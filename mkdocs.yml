@@ -1,0 +1,18 @@
+site_description: DoppelData - Synthetic Data for Healthcare
+site_author: Adam Kells
+
+nav:
+  - Home: index.md
+plugins:
+  - mkdocstrings
+  - search
+copyright: Maintained by <a href="https://github.com/adamkells">Adam</a>.
+theme:
+  name: material
+  # favicon: icon.png
+  # logo: icon.png
+  feature:
+    tabs: true
+  palette:
+    primary: white
+    accent: blue
