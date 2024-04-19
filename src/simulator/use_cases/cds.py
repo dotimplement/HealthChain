@@ -1,5 +1,6 @@
-from pydantic import Dict
-from ..base import BaseUseCase, Workflow
+from typing import Dict
+
+from ..base import BaseUseCase, UseCaseType, Workflow, validate_workflow
 
 
 class ClinicalDecisionSupport(BaseUseCase):
@@ -8,11 +9,13 @@ class ClinicalDecisionSupport(BaseUseCase):
     """
     def _validate_data(self, data, workflow: Workflow) -> bool:
         # do something to valida fhir data and the worklow it's for
-        pass
-
+        return True
+    
+    @validate_workflow(UseCaseType.ClinicalDecisionSupport)
     def construct_request(self, data, workflow: Workflow) -> Dict:
         if self._validate_data(data, workflow):
             # do something to construct a cds rest API post request depending on the workflow
+            print("Construction CDS request")
             request = {}
         else:
             raise ValueError(f"Error validating data for workflow {Workflow}")
