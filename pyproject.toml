@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "doppeldata"
+name = "healthchainx"
 version = "0.1.0"
 description = ""
 authors = ["Adam Kells <adamjkells93@gmail.com>"]
