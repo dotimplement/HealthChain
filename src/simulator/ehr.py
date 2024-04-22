@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import Dict
 from enum import Enum
 
-from .use_cases.cds import ClinicalDecisionSupport
-from .use_cases.clindoc import ClinicalDocumentation
+from .use_cases.test import TestUseCase
 from .base import BaseClient, BaseUseCase, UseCaseType, Workflow
 
 log = logging.getLogger(__name__)
@@ -24,14 +23,14 @@ class EHR(BaseClient):
     - Clinical Decision Support (HL7 CDS Hooks)
     - Clinical Documentation (Epic NoteReader)
     """
-    def __init__(self, use_case: BaseUseCase) -> None:
+    def __init__(self, use_case: BaseUseCase = None) -> None:
         self._use_case = use_case
         self.data = None # DoppelData object; 
         self.fhir_server_endpoint = None  # this is just for reference, simulating return of data from fhir server is all the same
     
     @property
     def UseCase(self) -> UseCaseType:
-        return self._use_case
+        return self._use_case.description()
     
     @UseCase.setter
     def UseCase(self, use_case: UseCase) -> None:
@@ -40,7 +39,10 @@ class EHR(BaseClient):
     # to implement in DoppelData
     @property
     def DataSchema(self) -> Dict:
-        return self.data._schema
+        if self.data is not None:
+            return self.data._schema
+        else:
+            return None
     
     @classmethod
     def from_doppeldata(cls, data, use_case: UseCase) -> None:
@@ -56,15 +58,6 @@ class EHR(BaseClient):
         """
         data = path
         return cls(data, use_case)
-
-    # @staticmethod
-    # def choose_strategy(strategy_type: str):
-    #     """Selects the strategy based on the strategy_type argument."""
-    #     strategies = {
-    #         "cds": ClinicalDecisionSupport(),
-    #         "clinical_documentation": ClinicalDocumentation()
-    #     }
-    #     return strategies.get(strategy_type, None)
     
     def add_database(self, data) -> None:
         """
@@ -76,6 +69,9 @@ class EHR(BaseClient):
         """
         Sends the API request to an AI service
         """
+        if self._use_case is None:
+            raise RuntimeError("No EHR use case configured! Set using .UseCase")
+
         response = {}
         request = self._use_case.construct_request(self.data, workflow)
         

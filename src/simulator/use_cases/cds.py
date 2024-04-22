@@ -7,6 +7,9 @@ class ClinicalDecisionSupport(BaseUseCase):
     """
     Simulates the behaviour of EHR backend for Clinical Decision Support (CDS)
     """
+    def description(self) -> str:
+        return "Clinical decision support (HL7 CDS specification)"
+    
     def _validate_data(self, data, workflow: Workflow) -> bool:
         # do something to valida fhir data and the worklow it's for
         return True
