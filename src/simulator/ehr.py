@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict
 from enum import Enum
 
-from .use_cases.test import TestUseCase
 from .base import BaseClient, BaseUseCase, UseCaseType, Workflow
 
 log = logging.getLogger(__name__)
