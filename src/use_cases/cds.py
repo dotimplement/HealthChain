@@ -18,8 +18,8 @@ class ClinicalDecisionSupport(BaseUseCase):
     def construct_request(self, data, workflow: Workflow) -> Dict:
         if self._validate_data(data, workflow):
             # do something to construct a cds rest API post request depending on the workflow
-            print("Construction CDS request")
-            request = {}
+            print(f"Constructing CDS request for {workflow.value}...")
+            request = {"request": data}
         else:
             raise ValueError(f"Error validating data for workflow {Workflow}")
 
