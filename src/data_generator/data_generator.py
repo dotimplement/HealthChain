@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 from faker import Faker
 from src.data_generator.fhir_data import Patient, HumanName
+from src.fhir_data import BaseLiterals
 import random
 
 class AbstractDataGenerator(ABC):
@@ -20,7 +21,7 @@ class HumanNameGenerator(AbstractDataGenerator):
             family=faker.last_name(),
             given=[faker.first_name()],
             prefix=[faker.prefix()],
-            suffix=[faker.suffix()]  ## We probably don't want to generate suffixes every time
+            suffix=[faker.suffix() if random.random() < 0.001 else None]
         )
 
 class PatientGenerator(AbstractDataGenerator):
@@ -35,5 +36,7 @@ class PatientGenerator(AbstractDataGenerator):
                 "use": faker.random_element(elements=("home", "work", "temp")),
                 "rank": faker.random_int(min=1, max=3)
             }],
-            gender=faker.random_element(elements=("
+            gender=faker.random_element(elements=(BaseLiterals.gender)),
+        )
+    
 
