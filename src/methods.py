@@ -14,7 +14,6 @@ class EHRClientMethod:
         # Use the strategy (use case) to construct the request with the output from func
         if self.use_case:
             request_data = self.use_case.construct_request(data, self.workflow)
-            return request_data 
+            return request_data
         else:
             return data
-

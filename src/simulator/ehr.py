@@ -22,15 +22,16 @@ class EHR(BaseClient):
     - Clinical Decision Support (HL7 CDS Hooks)
     - Clinical Documentation (Epic NoteReader)
     """
+
     def __init__(self, use_case: BaseUseCase = None) -> None:
         self._use_case = use_case
-        self.data = None # DoppelData object; 
+        self.data = None  # DoppelData object;
         self.fhir_server_endpoint = None  # this is just for reference, simulating return of data from fhir server is all the same
-    
+
     @property
     def UseCase(self) -> UseCaseType:
         return self._use_case.description()
-    
+
     @UseCase.setter
     def UseCase(self, use_case: UseCase) -> None:
         self._use_case = use_case
@@ -42,7 +43,7 @@ class EHR(BaseClient):
             return self.data._schema
         else:
             return None
-    
+
     @classmethod
     def from_doppeldata(cls, data, use_case: UseCase) -> None:
         """
@@ -57,7 +58,7 @@ class EHR(BaseClient):
         """
         data = path
         return cls(data, use_case)
-    
+
     def add_database(self, data) -> None:
         """
         This will take in a DoppelData object
@@ -73,17 +74,15 @@ class EHR(BaseClient):
 
         response = {}
         request = self._use_case.construct_request(self.data, workflow)
-        
-        try: 
+
+        try:
             response = requests.post(url=url, data=request)
         except Exception as e:
             log.error(f"Error sending request: {e}")
-        
 
         return response
-    
+
     async def send_request_bulk(self, num: int, url: str, workflow: Workflow) -> None:
         """
         Sends bulk API requests to an AI service
         """
-

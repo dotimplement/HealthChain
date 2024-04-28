@@ -15,12 +15,13 @@ class Workflow(Enum):
 
 class UseCaseType(Enum):
     ClinicalDecisionSupport = (
-        "patient-view", "order-select", "order-sign", "encounter-discharge"
-        )
-    ClinicalDocumentation = (
-        "notereader-sign-inpatient", "notereader-sign-outpatient"
-        )
-    
+        "patient-view",
+        "order-select",
+        "order-sign",
+        "encounter-discharge",
+    )
+    ClinicalDocumentation = ("notereader-sign-inpatient", "notereader-sign-outpatient")
+
     def __init__(self, *workflows):
         self.allowed_workflows = workflows
 
@@ -35,7 +36,9 @@ def validate_workflow(use_case):
             if not is_valid_workflow(use_case, args[2]):
                 raise ValueError(f"Invalid workflow {args[2]} for UseCase {use_case}")
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -44,7 +47,7 @@ class BaseClient(ABC):
     A client can be an EHR or CPOE etc.
     The basic operation is that it sends data in a specified standard.
     """
-    
+
     @abstractmethod
     def send_request(self) -> None:
         """
@@ -59,6 +62,7 @@ class BaseUseCase(ABC):
     - the data it accepts (FHIR or CDA)
     - the format of the request it constructs (CDS Hook or NoteReader workflows)
     """
+
     @abstractmethod
     def _validate_data(self, data) -> bool:
         pass
