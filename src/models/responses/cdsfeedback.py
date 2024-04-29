@@ -25,6 +25,7 @@ class CDSFeedback(BaseModel):
     """
     https://cds-hooks.org/specification/current/#feedback
     """
+
     card: str
     outcome: OutcomeEnum
     outcomeTimestamp: str

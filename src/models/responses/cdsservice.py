@@ -1,8 +1,10 @@
 from enum import Enum
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 from typing_extensions import Self
+
+# TODO: add docstrings
 
 
 class IndicatorEnum(str, Enum):
@@ -74,7 +76,7 @@ class Link(BaseModel):
         if self.appContext:
             assert (
                 self.type == LinkTypeEnum.smart
-            ), f"'type' must be 'smart' for appContext to be valued."
+            ), "'type' must be 'smart' for appContext to be valued."
 
         return self
 
