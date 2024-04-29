@@ -1,6 +1,10 @@
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, List, Dict, Any
 
+from ..hooks.basehookcontext import BaseHookContext
+
+# TODO: add docstrings
+
 
 class FHIRAuthorization(BaseModel):
     access_token: str  # OAuth2 access token
@@ -17,7 +21,7 @@ class CDSRequest(BaseModel):
 
     hook: str
     hookInstance: str
-    context: Dict[str, Any]
+    context: BaseHookContext
     fhirServer: Optional[HttpUrl] = None
     fhirAuthorization: Optional[FHIRAuthorization] = (
         None  # note this is required if fhirserver is given
