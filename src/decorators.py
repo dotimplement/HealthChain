@@ -8,10 +8,15 @@ from .methods import EHRClientMethod
 log = logging.getLogger(__name__)
 
 
-def ehr(func=None, *, workflow=None, use_case=None):
+# TODO: add validator and error handling
+def ehr(func=None, *, workflow=None, num=1):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(self, *args, **kwargs):
+            use_case = getattr(self, "use_case", None)
+            if use_case is None:
+                raise ValueError("Use case not configured!")
+
             try:
                 workflow_enum = Workflow(workflow)
             except ValueError as e:
@@ -26,9 +31,11 @@ def ehr(func=None, *, workflow=None, use_case=None):
                 method = EHRClientMethod(
                     func, workflow=workflow_enum, use_case=use_case
                 )
+                for _ in range(num):
+                    method.generate_request(self, *args, **kwargs)
             else:
                 raise NotImplementedError
-            return method(*args, **kwargs)
+            return method  # (self, *args, **kwargs)
 
         return wrapper
 
