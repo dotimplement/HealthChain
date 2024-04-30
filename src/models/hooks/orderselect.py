@@ -1,5 +1,6 @@
 from pydantic import Field, model_validator
-from typing import List, Dict, Optional, Any, Self
+from typing import List, Dict, Optional, Any
+from typing_extensions import Self
 
 from .basehookcontext import BaseHookContext
 
