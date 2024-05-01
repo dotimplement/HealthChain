@@ -1,17 +1,21 @@
 [tool.poetry]
-name = "doppeldata"
+name = "HealthChain"
 version = "0.1.0"
-description = ""
-authors = ["Adam Kells <adamjkells93@gmail.com>"]
+description = "Remarkably simple LLM prototyping and testing in healthcare context."
+authors = ["Adam Kells <adamjkells93@gmail.com>", "Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 mkdocs = "^1.5.3"
+pydantic = "^2.7.1"
+requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.1.1"
+ruff = "^0.4.2"
+pytest = "^8.2.0"
+pre-commit = "^3.7.0"
 
 [build-system]
 requires = ["poetry-core"]
