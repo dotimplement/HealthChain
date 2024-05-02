@@ -30,7 +30,7 @@ def is_valid_workflow(use_case: UseCaseType, workflow: Workflow) -> bool:
     return workflow.value in use_case.allowed_workflows
 
 
-def validate_workflow(use_case):
+def validate_workflow(use_case: UseCaseType):
     def decorator(func):
         def wrapper(*args, **kwargs):
             if not is_valid_workflow(use_case, args[2]):

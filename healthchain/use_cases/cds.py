@@ -26,6 +26,7 @@ class ClinicalDecisionSupport(BaseUseCase):
             Workflow.encounter_discharge: EncounterDischargeContext,
         }
 
+    @property
     def description(self) -> str:
         return "Clinical decision support (HL7 CDS specification)"
 
@@ -35,11 +36,16 @@ class ClinicalDecisionSupport(BaseUseCase):
 
     @validate_workflow(UseCaseType.ClinicalDecisionSupport)
     def construct_request(self, data, workflow: Workflow) -> Dict:
-        # TODO: sub data for actual DoppelData format
+        # TODO: sub data for actual DoppelData format!!
         if self._validate_data(data, workflow):
             log.debug(f"Constructing CDS request for {workflow.value} from {data}")
 
             context_model = self.context_mapping.get(workflow, None)
+            if context_model is None:
+                raise ValueError(
+                    f"Invalid workflow {workflow.value} or workflow model not implemented."
+                )
+
             context = context_model(**data.context)
             request = CDSRequest(
                 hook=workflow.value, hookInstance=data.uuid, context=context
