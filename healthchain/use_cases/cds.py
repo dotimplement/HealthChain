@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class ClinicalDecisionSupport(BaseUseCase):
     """
-    Simulates the behaviour of EHR backend for Clinical Decision Support (CDS)
+    Implements EHR backend strategy for Clinical Decision Support (CDS)
     """
 
     def __init__(self) -> None:
@@ -36,6 +36,19 @@ class ClinicalDecisionSupport(BaseUseCase):
 
     @validate_workflow(UseCaseType.ClinicalDecisionSupport)
     def construct_request(self, data, workflow: Workflow) -> Dict:
+        """
+        Constructs a HL7-compliant CDS request based on workflow.
+
+        Parameters:
+            data: FHIR data to be injected in request.
+            workflow (Workflow): The CDS hook name, e.g. patient-view.
+
+        Returns:
+            Dict: A json-compatible CDS request.
+
+        Raises:
+            ValueError: If the workflow is invalid or the data does not validate properly.
+        """
         # TODO: sub data for actual DoppelData format!!
         if self._validate_data(data, workflow):
             log.debug(f"Constructing CDS request for {workflow.value} from {data}")

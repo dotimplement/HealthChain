@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 # TODO: TO IMPLEMENT
 class ClinicalDocumentation(BaseUseCase):
     """
-    Simulates the behaviour of EHR backend for clinical documentation (NoteReader)
+    Implements EHR backend strategy for clinical documentation (NoteReader)
     """
 
     @property
