@@ -4,7 +4,7 @@ import requests
 log = logging.getLogger(__name__)
 
 
-class EHRClientMethod:
+class EHRClient:
     def __init__(self, func, workflow=None, use_case=None):
         self.data_generator_func = func
         self.workflow = workflow

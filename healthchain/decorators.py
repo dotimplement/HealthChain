@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 
 from .base import Workflow
-from .methods import EHRClientMethod
+from .clients import EHRClient
 
 log = logging.getLogger(__name__)
 
@@ -28,9 +28,7 @@ def ehr(func=None, *, workflow=None, num=1):
                 "ClinicalDocumentation",
                 "ClinicalDecisionSupport",
             ]:
-                method = EHRClientMethod(
-                    func, workflow=workflow_enum, use_case=use_case
-                )
+                method = EHRClient(func, workflow=workflow_enum, use_case=use_case)
                 for _ in range(num):
                     method.generate_request(self, *args, **kwargs)
             else:
