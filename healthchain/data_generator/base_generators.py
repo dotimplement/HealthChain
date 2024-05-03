@@ -3,7 +3,7 @@
 import random
 import string
 
-from src.pydantic_models import booleanModel, canonicalModel, codeModel, dateModel, dateTimeModel, decimalModel, idModel, instantModel, integerModel, markdownModel, positiveIntModel, stringModel, timeModel, unsignedIntModel, uriModel, urlModel, uuidModel
+from healthchain.fhir_resources.base_resources import booleanModel, canonicalModel, codeModel, dateModel, dateTimeModel, decimalModel, idModel, instantModel, integerModel, markdownModel, positiveIntModel, stringModel, timeModel, unsignedIntModel, uriModel, urlModel, uuidModel
 
 from faker import Faker
 faker = Faker()
