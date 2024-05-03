@@ -2,7 +2,7 @@
 
 # HealthChain
 
-A package to help Healthtech developers generate synthetic data in the Fhir data standard.
+Simplify prototyping and testing LLM applications in healthcare context.
 
 ## Quickstart
 
