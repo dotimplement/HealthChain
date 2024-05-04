@@ -1,6 +1,6 @@
-from src.data_generator.base_generators import BaseGenerator, generator_registry, register_generator
-from src.pydantic_models import PatientModel, HumanNameModel, ContactPointModel, AddressModel, PeriodModel, CodeableConceptModel,\
-stringModel, CodingModel, uriModel, codeModel, dateTimeModel, positiveIntModel
+from healthchain.data_generator.base_generators import BaseGenerator, generator_registry, register_generator
+from healthchain.fhir_resources.base_resources import PeriodModel, CodeableConceptModel, stringModel, CodingModel, uriModel, codeModel, dateTimeModel, positiveIntModel
+from healthchain.fhir_resources.patient_resources import PatientModel, HumanNameModel, ContactPointModel, AddressModel
 from faker import Faker
 
 import random
