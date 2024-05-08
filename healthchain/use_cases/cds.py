@@ -8,6 +8,7 @@ from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
 from ..models.hooks.patientview import PatientViewContext
 from ..models.hooks.encounterdischarge import EncounterDischargeContext
+from ..utils.endpoints import Endpoint
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +26,10 @@ class ClinicalDecisionSupport(BaseUseCase):
             Workflow.patient_view: PatientViewContext,
             Workflow.encounter_discharge: EncounterDischargeContext,
         }
+        self.endpoints = [
+            Endpoint(path="/cds-services", method="GET"),
+            Endpoint(path="/cds-services/{id}", method="POST", service_mount=True),
+        ]
 
     @property
     def description(self) -> str:

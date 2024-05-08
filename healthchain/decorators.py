@@ -3,8 +3,9 @@ import logging
 from functools import wraps
 from typing import Any, TypeVar, Optional, Callable, Union
 
-from .base import Workflow, BaseUseCase
+from .base import Workflow
 from .clients import EHRClient
+from .service.service import Service
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def ehr(
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(self: BaseUseCase, *args: Any, **kwargs: Any) -> EHRClient:
+        def wrapper(self, *args: Any, **kwargs: Any) -> EHRClient:
             use_case = getattr(self, "use_case", None)
             if use_case is None:
                 raise ValueError(
@@ -72,3 +73,20 @@ def ehr(
         return decorator
     else:
         return decorator(func)
+
+
+def service(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
+    """
+    A decorator that wraps around an LLM
+    """
+
+    def wrapper(self, *args: Any, **kwargs: Any) -> Service:
+        if hasattr(self, "endpoints"):
+            for endpoint in self.endpoints:
+                if endpoint.service_mount:
+                    self.service.register_route(
+                        endpoint, func.__get__(self, type(self))
+                    )
+        return func(self, *args, **kwargs)
+
+    return wrapper
