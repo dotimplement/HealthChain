@@ -1,7 +1,8 @@
 from typing import Enum
 
 class ImplementedResourceRegistry(Enum):
-    pass
+    Patient: str = "Patient"
+    Practitioner: str = "Practitioner"
 
 
 class UnimplementedResourceRegistry(Enum):
@@ -115,13 +116,11 @@ class UnimplementedResourceRegistry(Enum):
     OrganizationAffiliation: str = "OrganizationAffiliation"
     PackagedProductDefinition: str = "PackagedProductDefinition"
     Parameters: str = "Parameters"
-    Patient: str = "Patient"
     PaymentNotice: str = "PaymentNotice"
     PaymentReconciliation: str = "PaymentReconciliation"
     Permission: str = "Permission"
     Person: str = "Person"
     PlanDefinition: str = "PlanDefinition"
-    Practitioner: str = "Practitioner"
     PractitionerRole: str = "PractitionerRole"
     Procedure: str = "Procedure"
     Provenance: str = "Provenance"

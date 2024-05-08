@@ -25,9 +25,9 @@ class ContactPointGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return ContactPointModel(
-            system=faker.random_element(elements=('phone', 'fax', 'email', 'pager', 'url', 'sms', 'other')),
+            system=codeModel(code=faker.random_element(elements=('phone', 'fax', 'email', 'pager', 'url', 'sms', 'other'))),
             value=stringModel(string=faker.phone_number()),
-            use=faker.random_element(elements=('home', 'work', 'temp', 'old', 'mobile')),
+            use=codeModel(code=faker.random_element(elements=('home', 'work'))),
             rank=positiveIntModel(positiveInt=random.randint(1, 10)),
             period=generator_registry.get('PeriodGenerator').generate(),
         )
@@ -37,8 +37,8 @@ class AddressGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return AddressModel(
-            use=faker.random_element(elements=('home', 'work', 'temp', 'old')),
-            type=faker.random_element(elements=('postal', 'physical', 'both')),
+            use=codeModel(code=faker.random_element(elements=('home', 'work', 'temp', 'old'))),
+            type=codeModel(code=faker.random_element(elements=('postal', 'physical', 'both'))),
             text=stringModel(string=faker.address()),
             line=[stringModel(string=faker.street_address())],
             city=stringModel(string=faker.city()),

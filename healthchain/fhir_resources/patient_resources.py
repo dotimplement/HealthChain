@@ -6,8 +6,8 @@ from healthchain.fhir_resources.base_resources import BaseModel, idModel, uriMod
 class AddressModel(BaseModel):
     id_field: stringModel = Field(default=None, alias="id", description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.")
     extension_field: List[ExtensionModel] = Field(default_factory=list, alias="extension", description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.")
-    # Address_use_field: useModel = Field(..., alias="use", description="The purpose of this address.")
-    # Address_type_field: typeModel = Field(..., alias="type", description="Distinguishes between physical addresses (those you can visit) and mailing addresses (e.g. PO Boxes and care-of addresses). Most addresses are both.")
+    use_field: codeModel = Field(default=None, alias="use", description="The purpose of this address.")
+    type_field: codeModel = Field(default=None, alias="type", description="Distinguishes between physical addresses (those you can visit) and mailing addresses (e.g. PO Boxes and care-of addresses). Most addresses are both.")
     text_field: stringModel = Field(default=None, alias="text", description="Specifies the entire address as it should be displayed e.g. on a postal label. This may be provided instead of or as well as the specific parts.")
     line_field: List[stringModel] = Field(default_factory=list, alias="line", description="This component contains the house number, apartment number, street name, street direction,  P.O. Box number, delivery hints, and similar address information.")
     city_field: stringModel = Field(default=None, alias="city", description="The name of the city, town, suburb, village or other community or delivery center.")
@@ -21,18 +21,17 @@ class AddressModel(BaseModel):
 class ContactPointModel(BaseModel):
     id_field: stringModel = Field(default=None, alias="id", description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.")
     extension_field: List[ExtensionModel] = Field(default_factory=list, alias="extension", description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.")
-    # ContactPoint_system_field: systemModel = Field(..., alias="system", description="Telecommunications form for contact point - what communications system is required to make use of the contact.")
+    system_field: codeModel = Field(default=None, alias="system", description="Telecommunications form for contact point - what communications system is required to make use of the contact.")
     value_field: stringModel = Field(default=None, alias="value", description="The actual contact point details, in a form that is meaningful to the designated communication system (i.e. phone number or email address).")
-    # ContactPoint_use_field: useModel = Field(..., alias="use", description="Identifies the purpose for the contact point.")
+    use_field: codeModel = Field(default=None, alias="use", description="Identifies the purpose for the contact point.")
     rank_field: positiveIntModel = Field(default=None, alias="rank", description="Specifies a preferred order in which to use a set of contacts. ContactPoints with lower rank values are more preferred than those with higher rank values.")
     period_field: PeriodModel = Field(default=None, alias="period", description="Time period when the contact point was/is in use.")
-
 
 
 class HumanNameModel(BaseModel):
     id_field: stringModel = Field(default=None, alias="id", description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.")
     extension_field: List[ExtensionModel] = Field(default_factory=list, alias="extension", description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.")
-    # HumanName_use_field: useModel = Field(..., alias="use", description="Identifies the purpose for this name.")
+    use_field: codeModel = Field(default=None, alias="use", description="Identifies the purpose for this name.")
     text_field: stringModel = Field(default=None, alias="text", description="Specifies the entire name as it should be displayed e.g. on an application UI. This may be provided instead of or as well as the specific parts.")
     family_field: stringModel = Field(default=None, alias="family", description="The part of a name that links to the genealogy. In some cultures (e.g. Eritrea) the family name of a son is the first name of his father.")
     given_field: List[stringModel] = Field(default_factory=list, alias="given", description="Given name.")
