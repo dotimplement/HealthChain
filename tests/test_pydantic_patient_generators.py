@@ -1,4 +1,4 @@
-from src.data_generator.patient_generator import PatientGenerator, HumanNameGenerator
+from healthchain.data_generator.patient_generator import PatientGenerator, HumanNameGenerator
 
 
 def test_human_name_generator():

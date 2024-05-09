@@ -33,6 +33,43 @@ class Practitioner_QualificationGenerator(BaseGenerator):
         )
     
 
+
+
+@register_generator
+class LanguageGenerator():
+    language_value_dict = {'en': 'English',
+                           'es': 'Spanish',
+                           'fr': 'French',
+                           'de': 'German',
+                           'it': 'Italian',
+                           'ja': 'Japanese',
+                           'ko': 'Korean',
+                           'zh': 'Chinese',
+                           'ru': 'Russian',
+                           'ar': 'Arabic'}
+    @staticmethod
+    def generate():
+        language = faker.random_element(elements=LanguageGenerator.language_value_dict.keys())
+        return CodeableConceptModel(
+            coding=[CodingModel(
+                system=uriModel(uri="http://terminology.hl7.org/CodeSystem/languages"),
+                code=codeModel(code=language),
+                display=stringModel(string=LanguageGenerator.language_value_dict.get(language))
+                )],
+            text=stringModel(string=LanguageGenerator.language_value_dict.get(language))
+        )
+
+@register_generator
+class Practitioner_CommunicationGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        return Practitioner_CommunicationModel(
+            id=stringModel(string=faker.uuid4()),
+            language=generator_registry.get('CodeableConceptGenerator').generate(),
+            preferred=booleanModel(boolean=random.choice(['true', 'false'])),
+        )
+    
+
 @register_generator
 class PractitionerGenerator(BaseGenerator):
     @staticmethod
