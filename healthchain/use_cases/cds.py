@@ -2,7 +2,7 @@ import logging
 
 from typing import Dict
 
-from ..base import BaseUseCase, UseCaseType, Workflow, validate_workflow
+from ..base import BaseUseCase, UseCaseMapping, Workflow, validate_workflow
 from ..models.requests.cdsrequest import CDSRequest
 from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
@@ -39,7 +39,7 @@ class ClinicalDecisionSupport(BaseUseCase):
         # do something to valida fhir data and the worklow it's for
         return True
 
-    @validate_workflow(UseCaseType.ClinicalDecisionSupport)
+    @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
     def construct_request(self, data, workflow: Workflow) -> Dict:
         """
         Constructs a HL7-compliant CDS request based on workflow.

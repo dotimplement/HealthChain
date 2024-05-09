@@ -14,6 +14,11 @@ class Workflow(Enum):
 
 
 class UseCaseType(Enum):
+    cds = "ClinicalDecisionSupport"
+    clindoc = "ClinicalDocumentation"
+
+
+class UseCaseMapping(Enum):
     ClinicalDecisionSupport = (
         "patient-view",
         "order-select",
@@ -26,15 +31,21 @@ class UseCaseType(Enum):
         self.allowed_workflows = workflows
 
 
-def is_valid_workflow(use_case: UseCaseType, workflow: Workflow) -> bool:
+def is_valid_workflow(use_case: UseCaseMapping, workflow: Workflow) -> bool:
     return workflow.value in use_case.allowed_workflows
 
 
-def validate_workflow(use_case: UseCaseType):
+def validate_workflow(use_case: UseCaseMapping):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            if not is_valid_workflow(use_case, args[2]):
-                raise ValueError(f"Invalid workflow {args[2]} for UseCase {use_case}")
+            if len(kwargs) > 0:
+                workflow = kwargs.get("workflow")
+            else:
+                for arg in args:
+                    if type(arg) == Workflow:
+                        workflow = arg
+            if not is_valid_workflow(use_case, workflow):
+                raise ValueError(f"Invalid workflow {workflow} for UseCase {use_case}")
             return func(*args, **kwargs)
 
         return wrapper

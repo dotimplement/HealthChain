@@ -65,7 +65,7 @@ def test_context_mapping(cds, valid_data):
             )
         },
     ):
-        cds.construct_request(valid_data, Workflow.patient_view)
+        cds.construct_request(data=valid_data, workflow=Workflow.patient_view)
         cds.context_mapping[Workflow.patient_view].assert_called_once_with(
             **valid_data.context
         )
@@ -73,7 +73,13 @@ def test_context_mapping(cds, valid_data):
 
 def test_workflow_validation_decorator(cds, valid_data):
     with pytest.raises(ValueError) as excinfo:
-        cds.construct_request(valid_data, Workflow.notereader_sign_inpatient)
+        cds.construct_request(Workflow.notereader_sign_inpatient, valid_data)
+    assert "Invalid workflow" in str(excinfo.value)
+
+    with pytest.raises(ValueError) as excinfo:
+        cds.construct_request(
+            data=valid_data, workflow=Workflow.notereader_sign_inpatient
+        )
     assert "Invalid workflow" in str(excinfo.value)
 
     assert cds.construct_request(valid_data, Workflow.patient_view)

@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 from typing import Any, TypeVar, Optional, Callable, Union
 
-from .base import Workflow
+from .base import Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
 
@@ -56,10 +56,7 @@ def ehr(
                     f"{e}: please select from {[x.value for x in Workflow]}"
                 )
 
-            if use_case.__class__.__name__ in [
-                "ClinicalDocumentation",
-                "ClinicalDecisionSupport",
-            ]:
+            if use_case.__class__.__name__ in [e.value for e in UseCaseType]:
                 method = EHRClient(func, workflow=workflow_enum, use_case=use_case)
                 for _ in range(num):
                     method.generate_request(self, *args, **kwargs)
