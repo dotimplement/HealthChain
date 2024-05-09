@@ -24,6 +24,9 @@ jobs:
         with:
           python-version: ${{matrix.python-version}}
           poetry-version: ${{matrix.poetry-version}}
+      - name: Install package
+        run: |
+          poetry install --no-interaction
       - name: Lint with Ruff
         run: |
           poetry run ruff format
