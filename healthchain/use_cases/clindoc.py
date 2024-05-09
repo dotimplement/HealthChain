@@ -2,7 +2,7 @@ import logging
 
 from typing import Dict
 
-from ..base import BaseUseCase, UseCaseType, Workflow, validate_workflow
+from ..base import BaseUseCase, UseCaseMapping, Workflow, validate_workflow
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class ClinicalDocumentation(BaseUseCase):
         # do something to validate cda data and the workflow it's for
         return True
 
-    @validate_workflow(UseCaseType.ClinicalDocumentation)
+    @validate_workflow(UseCaseMapping.ClinicalDocumentation)
     def construct_request(self, data, workflow: Workflow) -> Dict:
         if self._validate_data(data, workflow):
             # do something to construct a notereader soap request
