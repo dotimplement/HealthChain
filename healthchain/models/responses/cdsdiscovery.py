@@ -30,7 +30,7 @@ class CDSService(BaseModel):
     usageRequirements: Optional[str] = None
 
 
-class CDSServiceDiscoveryResponse(BaseModel):
+class CDSServiceInformation(BaseModel):
     """
     A CDS Service is discoverable via a stable endpoint by CDS Clients. The Discovery endpoint includes information such as a
     description of the CDS Service, when it should be invoked, and any data that is requested to be prefetched.

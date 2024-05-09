@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 from typing import Optional, List, Dict
 from typing_extensions import Self
 
-# TODO: add docstrings
-
 
 class IndicatorEnum(str, Enum):
     """
