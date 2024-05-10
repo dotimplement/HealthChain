@@ -1,14 +1,16 @@
 import logging
 
-from typing import Dict
+from typing import Dict, Callable
 
 from ..base import BaseUseCase, UseCaseMapping, Workflow, validate_workflow
 from ..models.requests.cdsrequest import CDSRequest
+from ..models.responses.cdsresponse import CDSResponse
 from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
 from ..models.hooks.patientview import PatientViewContext
 from ..models.hooks.encounterdischarge import EncounterDischargeContext
 from ..utils.endpoints import Endpoint
+from ..utils.apimethod import APIMethod
 
 log = logging.getLogger(__name__)
 
@@ -18,22 +20,37 @@ class ClinicalDecisionSupport(BaseUseCase):
     Implements EHR backend strategy for Clinical Decision Support (CDS)
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, service_api: APIMethod = None) -> None:
         self.context_mapping = {
             Workflow.order_select: OrderSelectContext,
             Workflow.order_sign: OrderSignContext,
             Workflow.patient_view: PatientViewContext,
             Workflow.encounter_discharge: EncounterDischargeContext,
         }
-        self.endpoints = [
-            Endpoint(path="/cds-services", method="GET"),
-            Endpoint(path="/cds-services/{id}", method="POST", service_mount=True),
-        ]
+        # do we need keys? just in case
+        self.endpoints = {
+            "info": Endpoint(
+                path="/cds-services", method="GET", function=self.cds_discovery
+            ),
+            "service_mount": Endpoint(
+                path="/cds-services/{id}", method="POST", function=self.cds_service
+            ),
+        }
+        self._service_api = service_api
+
+    @property
+    def service_api(self) -> str:
+        if self._service_api is not None:
+            return self._service_api.__dict__
+        return "api not set"
 
     @property
     def description(self) -> str:
         return "Clinical decision support (HL7 CDS specification)"
+
+    @service_api.setter
+    def service_api(self, func: Callable) -> None:
+        self._service_api = func
 
     def _validate_data(self, data, workflow: Workflow) -> bool:
         # do something to valida fhir data and the worklow it's for
@@ -72,3 +89,16 @@ class ClinicalDecisionSupport(BaseUseCase):
             raise ValueError(f"Error validating data for workflow {Workflow}")
 
         return request
+
+    def cds_discovery(self) -> str:
+        return "cds check"
+
+    def cds_service(self, id: str, request: CDSRequest) -> CDSResponse:
+        # get json string - could be configurable?
+        request_json = request.model_dump_json()
+
+        # TODO: need to get kwargs here
+        result = self._service_api.func(self, text=request_json)
+
+        # TODO: could use llm to fix results here?
+        return CDSResponse(**result)

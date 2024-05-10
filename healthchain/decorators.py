@@ -5,7 +5,8 @@ from typing import Any, TypeVar, Optional, Callable, Union
 
 from .base import Workflow, UseCaseType
 from .clients import EHRClient
-from .service.service import Service
+from .utils.apimethod import APIMethod
+
 
 log = logging.getLogger(__name__)
 
@@ -72,18 +73,22 @@ def ehr(
         return decorator(func)
 
 
-def service(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
+def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
     """
     A decorator that wraps around an LLM
     """
 
-    def wrapper(self, *args: Any, **kwargs: Any) -> Service:
-        if hasattr(self, "endpoints"):
-            for endpoint in self.endpoints:
-                if endpoint.service_mount:
-                    self.service.register_route(
-                        endpoint, func.__get__(self, type(self))
-                    )
-        return func(self, *args, **kwargs)
+    def decorator(func: F) -> F:
+        func.is_service_route = True
 
-    return wrapper
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> APIMethod:
+            # TODO: set any configs needed
+            return APIMethod(func)
+
+        return wrapper
+
+    if func is None:
+        return decorator
+    else:
+        return decorator(func)

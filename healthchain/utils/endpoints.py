@@ -1,11 +1,11 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional
+from typing import Optional, Callable
 
 
 class Endpoint(BaseModel):
     path: str
     method: str
-    service_mount: bool = False
+    function: Callable
     description: Optional[str] = None
 
     @field_validator("method")
