@@ -1,5 +1,4 @@
 import logging
-import requests
 
 from typing import Any, Callable, List, Dict
 
@@ -41,7 +40,7 @@ class EHRClient(BaseClient):
         data = self.data_generator_func(*args, **kwargs)
         self.request_data.append(self.use_case.construct_request(data, self.workflow))
 
-    def send_request(self, url: str) -> List[Dict]:
+    async def send_request(self, url: str) -> List[Dict]:
         """
         Sends all queued requests to the specified URL and collects the responses.
 
@@ -52,15 +51,18 @@ class EHRClient(BaseClient):
             Notes:
                 This method logs errors rather than raising them, to avoid interrupting the batch processing of requests.
         """
-        json_responses: List[Dict] = []
-        for request in self.request_data:
-            try:
-                response = requests.post(
-                    url=url, data=request.model_dump_json(exclude_none=True)
-                )
-                json_responses.append(response.json())
-            except Exception as e:
-                log.error(f"Error sending request: {e}")
-                json_responses.append({})
+        import httpx
+
+        async with httpx.AsyncClient() as client:
+            json_responses: List[Dict] = []
+            for request in self.request_data:
+                try:
+                    response = await client.post(
+                        url=url, data=request.model_dump_json(exclude_none=True)
+                    )
+                    json_responses.append(response.json())
+                except Exception as e:
+                    log.error(f"Error sending request: {e}")
+                    json_responses.append({})
 
         return json_responses
