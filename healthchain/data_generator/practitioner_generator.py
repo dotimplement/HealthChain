@@ -10,28 +10,44 @@ import random
 
 faker = Faker()
 
+
+@register_generator
+class QualificationGenerator(BaseGenerator):
+    # TODO: Update with realistic qualifications
+    qualification_dict = {
+        '12345': 'Qualification 1',
+        '67890': 'Qualification 2',
+        '54321': 'Qualification 3',
+        '09876': 'Qualification 4',
+        '65432': 'Qualification 5',
+    }
+    @staticmethod
+    def generate():
+        random_qual = faker.random_element(elements=QualificationGenerator.qualification_dict.keys())
+        return CodeableConceptModel(
+            coding=[CodingModel(
+                system=uriModel("http://example.org"),
+                code=codeModel(random_qual),
+                display=stringModel(QualificationGenerator.qualification_dict.get(random_qual))
+            )],
+            text=stringModel(QualificationGenerator.qualification_dict.get(random_qual))
+        )
+
 @register_generator
 class Practitioner_QualificationGenerator(BaseGenerator):
-    qualification_value_set = [
-    "PN", "AAS", "AA", "ABA", "AE", "AS", "BA", "BBA", "BE", "BFA", "BN", "BS",
-    "BSL", "BSN", "BT", "CER", "CANP", "CMA", "CNP", "CNM", "CRN", "CNS", "CPNP",
-    "CTR", "DIP", "DBA", "DED", "PharmD", "PHE", "PHD", "PHS", "MD", "DO", "EMT",
-    "EMTP", "FPNP", "HS", "JD", "MA", "MBA", "MCE", "MDI", "MED", "MEE", "ME",
-    "MFA", "MME", "MS", "MSL", "MSN", "MTH", "MDA", "MT", "NG", "NP", "PA", "RMA",
-    "RN", "RPH", "SEC", "TS"]
+    # TODO: Refactor the value set to live with the resources
+
 
 
     @staticmethod
     def generate():
         return Practitioner_QualificationModel(
-            id=stringModel(string=faker.uuid4()),
-            identifier=[generator_registry.get('IdentifierGenerator').generate()],
-            code=codeModel(code=faker.random_element(elements=Practitioner_QualificationGenerator.qualification_value_set)),
+            id=stringModel(faker.uuid4()),
+            code=generator_registry.get('QualificationGenerator').generate(),
             # TODO: Modify period generator to have flexibility to set to present date
             period=generator_registry.get('PeriodGenerator').generate(),
             # issuer=generator_registry.get('ReferenceGenerator').generate(),
         )
-    
 
 
 
@@ -52,11 +68,11 @@ class LanguageGenerator():
         language = faker.random_element(elements=LanguageGenerator.language_value_dict.keys())
         return CodeableConceptModel(
             coding=[CodingModel(
-                system=uriModel(uri="http://terminology.hl7.org/CodeSystem/languages"),
-                code=codeModel(code=language),
-                display=stringModel(string=LanguageGenerator.language_value_dict.get(language))
+                system=uriModel("http://terminology.hl7.org/CodeSystem/languages"),
+                code=codeModel(language),
+                display=stringModel(LanguageGenerator.language_value_dict.get(language))
                 )],
-            text=stringModel(string=LanguageGenerator.language_value_dict.get(language))
+            text=stringModel(LanguageGenerator.language_value_dict.get(language))
         )
 
 @register_generator
@@ -64,9 +80,9 @@ class Practitioner_CommunicationGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return Practitioner_CommunicationModel(
-            id=stringModel(string=faker.uuid4()),
-            language=generator_registry.get('CodeableConceptGenerator').generate(),
-            preferred=booleanModel(boolean=random.choice(['true', 'false'])),
+            id=stringModel(faker.uuid4()),
+            language=generator_registry.get('LanguageGenerator').generate(),
+            preferred=booleanModel(random.choice(['true', 'false'])),
         )
     
 
@@ -75,12 +91,11 @@ class PractitionerGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return PractitionerModel(
-            id=stringModel(string=faker.uuid4()),
-            identifier=[generator_registry.get('IdentifierGenerator').generate()],
-            active=booleanModel(boolean=random.choice(['true', 'false'])),
+            id=stringModel(faker.uuid4()),
+            active=booleanModel(random.choice(['true', 'false'])),
             name=[generator_registry.get('HumanNameGenerator').generate()],
             telecom=[generator_registry.get('ContactPointGenerator').generate()],
-            gender=codeModel(code=faker.random_element(elements=('male', 'female', 'other', 'unknown'))),
+            gender=codeModel(faker.random_element(elements=('male', 'female', 'other', 'unknown'))),
             address=[generator_registry.get('AddressGenerator').generate()],
             qualification=[generator_registry.get('Practitioner_QualificationGenerator').generate()],
             communication=[generator_registry.get('Practitioner_CommunicationGenerator').generate()],

@@ -1,7 +1,7 @@
 from pydantic import Field, BaseModel
 from typing import List
-from healthchain.fhir_resources.base_resources import BaseModel, idModel, uriModel, codeModel, booleanModel, IdentifierModel, ReferenceModel, stringModel, ExtensionModel, PeriodModel, positiveIntModel, CodeableConceptModel, dateModel
-from healthchain.fhir_resources.patient_resources import HumanNameModel, ContactPointModel, AddressModel, AttachmentModel
+from healthchain.fhir_resources.base_resources import BaseModel, idModel, uriModel, codeModel, booleanModel, IdentifierModel, ReferenceModel, stringModel, ExtensionModel, PeriodModel, CodeableConceptModel, dateModel
+from healthchain.fhir_resources.patient_resources import HumanNameModel, ContactPointModel, AddressModel
 
 
 class Practitioner_QualificationModel(BaseModel):
@@ -23,7 +23,7 @@ class Practitioner_CommunicationModel(BaseModel):
 
 
 class PractitionerModel(BaseModel):
-    resourceType_field: str =  "Practitioner"
+    resourceType: str =  "Practitioner"
     id_field: idModel = Field(default=None, alias="id", description="The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.")
     # meta_field: MetaModel = Field(default=None, alias="meta", description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.")
     implicitRules_field: uriModel = Field(default=None, alias="implicitRules", description="A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.")
