@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from enum import Enum
 
-from .cdsservice import Coding
+from .cdsresponse import Coding
 
 
 class OutcomeEnum(str, Enum):
