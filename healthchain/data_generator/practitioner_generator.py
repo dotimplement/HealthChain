@@ -19,8 +19,6 @@ from healthchain.fhir_resources.practitioner_resources import (
 from faker import Faker
 
 
-import random
-
 faker = Faker()
 
 
@@ -58,8 +56,6 @@ class QualificationGenerator(BaseGenerator):
 
 @register_generator
 class Practitioner_QualificationGenerator(BaseGenerator):
-    # TODO: Refactor the value set to live with the resources
-
     @staticmethod
     def generate():
         return Practitioner_QualificationModel(
@@ -73,35 +69,30 @@ class Practitioner_QualificationGenerator(BaseGenerator):
 
 @register_generator
 class LanguageGenerator:
-    language_value_dict = {
-        "en": "English",
-        "es": "Spanish",
-        "fr": "French",
-        "de": "German",
-        "it": "Italian",
-        "ja": "Japanese",
-        "ko": "Korean",
-        "zh": "Chinese",
-        "ru": "Russian",
-        "ar": "Arabic",
-    }
-
     @staticmethod
     def generate():
-        language = faker.random_element(
-            elements=LanguageGenerator.language_value_dict.keys()
-        )
+        language_value_dict = {
+            "en": "English",
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "it": "Italian",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "zh": "Chinese",
+            "ru": "Russian",
+            "ar": "Arabic",
+        }
+        language = faker.random_element(elements=language_value_dict.keys())
         return CodeableConceptModel(
             coding=[
                 CodingModel(
                     system=uriModel("http://terminology.hl7.org/CodeSystem/languages"),
                     code=codeModel(language),
-                    display=stringModel(
-                        LanguageGenerator.language_value_dict.get(language)
-                    ),
+                    display=stringModel(language_value_dict.get(language)),
                 )
             ],
-            text=stringModel(LanguageGenerator.language_value_dict.get(language)),
+            text=stringModel(language_value_dict.get(language)),
         )
 
 
@@ -112,7 +103,7 @@ class Practitioner_CommunicationGenerator(BaseGenerator):
         return Practitioner_CommunicationModel(
             id=stringModel(faker.uuid4()),
             language=generator_registry.get("LanguageGenerator").generate(),
-            preferred=booleanModel(random.choice(["true", "false"])),
+            preferred=booleanModel("true"),
         )
 
 
@@ -122,7 +113,7 @@ class PractitionerGenerator(BaseGenerator):
     def generate():
         return PractitionerModel(
             id=stringModel(faker.uuid4()),
-            active=booleanModel(random.choice(["true", "false"])),
+            active=booleanModel("true"),
             name=[generator_registry.get("HumanNameGenerator").generate()],
             telecom=[generator_registry.get("ContactPointGenerator").generate()],
             gender=codeModel(

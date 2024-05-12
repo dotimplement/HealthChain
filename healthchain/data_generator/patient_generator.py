@@ -21,7 +21,6 @@ from healthchain.fhir_resources.patient_resources import (
 )
 from faker import Faker
 
-import random
 
 faker = Faker()
 
@@ -44,14 +43,10 @@ class ContactPointGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return ContactPointModel(
-            system=codeModel(
-                faker.random_element(
-                    elements=("phone", "fax", "email", "pager", "url", "sms", "other")
-                )
-            ),
+            system=codeModel(faker.random_element(elements=("phone", "fax"))),
             value=stringModel(faker.phone_number()),
             use=codeModel(faker.random_element(elements=("home", "work"))),
-            rank=positiveIntModel(random.randint(1, 10)),
+            rank=positiveIntModel(1),
             period=generator_registry.get("PeriodGenerator").generate(),
         )
 
@@ -122,10 +117,7 @@ class PatientGenerator(BaseGenerator):
             id=generator_registry.get("idGenerator").generate(),
             active=generator_registry.get("booleanGenerator").generate(),
             name=[generator_registry.get("HumanNameGenerator").generate()],
-            telecom=[
-                generator_registry.get("ContactPointGenerator").generate()
-                for _ in range(1)
-            ],  ## List of length 1 for simplicity
+            telecom=[generator_registry.get("ContactPointGenerator").generate()],
             gender=codeModel(
                 faker.random_element(elements=("male", "female", "other", "unknown"))
             ),
