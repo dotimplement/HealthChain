@@ -1,7 +1,5 @@
 from healthchain.data_generator.base_generators import BaseGenerator, generator_registry, register_generator
-from healthchain.data_generator.patient_generator import PeriodGenerator, ContactPointGenerator, AddressGenerator
-from healthchain.fhir_resources.base_resources import PeriodModel, booleanModel, CodeableConceptModel, stringModel, CodingModel, uriModel, codeModel, dateTimeModel, positiveIntModel
-from healthchain.fhir_resources.patient_resources import PatientModel, HumanNameModel, ContactPointModel, AddressModel
+from healthchain.fhir_resources.base_resources import PeriodModel, booleanModel, CodeableConceptModel, stringModel, CodingModel, uriModel, codeModel
 from healthchain.fhir_resources.practitioner_resources import PractitionerModel, Practitioner_QualificationModel, Practitioner_CommunicationModel
 from faker import Faker
 

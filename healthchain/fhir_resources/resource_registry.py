@@ -1,8 +1,13 @@
 from typing import Enum
 
 class ImplementedResourceRegistry(Enum):
+    Bundle: str = "Bundle"
+    Encounter: str = "Encounter"
+    MedicationRequest: str = "MedicationRequest"
+    NutritionOrder: str = "NutritionOrder"
     Patient: str = "Patient"
     Practitioner: str = "Practitioner"
+    
 
 
 class UnimplementedResourceRegistry(Enum):
@@ -21,7 +26,6 @@ class UnimplementedResourceRegistry(Enum):
     BiologicallyDerivedProduct: str = "BiologicallyDerivedProduct"
     BiologicallyDerivedProductDispense: str = "BiologicallyDerivedProductDispense"
     BodyStructure: str = "BodyStructure"
-    Bundle: str = "Bundle"
     CapabilityStatement: str = "CapabilityStatement"
     CarePlan: str = "CarePlan"
     CareTeam: str = "CareTeam"
@@ -98,7 +102,6 @@ class UnimplementedResourceRegistry(Enum):
     MedicationAdministration: str = "MedicationAdministration"
     MedicationDispense: str = "MedicationDispense"
     MedicationKnowledge: str = "MedicationKnowledge"
-    MedicationRequest: str = "MedicationRequest"
     MedicationStatement: str = "MedicationStatement"
     MedicinalProductDefinition: str = "MedicinalProductDefinition"
     MessageDefinition: str = "MessageDefinition"
@@ -106,7 +109,6 @@ class UnimplementedResourceRegistry(Enum):
     MolecularSequence: str = "MolecularSequence"
     NamingSystem: str = "NamingSystem"
     NutritionIntake: str = "NutritionIntake"
-    NutritionOrder: str = "NutritionOrder"
     NutritionProduct: str = "NutritionProduct"
     Observation: str = "Observation"
     ObservationDefinition: str = "ObservationDefinition"
