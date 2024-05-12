@@ -7,4 +7,3 @@ Simplify prototyping and testing LLM applications in healthcare context.
 ## Quickstart
 
 You can install this package by running:
-

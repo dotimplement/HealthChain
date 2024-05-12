@@ -1,4 +1,9 @@
-from healthchain.data_generator.practitioner_generator import PractitionerGenerator, Practitioner_QualificationGenerator, Practitioner_CommunicationGenerator
+from healthchain.data_generator.practitioner_generator import (
+    PractitionerGenerator,
+    Practitioner_QualificationGenerator,
+    Practitioner_CommunicationGenerator,
+)
+
 
 def test_practitioner_data_generator():
     # Create an instance of the PractitionerDataGenerator

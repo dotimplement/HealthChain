@@ -1,5 +1,6 @@
 from typing import Enum
 
+
 class ImplementedResourceRegistry(Enum):
     Bundle: str = "Bundle"
     Encounter: str = "Encounter"
@@ -7,7 +8,6 @@ class ImplementedResourceRegistry(Enum):
     NutritionOrder: str = "NutritionOrder"
     Patient: str = "Patient"
     Practitioner: str = "Practitioner"
-    
 
 
 class UnimplementedResourceRegistry(Enum):
