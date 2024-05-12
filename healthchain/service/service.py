@@ -1,20 +1,24 @@
 import logging
+
+from typing import Dict
 from fastapi import FastAPI
 
-from ..base import BaseUseCase
+from ..utils.endpoints import Endpoint
 
 log = logging.getLogger(__name__)
 
 
 class Service:
-    def __init__(self, strategy: BaseUseCase):
+    def __init__(self, endpoints: Dict[str, Endpoint] = None):
         self.app = FastAPI()
-        self.strategy = strategy
-        self.register_route()
+        self.endpoints = endpoints
 
-    def register_route(self):
+        if self.endpoints is not None:
+            self.register_route()
+
+    def register_route(self) -> None:
         # TODO: add kwargs
-        for endpoint in self.strategy.endpoints.values():
+        for endpoint in self.endpoints.values():
             self.app.add_api_route(
                 endpoint.path,
                 endpoint.function,
@@ -22,7 +26,7 @@ class Service:
                 response_model_exclude_none=True,
             )
 
-    def run(self):
+    def run(self) -> None:
         # TODO: pass configurations in
         import uvicorn
 

@@ -1,4 +1,5 @@
 import logging
+import httpx
 
 from typing import Any, Callable, List, Dict
 
@@ -51,7 +52,6 @@ class EHRClient(BaseClient):
             Notes:
                 This method logs errors rather than raising them, to avoid interrupting the batch processing of requests.
         """
-        import httpx
 
         async with httpx.AsyncClient() as client:
             json_responses: List[Dict] = []

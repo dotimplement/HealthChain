@@ -1,10 +1,14 @@
 import logging
+import threading
+import asyncio
 
+from time import sleep
 from functools import wraps
 from typing import Any, TypeVar, Optional, Callable, Union
 
-from .base import Workflow, UseCaseType
+from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
+from .service.service import Service
 from .utils.apimethod import APIMethod
 
 
@@ -42,13 +46,13 @@ def ehr(
     """
 
     def decorator(func: F) -> F:
+        func.is_client = True
+
         @wraps(func)
         def wrapper(self, *args: Any, **kwargs: Any) -> EHRClient:
-            use_case = getattr(self, "use_case", None)
-            if use_case is None:
-                raise ValueError(
-                    f"Use case not configured! Check {type(self)} is a valid strategy."
-                )
+            assert issubclass(
+                type(self), BaseUseCase
+            ), f"{self.__class__.__name__} must be subclass of valid Use Case strategy!"
 
             try:
                 workflow_enum = Workflow(workflow)
@@ -56,13 +60,14 @@ def ehr(
                 raise ValueError(
                     f"{e}: please select from {[x.value for x in Workflow]}"
                 )
-
-            if use_case.__class__.__name__ in [e.value for e in UseCaseType]:
-                method = EHRClient(func, workflow=workflow_enum, use_case=use_case)
+            if self.type in UseCaseType:
+                method = EHRClient(func, workflow=workflow_enum, use_case=self)
                 for _ in range(num):
                     method.generate_request(self, *args, **kwargs)
             else:
-                raise NotImplementedError
+                raise NotImplementedError(
+                    f"Use case {self.type} not recognised, check if implemented."
+                )
             return method
 
         return wrapper
@@ -92,3 +97,51 @@ def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]
         return decorator
     else:
         return decorator(func)
+
+
+def sandbox(cls):
+    """
+    A decorator function that sets up a sandbox environment. It will:
+    - Initialise the use case strategy class
+    - Set up a service instance
+    - Trigger .send_request() function from the configured client
+    """
+    original_init = cls.__init__
+
+    def new_init(self, *args, **kwargs):
+        # initialse parent class, which should be a strategy use case
+        super(cls, self).__init__(*args, **kwargs)
+        original_init(self, *args, **kwargs)  # Call the original __init__
+
+        for name in dir(self):
+            attr = getattr(self, name)
+            # Get the function decorated with @api and register it to inject in service
+            if callable(attr) and hasattr(attr, "is_service_route"):
+                method_func = attr.__get__(self, cls)
+                self.service_api = method_func()
+            # Get the function decorated with @client and asign to client
+            if callable(attr) and hasattr(attr, "is_client"):
+                method_func = attr.__get__(self, cls)
+                # TODO: need to figure out where to pass in data spec
+                self.client = method_func("123456")
+
+        # Create a Service instance and register routes from strategy
+        self.service = Service(endpoints=self.endpoints)
+
+    cls.__init__ = new_init
+
+    def start_sandbox(self):
+        server_thread = threading.Thread(target=lambda: self.service.run())
+        server_thread.start()
+
+        sleep(5)
+
+        # TODO: url needs to be passed in from the configs!!
+        responses = asyncio.run(
+            self.client.send_request(url="http://127.0.0.1:8000/cds-services/1")
+        )
+        print(responses)
+
+    cls.start_sandbox = start_sandbox
+
+    return cls

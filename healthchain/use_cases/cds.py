@@ -2,7 +2,7 @@ import logging
 
 from typing import Dict, Callable
 
-from ..base import BaseUseCase, UseCaseMapping, Workflow, validate_workflow
+from ..base import BaseUseCase, UseCaseMapping, UseCaseType, Workflow, validate_workflow
 from ..models.requests.cdsrequest import CDSRequest
 from ..models.responses.cdsresponse import CDSResponse
 from ..models.hooks.orderselect import OrderSelectContext
@@ -21,6 +21,7 @@ class ClinicalDecisionSupport(BaseUseCase):
     """
 
     def __init__(self, service_api: APIMethod = None) -> None:
+        self.type = UseCaseType.cds
         self.context_mapping = {
             Workflow.order_select: OrderSelectContext,
             Workflow.order_sign: OrderSignContext,
