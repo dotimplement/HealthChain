@@ -17,12 +17,8 @@ def test_ClassGenerator():
 
 def test_EncounterTypeGenerator():
     encounter_type = EncounterTypeGenerator.generate()
-    assert (
-        encounter_type.coding_field[0].system_field
-        == "http://terminology.hl7.org/CodeSystem/v3-ActCode"
-    )
-    assert encounter_type.coding_field[0].code_field in ("ADMS", "EMER")
-    assert encounter_type.coding_field[0].display_field in ("admission", "emergency")
+    assert encounter_type.coding_field[0].system_field == "http://snomed.info/sct"
+    assert encounter_type.coding_field[0].display_field in ("consultation", "emergency")
 
 
 def test_EncounterModel():

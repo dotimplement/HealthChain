@@ -32,12 +32,12 @@ class ClassGenerator(BaseGenerator):
 class EncounterTypeGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        encounter_type_mapping = {"ADMS": "admission", "EMER": "emergency"}
-        encounter_type = faker.random_element(elements=("ADMS", "EMER"))
+        encounter_type_mapping = {"11429006": "consultation", "50849002": "emergency"}
+        encounter_type = faker.random_element(elements=("11429006", "50849002"))
         return CodeableConceptModel(
             coding=[
                 CodingModel(
-                    system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                    system="http://snomed.info/sct",
                     code=encounter_type,
                     display=encounter_type_mapping.get(encounter_type),
                 )
@@ -49,16 +49,12 @@ class EncounterTypeGenerator(BaseGenerator):
 class EncounterPriorityGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        encounter_priority_mapping = {
-            "ALRT": "alert",
-            "CRIT": "critical",
-            "NRM": "normal",
-        }
-        encounter_priority = faker.random_element(elements=("ALRT", "CRIT", "NRM"))
+        encounter_priority_mapping = {"17621005": "normal", "24484000": "critical"}
+        encounter_priority = faker.random_element(elements=("17621005", "24484000"))
         return CodeableConceptModel(
             coding=[
                 CodingModel(
-                    system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                    system="http://snomed.info/sct",
                     code=encounter_priority,
                     display=encounter_priority_mapping.get(encounter_priority),
                 )
@@ -79,7 +75,6 @@ class EncounterGenerator(BaseGenerator):
                 "status": "generated",
                 "div": '<div xmlns="http://www.w3.org/1999/xhtml">Encounter with patient @example</div>',
             },
-            # TODO: Move the elements to live with the resources
             status=faker.random_element(
                 elements=(
                     "planned",
