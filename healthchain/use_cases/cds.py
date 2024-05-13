@@ -1,4 +1,5 @@
 import logging
+import inspect
 
 from typing import Dict, Callable
 
@@ -95,11 +96,21 @@ class ClinicalDecisionSupport(BaseUseCase):
         return "cds check"
 
     def cds_service(self, id: str, request: CDSRequest) -> CDSResponse:
-        # get json string - could be configurable?
+        # TODO: can register multiple services and fetch with id
+
         request_json = request.model_dump_json()
 
-        # TODO: need to get kwargs here
-        result = self._service_api.func(self, text=request_json)
+        # TODO: better handling of args/kwargs io here
+        signature = inspect.signature(self._service_api.func)
+        assert (
+            len(signature.parameters) == 2
+        ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; CDS Service functions currently only accept 'self' and a single input argument."
 
-        # TODO: could use llm to fix results here?
+        # params = iter(inspect.signature(self._service_api.func).parameters.items())
+        # for name, param in params:
+        #     print(name, param, param.annotation)
+
+        result = self._service_api.func(self, request_json)
+
+        # TODO: could use llm to check and fix results here?
         return CDSResponse(**result)
