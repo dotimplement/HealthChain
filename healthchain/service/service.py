@@ -1,4 +1,5 @@
 import logging
+import uvicorn
 
 from typing import Dict
 from fastapi import FastAPI
@@ -26,8 +27,8 @@ class Service:
                 response_model_exclude_none=True,
             )
 
-    def run(self) -> None:
-        # TODO: pass configurations in
-        import uvicorn
+    def run(self, config: Dict = None) -> None:
+        if config is None:
+            config = {}
 
-        uvicorn.run(self.app, host="127.0.0.1", port=8000)
+        uvicorn.run(self.app, **config)

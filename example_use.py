@@ -12,7 +12,7 @@ def run():
         uuid: str
         prefetch: dict
 
-    @sandbox  # (service_config={"port": "8000"})
+    @sandbox(service_config={"port": 9000})
     class myCDS(ClinicalDecisionSupport):
         def __init__(self) -> None:
             self.data_generator = None
@@ -30,7 +30,7 @@ def run():
 
         @api
         def llm(self, text: str):
-            print("processing...")
+            print(f"processing {text}...")
             return {
                 "cards": [
                     {

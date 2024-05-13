@@ -44,7 +44,7 @@ class ClinicalDecisionSupport(BaseUseCase):
     def service_api(self) -> str:
         if self._service_api is not None:
             return self._service_api.__dict__
-        return "api not set"
+        return None
 
     @property
     def description(self) -> str:

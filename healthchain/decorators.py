@@ -4,7 +4,7 @@ import asyncio
 
 from time import sleep
 from functools import wraps
-from typing import Any, TypeVar, Optional, Callable, Union
+from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
 from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
@@ -17,7 +17,6 @@ log = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable)
 
 
-# TODO: add validator and error handling
 def ehr(
     func: Optional[F] = None, *, workflow: Workflow, num: int = 1
 ) -> Union[Callable[..., Any], Callable[[F], F]]:
@@ -89,7 +88,7 @@ def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> APIMethod:
             # TODO: set any configs needed
-            return APIMethod(func)
+            return APIMethod(func=func)
 
         return wrapper
 
@@ -99,49 +98,157 @@ def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]
         return decorator(func)
 
 
-def sandbox(cls):
+def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
     """
-    A decorator function that sets up a sandbox environment. It will:
+    Decorator factory for creating a sandboxed environment, either with or without configuration.
+    This can be used both as a decorator without arguments or with configuration arguments.
+
+    Parameters:
+        arg: Optional argument which can be either a callable (class) directly or a configuration dict.
+        **kwargs: Arbitrary keyword arguments, mainly used to pass in 'service_config'.
+        service_config must be a dictionary of valid kwargs to pass into uvivorn.run()
+
+    Returns:
+        If `arg` is callable, it applies the default decorator with no extra configuration.
+        Otherwise, it uses the provided arguments to configure the service environment.
+
+    Example:
+    @sandbox(service_config={"port": 9000})
+    class myCDS(ClinicalDecisionSupport):
+        def __init__(self) -> None:
+            self.data_generator = None
+    """
+    if callable(arg):
+        # The decorator was used without parentheses, and a class was passed in directly
+        cls = arg
+        return decorator()(cls)  # Apply default decorator with default settings
+    else:
+        # Arguments were provided, or no arguments but with parentheses
+        if "service_config" not in kwargs:
+            log.warn(
+                f"{list(kwargs.keys())} is not a valid argument and will not be used; use 'service_config'."
+            )
+        service_config = arg if arg is not None else kwargs.get("service_config", {})
+
+        return decorator(service_config)
+
+
+def decorator(service_config: Optional[Dict] = None) -> Callable:
+    """
+    A decorator function that sets up a sandbox environment. It modifies the class initialization
+    to incorporate service and client management based on provided configurations. It will:
+
     - Initialise the use case strategy class
     - Set up a service instance
     - Trigger .send_request() function from the configured client
+
+    Parameters:
+        service_config: A dictionary containing configurations for the service.
+
+    Returns:
+        A wrapper function that modifies the class to which it is applied.
     """
-    original_init = cls.__init__
+    if service_config is None:
+        service_config = {}
 
-    def new_init(self, *args, **kwargs):
-        # initialse parent class, which should be a strategy use case
-        super(cls, self).__init__(*args, **kwargs)
-        original_init(self, *args, **kwargs)  # Call the original __init__
+    def wrapper(cls: Type) -> Type:
+        if not issubclass(cls, BaseUseCase):
+            raise TypeError(
+                f"The 'sandbox' decorator can only be applied to subclasses of BaseUseCase, got {cls.__name__}"
+            )
 
-        for name in dir(self):
-            attr = getattr(self, name)
-            # Get the function decorated with @api and register it to inject in service
-            if callable(attr) and hasattr(attr, "is_service_route"):
-                method_func = attr.__get__(self, cls)
-                self.service_api = method_func()
-            # Get the function decorated with @client and asign to client
-            if callable(attr) and hasattr(attr, "is_client"):
-                method_func = attr.__get__(self, cls)
-                # TODO: need to figure out where to pass in data spec
-                self.client = method_func("123456")
+        original_init = cls.__init__
 
-        # Create a Service instance and register routes from strategy
-        self.service = Service(endpoints=self.endpoints)
+        def new_init(self, *args: Any, **kwargs: Any) -> None:
+            # initialse parent class, which should be a strategy use case
+            super(cls, self).__init__(*args, **kwargs)
+            original_init(self, *args, **kwargs)  # Call the original __init__
 
-    cls.__init__ = new_init
+            self.service_config = service_config
+            self.service_api = None
+            self.client = None
+            service_route_count = 0
+            client_count = 0
 
-    def start_sandbox(self):
-        server_thread = threading.Thread(target=lambda: self.service.run())
-        server_thread.start()
+            for name in dir(self):
+                attr = getattr(self, name)
+                if callable(attr):
+                    # Get the function decorated with @api and register it to inject in service
+                    if hasattr(attr, "is_service_route"):
+                        service_route_count += 1
+                        if service_route_count > 1:
+                            raise RuntimeError(
+                                "Multiple methods are registered as service api. Only one is allowed."
+                            )
+                        method_func = attr.__get__(self, cls)
+                        self.service_api = method_func()
+                    # Get the function decorated with @client and asign to client
+                    if hasattr(attr, "is_client"):
+                        client_count += 1
+                        if client_count > 1:
+                            raise RuntimeError(
+                                "Multiple methods are registered as client. Only one is allowed."
+                            )
+                        method_func = attr.__get__(self, cls)
+                        # TODO: need to figure out where to pass in data spec
+                        self.client = method_func("123456")
 
-        sleep(5)
+            # Create a Service instance and register routes from strategy
+            self.service = Service(endpoints=self.endpoints)
 
-        # TODO: url needs to be passed in from the configs!!
-        responses = asyncio.run(
-            self.client.send_request(url="http://127.0.0.1:8000/cds-services/1")
-        )
-        print(responses)
+        cls.__init__ = new_init
 
-    cls.start_sandbox = start_sandbox
+        def start_sandbox(self, id: str = "1") -> None:
+            """
+            Starts the sandbox: initialises service and sends a request through the client.
+            """
+            # TODO: revisit this - default to a single service with id "1", we could have a service resgistry if useful
 
-    return cls
+            if self.service_api is None or not hasattr(self, "client"):
+                raise RuntimeError(
+                    "Service API or Client is not configured. Please check your class initialization."
+                )
+
+            # Start service on thread
+            log.info(
+                f"Starting {self.type.value} service {self.__class__.__name__} with configs {self.service_config}..."
+            )
+            server_thread = threading.Thread(
+                target=lambda: self.service.run(config=self.service_config)
+            )
+            server_thread.start()
+
+            # Wait for service to start
+            sleep(5)
+
+            # Build url from configs
+            protocol = self.service_config.get("ssl_keyfile")
+            if protocol is None:
+                protocol = "http"
+            else:
+                protocol = "https"
+            host = self.service_config.get("host", "127.0.0.1")
+            port = self.service_config.get("port", "8000")
+            service = getattr(self.endpoints.get("service_mount"), "path", None)
+            if service is not None:
+                # TODO: revisit this - not all services are formatted with ids
+                service = service.format(id=id)
+            else:
+                raise RuntimeError(
+                    f"Can't fetch service details from {self.type.value}: key 'service_mount' doesn't exist in {self.endpoints}"
+                )
+
+            # Send async request from client
+            url = f"{protocol}://{host}:{port}{service}"
+            log.info(f"Sending {self.client.__class__.__name__} requests to {url}...")
+            try:
+                responses = asyncio.run(self.client.send_request(url=url))
+                print(responses)
+            except Exception as e:
+                log.error(f"Couldn't start client: {e}")
+
+        cls.start_sandbox = start_sandbox
+
+        return cls
+
+    return wrapper
