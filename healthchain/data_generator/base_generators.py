@@ -27,11 +27,26 @@ from faker import Faker
 
 faker = Faker()
 
-generator_registry = {}
+
+class Registry:
+    def __init__(self):
+        self.registry = {}
+
+    def register(self, cls):
+        self.registry[cls.__name__] = cls
+        return cls
+
+    def get(self, name):
+        if name not in self.registry:
+            raise ValueError(f"No generator registered for '{name}'")
+        return self.registry.get(name)
+
+
+generator_registry = Registry()
 
 
 def register_generator(cls):
-    generator_registry[cls.__name__] = cls
+    generator_registry.register(cls)
     return cls
 
 

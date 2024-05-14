@@ -57,8 +57,3 @@ def test_code_invalid():
 
 
 # TODO: Add tests for the remaining base resources
-
-
-# Run the tests
-if __name__ == "__main__":
-    pytest.main()
