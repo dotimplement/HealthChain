@@ -1,0 +1,49 @@
+from healthchain.data_generator.condition_generators import (
+    clinicalStatusGenerator,
+    verificationStatusGenerator,
+    categoryGenerator,
+    ConditionModelGenerator,
+)
+
+
+def test_clinicalStatusGenerator():
+    clinical_status = clinicalStatusGenerator.generate()
+    assert (
+        clinical_status.coding_field[0].system_field
+        == "http://terminology.hl7.org/CodeSystem/condition-clinical"
+    )
+    assert clinical_status.coding_field[0].code_field in (
+        "active",
+        "recurrence",
+        "inactive",
+        "resolved",
+    )
+
+
+def test_verificationStatusGenerator():
+    verification_status = verificationStatusGenerator.generate()
+    assert (
+        verification_status.coding_field[0].system_field
+        == "http://terminology.hl7.org/CodeSystem/condition-ver-status"
+    )
+    assert verification_status.coding_field[0].code_field in (
+        "provisional",
+        "confirmed",
+    )
+
+
+def test_categoryGenerator():
+    category = categoryGenerator.generate()
+    assert category.coding_field[0].system_field == "http://snomed.info/sct"
+    assert category.coding_field[0].code_field in ("55607006", "404684003")
+
+
+def test_ConditionModelGenerator():
+    condition_model = ConditionModelGenerator.generate("Patient/456", "Encounter/789")
+    assert condition_model.resourceType == "Condition"
+    assert condition_model.subject_field.reference_field == "Patient/456"
+    assert condition_model.encounter_field.reference_field == "Encounter/789"
+    assert condition_model.id_field is not None
+    assert condition_model.subject_field is not None
+    assert condition_model.encounter_field is not None
+    assert condition_model.code_field is not None

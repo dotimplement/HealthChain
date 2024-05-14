@@ -253,3 +253,90 @@ class NarrativeModel(BaseModel):
         alias="div",
         description="The actual narrative content, a stripped down version of XHTML.",
     )
+
+
+class AgeModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    value_field: decimalModel = Field(
+        default=None,
+        alias="value",
+        description="The value of the measured amount. The value includes an implicit precision in the presentation of the value.",
+    )
+    # Age_comparator_field: comparatorModel = Field(..., alias="comparator", description="How the value should be understood and represented - whether the actual value is greater or less than the stated value due to measurement issues; e.g. if the comparator is < , then the real value is < stated value.")
+    unit_field: stringModel = Field(
+        default=None, alias="unit", description="A human-readable form of the unit."
+    )
+    system_field: uriModel = Field(
+        default=None,
+        alias="system",
+        description="The identification of the system that provides the coded form of the unit.",
+    )
+    code_field: codeModel = Field(
+        default=None,
+        alias="code",
+        description="A computer processable form of the unit in some unit representation system.",
+    )
+
+
+class QuantityModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    value_field: decimalModel = Field(
+        default=None,
+        alias="value",
+        description="The value of the measured amount. The value includes an implicit precision in the presentation of the value.",
+    )
+    # Quantity_comparator_field: comparatorModel = Field(..., alias="comparator", description="How the value should be understood and represented - whether the actual value is greater or less than the stated value due to measurement issues; e.g. if the comparator is < , then the real value is < stated value.")
+    unit_field: stringModel = Field(
+        default=None, alias="unit", description="A human-readable form of the unit."
+    )
+    system_field: uriModel = Field(
+        default=None,
+        alias="system",
+        description="The identification of the system that provides the coded form of the unit.",
+    )
+    code_field: codeModel = Field(
+        default=None,
+        alias="code",
+        description="A computer processable form of the unit in some unit representation system.",
+    )
+
+
+class RangeModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    low_field: QuantityModel = Field(
+        default=None,
+        alias="low",
+        description="The low limit. The boundary is inclusive.",
+    )
+    high_field: QuantityModel = Field(
+        default=None,
+        alias="high",
+        description="The high limit. The boundary is inclusive.",
+    )
