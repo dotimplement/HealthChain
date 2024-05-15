@@ -18,11 +18,15 @@ def run():
             self.data_generator = None
 
         # decorator sets up an instance of ehr configured with use case CDS
-        @ehr(workflow="patient-view", num=5)
+        @ehr(workflow="encounter-discharge", num=3)
         def load_data(self, data_spec):
             # data = "hello, " + data_spec
             data = synth_data(
-                context={"userId": "Practitioner/123", "patientId": data_spec},
+                context={
+                    "userId": "Practitioner/123",
+                    "patientId": data_spec,
+                    "encounterId": "123",
+                },
                 uuid=str(uuid.uuid4()),
                 prefetch={},
             )
@@ -43,6 +47,7 @@ def run():
 
     cds = myCDS()
     cds.start_sandbox()
+    print(cds.responses)
 
     # ehr_client = cds.load_data("123")
     # request = ehr_client.request_data
