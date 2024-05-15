@@ -14,13 +14,14 @@ from healthchain.fhir_resources.base_resources import (
     CodeableReferenceModel,
     NarrativeModel,
     RangeModel,
+    RatioModel,
     booleanModel,
     QuantityModel,
     integerModel,
 )
 
 
-# TODO: Implement RAtio model
+# TODO: Implement RatioModel and TimingModel
 class Dosage_DoseAndRateModel(BaseModel):
     id_field: stringModel = Field(
         default=None,
@@ -48,11 +49,11 @@ class Dosage_DoseAndRateModel(BaseModel):
     doseQuantity_field: QuantityModel = Field(
         default=None, alias="doseQuantity", description="Amount of medication per dose."
     )
-    # rateRatio_field: RatioModel = Field(
-    #     default=None,
-    #     alias="rateRatio",
-    #     description="Amount of medication per unit of time.",
-    # )
+    rateRatio_field: RatioModel = Field(
+        default=None,
+        alias="rateRatio",
+        description="Amount of medication per unit of time.",
+    )
     rateRange_field: RangeModel = Field(
         default=None,
         alias="rateRange",
@@ -132,11 +133,11 @@ class DosageModel(BaseModel):
         alias="doseAndRate",
         description="Depending on the resource,this is the amount of medication administered, to  be administered or typical amount to be administered.",
     )
-    # maxDosePerPeriod_field: List[RatioModel] = Field(
-    #     default_factory=list,
-    #     alias="maxDosePerPeriod",
-    #     description="Upper limit on medication per unit of time.",
-    # )
+    maxDosePerPeriod_field: List[RatioModel] = Field(
+        default_factory=list,
+        alias="maxDosePerPeriod",
+        description="Upper limit on medication per unit of time.",
+    )
     maxDosePerAdministration_field: QuantityModel = Field(
         default=None,
         alias="maxDosePerAdministration",
@@ -332,49 +333,3 @@ class MedicationRequestModel(BaseModel):
         alias="eventHistory",
         description="Links to Provenance records for past versions of this resource or fulfilling request or event resources that identify key state transitions or updates that are likely to be relevant to a user looking at the current version of the resource.",
     )
-
-
-{
-    "resourceType": "MedicationRequest",
-    "id": "medrx002",
-    "text": {
-        "status": "generated",
-        "div": '<div xmlns="http://www.w3.org/1999/xhtml"><p><b>Generated Narrative: MedicationRequest</b><a name="medrx002"> </a></p><div style="display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%"><p style="margin-bottom: 0px">Resource MedicationRequest &quot;medrx002&quot; </p></div><p><b>identifier</b>: id:\u00a012345\u00a0(use:\u00a0OFFICIAL)</p><p><b>status</b>: active</p><p><b>intent</b>: order</p><h3>Medications</h3><table class="grid"><tr><td>-</td><td><b>Reference</b></td></tr><tr><td>*</td><td><span title="  Linked to a RESOURCE Medication  "><a href="medicationexample0316.html">Medication/med0316: prescribed medication</a></span></td></tr></table><p><b>subject</b>: <a href="patient-example-a.html">Patient/pat1: Donald Duck</a> &quot;Donald DUCK&quot;</p><p><b>encounter</b>: <a href="encounter-example-f001-heart.html">Encounter/f001: encounter that leads to this prescription</a></p><p><b>authoredOn</b>: 2015-03-01</p><p><b>requester</b>: <a href="practitioner-example-f007-sh.html">Practitioner/f007: Patrick Pump</a> &quot;Simone HEPS&quot;</p><h3>Reasons</h3><table class="grid"><tr><td>-</td><td><b>Concept</b></td></tr><tr><td>*</td><td>Essential hypertension (disorder) <span style="background: LightGoldenRodYellow; margin: 4px; border: 1px solid khaki"> (<a href="https://browser.ihtsdotools.org/">SNOMED CT</a>#59621000)</span></td></tr></table><h3>DosageInstructions</h3><table class="grid"><tr><td>-</td><td><b>Sequence</b></td><td><b>Text</b></td></tr><tr><td>*</td><td>1</td><td>Take one tablet daily as directed</td></tr></table></div>',
-    },
-    "identifier": [
-        {
-            "use": "official",
-            "system": "http://www.bmc.nl/portal/prescriptions",
-            "value": "12345",
-        }
-    ],
-    "status": "active",
-    "intent": "order",
-    "medication": {
-        "reference": {
-            "reference": "Medication/med0316",
-            "display": "prescribed medication",
-        }
-    },
-    "subject": {"reference": "Patient/pat1", "display": "Donald Duck"},
-    "encounter": {
-        "reference": "Encounter/f001",
-        "display": "encounter that leads to this prescription",
-    },
-    "authoredOn": "2015-03-01",
-    "requester": {"reference": "Practitioner/f007", "display": "Patrick Pump"},
-    "reason": [
-        {
-            "concept": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "59621000",
-                        "display": "Essential hypertension (disorder)",
-                    }
-                ]
-            }
-        }
-    ],
-    "dosageInstruction": [{"sequence": 1, "text": "Take one tablet daily as directed"}],
-}

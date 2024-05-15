@@ -340,3 +340,22 @@ class RangeModel(BaseModel):
         alias="high",
         description="The high limit. The boundary is inclusive.",
     )
+
+
+class RatioModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    numerator_field: QuantityModel = Field(
+        default=None, alias="numerator", description="The value of the numerator."
+    )
+    denominator_field: QuantityModel = Field(
+        default=None, alias="denominator", description="The value of the denominator."
+    )
