@@ -1,28 +1,10 @@
 import pytest
 
-from unittest.mock import Mock
 from healthchain.decorators import ehr
-from healthchain.base import BaseUseCase, UseCaseType
 
 
 class MockUseCase:
     pass
-
-
-class MockClinicalDocumentation(BaseUseCase):
-    def _validate_data(self):
-        pass
-
-    construct_request = Mock(return_value=Mock(model_dump_json=Mock(return_value="{}")))
-    type = UseCaseType.clindoc
-
-
-class MockClinicalDecisionSupport(BaseUseCase):
-    def _validate_data(self):
-        pass
-
-    construct_request = Mock(return_value=Mock(model_dump_json=Mock(return_value="{}")))
-    type = UseCaseType.cds
 
 
 @pytest.fixture
@@ -43,24 +25,21 @@ class TestEHRDecorator:
             excinfo.value
         )
 
-    def test_invalid_workflow(self, function):
-        instance = MockClinicalDocumentation()
-        instance.use_case = MockClinicalDocumentation()
+    def test_invalid_workflow(self, function, mock_cds):
         with pytest.raises(ValueError) as excinfo:
             decorated = ehr(workflow="invalid_workflow")(function)
-            decorated(instance)
+            decorated(mock_cds())
         assert "please select from" in str(excinfo.value)
 
-    def test_correct_behavior(self, function):
-        instance = MockClinicalDecisionSupport()
-        instance.use_case = MockClinicalDecisionSupport()
+    def test_correct_behavior(self, function, mock_cds):
         decorated = ehr(workflow="order-sign")(function)
-        result = decorated(instance)
+        result = decorated(mock_cds())
         assert len(result.request_data) == 1
 
-    def test_multiple_calls(self, function):
-        instance = MockClinicalDecisionSupport()
-        instance.use_case = MockClinicalDecisionSupport()
+    def test_multiple_calls(self, function, mock_cds):
         decorated = ehr(workflow="order-select", num=3)(function)
-        result = decorated(instance)
+        result = decorated(mock_cds())
         assert len(result.request_data) == 3
+
+
+# TODO: add test for api decorator
