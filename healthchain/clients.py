@@ -3,14 +3,14 @@ import httpx
 
 from typing import Any, Callable, List, Dict
 
-from .base import BaseUseCase, BaseClient, Workflow
+from .base import BaseStrategy, BaseClient, Workflow
 
 log = logging.getLogger(__name__)
 
 
 class EHRClient(BaseClient):
     def __init__(
-        self, func: Callable[..., Any], workflow: Workflow, use_case: BaseUseCase
+        self, func: Callable[..., Any], workflow: Workflow, strategy: BaseStrategy
     ):
         """
         Initializes the EHRClient with a data generator function and optional workflow and use case.
@@ -23,7 +23,7 @@ class EHRClient(BaseClient):
         """
         self.data_generator_func: Callable[..., Any] = func
         self.workflow: Workflow = workflow
-        self.use_case: BaseUseCase = use_case
+        self.strategy: BaseStrategy = strategy
         self.request_data: List[Dict] = []
 
     def generate_request(self, *args: Any, **kwargs: Any) -> None:
@@ -39,7 +39,7 @@ class EHRClient(BaseClient):
                 ValueError: If the use case is not configured.
         """
         data = self.data_generator_func(*args, **kwargs)
-        self.request_data.append(self.use_case.construct_request(data, self.workflow))
+        self.request_data.append(self.strategy.construct_request(data, self.workflow))
 
     async def send_request(self, url: str) -> List[Dict]:
         """

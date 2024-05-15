@@ -60,7 +60,7 @@ def ehr(
                     f"{e}: please select from {[x.value for x in Workflow]}"
                 )
             if self.type in UseCaseType:
-                method = EHRClient(func, workflow=workflow_enum, use_case=self)
+                method = EHRClient(func, workflow=workflow_enum, strategy=self.strategy)
                 for _ in range(num):
                     method.generate_request(self, *args, **kwargs)
             else:
@@ -125,7 +125,7 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
     else:
         # Arguments were provided, or no arguments but with parentheses
         if "service_config" not in kwargs:
-            log.warn(
+            log.warning(
                 f"{list(kwargs.keys())} is not a valid argument and will not be used; use 'service_config'."
             )
         service_config = arg if arg is not None else kwargs.get("service_config", {})
@@ -161,12 +161,9 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
             # initialse parent class, which should be a strategy use case
-            super(cls, self).__init__(*args, **kwargs)
+            super(cls, self).__init__(*args, **kwargs, service_config=service_config)
             original_init(self, *args, **kwargs)  # Call the original __init__
 
-            self.service_config = service_config
-            self.service_api = None
-            self.client = None
             service_route_count = 0
             client_count = 0
 
@@ -182,6 +179,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                             )
                         method_func = attr.__get__(self, cls)
                         self.service_api = method_func()
+                        log.debug(f"Set {name} as service_api")
                     # Get the function decorated with @client and asign to client
                     if hasattr(attr, "is_client"):
                         client_count += 1
@@ -192,6 +190,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                         method_func = attr.__get__(self, cls)
                         # TODO: need to figure out where to pass in data spec
                         self.client = method_func("123456")
+                        log.debug(f"Set {name} as client")
 
             # Create a Service instance and register routes from strategy
             self.service = Service(endpoints=self.endpoints)
@@ -204,7 +203,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
             """
             # TODO: revisit this - default to a single service with id "1", we could have a service resgistry if useful
 
-            if self.service_api is None or not hasattr(self, "client"):
+            if self.service_api is None or self.client is None:
                 raise RuntimeError(
                     "Service API or Client is not configured. Please check your class initialization."
                 )
@@ -221,7 +220,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
             # Wait for service to start
             sleep(5)
 
-            # Build url from configs
+            # Build url from configs - TODO: refactor into url builder
             protocol = self.service_config.get("ssl_keyfile")
             if protocol is None:
                 protocol = "http"
@@ -243,7 +242,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
             log.info(f"Sending {self.client.__class__.__name__} requests to {url}...")
             try:
                 responses = asyncio.run(self.client.send_request(url=url))
-                print(responses)
+                self.responses = responses
             except Exception as e:
                 log.error(f"Couldn't start client: {e}")
 
