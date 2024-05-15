@@ -26,7 +26,7 @@ from ..utils.apimethod import APIMethod
 log = logging.getLogger(__name__)
 
 
-class ClinicalDecisionSupportStrategy:
+class ClinicalDecisionSupportStrategy(BaseStrategy):
     """
     Handles the request construction and validation
     """
@@ -87,6 +87,8 @@ class ClinicalDecisionSupport(BaseUseCase):
         service_config (Dict): the config kwargs for the uvicorn server passed into service
         service (Service): the service runner object
         client (BaseClient): the client runner object
+
+    See https://cds-hooks.org/ for specification
     """
 
     def __init__(
@@ -130,6 +132,9 @@ class ClinicalDecisionSupport(BaseUseCase):
         return self._endpoints
 
     def cds_discovery(self) -> CDSServiceInformation:
+        """
+        CDS discovery endpoint for FastAPI app, should be mounted to /cds-services
+        """
         if self.client is None:
             log.warning("CDS 'client' not configured, check class init.")
             return CDSServiceInformation(services=[])
@@ -142,6 +147,9 @@ class ClinicalDecisionSupport(BaseUseCase):
         return CDSServiceInformation(services=[service_info])
 
     def cds_service(self, id: str, request: CDSRequest) -> CDSResponse:
+        """
+        CDS service endpoint for FastAPI app, should be mounted to /cds-services/{id}
+        """
         if self.service_api is None:
             log.warning("CDS 'service_api' not configured, check class init.")
             return CDSResponse(cards=[])
@@ -153,7 +161,7 @@ class ClinicalDecisionSupport(BaseUseCase):
             len(signature.parameters) == 2
         ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; CDS Service functions currently only accept 'self' and a single input argument."
 
-        # TODO: better handling of args/kwargs io here
+        # TODO: better handling of args/kwargs io
         # params = iter(inspect.signature(self._service_api.func).parameters.items())
         # for name, param in params:
         #     print(name, param, param.annotation)
@@ -161,4 +169,10 @@ class ClinicalDecisionSupport(BaseUseCase):
         result = self.service_api.func(self, request_json)
 
         # TODO: could use llm to check and fix results here?
+        if result is None:
+            log.warning(
+                "CDS 'service_api' returned None, please check function definition."
+            )
+            return CDSResponse(cards=[])
+
         return CDSResponse(**result)

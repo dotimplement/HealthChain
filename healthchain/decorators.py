@@ -10,6 +10,7 @@ from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
 from .utils.apimethod import APIMethod
+from .utils.urlbuilder import UrlBuilder
 
 
 log = logging.getLogger(__name__)
@@ -79,7 +80,10 @@ def ehr(
 
 def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
     """
-    A decorator that wraps around an LLM
+    A decorator that wraps a function in an APIMethod; this wraps a function that handles LLM/NLP
+    processing and tags it as a service route to be mounted onto the main service endpoints.
+
+    It does not take any additional arguments for now, but we may consider adding configs
     """
 
     def decorator(func: F) -> F:
@@ -106,7 +110,7 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
     Parameters:
         arg: Optional argument which can be either a callable (class) directly or a configuration dict.
         **kwargs: Arbitrary keyword arguments, mainly used to pass in 'service_config'.
-        service_config must be a dictionary of valid kwargs to pass into uvivorn.run()
+        'service_config' must be a dictionary of valid kwargs to pass into uvivorn.run()
 
     Returns:
         If `arg` is callable, it applies the default decorator with no extra configuration.
@@ -197,12 +201,13 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
 
         cls.__init__ = new_init
 
-        def start_sandbox(self, id: str = "1") -> None:
+        def start_sandbox(self, service_id: str = "1") -> None:
             """
             Starts the sandbox: initialises service and sends a request through the client.
+
+            NOTE: service_id is hardcoded "1" by default, don't change.
             """
             # TODO: revisit this - default to a single service with id "1", we could have a service resgistry if useful
-
             if self.service_api is None or self.client is None:
                 raise RuntimeError(
                     "Service API or Client is not configured. Please check your class initialization."
@@ -220,29 +225,17 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
             # Wait for service to start
             sleep(5)
 
-            # Build url from configs - TODO: refactor into url builder
-            protocol = self.service_config.get("ssl_keyfile")
-            if protocol is None:
-                protocol = "http"
-            else:
-                protocol = "https"
-            host = self.service_config.get("host", "127.0.0.1")
-            port = self.service_config.get("port", "8000")
-            service = getattr(self.endpoints.get("service_mount"), "path", None)
-            if service is not None:
-                # TODO: revisit this - not all services are formatted with ids
-                service = service.format(id=id)
-            else:
-                raise RuntimeError(
-                    f"Can't fetch service details from {self.type.value}: key 'service_mount' doesn't exist in {self.endpoints}"
-                )
+            url = UrlBuilder.build_from_config(
+                config=self.service_config,
+                endpoints=self.endpoints,
+                service_id=service_id,
+            )
 
-            # Send async request from client
-            url = f"{protocol}://{host}:{port}{service}"
-            log.info(f"Sending {self.client.__class__.__name__} requests to {url}...")
+            # # Send async request from client
+            log.info(f"Sending {self.client.__class__.__name__} requests to {url.str}")
+
             try:
-                responses = asyncio.run(self.client.send_request(url=url))
-                self.responses = responses
+                self.responses = asyncio.run(self.client.send_request(url=url.str))
             except Exception as e:
                 log.error(f"Couldn't start client: {e}")
 
