@@ -1,6 +1,7 @@
 import logging
-from .utils.logger import ColorLogger
+from .utils.logger import add_handlers
 
 
-logging.setLoggerClass(ColorLogger)
 logger = logging.getLogger(__name__)
+add_handlers(logger)
+logger.setLevel(logging.INFO)
