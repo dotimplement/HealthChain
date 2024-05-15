@@ -1,107 +1,6 @@
 import pytest
 
 from healthchain.decorators import sandbox
-from healthchain.use_cases.cds import ClinicalDecisionSupport
-
-
-@pytest.fixture
-def mock_client_decorator():
-    def mock_client_decorator(func):
-        func.is_client = True
-        return func
-
-    return mock_client_decorator
-
-
-@pytest.fixture
-def mock_api_decorator():
-    def mock_api_decorator(func):
-        func.is_service_route = True
-        return func
-
-    return mock_api_decorator
-
-
-@pytest.fixture
-def correct_sandbox_class(mock_api_decorator, mock_client_decorator):
-    @sandbox
-    class testSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            pass
-
-        @mock_client_decorator
-        def foo(self, test):
-            return "foo"
-
-        @mock_api_decorator
-        def bar(self):
-            return "bar"
-
-    return testSandbox
-
-
-@pytest.fixture
-def incorrect_client_num_sandbox_class(mock_api_decorator, mock_client_decorator):
-    @sandbox
-    class testSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            pass
-
-        @mock_client_decorator
-        def foo(self, test):
-            return "foo"
-
-        @mock_client_decorator
-        def foo2(self, test):
-            return "foo"
-
-        @mock_api_decorator
-        def bar(self):
-            return "bar"
-
-    return testSandbox
-
-
-@pytest.fixture
-def incorrect_api_num_sandbox_class(mock_api_decorator, mock_client_decorator):
-    @sandbox
-    class testSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            pass
-
-        @mock_client_decorator
-        def foo(self, test):
-            return "foo"
-
-        @mock_api_decorator
-        def bar(self):
-            return "bar"
-
-        @mock_api_decorator
-        def bar2(self):
-            return "bar"
-
-    return testSandbox
-
-
-@pytest.fixture
-def missing_funcs_sandbox_class():
-    @sandbox
-    class testSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            pass
-
-    return testSandbox
-
-
-@pytest.fixture
-def wrong_subclass_sandbox_class():
-    @sandbox
-    class testSandbox:
-        def __init__(self) -> None:
-            pass
-
-    return testSandbox
 
 
 def test_sandbox_init(correct_sandbox_class):
@@ -124,6 +23,22 @@ def test_sandbox_init(correct_sandbox_class):
     assert (
         test_sandbox.service.endpoints.get("service_mount").path == "/cds-services/{id}"
     )
+
+
+def test_sandbox_init_with_args(correct_sandbox_class_with_args):
+    test_sandbox = correct_sandbox_class_with_args()
+
+    assert test_sandbox.service_config == {
+        "host": "123.0.0.1",
+        "port": 9000,
+        "ssl_keyfile": "foo",
+    }
+
+
+def test_sandbox_init_with_incorrect_args(correct_sandbox_class_with_incorrect_args):
+    test_sandbox = correct_sandbox_class_with_incorrect_args()
+
+    assert test_sandbox.service_config == {}
 
 
 def test_incorrect_sandbox_usage(
@@ -162,4 +77,3 @@ def test_incorrect_sandbox_usage(
 
 
 # TODO: write test for the start_sandbox func
-# TODO: write test for sandbox decorator with input args
