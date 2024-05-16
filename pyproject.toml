@@ -13,6 +13,7 @@ pydantic = "^2.7.1"
 requests = "^2.31.0"
 colorama = "^0.4.6"
 fastapi = "^0.111.0"
+faker = "^25.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
