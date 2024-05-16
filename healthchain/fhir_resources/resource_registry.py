@@ -1,4 +1,4 @@
-from typing import Enum
+from enum import Enum
 
 
 class ImplementedResourceRegistry(Enum):

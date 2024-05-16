@@ -14,6 +14,7 @@ from healthchain.fhir_resources.general_purpose_resources import (
     ExtensionModel,
     PeriodModel,
     CodeableConceptModel,
+    MetaModel,
 )
 from healthchain.fhir_resources.patient_resources import (
     HumanNameModel,
@@ -95,7 +96,11 @@ class PractitionerModel(BaseModel):
         alias="id",
         description="The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.",
     )
-    # meta_field: MetaModel = Field(default=None, alias="meta", description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.")
+    meta_field: MetaModel = Field(
+        default=None,
+        alias="meta",
+        description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
+    )
     implicitRules_field: uriModel = Field(
         default=None,
         alias="implicitRules",

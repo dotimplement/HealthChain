@@ -18,6 +18,8 @@ from healthchain.fhir_resources.general_purpose_resources import (
     NarrativeModel,
     AgeModel,
     RangeModel,
+    MetaModel,
+    TimingModel,
 )
 
 
@@ -94,11 +96,11 @@ class ProcedureModel(BaseModel):
         alias="id",
         description="The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.",
     )
-    # meta_field: MetaModel = Field(
-    #     default=None,
-    #     alias="meta",
-    #     description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
-    # )
+    meta_field: MetaModel = Field(
+        default=None,
+        alias="meta",
+        description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
+    )
     implicitRules_field: uriModel = Field(
         default=None,
         alias="implicitRules",
@@ -204,11 +206,11 @@ class ProcedureModel(BaseModel):
         alias="occurrenceRange",
         description="Estimated or actual date, date-time, period, or age when the procedure did occur or is occurring.  Allows a period to support complex procedures that span more than one date, and also allows for the length of the procedure to be captured.",
     )
-    # occurrenceTiming_field: TimingModel = Field(
-    #     default=None,
-    #     alias="occurrenceTiming",
-    #     description="Estimated or actual date, date-time, period, or age when the procedure did occur or is occurring.  Allows a period to support complex procedures that span more than one date, and also allows for the length of the procedure to be captured.",
-    # )
+    occurrenceTiming_field: TimingModel = Field(
+        default=None,
+        alias="occurrenceTiming",
+        description="Estimated or actual date, date-time, period, or age when the procedure did occur or is occurring.  Allows a period to support complex procedures that span more than one date, and also allows for the length of the procedure to be captured.",
+    )
     recorded_field: dateTimeModel = Field(
         default=None,
         alias="recorded",
