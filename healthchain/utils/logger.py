@@ -24,12 +24,13 @@ class ColorFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 
-class ColorLogger(logging.Logger):
-    def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.DEBUG)
-        color_formatter = ColorFormatter(
+def add_handlers(log):
+    if len(log.handlers) == 0:
+        formatter = ColorFormatter(
             "%(asctime)-10s %(levelname)s [%(module)s]: %(message)s"
         )
-        console = logging.StreamHandler()
-        console.setFormatter(color_formatter)
-        self.addHandler(console)
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
+
+    return log

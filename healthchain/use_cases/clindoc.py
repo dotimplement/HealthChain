@@ -2,7 +2,8 @@ import logging
 
 from typing import Dict
 
-from ..base import BaseUseCase, UseCaseMapping, Workflow, validate_workflow
+from ..utils.apimethod import APIMethod
+from ..base import BaseUseCase, UseCaseMapping, UseCaseType, Workflow, validate_workflow
 
 log = logging.getLogger(__name__)
 
@@ -12,6 +13,10 @@ class ClinicalDocumentation(BaseUseCase):
     """
     Implements EHR backend strategy for clinical documentation (NoteReader)
     """
+
+    def __init__(self, service_api: APIMethod = None) -> None:
+        self.type = UseCaseType.clindoc
+        self.service_api = service_api
 
     @property
     def description(self) -> str:
