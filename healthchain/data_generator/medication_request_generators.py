@@ -2,7 +2,7 @@ from healthchain.fhir_resources.medication_request_resources import (
     MedicationRequestModel,
     DosageModel,
 )
-from healthchain.fhir_resources.base_resources import (
+from healthchain.fhir_resources.general_purpose_resources import (
     ReferenceModel,
     CodeableReferenceModel,
 )

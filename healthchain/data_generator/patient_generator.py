@@ -3,15 +3,17 @@ from healthchain.data_generator.base_generators import (
     generator_registry,
     register_generator,
 )
-from healthchain.fhir_resources.base_resources import (
-    PeriodModel,
-    CodeableConceptModel,
+from healthchain.fhir_resources.primitive_resources import (
     stringModel,
-    CodingModel,
     uriModel,
     codeModel,
     dateTimeModel,
     positiveIntModel,
+)
+from healthchain.fhir_resources.general_purpose_resources import (
+    PeriodModel,
+    CodeableConceptModel,
+    CodingModel,
 )
 from healthchain.fhir_resources.patient_resources import (
     PatientModel,

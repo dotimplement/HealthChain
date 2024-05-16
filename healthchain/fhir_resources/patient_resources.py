@@ -1,18 +1,20 @@
 from pydantic import Field, BaseModel
 from typing import List
-from healthchain.fhir_resources.base_resources import (
+from healthchain.fhir_resources.primitive_resources import (
     idModel,
     uriModel,
     codeModel,
     booleanModel,
+    stringModel,
+    positiveIntModel,
+    dateModel,
+)
+from healthchain.fhir_resources.general_purpose_resources import (
     IdentifierModel,
     ReferenceModel,
-    stringModel,
     ExtensionModel,
     PeriodModel,
-    positiveIntModel,
     CodeableConceptModel,
-    dateModel,
 )
 
 

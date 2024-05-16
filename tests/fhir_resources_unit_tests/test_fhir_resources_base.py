@@ -1,7 +1,7 @@
 from pydantic import ValidationError
 import pytest
 from pydantic import BaseModel
-from healthchain.fhir_resources.base_resources import (
+from healthchain.fhir_resources.primitive_resources import (
     booleanModel,
     canonicalModel,
     codeModel,

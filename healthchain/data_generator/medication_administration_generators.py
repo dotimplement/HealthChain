@@ -2,7 +2,7 @@ from healthchain.fhir_resources.medication_administration_resources import (
     MedicationAdministrationModel,
     MedicationAdministration_DosageModel,
 )
-from healthchain.fhir_resources.base_resources import ReferenceModel
+from healthchain.fhir_resources.general_purpose_resources import ReferenceModel
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,

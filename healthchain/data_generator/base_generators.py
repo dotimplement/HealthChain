@@ -3,7 +3,7 @@
 import random
 import string
 
-from healthchain.fhir_resources.base_resources import (
+from healthchain.fhir_resources.primitive_resources import (
     booleanModel,
     canonicalModel,
     codeModel,

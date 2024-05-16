@@ -1,5 +1,8 @@
 from healthchain.fhir_resources.encounter_resources import EncounterModel
-from healthchain.fhir_resources.base_resources import CodingModel, CodeableConceptModel
+from healthchain.fhir_resources.general_purpose_resources import (
+    CodingModel,
+    CodeableConceptModel,
+)
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,

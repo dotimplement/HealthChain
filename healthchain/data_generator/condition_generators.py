@@ -3,7 +3,7 @@ from healthchain.data_generator.base_generators import (
     generator_registry,
     register_generator,
 )
-from healthchain.fhir_resources.base_resources import (
+from healthchain.fhir_resources.general_purpose_resources import (
     CodeableConceptModel,
     CodingModel,
     ReferenceModel,
