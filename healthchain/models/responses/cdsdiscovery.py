@@ -25,7 +25,7 @@ class CDSService(BaseModel):
     hook: str
     description: str
     id: str
-    title: Optional[str]
+    title: Optional[str] = None
     prefetch: Optional[Dict[str, Any]] = None
     usageRequirements: Optional[str] = None
 
@@ -36,4 +36,4 @@ class CDSServiceInformation(BaseModel):
     description of the CDS Service, when it should be invoked, and any data that is requested to be prefetched.
     """
 
-    services: List[CDSService]
+    services: List[CDSService] = []
