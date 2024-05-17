@@ -21,7 +21,7 @@ faker = Faker()
 
 
 @register_generator
-class clinicalStatusGenerator(BaseGenerator):
+class ClinicalStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -37,7 +37,7 @@ class clinicalStatusGenerator(BaseGenerator):
 
 
 @register_generator
-class verificationStatusGenerator(BaseGenerator):
+class VerificationStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -51,7 +51,7 @@ class verificationStatusGenerator(BaseGenerator):
 
 
 @register_generator
-class categoryGenerator(BaseGenerator):
+class CategoryGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -78,7 +78,7 @@ class ConditionStageGenerator(BaseGenerator):
 
 
 @register_generator
-class severityGenerator(BaseGenerator):
+class SeverityGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -95,7 +95,7 @@ class severityGenerator(BaseGenerator):
 
 
 @register_generator
-class snomedCodeGenerator(BaseGenerator):
+class SnomedCodeGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -110,7 +110,7 @@ class snomedCodeGenerator(BaseGenerator):
 
 
 @register_generator
-class bodySiteGenerator(BaseGenerator):
+class BodySiteGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -141,19 +141,19 @@ class ConditionModelGenerator(BaseGenerator):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         return ConditionModel(
-            id=generator_registry.get("idGenerator").generate(),
-            clinicalStatus=generator_registry.get("clinicalStatusGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
+            clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
             verificationStatus=generator_registry.get(
-                "verificationStatusGenerator"
+                "VerificationStatusGenerator"
             ).generate(),
-            category=[generator_registry.get("categoryGenerator").generate()],
-            severity=generator_registry.get("severityGenerator").generate(),
-            code=generator_registry.get("snomedCodeGenerator").generate(),
-            bodySite=[generator_registry.get("bodySiteGenerator").generate()],
+            category=[generator_registry.get("CategoryGenerator").generate()],
+            severity=generator_registry.get("SeverityGenerator").generate(),
+            code=generator_registry.get("SnomedCodeGenerator").generate(),
+            bodySite=[generator_registry.get("BodySiteGenerator").generate()],
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             onsetDateTime=generator_registry.get(
-                "dateGenerator"
+                "DateGenerator"
             ).generate(),  ## Are there more plausible dates to use?
-            recordedDate=generator_registry.get("dateGenerator").generate(),
+            recordedDate=generator_registry.get("DateGenerator").generate(),
         )

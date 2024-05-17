@@ -76,7 +76,7 @@ class AddressGenerator(BaseGenerator):
 
 
 @register_generator
-class maritalStatusGenerator(BaseGenerator):
+class MaritalStatusGenerator(BaseGenerator):
     def generate():
         marital_status_dict = {
             "D": "Divorced",
@@ -116,16 +116,16 @@ class PatientGenerator(BaseGenerator):
     def generate():
         return PatientModel(
             resourceType="Patient",
-            id=generator_registry.get("idGenerator").generate(),
-            active=generator_registry.get("booleanGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
+            active=generator_registry.get("BooleanGenerator").generate(),
             name=[generator_registry.get("HumanNameGenerator").generate()],
             telecom=[generator_registry.get("ContactPointGenerator").generate()],
             gender=codeModel(
                 faker.random_element(elements=("male", "female", "other", "unknown"))
             ),
-            birthDate=generator_registry.get("dateGenerator").generate(),
+            birthDate=generator_registry.get("DateGenerator").generate(),
             address=[
                 generator_registry.get("AddressGenerator").generate() for _ in range(1)
             ],  ## List of length 1 for simplicity
-            maritalStatus=generator_registry.get("maritalStatusGenerator").generate(),
+            maritalStatus=generator_registry.get("MaritalStatusGenerator").generate(),
         )

@@ -29,16 +29,16 @@ class MedicationAdministrationDosageGenerator(BaseGenerator):
 
 
 @register_generator
-class medicationAdministrationGenerator(BaseGenerator):
+class MedicationAdministrationGenerator(BaseGenerator):
     @staticmethod
     def generate(subject_reference: str, encounter_reference: str):
         return MedicationAdministrationModel(
-            id=generator_registry.get("idGenerator").generate(),
-            status=generator_registry.get("eventStatusGenerator").generate(),
-            medication=generator_registry.get("medicationGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
+            status=generator_registry.get("EventStatusGenerator").generate(),
+            medication=generator_registry.get("MedicationGenerator").generate(),
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
-            authoredOn=generator_registry.get("dateGenerator").generate(),
+            authoredOn=generator_registry.get("DateGenerator").generate(),
             dosage=generator_registry.get(
                 "MedicationAdministrationDosageGenerator"
             ).generate(),

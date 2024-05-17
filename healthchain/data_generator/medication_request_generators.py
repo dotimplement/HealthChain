@@ -19,7 +19,7 @@ faker = Faker()
 
 
 @register_generator
-class medicationGenerator(BaseGenerator):
+class MedicationGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableReferenceModel(
@@ -32,7 +32,7 @@ class medicationGenerator(BaseGenerator):
 
 
 @register_generator
-class dosageInstructionGenerator(BaseGenerator):
+class DosageInstructionGenerator(BaseGenerator):
     @staticmethod
     def generate():
         random_int = faker.random_int(min=1, max=10)
@@ -49,13 +49,13 @@ class MedicationRequestGenerator(BaseGenerator):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         return MedicationRequestModel(
-            id=generator_registry.get("idGenerator").generate(),
-            status=generator_registry.get("eventStatusGenerator").generate(),
-            medication=generator_registry.get("medicationGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
+            status=generator_registry.get("EventStatusGenerator").generate(),
+            medication=generator_registry.get("MedicationGenerator").generate(),
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
-            authoredOn=generator_registry.get("dateTimeGenerator").generate(),
+            authoredOn=generator_registry.get("DateTimeGenerator").generate(),
             dosageInstruction=[
-                generator_registry.get("dosageInstructionGenerator").generate()
+                generator_registry.get("DosageInstructionGenerator").generate()
             ],
         )

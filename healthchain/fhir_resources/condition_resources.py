@@ -18,6 +18,7 @@ from healthchain.fhir_resources.general_purpose_resources import (
     AgeModel,
     RangeModel,
     MetaModel,
+    AnnotationModel,
 )
 
 
@@ -219,8 +220,8 @@ class ConditionModel(BaseModel):
         alias="evidence",
         description="Supporting evidence / manifestations that are the basis of the Condition's verification status, such as evidence that confirmed or refuted the condition.",
     )
-    # note_field: List[AnnotationModel] = Field(
-    #     default_factory=list,
-    #     alias="note",
-    #     description="Additional information about the Condition. This is a general notes/comments entry  for description of the Condition, its diagnosis and prognosis.",
-    # )
+    note_field: List[AnnotationModel] = Field(
+        default_factory=list,
+        alias="note",
+        description="Additional information about the Condition. This is a general notes/comments entry  for description of the Condition, its diagnosis and prognosis.",
+    )

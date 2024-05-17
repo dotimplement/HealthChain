@@ -17,14 +17,14 @@ faker = Faker()
 
 
 @register_generator
-class eventStatusGenerator(BaseGenerator):
+class EventStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return faker.random_element(elements=("in-progress", "completed"))
 
 
 @register_generator
-class procedureSnomedCodeGenerator(BaseGenerator):
+class ProcedureSnomedCodeGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return CodeableConceptModel(
@@ -44,9 +44,9 @@ class ProcedureModelGenerator(BaseGenerator):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         return ProcedureModel(
-            id=generator_registry.get("idGenerator").generate(),
-            status=generator_registry.get("eventStatusGenerator").generate(),
-            code=generator_registry.get("procedureSnomedCodeGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
+            status=generator_registry.get("EventStatusGenerator").generate(),
+            code=generator_registry.get("ProcedureSnomedCodeGenerator").generate(),
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),

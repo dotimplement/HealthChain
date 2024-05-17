@@ -1,13 +1,13 @@
 from healthchain.data_generator.condition_generators import (
-    clinicalStatusGenerator,
-    verificationStatusGenerator,
-    categoryGenerator,
+    ClinicalStatusGenerator,
+    VerificationStatusGenerator,
+    CategoryGenerator,
     ConditionModelGenerator,
 )
 
 
-def test_clinicalStatusGenerator():
-    clinical_status = clinicalStatusGenerator.generate()
+def test_ClinicalStatusGenerator():
+    clinical_status = ClinicalStatusGenerator.generate()
     assert (
         clinical_status.coding_field[0].system_field
         == "http://terminology.hl7.org/CodeSystem/condition-clinical"
@@ -20,8 +20,8 @@ def test_clinicalStatusGenerator():
     )
 
 
-def test_verificationStatusGenerator():
-    verification_status = verificationStatusGenerator.generate()
+def test_VerificationStatusGenerator():
+    verification_status = VerificationStatusGenerator.generate()
     assert (
         verification_status.coding_field[0].system_field
         == "http://terminology.hl7.org/CodeSystem/condition-ver-status"
@@ -32,8 +32,8 @@ def test_verificationStatusGenerator():
     )
 
 
-def test_categoryGenerator():
-    category = categoryGenerator.generate()
+def test_CategoryGenerator():
+    category = CategoryGenerator.generate()
     assert category.coding_field[0].system_field == "http://snomed.info/sct"
     assert category.coding_field[0].code_field in ("55607006", "404684003")
 

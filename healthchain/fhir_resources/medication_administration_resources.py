@@ -17,8 +17,10 @@ from healthchain.fhir_resources.general_purpose_resources import (
     CodeableReferenceModel,
     NarrativeModel,
     QuantityModel,
+    TimingModel,
     RatioModel,
     MetaModel,
+    AnnotationModel,
 )
 
 
@@ -200,11 +202,11 @@ class MedicationAdministrationModel(BaseModel):
         alias="occurencePeriod",
         description="A specific date/time or interval of time during which the administration took place (or did not take place). For many administrations, such as swallowing a tablet the use of dateTime is more appropriate.",
     )
-    # occurenceTiming_field: TimingModel = Field(
-    #     default=None,
-    #     alias="occurenceTiming",
-    #     description="A specific date/time or interval of time during which the administration took place (or did not take place). For many administrations, such as swallowing a tablet the use of dateTime is more appropriate.",
-    # )
+    occurenceTiming_field: TimingModel = Field(
+        default=None,
+        alias="occurenceTiming",
+        description="A specific date/time or interval of time during which the administration took place (or did not take place). For many administrations, such as swallowing a tablet the use of dateTime is more appropriate.",
+    )
     recorded_field: dateTimeModel = Field(
         default=None,
         alias="recorded",
@@ -240,11 +242,11 @@ class MedicationAdministrationModel(BaseModel):
         alias="device",
         description="The device that is to be used for the administration of the medication (for example, PCA Pump).",
     )
-    # note_field: List[AnnotationModel] = Field(
-    #     default_factory=list,
-    #     alias="note",
-    #     description="Extra information about the medication administration that is not conveyed by the other attributes.",
-    # )
+    note_field: List[AnnotationModel] = Field(
+        default_factory=list,
+        alias="note",
+        description="Extra information about the medication administration that is not conveyed by the other attributes.",
+    )
     dosage_field: MedicationAdministration_DosageModel = Field(
         default=None,
         alias="dosage",

@@ -1,6 +1,6 @@
 from healthchain.data_generator.medication_administration_generators import (
     MedicationAdministrationDosageGenerator,
-    medicationAdministrationGenerator,
+    MedicationAdministrationGenerator,
 )
 
 
@@ -9,8 +9,8 @@ def test_MedicationAdministrationDosageGenerator():
     assert result.text_field is not None
 
 
-def test_medicationAdministrationGenerator():
-    result = medicationAdministrationGenerator.generate("Patient/123", "Encounter/123")
+def test_MedicationAdministrationGenerator():
+    result = MedicationAdministrationGenerator.generate("Patient/123", "Encounter/123")
     assert result.id_field is not None
     assert result.status_field is not None
     assert result.medication_field is not None
