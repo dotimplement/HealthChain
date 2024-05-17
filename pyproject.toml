@@ -13,11 +13,14 @@ pydantic = "^2.7.1"
 requests = "^2.31.0"
 colorama = "^0.4.6"
 faker = "^25.1.0"
+fastapi = "^0.111.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
 pytest = "^8.2.0"
 pre-commit = "^3.7.0"
+pytest-anyio = "^0.0.0"
+trio = "^0.25.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Dict
 
+from .utils.endpoints import Endpoint
+
 
 # a workflow is a specific event that may occur in an EHR that triggers a request to server
 class Workflow(Enum):
@@ -66,9 +68,9 @@ class BaseClient(ABC):
         """
 
 
-class BaseUseCase(ABC):
+class BaseStrategy(ABC):
     """
-    Abstract class for a specific use case of an EHR object
+    Abstract class for the strategy for validating and constructing a request
     Use cases will differ by:
     - the data it accepts (FHIR or CDA)
     - the format of the request it constructs (CDS Hook or NoteReader workflows)
@@ -80,4 +82,28 @@ class BaseUseCase(ABC):
 
     @abstractmethod
     def construct_request(self, data, workflow: Workflow) -> Dict:
+        pass
+
+
+class BaseUseCase(ABC):
+    """
+    Abstract class for a specific use case of an EHR object
+    Use cases will differ by:
+    - the data it accepts (FHIR or CDA)
+    - the format of the request it constructs (CDS Hook or NoteReader workflows)
+    """
+
+    @property
+    @abstractmethod
+    def type(self) -> UseCaseType:
+        pass
+
+    @property
+    @abstractmethod
+    def strategy(self) -> BaseStrategy:
+        pass
+
+    @property
+    @abstractmethod
+    def endpoints(self) -> Dict[str, Endpoint]:
         pass
