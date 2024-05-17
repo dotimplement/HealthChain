@@ -1,5 +1,8 @@
 from healthchain.fhir_resources.encounter_resources import EncounterModel
-from healthchain.fhir_resources.base_resources import CodingModel, CodeableConceptModel
+from healthchain.fhir_resources.general_purpose_resources import (
+    CodingModel,
+    CodeableConceptModel,
+)
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,
@@ -70,7 +73,7 @@ class EncounterGenerator(BaseGenerator):
             patient_reference = "Patient/123"
         return EncounterModel(
             resourceType="Encounter",
-            id=generator_registry.get("idGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
             text={
                 "status": "generated",
                 "div": '<div xmlns="http://www.w3.org/1999/xhtml">Encounter with patient @example</div>',
