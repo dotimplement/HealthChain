@@ -7,6 +7,7 @@ from healthchain.fhir_resources.primitive_resources import (
     dateTimeModel,
     codeModel,
     booleanModel,
+    markdownModel,
     decimalModel,
     comparatorModel,
     positiveIntModel,
@@ -539,4 +540,32 @@ class DurationModel(BaseModel):
         default=None,
         alias="code",
         description="A computer processable form of the unit in some unit representation system.",
+    )
+
+
+class AnnotationModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    authorReference_field: ReferenceModel = Field(
+        default=None,
+        alias="authorReference",
+        description="The individual responsible for making the annotation.",
+    )
+    time_field: dateTimeModel = Field(
+        default=None,
+        alias="time",
+        description="Indicates when this particular annotation was made.",
+    )
+    text_field: markdownModel = Field(
+        default=None,
+        alias="text",
+        description="The text of the annotation in markdown format.",
     )
