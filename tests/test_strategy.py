@@ -19,6 +19,12 @@ def test_valid_data_request_construction(cds_strategy, valid_data):
 
 def test_invalid_data_raises_error(cds_strategy, invalid_data):
     with pytest.raises(ValueError):
+        # incorrect keys passed in
+        cds_strategy.construct_request(invalid_data, Workflow.patient_view)
+
+    with pytest.raises(ValueError):
+        # correct keys but invalid data
+        invalid_data.context = {"userId": "Practitioner"}
         cds_strategy.construct_request(invalid_data, Workflow.patient_view)
 
 
