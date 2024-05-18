@@ -1,4 +1,4 @@
-from typing import Enum
+from enum import Enum
 
 
 class ImplementedResourceRegistry(Enum):
@@ -8,6 +8,8 @@ class ImplementedResourceRegistry(Enum):
     NutritionOrder: str = "NutritionOrder"
     Patient: str = "Patient"
     Practitioner: str = "Practitioner"
+    Condition: str = "Condition"
+    Procedure: str = "Procedure"
 
 
 class UnimplementedResourceRegistry(Enum):
@@ -42,7 +44,7 @@ class UnimplementedResourceRegistry(Enum):
     CompartmentDefinition: str = "CompartmentDefinition"
     Composition: str = "Composition"
     ConceptMap: str = "ConceptMap"
-    Condition: str = "Condition"
+
     ConditionDefinition: str = "ConditionDefinition"
     Consent: str = "Consent"
     Contract: str = "Contract"

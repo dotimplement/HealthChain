@@ -1,5 +1,14 @@
-from healthchain.fhir_resources.encounter_resources import EncounterModel
-from healthchain.fhir_resources.base_resources import CodingModel, CodeableConceptModel
+from healthchain.fhir_resources.encounter_resources import (
+    EncounterModel,
+    Encounter_LocationModel,
+)
+from healthchain.fhir_resources.general_purpose_resources import (
+    CodingModel,
+    CodeableConceptModel,
+    PeriodModel,
+    dateTimeModel,
+    ReferenceModel,
+)
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,
@@ -9,6 +18,19 @@ from typing import Optional
 from faker import Faker
 
 faker = Faker()
+
+
+@register_generator
+class PeriodGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        start = faker.date_time()
+        end = faker.date_time_between(start_date=start).isoformat()
+        start = start.isoformat()
+        return PeriodModel(
+            start=dateTimeModel(start),
+            end=dateTimeModel(end),
+        )
 
 
 @register_generator
@@ -63,14 +85,28 @@ class EncounterPriorityGenerator(BaseGenerator):
 
 
 @register_generator
+class EncounterLocationGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        return Encounter_LocationModel(
+            location=ReferenceModel(reference="Location/123"),
+            status=faker.random_element(elements=("active", "completed")),
+            period=generator_registry.get("PeriodGenerator").generate(),
+        )
+
+
+@register_generator
 class EncounterGenerator(BaseGenerator):
     @staticmethod
-    def generate(patient_reference: Optional[str]):
+    def generate(
+        patient_reference: Optional[str] = None, field_params: Optional[dict] = None
+    ):
         if patient_reference is None:
             patient_reference = "Patient/123"
+
         return EncounterModel(
             resourceType="Encounter",
-            id=generator_registry.get("idGenerator").generate(),
+            id=generator_registry.get("IdGenerator").generate(),
             text={
                 "status": "generated",
                 "div": '<div xmlns="http://www.w3.org/1999/xhtml">Encounter with patient @example</div>',
@@ -85,8 +121,11 @@ class EncounterGenerator(BaseGenerator):
                 )
             ),
             class_field=[generator_registry.get("ClassGenerator").generate()],
+            priority=generator_registry.get("EncounterPriorityGenerator").generate(),
             type_field=[generator_registry.get("EncounterTypeGenerator").generate()],
             subject={"reference": patient_reference, "display": patient_reference},
+            actualPeriod=generator_registry.get("PeriodGenerator").generate(),
+            location=[generator_registry.get("EncounterLocationGenerator").generate()],
             participant=[],
             reason=[],
         )
