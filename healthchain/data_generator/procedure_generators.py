@@ -9,6 +9,7 @@ from healthchain.fhir_resources.general_purpose_resources import (
     ReferenceModel,
 )
 from healthchain.fhir_resources.procedure_resources import ProcedureModel
+
 from typing import Optional
 from faker import Faker
 

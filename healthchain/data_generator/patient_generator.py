@@ -77,6 +77,7 @@ class AddressGenerator(BaseGenerator):
 
 @register_generator
 class MaritalStatusGenerator(BaseGenerator):
+    @staticmethod
     def generate():
         marital_status_dict = {
             "D": "Divorced",

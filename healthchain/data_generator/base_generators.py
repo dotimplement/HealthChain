@@ -39,7 +39,7 @@ class Registry:
     def get(self, name):
         if name not in self.registry:
             raise ValueError(f"No generator registered for '{name}'")
-        return self.registry.get(name)
+        return self.registry.get(name)()
 
 
 generator_registry = Registry()

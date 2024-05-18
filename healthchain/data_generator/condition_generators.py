@@ -96,17 +96,37 @@ class SeverityGenerator(BaseGenerator):
 
 @register_generator
 class SnomedCodeGenerator(BaseGenerator):
+    def __init__(self) -> None:
+        super().__init__()
+
     @staticmethod
-    def generate():
+    def generate_base():
         return CodeableConceptModel(
             coding=[
                 CodingModel(
                     system="http://snomed.info/sct",
-                    code=faker.random_element(elements=("386661006")),
-                    display=faker.random_element(elements=("Fever")),
+                    code=faker.random_element(elements=("123456", "654321")),
                 )
             ]
         )
+
+    @staticmethod
+    def generate_complex():
+        return CodeableConceptModel(
+            coding=[
+                CodingModel(
+                    system="http://snomed.info/sct",
+                    code=faker.random_element(elements=("123456", "654321")),
+                )
+            ]
+        )
+
+    # @staticmethod
+    def generate(self, params: Optional[dict] = None):
+        if params is None:
+            return self.generate_base()
+        elif params.get("code") == "complex":
+            return self.generate_complex()
 
 
 @register_generator
@@ -137,9 +157,15 @@ class ConditionParticipantGenerator(BaseGenerator):
 @register_generator
 class ConditionModelGenerator(BaseGenerator):
     @staticmethod
-    def generate(subject_reference: Optional[str], encounter_reference: Optional[str]):
+    def generate(
+        subject_reference: Optional[str],
+        encounter_reference: Optional[str],
+        params: Optional[dict] = None,
+    ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
+        # TODO - Check whether this is the correct way to handle params
+        code = generator_registry.get("SnomedCodeGenerator").generate()
         return ConditionModel(
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
@@ -148,12 +174,13 @@ class ConditionModelGenerator(BaseGenerator):
             ).generate(),
             category=[generator_registry.get("CategoryGenerator").generate()],
             severity=generator_registry.get("SeverityGenerator").generate(),
-            code=generator_registry.get("SnomedCodeGenerator").generate(),
+            code=code,
             bodySite=[generator_registry.get("BodySiteGenerator").generate()],
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
-            onsetDateTime=generator_registry.get(
+            onsetDateTime=generator_registry.get("DateGenerator").generate(),
+            abatementDateTime=generator_registry.get(
                 "DateGenerator"
-            ).generate(),  ## Are there more plausible dates to use?
+            ).generate(),  ## TODO: Constraint abatementDateTime to be after onsetDateTime
             recordedDate=generator_registry.get("DateGenerator").generate(),
         )
