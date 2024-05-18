@@ -1,7 +1,13 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import Optional
 
 from .basehookcontext import BaseHookContext
+from ...utils.idgenerator import IdGenerator
+
+
+id_generator = IdGenerator(
+    resource_types=["Practitioner", "PractitionerRole", "Patient", "RelatedPerson"]
+)
 
 
 class PatientViewContext(BaseHookContext):
@@ -23,10 +29,23 @@ class PatientViewContext(BaseHookContext):
     # TODO: more comprehensive validator? for now regex should suffice
 
     userId: str = Field(
+        default_factory=id_generator.generate_random_user_id,
         pattern=r"^(Practitioner|PractitionerRole|Patient|RelatedPerson)/[^\s]+$",
         description="The ID of the current user, expected to be in the format 'Practitioner/123'.",
     )
-    patientId: str = Field(..., description="The FHIR Patient.id of the patient.")
+    patientId: str = Field(
+        default_factory=id_generator.generate_random_patient_id,
+        description="The FHIR Patient.id of the patient.",
+    )
     encounterId: Optional[str] = Field(
         None, description="The FHIR Encounter.id of the encounter, if applicable."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_unexpected_keys(cls, values):
+        allowed_keys = {"userId", "patientId", "encounterId"}
+        unexpected_keys = set(values) - allowed_keys
+        if unexpected_keys:
+            raise ValueError(f"Unexpected keys provided: {unexpected_keys}")
+        return values
