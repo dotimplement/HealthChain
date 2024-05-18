@@ -1,8 +1,8 @@
-from healthchain.data_generator.procedure_generators import ProcedureModelGenerator
+from healthchain.data_generator.procedure_generators import ProcedureGenerator
 
 
-def test_procedure_model_generator():
-    procedure = ProcedureModelGenerator.generate(
+def test_ProcedureGenerator():
+    procedure = ProcedureGenerator.generate(
         subject_reference="Patient/123", encounter_reference="Encounter/123"
     )
     assert procedure.resourceType == "Procedure"

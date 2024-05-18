@@ -45,7 +45,10 @@ class DosageInstructionGenerator(BaseGenerator):
 @register_generator
 class MedicationRequestGenerator(BaseGenerator):
     @staticmethod
-    def generate(subject_reference: Optional[str], encounter_reference: Optional[str]):
+    def generate(
+        subject_reference: Optional[str] = None,
+        encounter_reference: Optional[str] = None,
+    ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         return MedicationRequestModel(

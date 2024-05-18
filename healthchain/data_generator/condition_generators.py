@@ -155,12 +155,12 @@ class ConditionParticipantGenerator(BaseGenerator):
 
 
 @register_generator
-class ConditionModelGenerator(BaseGenerator):
+class ConditionGenerator(BaseGenerator):
     @staticmethod
     def generate(
-        subject_reference: Optional[str],
-        encounter_reference: Optional[str],
-        params: Optional[dict] = None,
+        subject_reference: Optional[str] = None,
+        encounter_reference: Optional[str] = None,
+        **params,
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
