@@ -9,6 +9,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
+from .data_generator.generator_orchestrator import GeneratorOrchestrator
 from .utils.apimethod import APIMethod
 from .utils.urlbuilder import UrlBuilder
 
@@ -16,6 +17,42 @@ from .utils.urlbuilder import UrlBuilder
 log = logging.getLogger(__name__)
 
 F = TypeVar("F", bound=Callable)
+
+
+def find_attributes_of_type(instance, target_type):
+    attributes = []
+    for attribute_name in dir(instance):
+        attribute_value = getattr(instance, attribute_name)
+        if isinstance(attribute_value, target_type):
+            attributes.append(attribute_name)
+    return attributes
+
+
+def assign_to_attribute(instance, attribute_name, method_name, *args, **kwargs):
+    attribute = getattr(instance, attribute_name)
+    method = getattr(attribute, method_name)
+    return method(*args, **kwargs)
+
+
+def is_service_route(attr):
+    return hasattr(attr, "is_service_route")
+
+
+def is_client(attr):
+    return hasattr(attr, "is_client")
+
+
+def validate_single_registration(count, attribute_name):
+    if count > 1:
+        raise RuntimeError(
+            f"Multiple methods are registered as {attribute_name}. Only one is allowed."
+        )
+
+
+def register_method(instance, method, cls, name, attribute_name):
+    method_func = method.__get__(instance, cls)
+    log.debug(f"Set {name} as {attribute_name}")
+    return method_func()
 
 
 def ehr(
@@ -60,6 +97,24 @@ def ehr(
                 raise ValueError(
                     f"{e}: please select from {[x.value for x in Workflow]}"
                 )
+
+            # Set workflow in data generator if configured
+            data_generator_attributes = find_attributes_of_type(
+                self, GeneratorOrchestrator
+            )
+            for i in range(len(data_generator_attributes)):
+                attribute_name = data_generator_attributes[i]
+                try:
+                    assign_to_attribute(
+                        self, attribute_name, "set_workflow", workflow_enum
+                    )
+                except Exception as e:
+                    log.error(
+                        f"Could not set workflow {workflow_enum.value} for data generator method {attribute_name}: {e}"
+                    )
+                if i > 1:
+                    log.warning("More than one DataGenerator instances found.")
+
             if self.type in UseCaseType:
                 method = EHRClient(func, workflow=workflow_enum, strategy=self.strategy)
                 for _ in range(num):
@@ -175,30 +230,22 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                 attr = getattr(self, name)
                 if callable(attr):
                     # Get the function decorated with @api and register it to inject in service
-                    if hasattr(attr, "is_service_route"):
+                    if is_service_route(attr):
                         service_route_count += 1
-                        if service_route_count > 1:
-                            raise RuntimeError(
-                                "Multiple methods are registered as service api. Only one is allowed."
-                            )
-                        method_func = attr.__get__(self, cls)
-                        self.service_api = method_func()
-                        log.debug(f"Set {name} as service_api")
-                    # Get the function decorated with @client and asign to client
-                    if hasattr(attr, "is_client"):
+                        validate_single_registration(service_route_count, "service api")
+                        self.service_api = register_method(
+                            self, attr, cls, name, "service_api"
+                        )
+
+                    if is_client(attr):
                         client_count += 1
-                        if client_count > 1:
-                            raise RuntimeError(
-                                "Multiple methods are registered as client. Only one is allowed."
-                            )
-                        method_func = attr.__get__(self, cls)
-                        # TODO: need to figure out where to pass in data spec
-                        self.client = method_func("123456")
-                        log.debug(f"Set {name} as client")
+                        validate_single_registration(client_count, "client")
+                        self.client = register_method(self, attr, cls, name, "client")
 
             # Create a Service instance and register routes from strategy
             self.service = Service(endpoints=self.endpoints)
 
+        # Set the new init
         cls.__init__ = new_init
 
         def start_sandbox(self, service_id: str = "1") -> None:
