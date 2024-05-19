@@ -2,6 +2,7 @@ import dataclasses
 import pytest
 
 from unittest.mock import Mock
+from pydantic import BaseModel
 
 from healthchain.base import BaseStrategy, BaseUseCase, UseCaseType
 from healthchain.models.requests.cdsrequest import CDSRequest
@@ -11,12 +12,24 @@ from healthchain.decorators import sandbox
 from healthchain.use_cases.cds import ClinicalDecisionSupport
 
 
+class MockBundle(BaseModel):
+    condition: str = "test"
+
+
 # TEMP
 @dataclasses.dataclass
 class synth_data:
     context: dict
-    uuid: str
-    prefetch: dict
+    resources: MockBundle
+
+
+class MockDataGenerator:
+    def __init__(self) -> None:
+        self.data = synth_data(context={}, resources=MockBundle())
+        self.workflow = None
+
+    def set_workflow(self, workflow):
+        self.workflow = workflow
 
 
 @pytest.fixture
@@ -28,8 +41,7 @@ def cds_strategy():
 def valid_data():
     return synth_data(
         context={"userId": "Practitioner/123", "patientId": "123"},
-        uuid="1234-5678",
-        prefetch={},
+        resources=MockBundle(),
     )
 
 
@@ -37,8 +49,7 @@ def valid_data():
 def invalid_data():
     return synth_data(
         context={"invalidId": "Practitioner", "patientId": "123"},
-        uuid="1234-5678",
-        prefetch={},
+        resources=MockBundle(),
     )
 
 
@@ -133,7 +144,7 @@ def correct_sandbox_class(mock_api_decorator, mock_client_decorator):
             pass
 
         @mock_client_decorator
-        def foo(self, test):
+        def foo(self):
             return "foo"
 
         @mock_api_decorator
@@ -151,11 +162,11 @@ def incorrect_client_num_sandbox_class(mock_api_decorator, mock_client_decorator
             pass
 
         @mock_client_decorator
-        def foo(self, test):
+        def foo(self):
             return "foo"
 
         @mock_client_decorator
-        def foo2(self, test):
+        def foo2(self):
             return "foo"
 
         @mock_api_decorator
@@ -173,7 +184,7 @@ def incorrect_api_num_sandbox_class(mock_api_decorator, mock_client_decorator):
             pass
 
         @mock_client_decorator
-        def foo(self, test):
+        def foo(self):
             return "foo"
 
         @mock_api_decorator
@@ -195,7 +206,7 @@ def correct_sandbox_class_with_args(mock_api_decorator, mock_client_decorator):
             pass
 
         @mock_client_decorator
-        def foo(self, test):
+        def foo(self):
             return "foo"
 
         @mock_api_decorator
@@ -215,7 +226,7 @@ def correct_sandbox_class_with_incorrect_args(
             pass
 
         @mock_client_decorator
-        def foo(self, test):
+        def foo(self):
             return "foo"
 
         @mock_api_decorator
