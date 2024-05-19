@@ -1,11 +1,11 @@
 from healthchain.data_generator.medication_request_generators import (
     MedicationRequestGenerator,
-    MedicationGenerator,
+    MedicationRequestContainedGenerator,
 )
 
 
 def test_MedicationGenerator():
-    generator = MedicationGenerator()
+    generator = MedicationRequestContainedGenerator()
     medication = generator.generate()
     assert medication is not None
 

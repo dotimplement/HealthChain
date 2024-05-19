@@ -2,6 +2,7 @@ from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,
     register_generator,
+    CodeableConceptGenerator,
 )
 from healthchain.fhir_resources.general_purpose_resources import (
     CodeableConceptModel,
@@ -12,6 +13,10 @@ from healthchain.fhir_resources.condition_resources import (
     ConditionModel,
     Condition_StageModel,
     Condition_ParticipantModel,
+)
+from healthchain.data_generator.value_sets.condition import (
+    ConditionCodeSimple,
+    ConditionCodeComplex,
 )
 from typing import Optional
 from faker import Faker
@@ -95,38 +100,16 @@ class SeverityGenerator(BaseGenerator):
 
 
 @register_generator
-class SnomedCodeGenerator(BaseGenerator):
+class SnomedCodeGenerator(CodeableConceptGenerator):
     def __init__(self) -> None:
         super().__init__()
-
-    @staticmethod
-    def generate_base():
-        return CodeableConceptModel(
-            coding=[
-                CodingModel(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(elements=("123456", "654321")),
-                )
-            ]
-        )
-
-    @staticmethod
-    def generate_complex():
-        return CodeableConceptModel(
-            coding=[
-                CodingModel(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(elements=("123456", "654321")),
-                )
-            ]
-        )
 
     # @staticmethod
     def generate(self, params: Optional[dict] = None):
         if params is None:
-            return self.generate_base()
+            return self.generate_from_valueset(ConditionCodeSimple)
         elif params.get("code") == "complex":
-            return self.generate_complex()
+            return self.generate_from_valueset(ConditionCodeComplex)
 
 
 @register_generator

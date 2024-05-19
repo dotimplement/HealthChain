@@ -2,12 +2,16 @@ from healthchain.fhir_resources.medication_administration_resources import (
     MedicationAdministrationModel,
     MedicationAdministration_DosageModel,
 )
-from healthchain.fhir_resources.general_purpose_resources import ReferenceModel
+from healthchain.fhir_resources.general_purpose_resources import (
+    ReferenceModel,
+    CodeableReferenceModel,
+)
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,
     register_generator,
 )
+from healthchain.fhir_resources.medication_request_resources import MedicationModel
 from faker import Faker
 
 
@@ -32,10 +36,18 @@ class MedicationAdministrationDosageGenerator(BaseGenerator):
 class MedicationAdministrationGenerator(BaseGenerator):
     @staticmethod
     def generate(subject_reference: str, encounter_reference: str):
+        contained_medication = MedicationModel(
+            code=generator_registry.get(
+                "MedicationRequestContainedGenerator"
+            ).generate()
+        )
         return MedicationAdministrationModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
-            medication=generator_registry.get("MedicationGenerator").generate(),
+            contained=[contained_medication],
+            medication=CodeableReferenceModel(
+                reference=ReferenceModel(reference="Medication/123")
+            ),
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             authoredOn=generator_registry.get("DateGenerator").generate(),
