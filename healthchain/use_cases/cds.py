@@ -40,7 +40,7 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         }
 
     @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
-    def construct_request(self, data, workflow: Workflow) -> Dict:
+    def construct_request(self, data, workflow: Workflow) -> CDSRequest:
         """
         Constructs a HL7-compliant CDS request based on workflow.
 

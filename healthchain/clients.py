@@ -3,6 +3,7 @@ import httpx
 
 from typing import Any, Callable, List, Dict
 
+from .models.requests.cdsrequest import CDSRequest
 from .base import BaseStrategy, BaseClient, Workflow
 
 log = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class EHRClient(BaseClient):
         self.data_generator_func: Callable[..., Any] = func
         self.workflow: Workflow = workflow
         self.strategy: BaseStrategy = strategy
-        self.request_data: List[Dict] = []
+        self.request_data: List[CDSRequest] = []
 
     def generate_request(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -57,9 +58,7 @@ class EHRClient(BaseClient):
             json_responses: List[Dict] = []
             for request in self.request_data:
                 try:
-                    response = await client.post(
-                        url=url, data=request.model_dump_json(exclude_none=True)
-                    )
+                    response = await client.post(url=url, json=request.model_dump())
                     json_responses.append(response.json())
                 except Exception as e:
                     log.error(f"Error sending request: {e}")

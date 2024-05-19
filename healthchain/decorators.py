@@ -1,8 +1,12 @@
 import logging
 import threading
 import asyncio
+import json
+import uuid
 
 from time import sleep
+from pathlib import Path
+from datetime import datetime
 from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
@@ -17,6 +21,33 @@ from .utils.urlbuilder import UrlBuilder
 log = logging.getLogger(__name__)
 
 F = TypeVar("F", bound=Callable)
+
+
+def generate_filename(prefix: str, unique_id: str, index: int):
+    timestamp = datetime.now().strftime("%Y-%m-%d")
+    filename = f"{timestamp}_sandbox_{unique_id}_{prefix}_{index}.json"
+    return filename
+
+
+def save_as_json(data, prefix, sandbox_id, index, save_dir):
+    save_name = generate_filename(prefix, sandbox_id, index)
+    file_path = save_dir / save_name
+    with open(file_path, "w") as outfile:
+        json.dump(data, outfile, indent=4)
+
+
+def ensure_directory_exists(directory):
+    path = Path(directory)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def save_data_to_directory(data_list, data_type, sandbox_id, save_dir):
+    for i, data in enumerate(data_list):
+        try:
+            save_as_json(data, data_type, sandbox_id, i, save_dir)
+        except Exception as e:
+            log.warning(f"Error saving file {i} at {save_dir}: {e}")
 
 
 def find_attributes_of_type(instance, target_type):
@@ -248,7 +279,12 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
         # Set the new init
         cls.__init__ = new_init
 
-        def start_sandbox(self, service_id: str = "1") -> None:
+        def start_sandbox(
+            self,
+            service_id: str = "1",
+            save_data: bool = True,
+            save_dir: str = "./output/",
+        ) -> None:
             """
             Starts the sandbox: initialises service and sends a request through the client.
 
@@ -260,9 +296,11 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                     "Service API or Client is not configured. Please check your class initialization."
                 )
 
+            sandbox_id = uuid.uuid4()
+
             # Start service on thread
             log.info(
-                f"Starting {self.type.value} service {self.__class__.__name__} with configs {self.service_config}..."
+                f"Starting sandbox {sandbox_id} {self.type.value} service {self.__class__.__name__} with configs {self.service_config}..."
             )
             server_thread = threading.Thread(
                 target=lambda: self.service.run(config=self.service_config)
@@ -285,6 +323,23 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                 self.responses = asyncio.run(self.client.send_request(url=url.str))
             except Exception as e:
                 log.error(f"Couldn't start client: {e}")
+
+            if save_data:
+                save_dir = Path(save_dir)
+                request_path = ensure_directory_exists(save_dir / "requests")
+                save_data_to_directory(
+                    [request.model_dump() for request in self.client.request_data],
+                    "request",
+                    sandbox_id,
+                    request_path,
+                )
+                log.info(f"Saved request data at {request_path}/")
+
+                response_path = ensure_directory_exists(save_dir / "responses")
+                save_data_to_directory(
+                    self.responses, "response", sandbox_id, response_path
+                )
+                log.info(f"Saved response data at {response_path}/")
 
         cls.start_sandbox = start_sandbox
 
