@@ -77,10 +77,6 @@ class BaseStrategy(ABC):
     """
 
     @abstractmethod
-    def _validate_data(self, data) -> bool:
-        pass
-
-    @abstractmethod
     def construct_request(self, data, workflow: Workflow) -> Dict:
         pass
 

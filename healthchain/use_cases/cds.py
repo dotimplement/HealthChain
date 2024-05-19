@@ -39,10 +39,6 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             Workflow.encounter_discharge: EncounterDischargeContext,
         }
 
-    def _validate_data(self, data, workflow: Workflow) -> bool:
-        # do something to valida fhir data and the worklow it's for
-        return True
-
     @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
     def construct_request(self, data, workflow: Workflow) -> Dict:
         """
@@ -58,22 +54,19 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         Raises:
             ValueError: If the workflow is invalid or the data does not validate properly.
         """
-        # TODO: sub data for actual DoppelData format!!
-        if self._validate_data(data, workflow):
-            log.debug(f"Constructing CDS request for {workflow.value} from {data}")
+        log.debug(f"Constructing CDS request for {workflow.value} from {data}")
 
-            context_model = self.context_mapping.get(workflow, None)
-            if context_model is None:
-                raise ValueError(
-                    f"Invalid workflow {workflow.value} or workflow model not implemented."
-                )
-
-            context = context_model(**data.context)
-            request = CDSRequest(
-                hook=workflow.value, hookInstance=data.uuid, context=context
+        context_model = self.context_mapping.get(workflow, None)
+        if context_model is None:
+            raise ValueError(
+                f"Invalid workflow {workflow.value} or workflow model not implemented."
             )
-        else:
-            raise ValueError(f"Error validating data for workflow {Workflow}")
+        context = context_model(**data.context)
+        request = CDSRequest(
+            hook=workflow.value,
+            context=context,
+            prefetch=data.resources.model_dump(),
+        )
 
         return request
 
