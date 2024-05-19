@@ -2,12 +2,6 @@ from typing import List, Dict, Callable, Optional
 from pydantic import BaseModel
 
 
-class UseCaseMapping(BaseModel):
-    generator: str
-    params: Dict[str, str]
-    # would also want to validate that the params are fields of the generator
-
-
 workflow_mappings = {
     "encounter-discharge": [
         {"generator": "EncounterGenerator"},
@@ -27,7 +21,7 @@ workflow_mappings = {
 # TODO: Some of the resources should be allowed to be multiplied
 
 
-class GeneratorOrchestrator:
+class DataGenerator:
     def __init__(
         self, registry: Dict[str, Callable], mappings: Dict[str, List[Dict[str, str]]]
     ):
@@ -37,16 +31,18 @@ class GeneratorOrchestrator:
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
 
-    def orchestrate(
-        self, workflow: str, priorities: Optional[List[str]] = None
-    ) -> List[BaseModel]:
+    def set_workflow(self, workflow: str, priorities: Optional[List[str]] = None):
+        self.workflow = workflow
+        self.priorities = priorities
+
+    def orchestrate(self) -> List[BaseModel]:
         results = []
 
-        if workflow not in self.mappings.keys():
-            raise ValueError(f"Workflow {workflow} not found in mappings")
+        if self.workflow not in self.mappings.keys():
+            raise ValueError(f"Workflow {self.workflow} not found in mappings")
 
         # converted_priorities = map_priorities_to_generators(priorities)
-        for resource in self.mappings[workflow]:
+        for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
             generator = self.fetch_generator(generator_name)
             result = generator.generate()
