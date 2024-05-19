@@ -1,10 +1,12 @@
 import pytest
 
-from healthchain.decorators import ehr
+from .conftest import MockDataGenerator
+from healthchain.decorators import ehr, find_attributes_of_type, assign_to_attribute
 
 
 class MockUseCase:
-    pass
+    def __init__(self) -> None:
+        self.data_gen = MockDataGenerator()
 
 
 @pytest.fixture
@@ -13,6 +15,23 @@ def function():
         pass
 
     return func
+
+
+def test_setting_workflow_attributes():
+    instance = MockUseCase()
+    attributes = find_attributes_of_type(instance, MockDataGenerator)
+    assert attributes == ["data_gen"]
+
+
+def test_assigning_workflow_attributes():
+    instance = MockUseCase()
+    attributes = ["data_gen", "invalid"]
+
+    assign_to_attribute(instance, attributes[0], "set_workflow", "workflow")
+    assert instance.data_gen.workflow == "workflow"
+
+    with pytest.raises(AttributeError):
+        assign_to_attribute(instance, attributes[1], "set_workflow", "workflow")
 
 
 class TestEHRDecorator:

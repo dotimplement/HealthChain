@@ -1,7 +1,7 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 
-from .conftest import synth_data
+from .conftest import MockDataGenerator
 from healthchain.decorators import sandbox, ehr, api
 from healthchain.use_cases.cds import ClinicalDecisionSupport
 
@@ -9,29 +9,19 @@ from healthchain.use_cases.cds import ClinicalDecisionSupport
 @sandbox
 class myCDS(ClinicalDecisionSupport):
     def __init__(self) -> None:
-        self.data_generator = None
+        self.data_generator = MockDataGenerator()
 
     # decorator sets up an instance of ehr configured with use case CDS
     @ehr(workflow="encounter-discharge", num=3)
-    def load_data(self, data_spec):
-        # data = "hello, " + data_spec
-        data = synth_data(
-            context={
-                "userId": "Practitioner/123",
-                "patientId": data_spec,
-                "encounterId": "123",
-            },
-            uuid="29e93987-c345-4cb7-9a92-b5136289c2a4",
-            prefetch={},
-        )
-        return data
+    def load_data(self):
+        return self.data_generator.data
 
     @api
     def llm(self, text: str):
         return {
             "cards": [
                 {
-                    "summary": "example",
+                    "summary": self.data_generator.data.resources.condition,
                     "indicator": "info",
                     "source": {"label": "website"},
                 }
@@ -63,7 +53,7 @@ def test_cds_service(test_cds_request):
     assert response.status_code == 200
     assert response.json() == {
         "cards": [
-            {"summary": "example", "indicator": "info", "source": {"label": "website"}}
+            {"summary": "test", "indicator": "info", "source": {"label": "website"}}
         ]
     }
 

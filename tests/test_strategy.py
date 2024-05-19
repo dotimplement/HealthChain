@@ -12,8 +12,8 @@ def test_valid_data_request_construction(cds_strategy, valid_data):
         cds_strategy.construct_request(valid_data, Workflow.patient_view)
         mock_init.assert_called_once_with(
             hook=Workflow.patient_view.value,
-            hookInstance="1234-5678",
             context=PatientViewContext(userId="Practitioner/123", patientId="123"),
+            prefetch={"condition": "test"},
         )
 
 
