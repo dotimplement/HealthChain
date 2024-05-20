@@ -1,6 +1,6 @@
 from healthchain.fhir_resources.bundle_resources import Bundle_EntryModel, BundleModel
-from healthchain.data_generator.patient_generator import PatientGenerator
-from healthchain.data_generator.encounter_generator import EncounterGenerator
+from healthchain.data_generator.patient_generators import PatientGenerator
+from healthchain.data_generator.encounter_generators import EncounterGenerator
 
 
 def test_bundle_entry_model():
