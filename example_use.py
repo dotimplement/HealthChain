@@ -17,6 +17,7 @@ def run():
 
     class DataGenerator:
         def __init__(self) -> None:
+            self.data = None
             self.workflow = None
 
         def set_workflow(self, workflow):
@@ -30,7 +31,7 @@ def run():
                 f"This is synthetic FHIR data from the generator, the param is {constraint}, the workflow is {self.workflow}"
             )
 
-            return data
+            self.data = data
 
     @sandbox(service_config={"port": 9000})
     class myCDS(ClinicalDecisionSupport):
@@ -49,8 +50,19 @@ def run():
         # decorator sets up an instance of ehr configured with use case CDS
         @ehr(workflow="encounter-discharge", num=3)
         def load_data(self):
-            data = self.data_generator.generate(constraint=["long_duration"])
-            return data
+            self.data_generator.generate(
+                constraint=[
+                    "long_encounter_period",
+                    "short_encounter_period",
+                    "has_problem_list",
+                    "has_medication_requests",
+                    "has_procedures",
+                ]
+            )
+            self.data_generator.update({"Condition/ClinicalStatus": "active"})
+            self.data_generator.load_free_text("./dir/")
+
+            return self.data_generator.data
 
         @api
         def llm(self, text: str):
