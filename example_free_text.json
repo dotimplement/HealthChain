@@ -1,0 +1,26 @@
+{
+    "resources": [
+      {
+        "resourceType": "Patient",
+        "text": "This is a patient with a history of hypertension and diabetes. The patient is currently on medication and has regular check-ups scheduled every 3 months."
+      },
+      {
+        "resourceType": "Observation",
+        "text": "Observation: Blood pressure reading is 140/90 mmHg. This is slightly elevated and the patient has been advised to monitor their blood pressure regularly and follow a low-sodium diet."
+      },
+      {
+        "resourceType": "Encounter",
+        "text": "Encounter: The patient visited the clinic for a routine check-up. Vital signs were stable, and no new symptoms were reported. Follow-up in 6 months."
+
+      },
+      {
+        "resourceType": "MedicationRequest",
+        "text": "MedicationRequest: Prescribed metformin 500 mg, to be taken twice daily with meals for management of type 2 diabetes."
+
+      },
+      {
+        "resourceType": "Condition",
+        "text": "Condition: The patient has been diagnosed with chronic obstructive pulmonary disease (COPD). They are advised to avoid smoking and exposure to pollutants, and to engage in pulmonary rehabilitation exercises."
+      }
+    ]
+}
