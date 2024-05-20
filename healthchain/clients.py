@@ -58,7 +58,9 @@ class EHRClient(BaseClient):
             json_responses: List[Dict] = []
             for request in self.request_data:
                 try:
-                    response = await client.post(url=url, json=request.model_dump())
+                    response = await client.post(
+                        url=url, json=request.model_dump(exclude_none=True)
+                    )
                     json_responses.append(response.json())
                 except Exception as e:
                     log.error(f"Error sending request: {e}")

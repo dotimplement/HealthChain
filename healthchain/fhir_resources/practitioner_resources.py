@@ -15,6 +15,7 @@ from healthchain.fhir_resources.general_purpose_resources import (
     PeriodModel,
     CodeableConceptModel,
     MetaModel,
+    NarrativeModel,
 )
 from healthchain.fhir_resources.patient_resources import (
     HumanNameModel,
@@ -111,7 +112,7 @@ class PractitionerModel(BaseModel):
         alias="language",
         description="The base language in which the resource is written.",
     )
-    text_field: stringModel = Field(
+    text_field: NarrativeModel = Field(
         default=None,
         alias="text",
         description="A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it clinically safe for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.",

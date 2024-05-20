@@ -11,6 +11,7 @@ from healthchain.fhir_resources.general_purpose_resources import (
 )
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
+    generate_text_field,
     generator_registry,
     register_generator,
 )
@@ -98,19 +99,13 @@ class EncounterLocationGenerator(BaseGenerator):
 @register_generator
 class EncounterGenerator(BaseGenerator):
     @staticmethod
-    def generate(
-        patient_reference: Optional[str] = None, constraints: Optional[list] = None
-    ):
-        if patient_reference is None:
-            patient_reference = "Patient/123"
-
+    def generate(constraints: Optional[list] = None, free_text: Optional[list] = None):
+        patient_reference = "Patient/123"
+        text = generate_text_field(free_text)
         return EncounterModel(
             resourceType="Encounter",
             id=generator_registry.get("IdGenerator").generate(),
-            text={
-                "status": "generated",
-                "div": '<div xmlns="http://www.w3.org/1999/xhtml">Encounter with patient @example</div>',
-            },
+            text=text,
             status=faker.random_element(
                 elements=(
                     "planned",

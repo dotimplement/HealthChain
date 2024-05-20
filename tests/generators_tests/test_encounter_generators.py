@@ -22,7 +22,7 @@ def test_EncounterTypeGenerator():
 
 
 def test_EncounterModel():
-    encounter = EncounterGenerator.generate(patient_reference="Patient/123")
+    encounter = EncounterGenerator.generate()
 
     assert encounter.resourceType == "Encounter"
     assert encounter.id_field is not None

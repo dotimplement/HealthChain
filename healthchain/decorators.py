@@ -331,7 +331,10 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                 save_dir = Path(save_dir)
                 request_path = ensure_directory_exists(save_dir / "requests")
                 save_data_to_directory(
-                    [request.model_dump() for request in self.client.request_data],
+                    [
+                        request.model_dump(exclude_none=True)
+                        for request in self.client.request_data
+                    ],
                     "request",
                     self.sandbox_id,
                     request_path,

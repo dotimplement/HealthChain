@@ -1,38 +1,10 @@
 from healthchain.use_cases.cds import ClinicalDecisionSupport
 from healthchain.decorators import ehr, api, sandbox
-import dataclasses
-from pydantic import BaseModel
-import random
+from healthchain.data_generator.data_generator import DataGenerator
 import json
 
 
 def run():
-    class MockBundle(BaseModel):
-        resource: str = "medication"
-
-    @dataclasses.dataclass
-    class synth_data:
-        context: dict
-        resources: MockBundle
-
-    class DataGenerator:
-        def __init__(self) -> None:
-            self.data = None
-            self.workflow = None
-
-        def set_workflow(self, workflow):
-            self.workflow = workflow
-
-        def generate(self, constraint):
-            examples = ["medication", "problems", "procedures"]
-            data = MockBundle(resource=random.choice(examples))
-            data = synth_data(context={}, resources=data)
-            print(
-                f"This is synthetic FHIR data from the generator, the param is {constraint}, the workflow is {self.workflow}"
-            )
-
-            self.data = data
-
     @sandbox(service_config={"port": 9000})
     class myCDS(ClinicalDecisionSupport):
         def __init__(self) -> None:
@@ -51,18 +23,17 @@ def run():
         @ehr(workflow="encounter-discharge", num=3)
         def load_data(self):
             self.data_generator.generate(
-                constraint=[
+                constraints=[
                     "long_encounter_period",
                     "short_encounter_period",
                     "has_problem_list",
                     "has_medication_requests",
                     "has_procedures",
-                ]
+                ],
+                free_text_json="./example_free_text.json",
             )
-            # self.data_generator.update({"Condition/ClinicalStatus": "active"})
-            # self.data_generator.load_free_text("./dir/")
 
-            return self.data_generator.data
+            return self.data_generator.data[-1]
 
         @api
         def llm(self, text: str):
@@ -84,8 +55,8 @@ def run():
 
     cds = myCDS()
     cds.start_sandbox(save_data=False)
-    print(cds.responses)
-    cds.stop_sandbox()
+    # print(cds.responses)
+    # cds.stop_sandbox()
 
     # ehr_client = cds.load_data("123")
     # request = ehr_client.request_data

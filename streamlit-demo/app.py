@@ -1,5 +1,5 @@
 import streamlit as st
-from healthchain.data_generator.encounter_generator import EncounterGenerator
+from healthchain.data_generator.encounter_generators import EncounterGenerator
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
     # Generate a synthetic encounter on button click
     if st.button("Generate Encounter"):
         encounter = generator.generate("Patient/123", set_name=selected_set)
-        st.json(encounter.model_dump_json(exclude_defaults=True))
+        st.json(encounter.model_dump_json(exclude_none=True))
 
 
 if __name__ == "__main__":

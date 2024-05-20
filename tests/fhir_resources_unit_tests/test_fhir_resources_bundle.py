@@ -7,7 +7,7 @@ def test_bundle_entry_model():
     patient_generator = PatientGenerator()
     patient = patient_generator.generate()
     encounter_generator = EncounterGenerator()
-    encounter = encounter_generator.generate(patient_reference="Patient/123")
+    encounter = encounter_generator.generate()
 
     bundle_patient_entry = Bundle_EntryModel(resource=patient)
     bundle_encounter_entry = Bundle_EntryModel(resource=encounter)
