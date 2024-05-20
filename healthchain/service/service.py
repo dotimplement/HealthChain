@@ -27,14 +27,15 @@ class Service:
     def __init__(self, endpoints: Dict[str, Endpoint] = None):
         self.app = FastAPI(lifespan=self.lifespan)
         self.endpoints = endpoints
-        self.dashboard_url = "/dashboard"
 
         if self.endpoints is not None:
             self._register_routes()
 
         # Router to handle stopping the server
         self.stop_router = APIRouter()
-        self.stop_router.add_api_route("/shutdown", self._shutdown, methods=["GET"])
+        self.stop_router.add_api_route(
+            "/shutdown", self._shutdown, methods=["GET"], include_in_schema=False
+        )
         self.app.include_router(self.stop_router)
 
     def _register_routes(self) -> None:
@@ -75,9 +76,6 @@ class Service:
             )
         print(
             f"{colored('HEALTHCHAIN', 'green')}: See more details at {colored(self.app.docs_url, 'magenta')}"
-        )
-        print(
-            f"{colored('HEALTHCHAIN', 'green')}: Interact with sandbox at {colored(self.dashboard_url, 'magenta')}"
         )
 
     def _shutdown(self):
