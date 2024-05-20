@@ -1,4 +1,4 @@
-from healthchain.data_generator.encounter_generator import (
+from healthchain.data_generator.encounter_generators import (
     ClassGenerator,
     EncounterTypeGenerator,
     EncounterGenerator,
