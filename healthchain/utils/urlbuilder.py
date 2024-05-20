@@ -5,7 +5,9 @@ from ..utils.endpoints import Endpoint
 
 class UrlBuilder:
     def __init__(self) -> None:
-        self.str = ""
+        self.base = ""
+        self.route = ""
+        self.service = ""
 
     @classmethod
     def build_from_config(
@@ -26,7 +28,8 @@ class UrlBuilder:
             raise ValueError(
                 f"Can't fetch service details: key 'service_mount' doesn't exist in {endpoints}"
             )
-
-        cls.str = f"{protocol}://{host}:{port}{service}"
+        cls.base = f"{protocol}://{host}:{port}"
+        cls.route = service
+        cls.service = f"{protocol}://{host}:{port}{service}"
 
         return cls

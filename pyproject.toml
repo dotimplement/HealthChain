@@ -14,6 +14,7 @@ requests = "^2.31.0"
 colorama = "^0.4.6"
 faker = "^25.1.0"
 fastapi = "^0.111.0"
+termcolor = "^2.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"

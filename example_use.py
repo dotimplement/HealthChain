@@ -59,8 +59,8 @@ def run():
                     "has_procedures",
                 ]
             )
-            self.data_generator.update({"Condition/ClinicalStatus": "active"})
-            self.data_generator.load_free_text("./dir/")
+            # self.data_generator.update({"Condition/ClinicalStatus": "active"})
+            # self.data_generator.load_free_text("./dir/")
 
             return self.data_generator.data
 
@@ -83,8 +83,9 @@ def run():
             }
 
     cds = myCDS()
-    cds.start_sandbox()
+    cds.start_sandbox(save_data=False)
     print(cds.responses)
+    cds.stop_sandbox()
 
     # ehr_client = cds.load_data("123")
     # request = ehr_client.request_data

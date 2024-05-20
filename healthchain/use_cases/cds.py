@@ -22,6 +22,7 @@ from ..models.hooks.patientview import PatientViewContext
 from ..models.hooks.encounterdischarge import EncounterDischargeContext
 from ..utils.endpoints import Endpoint
 from ..utils.apimethod import APIMethod
+from ..utils.urlbuilder import UrlBuilder
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +77,8 @@ class ClinicalDecisionSupport(BaseUseCase):
     Implements EHR backend simulator for Clinical Decision Support (CDS)
 
     Parameters:
+        sandbox_id (str): unique ID assigned to an instance
+        url (UrlBuilder): Contains url of the service
         service_api (APIMethod): the function body to inject into the main service
         service_config (Dict): the config kwargs for the uvicorn server passed into service
         service (Service): the service runner object
@@ -102,6 +105,8 @@ class ClinicalDecisionSupport(BaseUseCase):
                 path="/cds-services/{id}", method="POST", function=self.cds_service
             ),
         }
+        self.sandbox_id: str = None
+        self.url: UrlBuilder = None
         self.service_api: APIMethod = service_api
         self.service_config: Dict = service_config
         self.service: Service = service
