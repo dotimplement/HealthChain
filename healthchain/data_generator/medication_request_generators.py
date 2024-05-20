@@ -46,14 +46,14 @@ class MedicationRequestGenerator(BaseGenerator):
     def generate(
         subject_reference: Optional[str] = None,
         encounter_reference: Optional[str] = None,
-        params: Optional[dict] = None,
+        constraints: Optional[list] = None,
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         contained_medication = MedicationModel(
-            code=generator_registry.get("MedicationRequestContainedGenerator").generate(
-                params
-            )
+            code=generator_registry.get(
+                "MedicationRequestContainedGenerator"
+            ).generate()
         )
         return MedicationRequestModel(
             id=generator_registry.get("IdGenerator").generate(),

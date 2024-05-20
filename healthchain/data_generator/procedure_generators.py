@@ -42,11 +42,11 @@ class ProcedureGenerator(BaseGenerator):
     def generate(
         subject_reference: Optional[str] = None,
         encounter_reference: Optional[str] = None,
-        params: Optional[dict] = None,
+        constraints: Optional[list] = None,
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
-        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(params)
+        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate()
         return ProcedureModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),

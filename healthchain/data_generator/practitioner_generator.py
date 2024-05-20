@@ -19,6 +19,7 @@ from healthchain.fhir_resources.practitioner_resources import (
     Practitioner_QualificationModel,
     Practitioner_CommunicationModel,
 )
+from typing import Optional
 from faker import Faker
 
 
@@ -113,7 +114,7 @@ class Practitioner_CommunicationGenerator(BaseGenerator):
 @register_generator
 class PractitionerGenerator(BaseGenerator):
     @staticmethod
-    def generate():
+    def generate(constraints: Optional[list] = None):
         return PractitionerModel(
             id=stringModel(faker.uuid4()),
             active=booleanModel("true"),

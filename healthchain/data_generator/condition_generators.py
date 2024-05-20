@@ -143,7 +143,7 @@ class ConditionGenerator(BaseGenerator):
     def generate(
         subject_reference: Optional[str] = None,
         encounter_reference: Optional[str] = None,
-        **params,
+        constraints: Optional[list] = None,
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"

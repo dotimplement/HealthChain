@@ -1,15 +1,18 @@
-from typing import List, Dict, Callable, Optional
+from typing import List, Callable, Optional
+from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
+from healthchain.data_generator.base_generators import generator_registry
+from healthchain.base import Workflow
 from pydantic import BaseModel
 
 
 workflow_mappings = {
-    "encounter-discharge": [
+    Workflow.encounter_discharge: [
         {"generator": "EncounterGenerator"},
         {"generator": "ConditionGenerator"},
         {"generator": "ProcedureGenerator"},
         {"generator": "MedicationRequestGenerator"},
     ],
-    "patient-view": [
+    Workflow.patient_view: [
         {"generator": "PatientGenerator"},
         {"generator": "EncounterGenerator"},
         {"generator": "ConditionGenerator"},
@@ -21,12 +24,15 @@ workflow_mappings = {
 # TODO: Some of the resources should be allowed to be multiplied
 
 
+class OutputDataModel(BaseModel):
+    context: dict = {}
+    resources: BundleModel
+
+
 class DataGenerator:
-    def __init__(
-        self, registry: Dict[str, Callable], mappings: Dict[str, List[Dict[str, str]]]
-    ):
-        self.registry = registry
-        self.mappings = mappings
+    def __init__(self):
+        self.registry = generator_registry
+        self.mappings = workflow_mappings
 
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
@@ -35,7 +41,7 @@ class DataGenerator:
         self.workflow = workflow
         self.priorities = priorities
 
-    def orchestrate(self) -> List[BaseModel]:
+    def generate(self, constraints: Optional[list] = None) -> BaseModel:
         results = []
 
         if self.workflow not in self.mappings.keys():
@@ -45,7 +51,7 @@ class DataGenerator:
         for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
             generator = self.fetch_generator(generator_name)
-            result = generator.generate()
-            results.append(result)
+            result = generator.generate(constraints=constraints)
+            results.append(Bundle_EntryModel(resource=result))
 
-        return results
+        return OutputDataModel(context={}, resources=BundleModel(entry=results))

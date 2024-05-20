@@ -99,7 +99,7 @@ class EncounterLocationGenerator(BaseGenerator):
 class EncounterGenerator(BaseGenerator):
     @staticmethod
     def generate(
-        patient_reference: Optional[str] = None, field_params: Optional[dict] = None
+        patient_reference: Optional[str] = None, constraints: Optional[list] = None
     ):
         if patient_reference is None:
             patient_reference = "Patient/123"

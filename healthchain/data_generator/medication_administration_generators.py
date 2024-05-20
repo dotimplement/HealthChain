@@ -12,6 +12,7 @@ from healthchain.data_generator.base_generators import (
     register_generator,
 )
 from healthchain.fhir_resources.medication_request_resources import MedicationModel
+from typing import Optional
 from faker import Faker
 
 
@@ -35,7 +36,11 @@ class MedicationAdministrationDosageGenerator(BaseGenerator):
 @register_generator
 class MedicationAdministrationGenerator(BaseGenerator):
     @staticmethod
-    def generate(subject_reference: str, encounter_reference: str):
+    def generate(
+        subject_reference: str,
+        encounter_reference: str,
+        constraints: Optional[list] = None,
+    ):
         contained_medication = MedicationModel(
             code=generator_registry.get(
                 "MedicationRequestContainedGenerator"

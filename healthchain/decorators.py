@@ -14,7 +14,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
-from .data_generator.generator_orchestrator import DataGenerator
+from .data_generator.data_generator import DataGenerator
 from .utils.apimethod import APIMethod
 from .utils.urlbuilder import UrlBuilder
 
@@ -289,7 +289,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
 
             NOTE: service_id is hardcoded "1" by default, don't change.
             """
-            # TODO: revisit this - default to a single service with id "1", we could have a service resgistry if useful
+            # TODO: revisit this - default to a single service with id "1", we could have a service registry if useful
             if self.service_api is None or self.client is None:
                 raise RuntimeError(
                     "Service API or Client is not configured. Please check your class initialization."
