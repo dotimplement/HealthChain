@@ -1,18 +1,41 @@
-site_description: DoppelData - Synthetic Data for Healthcare
-site_author: Adam Kells
+site_name: Healthchain
+site_description: Simplify prototyping and testing NLP applications in a healthcare context.
+site_author: Jennifer Jiang-Kells
+
+# Repository
+repo_name: dotimplement/healthchain
+repo_url: https://github.com/dotimplement/healthchain
 
 nav:
   - Home: index.md
-plugins:
-  - mkdocstrings
-  - search
-copyright: Maintained by <a href="https://github.com/adamkells">Adam</a>.
+  - Getting Started:
+      - Installation: installation.md
+      - Quickstart: quickstart.md
+      - Usage: usage.md
+      - License: license.md
+  - Cookbook:
+      - cookbook/index.md
+  - Docs:
+      - reference/index.md
+  - API Reference:
+      - api/index.md
+# plugins:
+#   - mkdocstrings
+#   - search
+copyright: dotimplement
 theme:
   name: material
   # favicon: icon.png
   # logo: icon.png
-  feature:
-    tabs: true
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.code.copy
+    - navigation.expand
+    - navigation.tabs
+    - navigation.sections
+    - header.autohide
+    - announce.dismiss
   palette:
     primary: white
     accent: blue
