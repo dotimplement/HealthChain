@@ -262,7 +262,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                     # Get the function decorated with @api and register it to inject in service
                     if is_service_route(attr):
                         service_route_count += 1
-                        validate_single_registration(service_route_count, "service api")
+                        validate_single_registration(service_route_count, "service_api")
                         self.service_api = register_method(
                             self, attr, cls, name, "service_api"
                         )
@@ -331,7 +331,10 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                 save_dir = Path(save_dir)
                 request_path = ensure_directory_exists(save_dir / "requests")
                 save_data_to_directory(
-                    [request.model_dump() for request in self.client.request_data],
+                    [
+                        request.model_dump(exclude_none=True)
+                        for request in self.client.request_data
+                    ],
                     "request",
                     self.sandbox_id,
                     request_path,

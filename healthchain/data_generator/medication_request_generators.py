@@ -25,7 +25,7 @@ faker = Faker()
 
 @register_generator
 class MedicationRequestContainedGenerator(CodeableConceptGenerator):
-    def generate(self, params: Optional[dict] = None):
+    def generate(self):
         return self.generate_from_valueset(MedicationRequestionMedication)
 
 
@@ -44,12 +44,10 @@ class DosageInstructionGenerator(BaseGenerator):
 class MedicationRequestGenerator(BaseGenerator):
     @staticmethod
     def generate(
-        subject_reference: Optional[str] = None,
-        encounter_reference: Optional[str] = None,
         constraints: Optional[list] = None,
     ):
-        subject_reference = subject_reference or "Patient/123"
-        encounter_reference = encounter_reference or "Encounter/123"
+        subject_reference = "Patient/123"
+        encounter_reference = "Encounter/123"
         contained_medication = MedicationModel(
             code=generator_registry.get(
                 "MedicationRequestContainedGenerator"

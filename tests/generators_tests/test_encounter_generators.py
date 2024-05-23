@@ -1,4 +1,4 @@
-from healthchain.data_generator.encounter_generator import (
+from healthchain.data_generator.encounter_generators import (
     ClassGenerator,
     EncounterTypeGenerator,
     EncounterGenerator,
@@ -22,11 +22,10 @@ def test_EncounterTypeGenerator():
 
 
 def test_EncounterModel():
-    encounter = EncounterGenerator.generate(patient_reference="Patient/123")
+    encounter = EncounterGenerator.generate()
 
     assert encounter.resourceType == "Encounter"
     assert encounter.id_field is not None
-    assert encounter.text_field is not None
     assert encounter.status_field in (
         "planned",
         "in-progress",

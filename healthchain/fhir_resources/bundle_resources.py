@@ -1,12 +1,12 @@
 from healthchain.fhir_resources.resource_registry import ImplementedResourceRegistry
 from pydantic import Field, BaseModel, field_validator
-from typing import List
+from typing import List, Any
 
 implemented_resources = [f"{item.value}Model" for item in ImplementedResourceRegistry]
 
 
 class Bundle_EntryModel(BaseModel):
-    resource_field: BaseModel = Field(
+    resource_field: Any = Field(
         default=None,
         alias="resource",
         description="The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type. This is allowed to be a Parameters resource if and only if it is referenced by something else within the Bundle that provides context/meaning.",
@@ -14,11 +14,6 @@ class Bundle_EntryModel(BaseModel):
 
     @field_validator("resource_field")
     def check_enum(cls, value):
-        if not isinstance(value, BaseModel):
-            raise ValueError(
-                f"Invalid value: {value}. Must be an instance of a subclass of BaseModel."
-            )
-
         if value.__class__.__name__ not in implemented_resources:
             raise ValueError(
                 f"Invalid value class: {value.__class__.__name__}. Must be one of {implemented_resources}."

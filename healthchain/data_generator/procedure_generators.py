@@ -29,10 +29,11 @@ class EventStatusGenerator(BaseGenerator):
 
 @register_generator
 class ProcedureSnomedCodeGenerator(CodeableConceptGenerator):
-    def generate(self, params: Optional[dict] = None):
-        if params is None:
+    def generate(self, constraints: Optional[list] = None):
+        constraints = constraints or []
+        if "complex-procedure" not in constraints:
             return self.generate_from_valueset(ProcedureCodeSimple)
-        elif params.get("code") == "complex":
+        elif "complex-procedure" in constraints:
             return self.generate_from_valueset(ProcedureCodeComplex)
 
 
@@ -46,7 +47,9 @@ class ProcedureGenerator(BaseGenerator):
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
-        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate()
+        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(
+            constraints=constraints
+        )
         return ProcedureModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),

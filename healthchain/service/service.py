@@ -69,7 +69,6 @@ class Service:
         for i, line in enumerate(healthchain_ascii.split("\n")):
             color = colors[i % len(colors)]
             print(colored(line, color))
-        # print(healthchain_ascii)
         for endpoint in self.endpoints.values():
             print(
                 f"{colored('HEALTHCHAIN', 'green')}: {endpoint.method} endpoint at {endpoint.path}/"

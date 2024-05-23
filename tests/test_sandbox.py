@@ -48,7 +48,7 @@ def test_incorrect_sandbox_usage(
 ):
     with pytest.raises(
         RuntimeError,
-        match="Multiple methods are registered as service api. Only one is allowed.",
+        match="Multiple methods are registered as service_api. Only one is allowed.",
     ):
         incorrect_api_num_sandbox_class()
 

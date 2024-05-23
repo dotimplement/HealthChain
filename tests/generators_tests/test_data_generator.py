@@ -2,6 +2,7 @@ from healthchain.data_generator.data_generator import (
     DataGenerator,
 )
 from healthchain.base import Workflow
+import pytest
 
 
 def test_generator_orchestrator_encounter_discharge():
@@ -9,9 +10,9 @@ def test_generator_orchestrator_encounter_discharge():
 
     workflow = Workflow.encounter_discharge
     generator.set_workflow(workflow=workflow)
-    generated_resources = generator.generate()
+    generator.generate()
 
-    assert len(generated_resources.model_dump(by_alias=True)["resources"]["entry"]) == 4
+    assert len(generator.data.model_dump(by_alias=True)["resources"]["entry"]) == 4
 
 
 def test_generator_orchestrator_patient_view():
@@ -19,6 +20,17 @@ def test_generator_orchestrator_patient_view():
 
     workflow = Workflow.patient_view
     generator.set_workflow(workflow=workflow)
-    generated_resources = generator.generate()
+    generator.generate()
 
-    assert len(generated_resources.model_dump(by_alias=True)["resources"]["entry"]) == 3
+    assert len(generator.data.model_dump(by_alias=True)["resources"]["entry"]) == 3
+
+
+@pytest.mark.skip()
+def test_generator_with_json():
+    generator = DataGenerator()
+
+    workflow = Workflow.patient_view
+    generator.set_workflow(workflow=workflow)
+    generator.generate(free_text_json="use_cases/example_free_text.json")
+
+    assert len(generator.data.model_dump(by_alias=True)["resources"]["entry"]) == 4

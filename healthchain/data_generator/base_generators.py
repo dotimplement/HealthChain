@@ -26,7 +26,6 @@ from healthchain.fhir_resources.general_purpose_resources import (
     CodeableConceptModel,
     CodingModel,
 )
-
 from faker import Faker
 
 faker = Faker()
