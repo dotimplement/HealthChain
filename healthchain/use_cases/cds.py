@@ -153,7 +153,7 @@ class ClinicalDecisionSupport(BaseUseCase):
             return CDSResponse(cards=[])
 
         # TODO: can register multiple services and fetch with id
-        request_json = request.model_dump_json(exclude_none=True)
+        request_json = request.model_dump(exclude_none=True)
         signature = inspect.signature(self.service_api.func)
         assert (
             len(signature.parameters) == 2
@@ -165,6 +165,7 @@ class ClinicalDecisionSupport(BaseUseCase):
         #     print(name, param, param.annotation)
 
         result = self.service_api.func(self, request_json)
+        print(result)
 
         # TODO: could use llm to check and fix results here?
         if result is None:

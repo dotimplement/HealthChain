@@ -262,7 +262,7 @@ def decorator(service_config: Optional[Dict] = None) -> Callable:
                     # Get the function decorated with @api and register it to inject in service
                     if is_service_route(attr):
                         service_route_count += 1
-                        validate_single_registration(service_route_count, "service api")
+                        validate_single_registration(service_route_count, "service_api")
                         self.service_api = register_method(
                             self, attr, cls, name, "service_api"
                         )

@@ -26,7 +26,6 @@ def test_EncounterModel():
 
     assert encounter.resourceType == "Encounter"
     assert encounter.id_field is not None
-    assert encounter.text_field is not None
     assert encounter.status_field in (
         "planned",
         "in-progress",

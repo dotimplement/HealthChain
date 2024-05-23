@@ -3,7 +3,6 @@ from healthchain.data_generator.base_generators import (
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
-    generate_text_field,
 )
 from healthchain.fhir_resources.general_purpose_resources import (
     CodeableConceptModel,
@@ -151,7 +150,6 @@ class ConditionGenerator(BaseGenerator):
         encounter_reference = encounter_reference or "Encounter/123"
         # TODO - Check whether this is the correct way to handle params
         code = generator_registry.get("SnomedCodeGenerator").generate()
-        text = generate_text_field(free_text)
         return ConditionModel(
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
@@ -169,5 +167,4 @@ class ConditionGenerator(BaseGenerator):
                 "DateGenerator"
             ).generate(),  ## TODO: Constraint abatementDateTime to be after onsetDateTime
             recordedDate=generator_registry.get("DateGenerator").generate(),
-            text=text,
         )

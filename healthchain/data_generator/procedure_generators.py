@@ -1,6 +1,5 @@
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
-    generate_text_field,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
@@ -49,7 +48,6 @@ class ProcedureGenerator(BaseGenerator):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         code = generator_registry.get("ProcedureSnomedCodeGenerator").generate()
-        text = generate_text_field(free_text)
         return ProcedureModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
@@ -57,5 +55,4 @@ class ProcedureGenerator(BaseGenerator):
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),
-            text=text,
         )

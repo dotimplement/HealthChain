@@ -24,6 +24,11 @@ pre-commit = "^3.7.0"
 pytest-anyio = "^0.0.0"
 trio = "^0.25.0"
 
+
+[tool.poetry.scripts]
+healthchain = "healthchain.cli:main"
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

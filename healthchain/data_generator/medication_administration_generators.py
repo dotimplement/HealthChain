@@ -8,7 +8,6 @@ from healthchain.fhir_resources.general_purpose_resources import (
 )
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
-    generate_text_field,
     generator_registry,
     register_generator,
 )
@@ -41,14 +40,12 @@ class MedicationAdministrationGenerator(BaseGenerator):
         subject_reference: str,
         encounter_reference: str,
         constraints: Optional[list] = None,
-        free_text: Optional[list] = None,
     ):
         contained_medication = MedicationModel(
             code=generator_registry.get(
                 "MedicationRequestContainedGenerator"
             ).generate()
         )
-        text = generate_text_field(free_text)
         return MedicationAdministrationModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
@@ -56,7 +53,6 @@ class MedicationAdministrationGenerator(BaseGenerator):
             medication=CodeableReferenceModel(
                 reference=ReferenceModel(reference="Medication/123")
             ),
-            text=text,
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             authoredOn=generator_registry.get("DateGenerator").generate(),

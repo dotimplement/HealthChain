@@ -1,9 +1,14 @@
 from typing import List, Callable, Optional
 from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
 from healthchain.data_generator.base_generators import generator_registry
+from healthchain.fhir_resources.document_reference_resources import (
+    DocumentReferenceModel,
+)
+from healthchain.fhir_resources.general_purpose_resources import NarrativeModel
 from healthchain.base import Workflow
 from pydantic import BaseModel
 
+import random
 import json
 
 
@@ -22,7 +27,6 @@ workflow_mappings = {
 }
 
 # TODO: Add ordering and logic so that patient/encounter IDs are passed to subsequent generators
-# TODO: MAke use of value sets hard coded by tayto.
 # TODO: Some of the resources should be allowed to be multiplied
 
 
@@ -53,28 +57,51 @@ class DataGenerator:
             raise ValueError(f"Workflow {self.workflow} not found in mappings")
 
         if free_text_json is not None:
-            with open(free_text_json) as f:
-                free_text = json.load(f)
+            parsed_free_text = self.free_text_parser(free_text_json)
         else:
-            free_text = None
+            parsed_free_text = {self.workflow.value: []}
 
-        # converted_priorities = map_priorities_to_generators(priorities)
         for resource in self.mappings[self.workflow]:
-            if free_text is not None:
-                filtered_free_text = [
-                    x
-                    for x in free_text["resources"]
-                    if x["resourceType"] == resource["generator"].split("Generator")[0]
-                ]
-            else:
-                filtered_free_text = None
             generator_name = resource["generator"]
             generator = self.fetch_generator(generator_name)
-            result = generator.generate(
-                constraints=constraints, free_text=filtered_free_text
-            )
-            # print(result)
+            result = generator.generate(constraints=constraints)
+
             results.append(Bundle_EntryModel(resource=result))
+
+        print("############################")
+        print(self.workflow.value)
+        print(parsed_free_text.keys())
+        print(self.workflow.value in parsed_free_text.keys())
+        if (
+            self.workflow.value in parsed_free_text.keys()
+            and parsed_free_text[self.workflow.value]
+        ):
+            results.append(
+                Bundle_EntryModel(
+                    resource=random.choice(parsed_free_text[self.workflow.value])
+                )
+            )
         output = OutputDataModel(context={}, resources=BundleModel(entry=results))
-        self.data.append(output)
+        self.data = output
         return output
+
+    def free_text_parser(self, free_text: str) -> dict:
+        with open(free_text) as f:
+            free_text = json.load(f)
+
+        document_dict = {}
+
+        for x in free_text["resources"]:
+            # First parse x in to documentreferencemodel format
+            text = NarrativeModel(
+                status="generated",
+                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x["text"]}</div>',
+            )
+            doc = DocumentReferenceModel(text=text)  # TODO: Add more fields
+            # if key exists append to list, otherwise initialise with list
+            if x["workflow"] in document_dict.keys():
+                document_dict[x["workflow"]].append(doc)
+            else:
+                document_dict[x["workflow"]] = [doc]
+
+        return document_dict

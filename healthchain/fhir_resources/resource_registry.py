@@ -10,6 +10,7 @@ class ImplementedResourceRegistry(Enum):
     Practitioner: str = "Practitioner"
     Condition: str = "Condition"
     Procedure: str = "Procedure"
+    DocumentReference: str = "DocumentReference"
 
 
 class UnimplementedResourceRegistry(Enum):
@@ -60,7 +61,6 @@ class UnimplementedResourceRegistry(Enum):
     DeviceRequest: str = "DeviceRequest"
     DeviceUsage: str = "DeviceUsage"
     DiagnosticReport: str = "DiagnosticReport"
-    DocumentReference: str = "DocumentReference"
     Encounter: str = "Encounter"
     EncounterHistory: str = "EncounterHistory"
     Endpoint: str = "Endpoint"

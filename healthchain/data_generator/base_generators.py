@@ -25,9 +25,7 @@ from healthchain.fhir_resources.primitive_resources import (
 from healthchain.fhir_resources.general_purpose_resources import (
     CodeableConceptModel,
     CodingModel,
-    NarrativeModel,
 )
-from typing import List
 from faker import Faker
 
 faker = Faker()
@@ -60,18 +58,6 @@ class BaseGenerator:
     @staticmethod
     def generate():
         raise NotImplementedError("Each generator must implement a 'generate' method.")
-
-
-def generate_text_field(free_text: List[str]):
-    if free_text is None or len(free_text) == 0:
-        return NarrativeModel()
-    else:
-        free_text_choice = random.choice(free_text)
-        text = NarrativeModel(
-            status="generated",
-            div=f'<div xmlns="http://www.w3.org/1999/xhtml">{free_text_choice}</div>',
-        )
-        return text
 
 
 @register_generator

@@ -1,6 +1,5 @@
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
-    generate_text_field,
     generator_registry,
     register_generator,
 )
@@ -116,8 +115,7 @@ class HumanNameGenerator(BaseGenerator):
 @register_generator
 class PatientGenerator(BaseGenerator):
     @staticmethod
-    def generate(constraints: Optional[list] = None, free_text: Optional[list] = None):
-        text = generate_text_field(free_text)
+    def generate(constraints: Optional[list] = None):
         return PatientModel(
             resourceType="Patient",
             id=generator_registry.get("IdGenerator").generate(),
@@ -132,5 +130,4 @@ class PatientGenerator(BaseGenerator):
                 generator_registry.get("AddressGenerator").generate() for _ in range(1)
             ],  ## List of length 1 for simplicity
             maritalStatus=generator_registry.get("MaritalStatusGenerator").generate(),
-            text=text,
         )

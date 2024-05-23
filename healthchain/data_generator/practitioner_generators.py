@@ -1,6 +1,5 @@
 from healthchain.data_generator.base_generators import (
     BaseGenerator,
-    generate_text_field,
     generator_registry,
     register_generator,
 )
@@ -115,8 +114,7 @@ class Practitioner_CommunicationGenerator(BaseGenerator):
 @register_generator
 class PractitionerGenerator(BaseGenerator):
     @staticmethod
-    def generate(constraints: Optional[list] = None, free_text: Optional[list] = None):
-        text = generate_text_field(free_text)
+    def generate(constraints: Optional[list] = None):
         return PractitionerModel(
             id=stringModel(faker.uuid4()),
             active=booleanModel("true"),
@@ -132,5 +130,4 @@ class PractitionerGenerator(BaseGenerator):
             communication=[
                 generator_registry.get("Practitioner_CommunicationGenerator").generate()
             ],
-            text=text,
         )
