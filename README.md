@@ -85,7 +85,7 @@ streamlit streamlit-demo/app.py
 ## Contribute
 We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
 - 💡 Let's chat! [Discord](https://discord.gg/jG4UWCUh)
-- 🛠️ [Contribution Guidelines]()
+- 🛠️ [Contribution Guidelines](CONTRIBUTING.md)
 
 ## Acknowledgement
 This repository makes use of CDS Hooks developed by Boston Children’s Hospital.

@@ -197,12 +197,12 @@ from healthchain.data_generator import DataGenerator
 class MyCoolSandbox(ClinicalDecisionSupport):
     def __init__(self):
         self.data_generator = DataGenerator()
-    
+
     @hc.ehr(workflow="encounter-discharge", num=10)
     def load_data_in_client(self):
         self.data_generator.generate()
         return self.data_generator.data
-    
+
     @hc.api
     def llm_server(self, text: str):
         return {
@@ -234,7 +234,7 @@ healthchain my_sandbox.py
 
 ## Inspect generated data in Streamlit 🎈
 
-By default, data generated from your sandbox runs is saved at `./output/`. The streamlit dashboard is run separately and will assume this is where your data is saved. 
+By default, data generated from your sandbox runs is saved at `./output/`. The streamlit dashboard is run separately and will assume this is where your data is saved.
 
 To run the streamlit app:
 

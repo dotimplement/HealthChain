@@ -2,3 +2,4 @@
 
 ## Contribute
 
+[Contributing Guidelines](../../CONTRIBUTING.md)

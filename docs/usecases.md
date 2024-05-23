@@ -9,7 +9,7 @@
 | Triggered at certain events during a clinician's workflow, e.g. when a patient record is opened. | EHR  | The context of the event and FHIR resources that are requested by your service. e.g. patient ID, `Encounter` and `Patient`.  | “Cards” displaying text, actionable suggestions, or links to launch a [SMART](https://smarthealthit.org/) app from within the workflow.      |
 
 
-Each workflow has associated `context` and `prefetch` FHIR resource returned from it. 
+Each workflow has associated `context` and `prefetch` FHIR resource returned from it.
 
 If you use the `DataGenerator`, a pre-configured list of FHIR resources is randomly generated and placed in the `prefetch` field of a `CDSRequest`.
 
