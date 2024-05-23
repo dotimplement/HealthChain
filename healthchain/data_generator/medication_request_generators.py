@@ -25,7 +25,7 @@ faker = Faker()
 
 @register_generator
 class MedicationRequestContainedGenerator(CodeableConceptGenerator):
-    def generate(self, params: Optional[dict] = None):
+    def generate(self):
         return self.generate_from_valueset(MedicationRequestionMedication)
 
 

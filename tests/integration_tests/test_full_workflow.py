@@ -25,9 +25,6 @@ def test_run():
 
         @api
         def llm(self, text: str):
-            # result = self.chain.invoke(text)
-            # return result
-            print(text)
             request = json.loads(text)
             prefetch = request.get("prefetch")
             resource = prefetch.get("resource", "")
@@ -54,4 +51,4 @@ def test_run():
     }
     request = CDSRequest(**cds_dict)
     result = cds.llm(request)
-    print(result)
+    assert result["cards"][0]["summary"] == "This will be processed by llm"

@@ -1,4 +1,4 @@
-from typing import List, Callable, Optional
+from typing import Callable, Optional
 from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
 from healthchain.data_generator.base_generators import generator_registry
 from healthchain.fhir_resources.document_reference_resources import (
@@ -44,9 +44,8 @@ class DataGenerator:
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
 
-    def set_workflow(self, workflow: str, priorities: Optional[List[str]] = None):
+    def set_workflow(self, workflow: str):
         self.workflow = workflow
-        self.priorities = priorities
 
     def generate(
         self, constraints: Optional[list] = None, free_text_json: Optional[str] = None

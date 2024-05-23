@@ -2,11 +2,11 @@ from healthchain.fhir_resources.encounter_resources import (
     EncounterModel,
     Encounter_LocationModel,
 )
+from healthchain.fhir_resources.primitive_resources import dateTimeModel
 from healthchain.fhir_resources.general_purpose_resources import (
     CodingModel,
     CodeableConceptModel,
     PeriodModel,
-    dateTimeModel,
     ReferenceModel,
 )
 from healthchain.data_generator.base_generators import (

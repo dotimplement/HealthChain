@@ -105,10 +105,12 @@ class SnomedCodeGenerator(CodeableConceptGenerator):
         super().__init__()
 
     # @staticmethod
-    def generate(self, params: Optional[dict] = None):
-        if params is None:
+    def generate(self, constraints: Optional[list] = None):
+        # TODO: Factor out the code generation logic to a central place
+        constraints = constraints or []
+        if "complex-condition" not in constraints:
             return self.generate_from_valueset(ConditionCodeSimple)
-        elif params.get("code") == "complex":
+        elif "complex-condition" in constraints:
             return self.generate_from_valueset(ConditionCodeComplex)
 
 
@@ -144,12 +146,13 @@ class ConditionGenerator(BaseGenerator):
         subject_reference: Optional[str] = None,
         encounter_reference: Optional[str] = None,
         constraints: Optional[list] = None,
-        free_text: Optional[list] = None,
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         # TODO - Check whether this is the correct way to handle params
-        code = generator_registry.get("SnomedCodeGenerator").generate()
+        code = generator_registry.get("SnomedCodeGenerator").generate(
+            constraints=constraints
+        )
         return ConditionModel(
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
