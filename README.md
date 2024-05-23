@@ -13,10 +13,10 @@ pip install healthchain
 
 
 ## Features
-- [x] 🍱 Create and define sandbox testing rigs that comply with real EHRs API and data standards.
+- [x] 🍱 Create sandbox servers and clients that comply with real EHRs API and data standards.
 - [x] 🗃️ Generate synthetic FHIR resources or load your own data as free-text.
 - [x] 💾 Save generated request and response data for each sandbox run.
-- [x] 🎈 Streamlit dashboard to inspect rendered responses in a mock-EHR interface.
+- [x] 🎈 Streamlit dashboard to inspect generated data and responses.
 - [x] 🧪 Experiment with LLMs in a fully HL7 standard-compliant pipeline from day 1.
 
 ## Clinical Decision Support (CDS)
@@ -26,7 +26,7 @@ pip install healthchain
 
 **What information is sent**: the context of the event and FHIR resources that are requested by your service, for example, the patient ID and information on the encounter and conditions they are being seen for.
 
-**What information is returned**: “cards” displaying text, actionable suggestions, or links to launch a SMART app from within the workflow.
+**What information is returned**: “cards” displaying text, actionable suggestions, or links to launch a [SMART](https://smarthealthit.org/) app from within the workflow.
 
 **What you need to decide**: What data do I want my EHR client to send, and how will my service process this data.
 
@@ -83,8 +83,8 @@ streamlit streamlit-demo/app.py
 - [ ] 🚀 Use LLMs to parse configuration and modify integration code
 
 ## Contribute
-We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems! Our knowledge is only as strong as our numbers 💪.
-- 💡 Let's chat! [Discord]()
+We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
+- 💡 Let's chat! [Discord](https://discord.gg/jG4UWCUh)
 - 🛠️ [Contribution Guidelines]()
 
 ## Acknowledgement
