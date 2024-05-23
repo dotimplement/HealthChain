@@ -12,4 +12,5 @@ Note you need to download any libraries that you require separetly:
 pip install langchain
 pip install transformers
 pip install torch
+...
 ```

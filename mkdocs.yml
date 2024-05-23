@@ -11,17 +11,17 @@ nav:
   - Getting Started:
       - Installation: installation.md
       - Quickstart: quickstart.md
-      - Usage: usage.md
-      - License: license.md
+      - Use Cases: usecases.md
+      - Licence: license-page.md
   - Cookbook:
       - cookbook/index.md
   - Docs:
       - reference/index.md
   - API Reference:
       - api/index.md
-# plugins:
-#   - mkdocstrings
-#   - search
+  - Community:
+      - community/index.md
+
 copyright: dotimplement
 theme:
   name: material
@@ -45,6 +45,7 @@ theme:
 # Extensions
 markdown_extensions:
   - admonition
+  - tables
   - def_list
   - attr_list
   - md_in_html
@@ -59,9 +60,9 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  # - pymdownx.emoji:
-  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
-  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra_css:
   - stylesheets/extra.css
