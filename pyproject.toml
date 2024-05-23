@@ -1,10 +1,15 @@
 [tool.poetry]
-name = "HealthChain"
+name = "healthchain"
 version = "0.1.0"
 description = "Remarkably simple LLM prototyping and testing in healthcare context."
 authors = ["Adam Kells <adamjkells93@gmail.com>", "Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+
+
+[project.urls]
+"Homepage" = "https://github.com/dotimplement/HealthChain"
+"Repository" = "https://github.com/dotimplement/HealthChain"
 
 [tool.poetry.dependencies]
 python = "^3.11"
