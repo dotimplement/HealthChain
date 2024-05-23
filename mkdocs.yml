@@ -1,4 +1,4 @@
-site_name: Healthchain
+site_name: HealthChain 💫 🏥
 site_description: Simplify prototyping and testing NLP applications in a healthcare context.
 site_author: Jennifer Jiang-Kells
 
@@ -39,3 +39,43 @@ theme:
   palette:
     primary: white
     accent: blue
+# font:
+#     text: Roboto
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - def_list
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      noclasses: True
+      pygments_style: material
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
+  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - blog
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_submodules: true
+  - search
+  # - section-index
+  # - social:
+  #     cards_layout_options:
+  #       color: #173a58

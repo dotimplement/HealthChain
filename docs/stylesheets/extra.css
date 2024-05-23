@@ -1,0 +1,44 @@
+@font-face {
+    font-family: 'Source Code Pro Custom', monospace;
+    src: url(https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap);
+  }
+
+  :root > * {
+    --md-default-bg-color: #FFFFFF;
+    --md-code-bg-color: #2E3440;
+    --md-code-fg-color: #FFFFFF;
+    --md-text-font-family: "Roboto";
+    --md-code-font: "Source Code Pro Custom";
+    --md-default-fg-color--light: #D8DEE9;
+    --md-default-fg-color--lighter: #E5E9F0;
+    --md-default-fg-color--lightest: #ECEFF4;
+  }
+
+  h1.title {
+    color: #FFFFFF;
+    margin: 0px 0px 5px;
+  }
+
+  h2.subtitle {
+    margin: 5px 0px 25px;
+  }
+
+  .md-typeset {
+    line-height: 24px;
+    font-weight: 400;
+  }
+
+  .md-typeset h1 {
+    font-weight: bold;
+    color: #000000;
+  }
+
+  .md-typeset h2 {
+    font-weight: bold;
+    color: #000000;
+  }
+
+  .md-typeset h3 {
+    font-weight: bold;
+    color: #000000;
+  }

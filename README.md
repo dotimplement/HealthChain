@@ -9,15 +9,15 @@ Building applications that integrate in healthcare systems is complex, and so is
 ```bash
 pip install healthchain
 ```
-> ❗️🚧 This is a work in progress with a limited set of functionalities and resources implemented. Things might break. 💥 We are working towards a full release soon! 👀
+> 🚧 This is a work in progress with a limited set of functionalities and resources implemented. Things might break. 💥 We are working towards a full release soon! 👀
 
 
 ## Features
-- [x] 🍱 Create and define sandbox testing rigs that comply with real (very basic) EHRs API and data standards.
-- [x] 🗃️ Generate synthetic FHIR resources in your mock EHR instance or load your own data as free-text.
-- [x] 💾 Save generated request and response data for each sandbox run
+- [x] 🍱 Create and define sandbox testing rigs that comply with real EHRs API and data standards.
+- [x] 🗃️ Generate synthetic FHIR resources or load your own data as free-text.
+- [x] 💾 Save generated request and response data for each sandbox run.
 - [x] 🎈 Streamlit dashboard to inspect rendered responses in a mock-EHR interface.
-- [x] 🧪 Experiment with LLMs and health NLP models in a fully HL7 standard-compliant pipeline from day 1.
+- [x] 🧪 Experiment with LLMs in a fully HL7 standard-compliant pipeline from day 1.
 
 ## Clinical Decision Support (CDS)
 [CDS Hooks](https://cds-hooks.org/) is an [HL7](https://cds-hooks.hl7.org) published specification for clinical decision support.
@@ -28,7 +28,7 @@ pip install healthchain
 
 **What information is returned**: “cards” displaying text, actionable suggestions, or links to launch a SMART app from within the workflow.
 
-**What you need to decide**: What data do I want my EHR client to send, and how will my service process this data (this is where you do the fun stuff 🤖).
+**What you need to decide**: What data do I want my EHR client to send, and how will my service process this data.
 
 
 ```python
@@ -44,7 +44,7 @@ class myCDS(ClinicalDecisionSupport):
         self.data_generator = DataGenerator()
 
     # Sets up an instance of a mock EHR client of the specified workflow
-    @hc.ehr(workflow="patient-view", num=1)
+    @hc.ehr(workflow="patient-view")
     def load_data(self):
         self.data_generator.generate()
         return self.data_generator.data
@@ -76,6 +76,7 @@ streamlit streamlit-demo/app.py
 ## Road Map
 - [ ] 📝 Adding Clinical Documentation use case: CDA data generation, NoteReader API, and structured data extraction applications
 - [ ] 🎛️ Ability to test different EHR backend data configurations in client
+- [ ] 📦 Versioning of configurations and model artifacts
 - [ ] ✨ Improvements to synthetic data generator methods
 - [ ] 👾 Add proper frontend for EHR client which renders more complex cards
 - [ ] 🐳 Serve with Docker containers
