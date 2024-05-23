@@ -149,7 +149,6 @@ class ConditionGenerator(BaseGenerator):
     ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
-        # TODO - Check whether this is the correct way to handle params
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints
         )
