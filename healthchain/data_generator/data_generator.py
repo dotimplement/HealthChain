@@ -68,10 +68,6 @@ class DataGenerator:
 
             results.append(Bundle_EntryModel(resource=result))
 
-        print("############################")
-        print(self.workflow.value)
-        print(parsed_free_text.keys())
-        print(self.workflow.value in parsed_free_text.keys())
         if (
             self.workflow.value in parsed_free_text.keys()
             and parsed_free_text[self.workflow.value]
