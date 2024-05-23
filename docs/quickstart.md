@@ -82,7 +82,7 @@ If you are using a model that requires initialisation steps, we recommend you in
     ```
 === "Langchain"
     ```bash
-    pip install langchain langchain_openai
+    pip install langchain langchain-openai
     ```
     ```python
     import healthchain as hc
