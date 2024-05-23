@@ -170,6 +170,11 @@ class ConditionModel(BaseModel):
         alias="encounter",
         description="The Encounter during which this Condition was created or to which the creation of this record is tightly associated.",
     )
+    onsetDateTime_field: dateTimeModel = Field(
+        default=None,
+        alias="onsetDateTime",
+        description="Estimated or actual date or date-time  the condition began, in the opinion of the clinician.",
+    )
     onsetAge_field: AgeModel = Field(
         default=None,
         alias="onsetAge",
@@ -184,6 +189,11 @@ class ConditionModel(BaseModel):
         default=None,
         alias="onsetRange",
         description="Estimated or actual date or date-time  the condition began, in the opinion of the clinician.",
+    )
+    abatementDateTime_field: dateTimeModel = Field(
+        default=None,
+        alias="abatementDateTime",
+        description="The date or estimated date that the condition resolved or went into remission. This is called abatement because of the many overloaded connotations associated with remission or resolution - Some conditions, such as chronic conditions, are never really resolved, but they can abate.",
     )
     abatementAge_field: AgeModel = Field(
         default=None,

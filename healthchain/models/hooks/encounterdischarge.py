@@ -1,6 +1,10 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .basehookcontext import BaseHookContext
+from ...utils.idgenerator import IdGenerator
+
+
+id_generator = IdGenerator(resource_types=["Practitioner", "PractitionerRole"])
 
 
 class EncounterDischargeContext(BaseHookContext):
@@ -21,12 +25,24 @@ class EncounterDischargeContext(BaseHookContext):
     """
 
     userId: str = Field(
-        ...,
+        default_factory=id_generator.generate_random_user_id,
+        pattern=r"^(Practitioner|PractitionerRole)/[^\s]+$",
         description="The ID of the current user, expected to be in the format 'Practitioner/123'.",
     )
     patientId: str = Field(
-        ..., description="The FHIR Patient.id of the patient being discharged."
+        default_factory=id_generator.generate_random_patient_id,
+        description="The FHIR Patient.id of the patient being discharged.",
     )
     encounterId: str = Field(
-        ..., description="The FHIR Encounter.id of the encounter being ended."
+        default_factory=id_generator.generate_random_encounter_id,
+        description="The FHIR Encounter.id of the encounter being ended.",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_unexpected_keys(cls, values):
+        allowed_keys = {"userId", "patientId", "encounterId"}
+        unexpected_keys = set(values) - allowed_keys
+        if unexpected_keys:
+            raise ValueError(f"Unexpected keys provided: {unexpected_keys}")
+        return values

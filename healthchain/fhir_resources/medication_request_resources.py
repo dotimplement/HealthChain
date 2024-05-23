@@ -153,6 +153,12 @@ class DosageModel(BaseModel):
     )
 
 
+class MedicationModel(BaseModel):
+    code_field: CodeableConceptModel = Field(
+        default=None, alias="code", description="Identifies the item being prescribed."
+    )
+
+
 class MedicationRequestModel(BaseModel):
     resourceType_field: str = "MedicationRequest"
     id_field: idModel = Field(
@@ -180,7 +186,11 @@ class MedicationRequestModel(BaseModel):
         alias="text",
         description="A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it clinically safe for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.",
     )
-    # contained_field: List[ResourceListModel] = Field(default_factory=list, alias="contained", description="These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.")
+    contained_field: List[MedicationModel] = Field(
+        default_factory=list,
+        alias="contained",
+        description="These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.",
+    )
     extension_field: List[ExtensionModel] = Field(
         default_factory=list,
         alias="extension",

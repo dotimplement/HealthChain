@@ -1,7 +1,11 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import Optional, Dict, Any
 
 from .basehookcontext import BaseHookContext
+from ...utils.idgenerator import IdGenerator
+
+
+id_generator = IdGenerator(resource_types=["Practitioner", "PractitionerRole"])
 
 
 class OrderSignContext(BaseHookContext):
@@ -28,17 +32,27 @@ class OrderSignContext(BaseHookContext):
     # TODO: validate draftOrders
 
     userId: str = Field(
+        default_factory=id_generator.generate_random_user_id,
         pattern=r"^(Practitioner|PractitionerRole)/[^\s]+$",
         description="The ID of the current user in the format [ResourceType]/[id].",
     )
     patientId: str = Field(
-        ...,
+        default_factory=id_generator.generate_random_patient_id,
         description="The FHIR Patient.id representing the current patient in context.",
     )
     encounterId: Optional[str] = Field(
-        None,
+        default_factory=id_generator.generate_random_encounter_id,
         description="The FHIR Encounter.id of the current encounter, if applicable.",
     )
     draftOrders: Dict[str, Any] = Field(
         ..., description="A Bundle of FHIR request resources with a draft status."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_unexpected_keys(cls, values):
+        allowed_keys = {"userId", "patientId", "encounterId", "draftOrders"}
+        unexpected_keys = set(values) - allowed_keys
+        if unexpected_keys:
+            raise ValueError(f"Unexpected keys provided: {unexpected_keys}")
+        return values

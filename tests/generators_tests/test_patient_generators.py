@@ -1,4 +1,4 @@
-from healthchain.data_generator.patient_generator import (
+from healthchain.data_generator.patient_generators import (
     PatientGenerator,
     HumanNameGenerator,
 )

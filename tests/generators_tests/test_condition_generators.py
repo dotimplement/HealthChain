@@ -2,7 +2,7 @@ from healthchain.data_generator.condition_generators import (
     ClinicalStatusGenerator,
     VerificationStatusGenerator,
     CategoryGenerator,
-    ConditionModelGenerator,
+    ConditionGenerator,
 )
 
 
@@ -38,8 +38,8 @@ def test_CategoryGenerator():
     assert category.coding_field[0].code_field in ("55607006", "404684003")
 
 
-def test_ConditionModelGenerator():
-    condition_model = ConditionModelGenerator.generate("Patient/456", "Encounter/789")
+def test_ConditionGenerator():
+    condition_model = ConditionGenerator.generate("Patient/456", "Encounter/789")
     assert condition_model.resourceType == "Condition"
     assert condition_model.subject_field.reference_field == "Patient/456"
     assert condition_model.encounter_field.reference_field == "Encounter/789"

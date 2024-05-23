@@ -22,10 +22,6 @@ class ClinicalDocumentation(BaseUseCase):
     def description(self) -> str:
         return "Clinical documentation (NoteReader)"
 
-    def _validate_data(self, data, workflow: Workflow) -> bool:
-        # do something to validate cda data and the workflow it's for
-        return True
-
     @validate_workflow(UseCaseMapping.ClinicalDocumentation)
     def construct_request(self, data, workflow: Workflow) -> Dict:
         if self._validate_data(data, workflow):

@@ -1,9 +1,11 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 from typing import Optional, List, Dict, Any
 
 from ..hooks.basehookcontext import BaseHookContext
+from ...utils.idgenerator import IdGenerator
 
-# TODO: add docstrings
+
+id_generator = IdGenerator()
 
 
 class FHIRAuthorization(BaseModel):
@@ -31,7 +33,7 @@ class CDSRequest(BaseModel):
     """
 
     hook: str
-    hookInstance: str
+    hookInstance: str = Field(default_factory=id_generator.generate_random_uuid)
     context: BaseHookContext
     fhirServer: Optional[HttpUrl] = None
     fhirAuthorization: Optional[FHIRAuthorization] = (

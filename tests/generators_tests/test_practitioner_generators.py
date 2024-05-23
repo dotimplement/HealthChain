@@ -1,4 +1,4 @@
-from healthchain.data_generator.practitioner_generator import (
+from healthchain.data_generator.practitioner_generators import (
     PractitionerGenerator,
     Practitioner_QualificationGenerator,
     Practitioner_CommunicationGenerator,

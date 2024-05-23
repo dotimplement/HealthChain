@@ -16,6 +16,8 @@ from healthchain.fhir_resources.primitive_resources import (
     idModel,
     instantModel,
     timeModel,
+    integer64Model,
+    urlModel,
 )
 
 
@@ -568,4 +570,80 @@ class AnnotationModel(BaseModel):
         default=None,
         alias="text",
         description="The text of the annotation in markdown format.",
+    )
+
+
+class AttachmentModel(BaseModel):
+    id_field: stringModel = Field(
+        default=None,
+        alias="id",
+        description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+    )
+    extension_field: List[ExtensionModel] = Field(
+        default_factory=list,
+        alias="extension",
+        description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+    )
+    contentType_field: codeModel = Field(
+        default=None,
+        alias="contentType",
+        description="Identifies the type of the data in the attachment and allows a method to be chosen to interpret or render the data. Includes mime type parameters such as charset where appropriate.",
+    )
+    language_field: codeModel = Field(
+        default=None,
+        alias="language",
+        description="The human language of the content. The value can be any valid value according to BCP 47.",
+    )
+    data_field: stringModel = Field(
+        default=None,
+        alias="data",
+        description="The actual data of the attachment - a sequence of bytes, base64 encoded.",
+    )
+    url_field: urlModel = Field(
+        default=None,
+        alias="url",
+        description="A location where the data can be accessed.",
+    )
+    size_field: integer64Model = Field(
+        default=None,
+        alias="size",
+        description="The number of bytes of data that make up this attachment (before base64 encoding, if that is done).",
+    )
+    hash_field: stringModel = Field(
+        default=None,
+        alias="hash",
+        description="The calculated hash of the data using SHA-1. Represented using base64.",
+    )
+    title_field: stringModel = Field(
+        default=None,
+        alias="title",
+        description="A label or set of text to display in place of the data.",
+    )
+    creation_field: dateTimeModel = Field(
+        default=None,
+        alias="creation",
+        description="The date that the attachment was first created.",
+    )
+    height_field: positiveIntModel = Field(
+        default=None,
+        alias="height",
+        description="Height of the image in pixels (photo/video).",
+    )
+    width_field: positiveIntModel = Field(
+        default=None,
+        alias="width",
+        description="Width of the image in pixels (photo/video).",
+    )
+    frames_field: positiveIntModel = Field(
+        default=None,
+        alias="frames",
+        description="The number of frames in a photo. This is used with a multi-page fax, or an imaging acquisition context that takes multiple slices in a single image, or an animated gif. If there is more than one frame, this SHALL have a value in order to alert interface software that a multi-frame capable rendering widget is required.",
+    )
+    duration_field: decimalModel = Field(
+        default=None,
+        alias="duration",
+        description="The duration of the recording in seconds - for audio and video.",
+    )
+    pages_field: positiveIntModel = Field(
+        default=None, alias="pages", description="The number of pages when printed."
     )

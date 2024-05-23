@@ -21,6 +21,7 @@ from healthchain.fhir_resources.patient_resources import (
     ContactPointModel,
     AddressModel,
 )
+from typing import Optional
 from faker import Faker
 
 
@@ -77,6 +78,7 @@ class AddressGenerator(BaseGenerator):
 
 @register_generator
 class MaritalStatusGenerator(BaseGenerator):
+    @staticmethod
     def generate():
         marital_status_dict = {
             "D": "Divorced",
@@ -113,7 +115,7 @@ class HumanNameGenerator(BaseGenerator):
 @register_generator
 class PatientGenerator(BaseGenerator):
     @staticmethod
-    def generate():
+    def generate(constraints: Optional[list] = None):
         return PatientModel(
             resourceType="Patient",
             id=generator_registry.get("IdGenerator").generate(),

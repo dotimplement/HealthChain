@@ -3,6 +3,10 @@ from typing import List, Dict, Optional, Any
 from typing_extensions import Self
 
 from .basehookcontext import BaseHookContext
+from ...utils.idgenerator import IdGenerator
+
+
+id_generator = IdGenerator(resource_types=["Practitioner", "PractitionerRole"])
 
 
 class OrderSelectContext(BaseHookContext):
@@ -31,15 +35,16 @@ class OrderSelectContext(BaseHookContext):
     # TODO: validate selection and FHIR Bundle resource
 
     userId: str = Field(
+        default_factory=id_generator.generate_random_user_id,
         pattern=r"^(Practitioner|PractitionerRole)/[^\s]+$",
         description="An identifier of the current user in the format [ResourceType]/[id].",
     )
     patientId: str = Field(
-        ...,
+        default_factory=id_generator.generate_random_patient_id,
         description="The FHIR Patient.id representing the current patient in context.",
     )
     encounterId: Optional[str] = Field(
-        None,
+        default_factory=id_generator.generate_random_encounter_id,
         description="The FHIR Encounter.id of the current encounter, if applicable.",
     )
     selections: List[str] = Field(
@@ -48,6 +53,21 @@ class OrderSelectContext(BaseHookContext):
     draftOrders: Dict[str, Any] = Field(
         ..., description="A Bundle of FHIR request resources with a draft status."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_unexpected_keys(cls, values):
+        allowed_keys = {
+            "userId",
+            "patientId",
+            "encounterId",
+            "selections",
+            "draftOrders",
+        }
+        unexpected_keys = set(values) - allowed_keys
+        if unexpected_keys:
+            raise ValueError(f"Unexpected keys provided: {unexpected_keys}")
+        return values
 
     @model_validator(mode="after")
     def validate_selections(self) -> Self:

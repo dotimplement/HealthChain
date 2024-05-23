@@ -2,13 +2,17 @@ from healthchain.data_generator.base_generators import (
     BaseGenerator,
     generator_registry,
     register_generator,
+    CodeableConceptGenerator,
 )
 from healthchain.fhir_resources.general_purpose_resources import (
-    CodeableConceptModel,
-    CodingModel,
     ReferenceModel,
 )
 from healthchain.fhir_resources.procedure_resources import ProcedureModel
+from healthchain.data_generator.value_sets.procedure import (
+    ProcedureCodeSimple,
+    ProcedureCodeComplex,
+)
+
 from typing import Optional
 from faker import Faker
 
@@ -24,29 +28,32 @@ class EventStatusGenerator(BaseGenerator):
 
 
 @register_generator
-class ProcedureSnomedCodeGenerator(BaseGenerator):
-    @staticmethod
-    def generate():
-        return CodeableConceptModel(
-            coding=[
-                CodingModel(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(elements=("123456", "654321")),
-                )
-            ]
-        )
+class ProcedureSnomedCodeGenerator(CodeableConceptGenerator):
+    def generate(self, constraints: Optional[list] = None):
+        constraints = constraints or []
+        if "complex-procedure" not in constraints:
+            return self.generate_from_valueset(ProcedureCodeSimple)
+        elif "complex-procedure" in constraints:
+            return self.generate_from_valueset(ProcedureCodeComplex)
 
 
 @register_generator
-class ProcedureModelGenerator(BaseGenerator):
+class ProcedureGenerator(BaseGenerator):
     @staticmethod
-    def generate(subject_reference: Optional[str], encounter_reference: Optional[str]):
+    def generate(
+        subject_reference: Optional[str] = None,
+        encounter_reference: Optional[str] = None,
+        constraints: Optional[list] = None,
+    ):
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
+        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(
+            constraints=constraints
+        )
         return ProcedureModel(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
-            code=generator_registry.get("ProcedureSnomedCodeGenerator").generate(),
+            code=code,
             subject=ReferenceModel(reference=subject_reference),
             encounter=ReferenceModel(reference=encounter_reference),
             occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),
