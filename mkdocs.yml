@@ -42,6 +42,14 @@ theme:
 # font:
 #     text: Roboto
 
+
+# Additional configuration
+extra:
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_TAG
+
+
 # Extensions
 markdown_extensions:
   - admonition
