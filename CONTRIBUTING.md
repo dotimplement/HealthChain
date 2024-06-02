@@ -48,19 +48,25 @@ We believe that every contribution, big or small, makes a difference. Thank you 
     git checkout -b my-feature-branch
     ```
 
-6. Make your changes and commit them with descriptive commit messages.
+6. Pre-commit is a package for checking and auto-formatting code to have a consistent style. If you don't have pre-commit installed locally then you may need to follow the instructions [here](https://pre-commit.com/). You can then install our hooks by running:
+
+    ```shell
+    pre-commit install
+    ```
+
+7. Make your changes and commit them with descriptive commit messages.
 
     ```shell
     git commit -m "Add new feature to do X"
     ```
 
-7. Push your changes to your forked repository.
+8. Push your changes to your forked repository.
 
     ```shell
     git push origin my-feature-branch
     ```
 
-8. Open a pull request on the original repository.
+9. Open a pull request on the original repository.
 
 
 ## Testing
