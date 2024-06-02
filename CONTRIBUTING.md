@@ -1,7 +1,7 @@
 # Contributing
 > If you're reading this, you're early! We're still finalising our guidelines as this is an early release so please [drop us a message](https://discord.gg/jG4UWCUh) instead!
 >
-ABC
+
 First of all, thank you for being interested in contributing to HealthChain, we welcome contributions of all kinds! Listed below are some of the ways you can get involved.
 
 ## Reporting Issues
