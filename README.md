@@ -4,12 +4,12 @@
 
 Simplify prototyping and testing AI/NLP applications in a healthcare context 💫 🏥.
 
-Building applications that integrate in healthcare systems is complex, and so is designing reliable, reactive algorithms involving text and structured data. Let's try to change that.
+Building applications that integrate in healthcare systems is complex, and so is designing reliable, reactive algorithms involving unstructured data. Let's try to change that.
 
 ```bash
 pip install healthchain
 ```
-> 🚧 This is a work in progress with a limited set of functionalities and resources implemented. Things might break. 💥 We are working towards a full release soon! 👀
+> 🚧 This is a work in progress with a limited set of functionalities and resources implemented. Things might break. 💥 We are working towards a full release soon - please star ⭐️ or watch 👀 to stay tuned!
 
 
 ## Features
@@ -18,6 +18,12 @@ pip install healthchain
 - [x] 💾 Save generated request and response data for each sandbox run.
 - [x] 🎈 Streamlit dashboard to inspect generated data and responses.
 - [x] 🧪 Experiment with LLMs in a fully HL7 standard-compliant pipeline from day 1.
+
+## Why use HealthChain?
+- **[Most healthcare data is unstructured](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/)** - HealthChain is built for real-time AI/NLP applications that deal with realistic healthcare data.
+-  **Scaling EHR integrations is a manual and tedious process** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
+-  **End-to-end testing of complex pipelines** - test the real-world resilience and reliability of your whole system, not just your models.
+- **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
 
 ## Clinical Decision Support (CDS)
 [CDS Hooks](https://cds-hooks.org/) is an [HL7](https://cds-hooks.hl7.org) published specification for clinical decision support.
@@ -64,7 +70,7 @@ Then run:
 ```bash
 healthchain mycds.py
 ```
-This will populate your EHR client with the data generation method you have defined, send requests to your server for processing, and save the data in `./output' by default.
+This will populate your EHR client with the data generation method you have defined, send requests to your server for processing, and save the data in `./output` by default.
 
 ### Streamlit dashboard
 Note this is currently not meant to be a frontend to the EHR client, so you will have to run it separately from the sandbox application.
@@ -75,12 +81,12 @@ streamlit streamlit-demo/app.py
 
 ## Road Map
 - [ ] 📝 Adding Clinical Documentation use case: CDA data generation, NoteReader API, and structured data extraction applications
-- [ ] 🎛️ Ability to test different EHR backend data configurations in client
-- [ ] 📦 Versioning of configurations and model artifacts
+- [ ] 🎛️ Version and test different EHR backend configurations
+- [ ] 🤖 Integrations with popular LLM and NLP libraries
+- [ ] ❓ Evaluation framework for use cases
 - [ ] ✨ Improvements to synthetic data generator methods
-- [ ] 👾 Add proper frontend for EHR client which renders more complex cards
-- [ ] 🐳 Serve with Docker containers
-- [ ] 🚀 Use LLMs to parse configuration and modify integration code
+- [ ] 👾 Add frontend for EHR client
+- [ ] 🚀 Production deployment options
 
 ## Contribute
 We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
