@@ -9,20 +9,18 @@ Building applications that integrate in healthcare systems is complex, and so is
 ```bash
 pip install healthchain
 ```
-> 🚧 This is a work in progress with a limited set of functionalities and resources implemented. Things might break. 💥 We are working towards a full release soon - please star ⭐️ or watch 👀 to stay tuned!
-
 
 ## Features
 - [x] 🍱 Create sandbox servers and clients that comply with real EHRs API and data standards.
 - [x] 🗃️ Generate synthetic FHIR resources or load your own data as free-text.
 - [x] 💾 Save generated request and response data for each sandbox run.
 - [x] 🎈 Streamlit dashboard to inspect generated data and responses.
-- [x] 🧪 Experiment with LLMs in a fully HL7 standard-compliant pipeline from day 1.
+- [x] 🧪 Experiment with LLMs in an end-to-end standard compliant pipeline from day 1.
 
 ## Why use HealthChain?
-- **[Most healthcare data is unstructured](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/)** - HealthChain is built for real-time AI/NLP applications that deal with realistic healthcare data.
--  **Scaling EHR integrations is a manual and tedious process** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
--  **End-to-end testing of complex pipelines** - test the real-world resilience and reliability of your whole system, not just your models.
+-  **Scaling EHR integrations is a manual and time-consuming process** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
+-  **Evaluating the behaviour of AI in complex systems is a difficult and labor-intensive task** - HealthChain provides a framework to test the real-world resilience of your whole system, not just your models.
+-  **[Most healthcare data is unstructured](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/)** - HealthChain is optimised for real-time AI/NLP applications that deal with realistic healthcare data.
 - **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
 
 ## Clinical Decision Support (CDS)
@@ -80,12 +78,12 @@ streamlit streamlit-demo/app.py
 ```
 
 ## Road Map
-- [ ] 📝 Adding Clinical Documentation use case: CDA data generation, NoteReader API, and structured data extraction applications
+- [ ] 📝 Adding Clinical Documentation use case
 - [ ] 🎛️ Version and test different EHR backend configurations
 - [ ] 🤖 Integrations with popular LLM and NLP libraries
-- [ ] ❓ Evaluation framework for use cases
+- [ ] ❓ Evaluation framework for pipelines and use cases
 - [ ] ✨ Improvements to synthetic data generator methods
-- [ ] 👾 Add frontend for EHR client
+- [ ] 👾 Frontend demo for EHR client
 - [ ] 🚀 Production deployment options
 
 ## Contribute
