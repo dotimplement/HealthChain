@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 Then run:
 ```bash
-healthchain mycds.py
+healthchain run mycds.py
 ```
 This will populate your EHR client with the data generation method you have defined, send requests to your server for processing, and save the data in `./output` by default.
 
