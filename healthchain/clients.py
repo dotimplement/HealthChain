@@ -58,12 +58,27 @@ class EHRClient(BaseClient):
             json_responses: List[Dict] = []
             for request in self.request_data:
                 try:
+                    # TODO: pass timeout as config
+                    timeout = httpx.Timeout(10.0, read=None)
                     response = await client.post(
-                        url=url, json=request.model_dump(exclude_none=True)
+                        url=url,
+                        json=request.model_dump(exclude_none=True),
+                        timeout=timeout,
                     )
+                    response.raise_for_status()
                     json_responses.append(response.json())
-                except Exception as e:
-                    log.error(f"Error sending request: {e}")
+                except httpx.HTTPStatusError as exc:
+                    log.error(
+                        f"Error response {exc.response.status_code} while requesting {exc.request.url!r}."
+                    )
+                    json_responses.append({})
+                except httpx.TimeoutException as exc:
+                    log.error(f"Request to {exc.request.url!r} timed out!")
+                    json_responses.append({})
+                except httpx.RequestError as exc:
+                    log.error(
+                        f"An error occurred while requesting {exc.request.url!r}."
+                    )
                     json_responses.append({})
 
         return json_responses
