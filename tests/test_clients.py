@@ -30,8 +30,16 @@ async def test_send_request(ehr_client):
 @pytest.mark.anyio
 async def test_logging_on_send_request_error(caplog, ehr_client):
     with patch("healthchain.clients.httpx.AsyncClient.post") as mock_post:
-        mock_post.side_effect = Exception("Failed to connect")
-        ehr_client.request_data = [Mock(model_dump_json=Mock(return_value="{}"))]
+        mock_post.return_value = Mock()
+        mock_post.return_value.response.status_code = 400
+        mock_post.return_value.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Bad Request",
+            request=Mock(url="http://fakeurl.com"),
+            response=Mock(status_code="400"),
+        )
+        ehr_client.request_data = [
+            Mock(model_dump_json=Mock(return_value="{'request': 'success'}"))
+        ]
         responses = await ehr_client.send_request("http://fakeurl.com")
-        assert "Error sending request: Failed to connect" in caplog.text
+        assert "Error response 400 while requesting 'http://fakeurl.com" in caplog.text
         assert {} in responses
