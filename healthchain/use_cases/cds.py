@@ -66,7 +66,9 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         request = CDSRequest(
             hook=workflow.value,
             context=context,
-            prefetch=data.resources.model_dump(exclude_none=True, by_alias=True),
+            prefetch=data.resources.model_dump(
+                exclude_none=True, exclude_unset=True, by_alias=True
+            ),
         )
 
         return request
@@ -153,7 +155,9 @@ class ClinicalDecisionSupport(BaseUseCase):
             return CDSResponse(cards=[])
 
         # TODO: can register multiple services and fetch with id
-        request_json = request.model_dump_json(exclude_none=True, by_alias=True)
+        request_json = request.model_dump_json(
+            exclude_none=True, exclude_unset=True, exclude_defaults=True, by_alias=True
+        )
         signature = inspect.signature(self.service_api.func)
         assert (
             len(signature.parameters) == 2
