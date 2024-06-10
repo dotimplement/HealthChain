@@ -15,7 +15,7 @@ pip install healthchain
 - [x] 🗃️ Generate synthetic FHIR resources or load your own data as free-text.
 - [x] 💾 Save generated request and response data for each sandbox run.
 - [x] 🎈 Streamlit dashboard to inspect generated data and responses.
-- [x] 🧪 Experiment with LLMs in an end-to-end standard compliant pipeline from day 1.
+- [x] 🧪 Experiment with LLMs in an end-to-end HL7-compliant pipeline from day 1.
 
 ## Why use HealthChain?
 -  **Scaling EHR integrations is a manual and time-consuming process** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
