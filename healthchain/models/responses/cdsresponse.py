@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 from typing import Optional, List, Dict
 from typing_extensions import Self
 
@@ -173,14 +173,6 @@ class Card(BaseModel):
         if self.suggestions is not None:
             assert self.selectionBehavior, f"'selectionBehavior' must be given if 'suggestions' is present! Choose from {[v for v in SelectionBehaviorEnum.value]}"
         return self
-
-    @field_validator("detail")
-    @classmethod
-    def validate_markdown(cls, v: str) -> str:
-        if v is not None:
-            if not (v.startswith("#") or v.startswith("*")):
-                raise ValueError("Detail must be in GitHub Flavored Markdown format.")
-        return v
 
 
 class CDSResponse(BaseModel):

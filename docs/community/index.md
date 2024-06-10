@@ -2,4 +2,4 @@
 
 ## Contribute
 
-[Contributing Guidelines](../../CONTRIBUTING.md)
+[Contributing Guidelines](https://github.com/dotimplement/HealthChain/blob/main/CONTRIBUTING.md)
