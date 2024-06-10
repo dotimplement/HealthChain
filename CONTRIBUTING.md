@@ -1,49 +1,73 @@
-# Contributing 
-> If you're reading this, you're early! We're still finalising our guidelines as this is an early release so I asked ChatGPT to write some guidelines as a placeholder. [Drop us a message](https://discord.gg/jG4UWCUh) instead!
+# Contributing
+> If you're reading this, you're early! We're still finalising our guidelines as this is an early release so please [drop us a message](https://discord.gg/jG4UWCUh) instead!
 >
 
-Thank you for considering contributing to this project! Here are some guidelines to help you get started.
+First of all, thank you for being interested in contributing to HealthChain, we welcome contributions of all kinds! Listed below are some of the ways you can get involved.
 
+## Reporting Issues
 
-## How to Report a Bug
+Found a bug? Have a suggestion for a new feature? You can help us improve by:
 
-If you find a bug, please create an issue on GitHub. Include as much detail as possible:
-- A clear and descriptive title
-- Steps to reproduce the issue
-- Expected and actual results
-- Any relevant screenshots or logs
+- **Submitting Bug Reports**: Clearly describe the issue, including steps to reproduce it, the expected outcome, and any relevant screenshots or logs.
+- **Suggesting Enhancements**: Share your ideas for new features or improvements. Please provide as much detail as possible to help us understand your vision.
 
-## How to Suggest a Feature
+## Improving Documentation
 
-If you have an idea for a new feature, please open an issue on GitHub with the following information:
-- A clear and descriptive title
-- A detailed description of the proposed feature
-- Any other information that might be useful
+Good documentation helps others understand and use our project. You can contribute by:
+
+- **Updating Existing Documentation**: Fix typos, clarify instructions, and ensure all information is up to date.
+- **Creating New Documentation**: Write new guides, tutorials, or examples that help users and developers get the most out of our project.
+
+## Writing Code
+
+If you're a developer, there are many ways you can contribute code:
+
+- **Fixing Bugs**: Look through the issue tracker and find bugs that you can fix. Be sure to reference the issue number in your commit messages.
+- **Implementing Features**: Work on new features or enhancements. Discuss your ideas with the maintainers first to make sure they align with the project's goals.
+- **Improving Tests**: Increase test coverage and ensure the codebase is robust and reliable.
+
+## Join Our Discord
+
+Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/jG4UWCUh) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
+
+We believe that every contribution, big or small, makes a difference. Thank you for being a part of our community!
 
 ## How to Contribute Code
 
-1. Fork the repository to your own GitHub account.
+1. Fork the repository to your own GitHub account. For more details check out [github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+
 2. Clone the forked repository to your local machine.
-3. Create a new branch for your feature or bugfix.
-   ```sh
-   git checkout -b my-feature-branch
-   ```
-4. Make your changes and commit them with descriptive commit messages.
-   ```sh
-   git commit -m "Add new feature to do X"
-   ```
-5. Push your changes to your forked repository.
-   ```sh
-   git push origin my-feature-branch
-   ```
-6. Open a pull request on the original repository.
 
-## Style Guide
+3. Run `poetry install` to install all the necessary dependencies.
 
-Please follow the project's coding style:
-- Use meaningful variable and function names.
-- Write comments to explain complex code.
-- Ensure your code is formatted consistently.
+4. Try running `poetry run pytest` to check that all is working as expected.
+
+5. Create a new branch for your feature or bugfix.
+
+    ```shell
+    git checkout -b my-feature-branch
+    ```
+
+6. Pre-commit is a package for checking and auto-formatting code to have a consistent style. If you don't have pre-commit installed locally then you may need to follow the instructions [here](https://pre-commit.com/). You can then install our hooks by running:
+
+    ```shell
+    pre-commit install
+    ```
+
+7. Make your changes and commit them with descriptive commit messages.
+
+    ```shell
+    git commit -m "Add new feature to do X"
+    ```
+
+8. Push your changes to your forked repository.
+
+    ```shell
+    git push origin my-feature-branch
+    ```
+
+9. Open a pull request on the original repository.
+
 
 ## Testing
 

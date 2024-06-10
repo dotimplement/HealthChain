@@ -49,13 +49,13 @@ class myCDS(ClinicalDecisionSupport):
 
     # Sets up an instance of a mock EHR client of the specified workflow
     @hc.ehr(workflow="patient-view")
-    def load_data(self):
+    def ehr_database_client(self):
         self.data_generator.generate()
         return self.data_generator.data
 
     # Define your application logic here
     @hc.api
-    def service(self, request: str):
+    def llm_server(self, request: str):
         result = "Hello " + request["patient_name"]
         return result
 
