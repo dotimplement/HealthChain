@@ -9,7 +9,7 @@ from healthchain.base import Workflow
 from pydantic import BaseModel
 
 import random
-import json
+import csv
 
 
 workflow_mappings = {
@@ -48,17 +48,15 @@ class DataGenerator:
         self.workflow = workflow
 
     def generate(
-        self, constraints: Optional[list] = None, free_text_json: Optional[str] = None
+        self,
+        constraints: Optional[list] = None,
+        free_text_path: Optional[str] = None,
+        column_name: Optional[str] = None,
     ) -> BaseModel:
         results = []
 
         if self.workflow not in self.mappings.keys():
             raise ValueError(f"Workflow {self.workflow} not found in mappings")
-
-        if free_text_json is not None:
-            parsed_free_text = self.free_text_parser(free_text_json)
-        else:
-            parsed_free_text = {self.workflow.value: []}
 
         for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
@@ -67,36 +65,36 @@ class DataGenerator:
 
             results.append(Bundle_EntryModel(resource=result))
 
-        if (
-            self.workflow.value in parsed_free_text.keys()
-            and parsed_free_text[self.workflow.value]
-        ):
-            results.append(
-                Bundle_EntryModel(
-                    resource=random.choice(parsed_free_text[self.workflow.value])
-                )
-            )
+        parsed_free_text = (
+            self.free_text_parser(free_text_path, column_name)
+            if free_text_path
+            else None
+        )
+        if parsed_free_text:
+            results.append(Bundle_EntryModel(resource=random.choice(parsed_free_text)))
         output = OutputDataModel(context={}, resources=BundleModel(entry=results))
         self.data = output
         return output
 
-    def free_text_parser(self, free_text: str) -> dict:
-        with open(free_text) as f:
-            free_text = json.load(f)
+    def free_text_parser(self, path_to_csv: str, column_name: str) -> dict:
+        column_data = []
+        with open(path_to_csv, mode="r", newline="") as file:
+            reader = csv.DictReader(file)
+            if column_name is not None:
+                for row in reader:
+                    column_data.append(row[column_name])
+            else:
+                raise ValueError("Column name must be provided when header is True.")
 
-        document_dict = {}
+        document_list = []
 
-        for x in free_text["resources"]:
+        for x in column_data:
             # First parse x in to documentreferencemodel format
             text = NarrativeModel(
                 status="generated",
-                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x["text"]}</div>',
+                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
             )
-            doc = DocumentReferenceModel(text=text)  # TODO: Add more fields
-            # if key exists append to list, otherwise initialise with list
-            if x["workflow"] in document_dict.keys():
-                document_dict[x["workflow"]].append(doc)
-            else:
-                document_dict[x["workflow"]] = [doc]
+            doc = DocumentReferenceModel(text=text)
+            document_list.append(doc)
 
-        return document_dict
+        return document_list
