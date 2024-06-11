@@ -2,6 +2,7 @@ import pytest
 
 from unittest.mock import Mock
 from healthchain.use_cases.cds import ClinicalDecisionSupport
+from healthchain.models import Card
 
 
 def test_initialization(cds):
@@ -34,15 +35,13 @@ def test_cds_service_no_api_set(test_cds_request):
 
 def test_cds_service(cds, test_cds_request):
     request = test_cds_request
-    cds.service_api.func.return_value = {
-        "cards": [
-            {
-                "summary": "example",
-                "indicator": "info",
-                "source": {"label": "website"},
-            }
-        ]
-    }
+    cds.service_api.func.return_value = [
+        Card(
+            summary="example",
+            indicator="info",
+            source={"label": "test"},
+        )
+    ]
     response = cds.cds_service("1", request)
     assert len(response.cards) == 1
     assert response.cards[0].summary == "example"
