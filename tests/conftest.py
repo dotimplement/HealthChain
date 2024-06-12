@@ -20,12 +20,12 @@ class MockBundle(BaseModel):
 @dataclasses.dataclass
 class synth_data:
     context: dict
-    resources: MockBundle
+    prefetch: MockBundle
 
 
 class MockDataGenerator:
     def __init__(self) -> None:
-        self.data = synth_data(context={}, resources=MockBundle())
+        self.data = synth_data(context={}, prefetch=MockBundle())
         self.workflow = None
 
     def set_workflow(self, workflow):
@@ -41,7 +41,7 @@ def cds_strategy():
 def valid_data():
     return synth_data(
         context={"userId": "Practitioner/123", "patientId": "123"},
-        resources=MockBundle(),
+        prefetch=MockBundle(),
     )
 
 
@@ -49,7 +49,7 @@ def valid_data():
 def invalid_data():
     return synth_data(
         context={"invalidId": "Practitioner", "patientId": "123"},
-        resources=MockBundle(),
+        prefetch=MockBundle(),
     )
 
 
