@@ -25,13 +25,13 @@ F = TypeVar("F", bound=Callable)
 
 
 def generate_filename(prefix: str, unique_id: str, index: int):
-    timestamp = datetime.now().strftime("%Y-%m-%d")
-    filename = f"{timestamp}_sandbox_{unique_id}_{prefix}_{index}.json"
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.json"
     return filename
 
 
 def save_as_json(data, prefix, sandbox_id, index, save_dir):
-    save_name = generate_filename(prefix, sandbox_id, index)
+    save_name = generate_filename(prefix, str(sandbox_id), index)
     file_path = save_dir / save_name
     with open(file_path, "w") as outfile:
         json.dump(data, outfile, indent=4)
