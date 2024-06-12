@@ -1,6 +1,6 @@
 from healthchain.use_cases.cds import ClinicalDecisionSupport
 from healthchain.decorators import ehr, api, sandbox
-from healthchain.data_generator.data_generator import CDSDataGenerator
+from healthchain.data_generator.data_generator import CdsDataGenerator
 from healthchain.models.requests.cdsrequest import CDSRequest
 import json
 import pytest
@@ -11,7 +11,7 @@ def test_run():
     @sandbox(service_config={"port": 9000})
     class myCDS(ClinicalDecisionSupport):
         def __init__(self) -> None:
-            self.data_generator = CDSDataGenerator()
+            self.data_generator = CdsDataGenerator()
             self.chain = self.define_chain()
 
         def define_chain(self):

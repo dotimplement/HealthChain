@@ -1,12 +1,12 @@
 from healthchain.data_generator.data_generator import (
-    CDSDataGenerator,
+    CdsDataGenerator,
 )
 from healthchain.base import Workflow
 import pytest
 
 
 def test_generator_orchestrator_encounter_discharge():
-    generator = CDSDataGenerator()
+    generator = CdsDataGenerator()
 
     workflow = Workflow.encounter_discharge
     generator.set_workflow(workflow=workflow)
@@ -16,7 +16,7 @@ def test_generator_orchestrator_encounter_discharge():
 
 
 def test_generator_orchestrator_patient_view():
-    generator = CDSDataGenerator()
+    generator = CdsDataGenerator()
 
     workflow = Workflow.patient_view
     generator.set_workflow(workflow=workflow)
@@ -27,7 +27,7 @@ def test_generator_orchestrator_patient_view():
 
 @pytest.mark.skip()
 def test_generator_with_json():
-    generator = CDSDataGenerator()
+    generator = CdsDataGenerator()
 
     workflow = Workflow.patient_view
     generator.set_workflow(workflow=workflow)

@@ -14,7 +14,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
-from .data_generator.data_generator import CDSDataGenerator
+from .data_generator.data_generator import CdsDataGenerator
 from .utils.apimethod import APIMethod
 from .utils.urlbuilder import UrlBuilder
 
@@ -131,7 +131,7 @@ def ehr(
                 )
 
             # Set workflow in data generator if configured
-            data_generator_attributes = find_attributes_of_type(self, CDSDataGenerator)
+            data_generator_attributes = find_attributes_of_type(self, CdsDataGenerator)
             for i in range(len(data_generator_attributes)):
                 attribute_name = data_generator_attributes[i]
                 try:

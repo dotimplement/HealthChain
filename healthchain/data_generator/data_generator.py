@@ -11,7 +11,7 @@ from healthchain.fhir_resources.document_reference_resources import (
     DocumentReferenceModel,
 )
 from healthchain.fhir_resources.general_purpose_resources import NarrativeModel
-from healthchain.models.data.generatedfhirdata import GeneratedFhirData
+from healthchain.models.data.cdsfhirdata import CdsFhirData
 
 
 workflow_mappings = {
@@ -32,11 +32,11 @@ workflow_mappings = {
 # TODO: Some of the resources should be allowed to be multiplied
 
 
-class CDSDataGenerator:
+class CdsDataGenerator:
     def __init__(self):
         self.registry = generator_registry
         self.mappings = workflow_mappings
-        self.data: GeneratedFhirData = None
+        self.data: CdsFhirData = None
 
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
@@ -73,7 +73,7 @@ class CDSDataGenerator:
                     resource=random.choice(parsed_free_text[self.workflow.value])
                 )
             )
-        output = GeneratedFhirData(prefetch=BundleModel(entry=results))
+        output = CdsFhirData(prefetch=BundleModel(entry=results))
         self.data = output
         return output
 
