@@ -20,6 +20,7 @@ from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
 from ..models.hooks.patientview import PatientViewContext
 from ..models.hooks.encounterdischarge import EncounterDischargeContext
+from ..data_generator.data_generator import GeneratedFhirData
 from ..utils.endpoints import Endpoint
 from ..utils.apimethod import APIMethod
 from ..utils.urlbuilder import UrlBuilder
@@ -41,7 +42,9 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         }
 
     @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
-    def construct_request(self, data, workflow: Workflow) -> CDSRequest:
+    def construct_request(
+        self, data: GeneratedFhirData, workflow: Workflow
+    ) -> CDSRequest:
         """
         Constructs a HL7-compliant CDS request based on workflow.
 
@@ -66,7 +69,7 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         request = CDSRequest(
             hook=workflow.value,
             context=context,
-            prefetch=data.resources.model_dump(
+            prefetch=data.prefetch.model_dump(
                 exclude_none=True, exclude_unset=True, by_alias=True
             ),
         )

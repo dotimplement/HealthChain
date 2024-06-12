@@ -1,7 +1,7 @@
 import logging
 from .utils.logger import add_handlers
 from healthchain.decorators import ehr, api, sandbox
-from healthchain.data_generator.data_generator import DataGenerator
+from healthchain.data_generator.data_generator import CDSDataGenerator
 from healthchain.models.requests.cdsrequest import CDSRequest
 
 logger = logging.getLogger(__name__)
@@ -9,4 +9,4 @@ add_handlers(logger)
 logger.setLevel(logging.INFO)
 
 # Export them at the top level
-__all__ = ["ehr", "api", "sandbox", "DataGenerator", "CDSRequest"]
+__all__ = ["ehr", "api", "sandbox", "CDSDataGenerator", "CDSRequest"]

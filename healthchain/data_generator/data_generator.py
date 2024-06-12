@@ -1,15 +1,17 @@
+import random
+import json
+
+from pydantic import BaseModel
 from typing import Callable, Optional
+
+from healthchain.base import Workflow
 from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
 from healthchain.data_generator.base_generators import generator_registry
 from healthchain.fhir_resources.document_reference_resources import (
     DocumentReferenceModel,
 )
 from healthchain.fhir_resources.general_purpose_resources import NarrativeModel
-from healthchain.base import Workflow
-from pydantic import BaseModel
-
-import random
-import json
+from healthchain.models.data.generatedfhirdata import GeneratedFhirData
 
 
 workflow_mappings = {
@@ -30,16 +32,11 @@ workflow_mappings = {
 # TODO: Some of the resources should be allowed to be multiplied
 
 
-class OutputDataModel(BaseModel):
-    context: dict = {}
-    resources: BundleModel
-
-
-class DataGenerator:
+class CDSDataGenerator:
     def __init__(self):
         self.registry = generator_registry
         self.mappings = workflow_mappings
-        self.data = []
+        self.data: GeneratedFhirData = None
 
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
@@ -76,7 +73,7 @@ class DataGenerator:
                     resource=random.choice(parsed_free_text[self.workflow.value])
                 )
             )
-        output = OutputDataModel(context={}, resources=BundleModel(entry=results))
+        output = GeneratedFhirData(prefetch=BundleModel(entry=results))
         self.data = output
         return output
 
