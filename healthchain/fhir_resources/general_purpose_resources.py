@@ -28,7 +28,7 @@ class ExtensionModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -46,7 +46,7 @@ class PeriodModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -69,7 +69,7 @@ class IdentifierModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -108,7 +108,7 @@ class CodingModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -146,12 +146,12 @@ class CodeableConceptModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     coding_field: List[CodingModel] = Field(
-        default_factory=list,
+        default=None,
         alias="coding",
         description="A reference to a code defined by a terminology system.",
     )
@@ -169,7 +169,7 @@ class ReferenceModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -202,7 +202,7 @@ class CodeableReferenceModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -225,7 +225,7 @@ class NarrativeModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -244,7 +244,7 @@ class AgeModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -280,7 +280,7 @@ class QuantityModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -312,7 +312,7 @@ class RangeModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -335,7 +335,7 @@ class RatioModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -354,17 +354,17 @@ class TimingModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     modifierExtension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
     event_field: List[dateTimeModel] = Field(
-        default_factory=list,
+        default=None,
         alias="event",
         description="Identifies specific times when the event occurs.",
     )
@@ -387,12 +387,12 @@ class Timing_RepeatModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     modifierExtension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
@@ -454,12 +454,12 @@ class Timing_RepeatModel(BaseModel):
     )
     # Timing_Repeat_periodUnit_field: periodUnitModel = Field(..., alias="periodUnit", description="The units of time for the period in UCUM units")
     dayOfWeek_field: List[codeModel] = Field(
-        default_factory=list,
+        default=None,
         alias="dayOfWeek",
         description="If one or more days of week is provided, then the action happens only on the specified day(s).",
     )
     timeOfDay_field: List[timeModel] = Field(
-        default_factory=list,
+        default=None,
         alias="timeOfDay",
         description="Specified time of day for action to take place.",
     )
@@ -477,7 +477,7 @@ class MetaModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -497,17 +497,17 @@ class MetaModel(BaseModel):
         description="A uri that identifies the source system of the resource. This provides a minimal amount of [[[Provenance]]] information that can be used to track or differentiate the source of information in the resource. The source may identify another FHIR server, document, message, database, etc.",
     )
     profile_field: List[canonicalModel] = Field(
-        default_factory=list,
+        default=None,
         alias="profile",
         description="A list of profiles (references to [[[StructureDefinition]]] resources) that this resource claims to conform to. The URL is a reference to [[[StructureDefinition.url]]].",
     )
     security_field: List[CodingModel] = Field(
-        default_factory=list,
+        default=None,
         alias="security",
         description="Security labels applied to this resource. These tags connect specific resources to the overall security policy and infrastructure.",
     )
     tag_field: List[CodingModel] = Field(
-        default_factory=list,
+        default=None,
         alias="tag",
         description="Tags applied to this resource. Tags are intended to be used to identify and relate resources to process and workflow, and applications are not required to consider the tags when interpreting the meaning of a resource.",
     )
@@ -520,7 +520,7 @@ class DurationModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -552,7 +552,7 @@ class AnnotationModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
@@ -580,7 +580,7 @@ class AttachmentModel(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[ExtensionModel] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )

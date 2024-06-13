@@ -25,7 +25,7 @@ class Bundle_EntryModel(BaseModel):
 class BundleModel(BaseModel):
     resourceType_field: str = "Bundle"
     entry_field: List[Bundle_EntryModel] = Field(
-        default_factory=list,
+        default=None,
         alias="entry",
         description="An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only).",
     )
