@@ -14,7 +14,7 @@ from ..base import (
 )
 from ..service.service import Service
 from ..models.requests.cdsrequest import CDSRequest
-from ..models.responses.cdsresponse import CDSResponse
+from ..models.responses.cdsresponse import CDSResponse, Card
 from ..models.responses.cdsdiscovery import CDSService, CDSServiceInformation
 from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
@@ -63,13 +63,17 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             raise ValueError(
                 f"Invalid workflow {workflow.value} or workflow model not implemented."
             )
-        context = context_model(**data.context)
+        if not isinstance(data, CdsFhirData):
+            raise TypeError(
+                f"CDS clients must return data of type CdsFhirData, not {type(data)}"
+            )
+
+        # i feel like theres a better way to do this
+        request_data = data.model_dump()
         request = CDSRequest(
             hook=workflow.value,
-            context=context,
-            prefetch=data.prefetch.model_dump(
-                exclude_none=True, exclude_unset=True, by_alias=True
-            ),
+            context=context_model(**request_data.get("context", {})),
+            prefetch=request_data.get("prefetch"),
         )
 
         return request
@@ -178,5 +182,7 @@ class ClinicalDecisionSupport(BaseUseCase):
                 "CDS 'service_api' returned None, please check function definition."
             )
             return CDSResponse(cards=[])
+        elif isinstance(result, Card):
+            result = [result]
 
         return CDSResponse(cards=result)
