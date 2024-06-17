@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from .conftest import MockDataGenerator
 from healthchain.decorators import sandbox, ehr, api
 from healthchain.use_cases.cds import ClinicalDecisionSupport
+from healthchain.models import Card
 
 
 @sandbox
@@ -18,15 +19,13 @@ class myCDS(ClinicalDecisionSupport):
 
     @api
     def llm(self, text: str):
-        return {
-            "cards": [
-                {
-                    "summary": self.data_generator.data.resources.condition,
-                    "indicator": "info",
-                    "source": {"label": "website"},
-                }
-            ]
-        }
+        return [
+            Card(
+                summary="test",
+                indicator="info",
+                source={"label": "website"},
+            )
+        ]
 
 
 cds = myCDS()

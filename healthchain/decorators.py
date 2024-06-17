@@ -14,7 +14,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 from .base import BaseUseCase, Workflow, UseCaseType
 from .clients import EHRClient
 from .service.service import Service
-from .data_generator.data_generator import DataGenerator
+from .data_generator.data_generator import CdsDataGenerator
 from .utils.apimethod import APIMethod
 from .utils.urlbuilder import UrlBuilder
 
@@ -26,12 +26,12 @@ F = TypeVar("F", bound=Callable)
 
 def generate_filename(prefix: str, unique_id: str, index: int):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    filename = f"{timestamp}_sandbox_{unique_id}_{prefix}_{index}.json"
+    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.json"
     return filename
 
 
 def save_as_json(data, prefix, sandbox_id, index, save_dir):
-    save_name = generate_filename(prefix, sandbox_id, index)
+    save_name = generate_filename(prefix, str(sandbox_id), index)
     file_path = save_dir / save_name
     with open(file_path, "w") as outfile:
         json.dump(data, outfile, indent=4)
@@ -131,7 +131,7 @@ def ehr(
                 )
 
             # Set workflow in data generator if configured
-            data_generator_attributes = find_attributes_of_type(self, DataGenerator)
+            data_generator_attributes = find_attributes_of_type(self, CdsDataGenerator)
             for i in range(len(data_generator_attributes)):
                 attribute_name = data_generator_attributes[i]
                 try:

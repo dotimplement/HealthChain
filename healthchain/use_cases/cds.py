@@ -14,12 +14,13 @@ from ..base import (
 )
 from ..service.service import Service
 from ..models.requests.cdsrequest import CDSRequest
-from ..models.responses.cdsresponse import CDSResponse
+from ..models.responses.cdsresponse import CDSResponse, Card
 from ..models.responses.cdsdiscovery import CDSService, CDSServiceInformation
 from ..models.hooks.orderselect import OrderSelectContext
 from ..models.hooks.ordersign import OrderSignContext
 from ..models.hooks.patientview import PatientViewContext
 from ..models.hooks.encounterdischarge import EncounterDischargeContext
+from ..data_generator.data_generator import CdsFhirData
 from ..utils.endpoints import Endpoint
 from ..utils.apimethod import APIMethod
 from ..utils.urlbuilder import UrlBuilder
@@ -41,7 +42,7 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
         }
 
     @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
-    def construct_request(self, data, workflow: Workflow) -> CDSRequest:
+    def construct_request(self, data: CdsFhirData, workflow: Workflow) -> CDSRequest:
         """
         Constructs a HL7-compliant CDS request based on workflow.
 
@@ -62,13 +63,17 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             raise ValueError(
                 f"Invalid workflow {workflow.value} or workflow model not implemented."
             )
-        context = context_model(**data.context)
+        if not isinstance(data, CdsFhirData):
+            raise TypeError(
+                f"CDS clients must return data of type CdsFhirData, not {type(data)}"
+            )
+
+        # i feel like theres a better way to do this
+        request_data = data.model_dump()
         request = CDSRequest(
             hook=workflow.value,
-            context=context,
-            prefetch=data.resources.model_dump(
-                exclude_none=True, exclude_unset=True, by_alias=True
-            ),
+            context=context_model(**request_data.get("context", {})),
+            prefetch=request_data.get("prefetch"),
         )
 
         return request
@@ -150,25 +155,26 @@ class ClinicalDecisionSupport(BaseUseCase):
         """
         CDS service endpoint for FastAPI app, should be mounted to /cds-services/{id}
         """
+        # TODO: can register multiple services and fetch with id
         if self.service_api is None:
             log.warning("CDS 'service_api' not configured, check class init.")
             return CDSResponse(cards=[])
 
-        # TODO: can register multiple services and fetch with id
-        request_json = request.model_dump_json(
-            exclude_none=True, exclude_unset=True, exclude_defaults=True, by_alias=True
-        )
         signature = inspect.signature(self.service_api.func)
         assert (
             len(signature.parameters) == 2
         ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; CDS Service functions currently only accept 'self' and a single input argument."
 
-        # TODO: better handling of args/kwargs io
-        # params = iter(inspect.signature(self._service_api.func).parameters.items())
-        # for name, param in params:
-        #     print(name, param, param.annotation)
+        service_input = request
+        params = iter(inspect.signature(self.service_api.func).parameters.items())
+        for name, param in params:
+            if name != "self":
+                if param.annotation == str:
+                    service_input = request.model_dump_json(exclude_none=True)
+                elif param.annotation == Dict:
+                    service_input = request.model_dump(exclude_none=True)
 
-        result = self.service_api.func(self, request_json)
+        result = self.service_api.func(self, service_input)
 
         # TODO: could use llm to check and fix results here?
         if result is None:
@@ -177,4 +183,16 @@ class ClinicalDecisionSupport(BaseUseCase):
             )
             return CDSResponse(cards=[])
 
-        return CDSResponse(**result)
+        if not isinstance(result, list):
+            if isinstance(result, Card):
+                result = [result]
+            else:
+                raise TypeError(f"Expected a list, but got {type(result).__name__}")
+
+        for card in result:
+            if not isinstance(card, Card):
+                raise TypeError(
+                    f"Expected a list of 'Card' objects, but found an item of type {type(card).__name__}"
+                )
+
+        return CDSResponse(cards=result)
