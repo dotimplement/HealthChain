@@ -188,7 +188,17 @@ class ClinicalDecisionSupport(BaseUseCase):
                 "CDS 'service_api' returned None, please check function definition."
             )
             return CDSResponse(cards=[])
-        elif isinstance(result, Card):
-            result = [result]
+
+        if not isinstance(result, list):
+            if isinstance(result, Card):
+                result = [result]
+            else:
+                raise TypeError(f"Expected a list, but got {type(result).__name__}")
+
+        for card in result:
+            if not isinstance(card, Card):
+                raise TypeError(
+                    f"Expected a list of 'Card' objects, but found an item of type {type(card).__name__}"
+                )
 
         return CDSResponse(cards=result)

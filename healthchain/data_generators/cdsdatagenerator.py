@@ -1,15 +1,19 @@
 import random
-import json
+import csv
+import logging
 
 from pydantic import BaseModel
 from typing import Callable, Optional
+from pathlib import Path
 
-from healthchain.workflows import Workflow
-from healthchain.models import CdsFhirData
+from healthchain.base import Workflow
 from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
 from healthchain.data_generators.basegenerators import generator_registry
 from healthchain.fhir_resources.documentreference import DocumentReference
 from healthchain.fhir_resources.generalpurpose import Narrative
+from healthchain.models.data.cdsfhirdata import CdsFhirData
+
+logger = logging.getLogger(__name__)
 
 
 workflow_mappings = {
@@ -75,23 +79,38 @@ class CdsDataGenerator:
         self.data = output
         return output
 
-    def free_text_parser(self, free_text: str) -> dict:
-        with open(free_text) as f:
-            free_text = json.load(f)
+    def free_text_parser(self, path_to_csv: str, column_name: str) -> dict:
+        column_data = []
 
-        document_dict = {}
+        # Check that path_to_csv is a valid path with pathlib
+        path = Path(path_to_csv)
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"The file {path_to_csv} does not exist or is not a file."
+            )
 
-        for x in free_text["resources"]:
+        try:
+            with path.open(mode="r", newline="") as file:
+                reader = csv.DictReader(file)
+                if column_name is not None:
+                    for row in reader:
+                        column_data.append(row[column_name])
+                else:
+                    raise ValueError(
+                        "Column name must be provided when header is True."
+                    )
+        except Exception as ex:
+            logger.error(f"An error occurred: {ex}")
+
+        document_list = []
+
+        for x in column_data:
             # First parse x in to documentreferencemodel format
             text = Narrative(
                 status="generated",
-                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x["text"]}</div>',
+                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
             )
-            doc = DocumentReference(text=text)  # TODO: Add more fields
-            # if key exists append to list, otherwise initialise with list
-            if x["workflow"] in document_dict.keys():
-                document_dict[x["workflow"]].append(doc)
-            else:
-                document_dict[x["workflow"]] = [doc]
+            doc = DocumentReference(text=text)
+            document_list.append(doc)
 
-        return document_dict
+        return document_list

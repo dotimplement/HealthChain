@@ -12,7 +12,7 @@ def test_valid_data_request_construction(cds_strategy, valid_data):
         mock_init.assert_called_once_with(
             hook=Workflow.patient_view.value,
             context=PatientViewContext(userId="Practitioner/123", patientId="123"),
-            prefetch={},
+            prefetch={"entry": [{}]},
         )
 
 

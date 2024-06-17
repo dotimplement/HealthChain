@@ -3,7 +3,7 @@ from typing import List, Any
 
 from healthchain.fhir_resources.resourceregistry import ImplementedResourceRegistry
 
-implemented_resources = [f"{item.value}Model" for item in ImplementedResourceRegistry]
+implemented_resources = [f"{item.value}" for item in ImplementedResourceRegistry]
 
 
 class BundleEntry(BaseModel):

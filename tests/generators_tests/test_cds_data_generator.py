@@ -30,6 +30,8 @@ def test_generator_with_json():
 
     workflow = Workflow.patient_view
     generator.set_workflow(workflow=workflow)
-    generator.generate(free_text_json="use_cases/example_free_text.json")
+    generator.generate(
+        free_text_path="use_cases/my_encounter_data.csv", column_name="free_text"
+    )
 
     assert len(generator.data.model_dump(by_alias=True)["prefetch"]["entry"]) == 4

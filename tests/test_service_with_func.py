@@ -23,7 +23,7 @@ class myCDS(ClinicalDecisionSupport):
     def llm(self, text: str):
         return [
             Card(
-                summary=self.data_generator.data.prefetch.condition,
+                summary="test",
                 indicator="info",
                 source={"label": "website"},
             )

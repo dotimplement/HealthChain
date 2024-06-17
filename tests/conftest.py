@@ -5,7 +5,8 @@ from unittest.mock import Mock
 from pydantic import BaseModel
 
 from healthchain.base import BaseStrategy, BaseUseCase
-from healthchain.models import CDSRequest
+from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
+from healthchain.models import CDSRequest, CdsFhirData
 from healthchain.use_cases.cds import (
     ClinicalDecisionSupport,
     ClinicalDecisionSupportStrategy,
@@ -28,7 +29,8 @@ class synth_data:
 
 class MockDataGenerator:
     def __init__(self) -> None:
-        self.data = synth_data(context={}, prefetch=MockBundle())
+        self.data = CdsFhirData(context={}, prefetch=Bundle(entry=[BundleEntry()]))
+        # self.data = synth_data(context={}, prefetch=MockBundle())
         self.workflow = None
 
     def set_workflow(self, workflow):
@@ -42,17 +44,17 @@ def cds_strategy():
 
 @pytest.fixture
 def valid_data():
-    return synth_data(
+    return CdsFhirData(
         context={"userId": "Practitioner/123", "patientId": "123"},
-        prefetch=MockBundle(),
+        prefetch=Bundle(entry=[BundleEntry()]),
     )
 
 
 @pytest.fixture
 def invalid_data():
-    return synth_data(
+    return CdsFhirData(
         context={"invalidId": "Practitioner", "patientId": "123"},
-        prefetch=MockBundle(),
+        prefetch=Bundle(entry=[BundleEntry()]),
     )
 
 
