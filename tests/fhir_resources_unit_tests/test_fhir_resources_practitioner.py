@@ -1,4 +1,4 @@
-from healthchain.fhir_resources.practitioner_resources import PractitionerModel
+from healthchain.fhir_resources.practitioner import Practitioner
 
 
 def test_PractitionerModel():
@@ -37,7 +37,7 @@ def test_PractitionerModel():
         ],
     }
 
-    practitioner = PractitionerModel(**data)
+    practitioner = Practitioner(**data)
     practitioner = practitioner.model_dump(by_alias=True)
     assert practitioner["resourceType"] == "Practitioner"
     assert practitioner["name"][0]["given"] == ["John"]

@@ -1,11 +1,11 @@
 from enum import Enum
 
 
-class CodeSystem(Enum):
+class SimpleCodeSystem(Enum):
     snomedct = "http://snomed.info/sct"
     loinc = "http://loinc.org"
 
 
-class Extension(Enum):
+class CodeExtension(Enum):
     uk = "uk"
     international = "int"

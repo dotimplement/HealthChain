@@ -1,8 +1,8 @@
 from pydantic import Field, model_validator
 from typing import Optional
+from healthchain.utils.idgenerator import IdGenerator
 
 from .basehookcontext import BaseHookContext
-from ...utils.idgenerator import IdGenerator
 
 
 id_generator = IdGenerator(

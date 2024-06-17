@@ -4,12 +4,15 @@ import pytest
 from unittest.mock import Mock
 from pydantic import BaseModel
 
-from healthchain.base import BaseStrategy, BaseUseCase, UseCaseType
-from healthchain.models.requests.cdsrequest import CDSRequest
-from healthchain.use_cases.cds import ClinicalDecisionSupportStrategy
-from healthchain.clients import EHRClient
+from healthchain.base import BaseStrategy, BaseUseCase
+from healthchain.models import CDSRequest
+from healthchain.use_cases.cds import (
+    ClinicalDecisionSupport,
+    ClinicalDecisionSupportStrategy,
+)
+from healthchain.clients.ehrclient import EHRClient
 from healthchain.decorators import sandbox
-from healthchain.use_cases.cds import ClinicalDecisionSupport
+from healthchain.workflows import UseCaseType
 
 
 class MockBundle(BaseModel):

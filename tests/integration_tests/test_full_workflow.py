@@ -1,9 +1,11 @@
-from healthchain.use_cases.cds import ClinicalDecisionSupport
-from healthchain.decorators import ehr, api, sandbox
-from healthchain.data_generator.data_generator import CdsDataGenerator
-from healthchain.models.requests.cdsrequest import CDSRequest
 import json
 import pytest
+
+from healthchain.clients import ehr
+from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.decorators import api, sandbox
+from healthchain.data_generators import CdsDataGenerator
+from healthchain.models import CDSRequest
 
 
 @pytest.mark.skip(reason="Server hangs during test.")

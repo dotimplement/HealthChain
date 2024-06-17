@@ -2,16 +2,16 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 
 from .base import ValueSet
-from .codesystems import CodeSystem, Extension
+from .codesystems import SimpleCodeSystem, CodeExtension
 
 # using virtual therapeutic moiety (medicinal product) snomed form as it's just for vibes
 
 
 # Format: ResourceFieldParam
 @dataclass
-class MedicationRequestionMedication(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+class MedicationRequestMedication(ValueSet):
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "774656009", "display": "Aspirin"},

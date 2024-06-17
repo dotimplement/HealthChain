@@ -1,8 +1,7 @@
-from healthchain.data_generator.data_generator import (
-    CdsDataGenerator,
-)
-from healthchain.base import Workflow
 import pytest
+
+from healthchain.data_generators import CdsDataGenerator
+from healthchain.workflows import Workflow
 
 
 def test_generator_orchestrator_encounter_discharge():

@@ -1,21 +1,23 @@
-from healthchain.fhir_resources.encounter_resources import (
-    EncounterModel,
-    Encounter_LocationModel,
+from typing import Optional
+from faker import Faker
+
+from healthchain.fhir_resources.encounter import (
+    Encounter,
+    EncounterLocation,
 )
-from healthchain.fhir_resources.primitive_resources import dateTimeModel
-from healthchain.fhir_resources.general_purpose_resources import (
-    CodingModel,
-    CodeableConceptModel,
-    PeriodModel,
-    ReferenceModel,
+from healthchain.fhir_resources.primitives import dateTimeModel
+from healthchain.fhir_resources.generalpurpose import (
+    Coding,
+    CodeableConcept,
+    Period,
+    Reference,
 )
-from healthchain.data_generator.base_generators import (
+from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
 )
-from typing import Optional
-from faker import Faker
+
 
 faker = Faker()
 
@@ -27,7 +29,7 @@ class PeriodGenerator(BaseGenerator):
         start = faker.date_time()
         end = faker.date_time_between(start_date=start).isoformat()
         start = start.isoformat()
-        return PeriodModel(
+        return Period(
             start=dateTimeModel(start),
             end=dateTimeModel(end),
         )
@@ -39,9 +41,9 @@ class ClassGenerator(BaseGenerator):
     def generate():
         patient_class_mapping = {"IMP": "inpatient", "AMB": "ambulatory"}
         patient_class = faker.random_element(elements=("IMP", "AMB"))
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
                     code=patient_class,
                     display=patient_class_mapping.get(patient_class),
@@ -56,9 +58,9 @@ class EncounterTypeGenerator(BaseGenerator):
     def generate():
         encounter_type_mapping = {"11429006": "consultation", "50849002": "emergency"}
         encounter_type = faker.random_element(elements=("11429006", "50849002"))
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://snomed.info/sct",
                     code=encounter_type,
                     display=encounter_type_mapping.get(encounter_type),
@@ -73,9 +75,9 @@ class EncounterPriorityGenerator(BaseGenerator):
     def generate():
         encounter_priority_mapping = {"17621005": "normal", "24484000": "critical"}
         encounter_priority = faker.random_element(elements=("17621005", "24484000"))
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://snomed.info/sct",
                     code=encounter_priority,
                     display=encounter_priority_mapping.get(encounter_priority),
@@ -88,8 +90,8 @@ class EncounterPriorityGenerator(BaseGenerator):
 class EncounterLocationGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return Encounter_LocationModel(
-            location=ReferenceModel(reference="Location/123"),
+        return EncounterLocation(
+            location=Reference(reference="Location/123"),
             status=faker.random_element(elements=("active", "completed")),
             period=generator_registry.get("PeriodGenerator").generate(),
         )
@@ -102,7 +104,7 @@ class EncounterGenerator(BaseGenerator):
         constraints: Optional[list] = None,
     ):
         patient_reference = "Patient/123"
-        return EncounterModel(
+        return Encounter(
             resourceType="Encounter",
             id=generator_registry.get("IdGenerator").generate(),
             status=faker.random_element(

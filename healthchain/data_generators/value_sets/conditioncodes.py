@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 
 from .base import ValueSet
-from .codesystems import CodeSystem, Extension
+from .codesystems import SimpleCodeSystem, CodeExtension
 
 
 # Format: ResourceFieldParam
 @dataclass
 class ConditionCodeSimple(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "57054005", "display": "Acute myocardial infarction"},
@@ -50,8 +50,8 @@ class ConditionCodeSimple(ValueSet):
 
 @dataclass
 class ConditionCodeComplex(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "46701001", "display": "Acute myocarditis"},
@@ -104,8 +104,8 @@ class ConditionCodeComplex(ValueSet):
 # don't use
 @dataclass
 class ConditionCodeProblemListSimple(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "73211009", "display": "Diabetes mellitus"},

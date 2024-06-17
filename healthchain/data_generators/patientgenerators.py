@@ -1,28 +1,29 @@
-from healthchain.data_generator.base_generators import (
+from typing import Optional
+from faker import Faker
+
+from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
 )
-from healthchain.fhir_resources.primitive_resources import (
+from healthchain.fhir_resources.primitives import (
     stringModel,
     uriModel,
     codeModel,
     dateTimeModel,
     positiveIntModel,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    PeriodModel,
-    CodeableConceptModel,
-    CodingModel,
+from healthchain.fhir_resources.generalpurpose import (
+    Period,
+    CodeableConcept,
+    Coding,
 )
-from healthchain.fhir_resources.patient_resources import (
-    PatientModel,
-    HumanNameModel,
-    ContactPointModel,
-    AddressModel,
+from healthchain.fhir_resources.patient import (
+    Patient,
+    HumanName,
+    ContactPoint,
+    Address,
 )
-from typing import Optional
-from faker import Faker
 
 
 faker = Faker()
@@ -35,7 +36,7 @@ class PeriodGenerator(BaseGenerator):
         start = faker.date_time()
         end = faker.date_time_between(start_date=start).isoformat()
         start = start.isoformat()
-        return PeriodModel(
+        return Period(
             start=dateTimeModel(start),
             end=dateTimeModel(end),
         )
@@ -45,7 +46,7 @@ class PeriodGenerator(BaseGenerator):
 class ContactPointGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return ContactPointModel(
+        return ContactPoint(
             system=codeModel(faker.random_element(elements=("phone", "fax"))),
             value=stringModel(faker.phone_number()),
             use=codeModel(faker.random_element(elements=("home", "work"))),
@@ -58,7 +59,7 @@ class ContactPointGenerator(BaseGenerator):
 class AddressGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return AddressModel(
+        return Address(
             use=codeModel(
                 faker.random_element(elements=("home", "work", "temp", "old"))
             ),
@@ -86,9 +87,9 @@ class MaritalStatusGenerator(BaseGenerator):
             "M": "Married",
         }
         marital_code = faker.random_element(elements=(marital_status_dict.keys()))
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system=uriModel(
                         "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus"
                     ),
@@ -104,7 +105,7 @@ class MaritalStatusGenerator(BaseGenerator):
 class HumanNameGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return HumanNameModel(
+        return HumanName(
             family=stringModel(faker.last_name()),
             given=[stringModel(faker.first_name())],
             prefix=[stringModel(faker.prefix())],
@@ -116,7 +117,7 @@ class HumanNameGenerator(BaseGenerator):
 class PatientGenerator(BaseGenerator):
     @staticmethod
     def generate(constraints: Optional[list] = None):
-        return PatientModel(
+        return Patient(
             resourceType="Patient",
             id=generator_registry.get("IdGenerator").generate(),
             active=generator_registry.get("BooleanGenerator").generate(),

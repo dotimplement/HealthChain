@@ -4,14 +4,12 @@ import json
 from pydantic import BaseModel
 from typing import Callable, Optional
 
-from healthchain.base import Workflow
-from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
-from healthchain.data_generator.base_generators import generator_registry
-from healthchain.fhir_resources.document_reference_resources import (
-    DocumentReferenceModel,
-)
-from healthchain.fhir_resources.general_purpose_resources import NarrativeModel
-from healthchain.models.data.cdsfhirdata import CdsFhirData
+from healthchain.workflows import Workflow
+from healthchain.models import CdsFhirData
+from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
+from healthchain.data_generators.basegenerators import generator_registry
+from healthchain.fhir_resources.documentreference import DocumentReference
+from healthchain.fhir_resources.generalpurpose import Narrative
 
 
 workflow_mappings = {
@@ -62,18 +60,18 @@ class CdsDataGenerator:
             generator = self.fetch_generator(generator_name)
             result = generator.generate(constraints=constraints)
 
-            results.append(Bundle_EntryModel(resource=result))
+            results.append(BundleEntry(resource=result))
 
         if (
             self.workflow.value in parsed_free_text.keys()
             and parsed_free_text[self.workflow.value]
         ):
             results.append(
-                Bundle_EntryModel(
+                BundleEntry(
                     resource=random.choice(parsed_free_text[self.workflow.value])
                 )
             )
-        output = CdsFhirData(prefetch=BundleModel(entry=results))
+        output = CdsFhirData(prefetch=Bundle(entry=results))
         self.data = output
         return output
 
@@ -85,11 +83,11 @@ class CdsDataGenerator:
 
         for x in free_text["resources"]:
             # First parse x in to documentreferencemodel format
-            text = NarrativeModel(
+            text = Narrative(
                 status="generated",
                 div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x["text"]}</div>',
             )
-            doc = DocumentReferenceModel(text=text)  # TODO: Add more fields
+            doc = DocumentReference(text=text)  # TODO: Add more fields
             # if key exists append to list, otherwise initialise with list
             if x["workflow"] in document_dict.keys():
                 document_dict[x["workflow"]].append(doc)

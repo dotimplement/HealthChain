@@ -1,15 +1,16 @@
-from contextlib import asynccontextmanager
 import os
 import signal
 import logging
 import uvicorn
 
 from typing import Dict
+
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 from termcolor import colored
 
-from ..utils.endpoints import Endpoint
+from .endpoints import Endpoint
 
 log = logging.getLogger(__name__)
 

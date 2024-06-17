@@ -1,4 +1,4 @@
-from healthchain.data_generator.medication_request_generators import (
+from healthchain.data_generators.medicationrequestgenerators import (
     MedicationRequestGenerator,
     MedicationRequestContainedGenerator,
 )
