@@ -25,7 +25,7 @@ F = TypeVar("F", bound=Callable)
 
 
 def generate_filename(prefix: str, unique_id: str, index: int):
-    timestamp = datetime.now().strftime("%Y-%m-%d")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.json"
     return filename
 
