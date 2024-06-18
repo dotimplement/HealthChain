@@ -48,16 +48,12 @@ A client is typically an EHR system, but we may also support other health object
 We can mark a client by using the decorator `@hc.ehr`. You must declare a particular **workflow** for the EHR client, which informs the sandbox how your data will be formatted (See [Use Cases](usecases.md)).
 
 Data returned from the client should be wrapped in a [Pydantic](https://docs.pydantic.dev/latest/) model depending on use case, e.g. `CdsFhirData`.
-We can mark a client by using the decorator `@hc.ehr`. You must declare a particular **workflow** for the EHR client, which informs the sandbox how your data will be formatted (See [Use Cases](usecases.md)).
-
-Data returned from the client should be wrapped in a [Pydantic](https://docs.pydantic.dev/latest/) model depending on use case, e.g. `CdsFhirData`.
 
 You can optionally specify if you want more than 1 request generated with the `num` parameter.
 
 ```python
 import healthchain as hc
 from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.models import CdsFhirData
 from healthchain.models import CdsFhirData
 
 @hc.sandbox
@@ -66,7 +62,6 @@ class MyCoolSandbox(ClinicalDecisionSupport):
         pass
 
     @hc.ehr(workflow="patient-view", num=10)
-    def load_data_in_client(self) -> CdsFhirData:
     def load_data_in_client(self) -> CdsFhirData:
         # Do things here to load in your data
         pass
@@ -78,9 +73,7 @@ class MyCoolSandbox(ClinicalDecisionSupport):
 Healthcare data is interoperable, but not composable - every deployment site will have different ways of configuring data and terminology. This matters when you develop applications that need to integrate into these systems, especially when you need to reliably extract data for your model to consume.
 
 The aim of the data generator is not to generate realistic data suitable for use cases such as patient population studies, but rather to generate data that is structurally compliant with what is expected of EHR configurations, and to be able to test and handle variations in this.
-The aim of the data generator is not to generate realistic data suitable for use cases such as patient population studies, but rather to generate data that is structurally compliant with what is expected of EHR configurations, and to be able to test and handle variations in this.
 
-For this reason the data generator is opiniated by use case and workflow. See [Use Cases](usecases.md) for more information.
 For this reason the data generator is opiniated by use case and workflow. See [Use Cases](usecases.md) for more information.
 
 !!! note
@@ -90,7 +83,6 @@ On the synthetic data spectrum defined by [this UK ONS methodology working paper
 
 ![Synthetic data](assets/synthetic_data_ons.png)
 
-You can use the data generator within a client function or on its own. The `.generate()` is dependent on workflow. For CDS use cases, it will return a `CdsFhirData` model with the `prefetch` field populated with a [Bundle](https://www.hl7.org/fhir/bundle.html) of generated structural synthetic FHIR data.
 You can use the data generator within a client function or on its own. The `.generate()` is dependent on workflow. For CDS use cases, it will return a `CdsFhirData` model with the `prefetch` field populated with a [Bundle](https://www.hl7.org/fhir/bundle.html) of generated structural synthetic FHIR data.
 
 === "Within client"
@@ -104,12 +96,8 @@ You can use the data generator within a client function or on its own. The `.gen
     class MyCoolSandbox(ClinicalDecisionSupport):
         def __init__(self) -> None:
             self.data_generator = CdsDataGenerator()
-            self.data_generator = CdsDataGenerator()
 
         @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
         def load_data_in_client(self) -> CdsFhirData:
             data = self.data_generator.generate()
             return data
@@ -127,24 +115,11 @@ You can use the data generator within a client function or on its own. The `.gen
 
     # Initialise data generator
     data_generator = CdsDataGenerator()
-    data_generator = CdsDataGenerator()
 
     # Generate FHIR resources for use case workflow
     data_generator.set_workflow(Workflow.encounter_discharge)
     data = data_generator.generate()
-    data = data_generator.generate()
 
-    print(data.model_dump())
-
-    # {
-    #    "prefetch": {
-    #        "entry": [
-    #            {
-    #                "resource": ...
-    #            }
-    #        ]
-    #    }
-    #}
     print(data.model_dump())
 
     # {
@@ -187,11 +162,8 @@ data = data_generator.generate(free_text_csv="./dir/to/csv/file")
 
 ### Service API
 A service is typically an API of an external AI/NLP system that returns data to the client. This is where you define your application logic - it can be anything from a simple regex to a highly sophisticated LLM agentic workflow.
-A service is typically an API of an external AI/NLP system that returns data to the client. This is where you define your application logic - it can be anything from a simple regex to a highly sophisticated LLM agentic workflow.
 
 When you decorate a function with `@hc.api` in a sandbox, the function is mounted to a HL7-compliant service endpoint an EHR client can make requests to. This is usually a set of standardised API routes depending on the use case. HealthChain will start a [FastAPI](https://fastapi.tiangolo.com/) server with these APIs pre-defined for you.
-
-Your service function must accept and return models appropriate for your use case. Typically the service function should accept a `Request` model and return a use case specific model, such as a list of `Card` for CDS.
 
 Your service function must accept and return models appropriate for your use case. Typically the service function should accept a `Request` model and return a use case specific model, such as a list of `Card` for CDS.
 
@@ -210,12 +182,10 @@ If you are using a model that requires initialisation steps, we recommend you in
     from transformers import pipeline
 
     from typing import List
-    from typing import List
 
     @hc.sandbox
     class MyCoolSandbox(ClinicalDecisionSupport):
         def __init__(self):
-            self.data_generator = CdsDataGenerator()
             self.data_generator = CdsDataGenerator()
             self.pipeline = pipeline('summarization')
 
@@ -223,22 +193,8 @@ If you are using a model that requires initialisation steps, we recommend you in
         def load_data_in_client(self) -> CdsFhirData:
             data = self.data_generator.generate()
             return data
-        @hc.ehr(workflow="patient-view") -> CdsFhirData
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
 
         @hc.api
-        def my_service(self, request: CDSRequest) -> List[Card]:
-            results = self.pipeline(str(request.prefetch))
-            return [
-                Card(
-                    summary="Patient summary",
-                    indicator="info",
-                    source={"label": "transformers"},
-                    detail=results[0]['summary_text'],
-                )
-            ]
         def my_service(self, request: CDSRequest) -> List[Card]:
             results = self.pipeline(str(request.prefetch))
             return [
@@ -263,13 +219,12 @@ If you are using a model that requires initialisation steps, we recommend you in
 
     from healthchain.use_cases import ClinicalDecisionSupport
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.models import Card, CdsFhirData, CDSRequest
+    from healthchain.models import Card, CDSRequest, CdsFhirData
 
     from langchain_openai import ChatOpenAI
     from langchain_core.prompts import PromptTemplate
     from langchain_core.output_parsers import StrOutputParser
 
-    from typing import List
     from typing import List
 
     @hc.sandbox
@@ -277,12 +232,10 @@ If you are using a model that requires initialisation steps, we recommend you in
         def __init__(self):
             self.chain = self._init_llm_chain()
             self.data_generator = CdsDataGenerator()
-            self.data_generator = CdsDataGenerator()
 
         def _init_llm_chain(self):
             prompt = PromptTemplate.from_template(
                 "Summarize the text below {text}"
-            )
             )
             model = ChatOpenAI(model="gpt-4o")
             parser = StrOutputParser()
@@ -294,21 +247,8 @@ If you are using a model that requires initialisation steps, we recommend you in
         def load_data_in_client(self) -> CdsFhirData:
             data = self.data_generator.generate()
             return data
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
 
         @hc.api
-        def my_service(self, request: CDSRequest) -> List[Card]:
-            result = self.chain.invoke(str(request.prefetch))
-            return [
-                Card(
-                    summary="Patient summary",
-                    indicator="info",
-                    source={"label": "openai"},
-                    detail=result,
-                )
-            ]
         def my_service(self, request: CDSRequest) -> List[Card]:
             result = self.chain.invoke(str(request.prefetch))
             return [
