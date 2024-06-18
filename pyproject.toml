@@ -1,14 +1,24 @@
 [tool.poetry]
 name = "healthchain"
-version = "0.1.0"
-description = "Remarkably simple LLM prototyping and testing in healthcare context."
+version = "0.2.0"
+description = "Remarkably simple testing and validation of AI/NLP applications in healthcare context."
 authors = ["Adam Kells <adamjkells93@gmail.com>", "Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>"]
-license = "MIT"
+license = "Apache-2.0"
 readme = "README.md"
-
+documentation = "https://dotimplement.github.io/HealthChain/"
+keywords = ["nlp", "ai", "llm", "healthcare", "ehr"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
 [project.urls]
-"Homepage" = "https://github.com/dotimplement/HealthChain"
+"Homepage" = "https://dotimplement.github.io/HealthChain/"
 "Repository" = "https://github.com/dotimplement/HealthChain"
 
 [tool.poetry.dependencies]
