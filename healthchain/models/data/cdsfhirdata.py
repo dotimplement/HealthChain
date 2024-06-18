@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import Dict
 
-from ...fhir_resources.bundle_resources import BundleModel
+from healthchain.fhir_resources.bundleresources import Bundle
 
 
 class CdsFhirData(BaseModel):
     context: Dict = Field(default={})
-    prefetch: BundleModel
+    prefetch: Bundle
 
     def model_dump(self, *args, **kwargs):
         kwargs.setdefault("exclude_unset", True)

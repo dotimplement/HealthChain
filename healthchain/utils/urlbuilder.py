@@ -1,6 +1,6 @@
 from typing import Dict
 
-from ..utils.endpoints import Endpoint
+from healthchain.service.endpoints import Endpoint
 
 
 class UrlBuilder:

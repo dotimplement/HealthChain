@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 
 from .base import ValueSet
-from .codesystems import CodeSystem, Extension
+from .codesystems import SimpleCodeSystem, CodeExtension
 
 
 # Format: ResourceFieldParam
 @dataclass
 class ProcedureCodeSimple(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "232717009", "display": "Coronary artery bypass graft"},
@@ -46,8 +46,8 @@ class ProcedureCodeSimple(ValueSet):
 
 @dataclass
 class ProcedureCodeComplex(ValueSet):
-    system: CodeSystem = CodeSystem.snomedct
-    extension: Extension = Extension.uk
+    system: SimpleCodeSystem = SimpleCodeSystem.snomedct
+    extension: CodeExtension = CodeExtension.uk
     value_set: List[Dict] = field(
         default_factory=lambda: [
             {"code": "232723004", "display": "Coronary artery bypass grafts x 5"},

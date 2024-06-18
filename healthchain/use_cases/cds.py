@@ -3,27 +3,33 @@ import inspect
 
 from typing import Dict, Optional, List
 
-from ..base import (
-    BaseUseCase,
-    BaseStrategy,
+from healthchain.service import Service
+from healthchain.models import CdsFhirData
+from healthchain.service.endpoints import Endpoint
+from healthchain.utils import UrlBuilder
+from healthchain.base import BaseUseCase, BaseStrategy, BaseClient
+from healthchain.workflows import (
     UseCaseMapping,
     UseCaseType,
-    BaseClient,
     Workflow,
     validate_workflow,
 )
-from ..service.service import Service
-from ..models.requests.cdsrequest import CDSRequest
-from ..models.responses.cdsresponse import CDSResponse, Card
-from ..models.responses.cdsdiscovery import CDSService, CDSServiceInformation
-from ..models.hooks.orderselect import OrderSelectContext
-from ..models.hooks.ordersign import OrderSignContext
-from ..models.hooks.patientview import PatientViewContext
-from ..models.hooks.encounterdischarge import EncounterDischargeContext
-from ..data_generator.data_generator import CdsFhirData
-from ..utils.endpoints import Endpoint
-from ..utils.apimethod import APIMethod
-from ..utils.urlbuilder import UrlBuilder
+from healthchain.models import (
+    CDSRequest,
+    CDSResponse,
+    Card,
+    CDSService,
+    CDSServiceInformation,
+)
+from healthchain.models.hooks import (
+    OrderSelectContext,
+    OrderSignContext,
+    PatientViewContext,
+    EncounterDischargeContext,
+)
+
+from .apimethod import APIMethod
+
 
 log = logging.getLogger(__name__)
 

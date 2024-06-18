@@ -1,25 +1,26 @@
-from healthchain.data_generator.base_generators import (
+from typing import Optional
+from faker import Faker
+
+from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    CodeableConceptModel,
-    CodingModel,
-    ReferenceModel,
+from healthchain.fhir_resources.generalpurpose import (
+    CodeableConcept,
+    Coding,
+    Reference,
 )
-from healthchain.fhir_resources.condition_resources import (
-    ConditionModel,
-    Condition_StageModel,
-    Condition_ParticipantModel,
+from healthchain.fhir_resources.condition import (
+    Condition,
+    ConditionStage,
+    ConditionParticipant,
 )
-from healthchain.data_generator.value_sets.condition import (
+from healthchain.data_generators.value_sets.conditioncodes import (
     ConditionCodeSimple,
     ConditionCodeComplex,
 )
-from typing import Optional
-from faker import Faker
 
 
 faker = Faker()
@@ -29,9 +30,9 @@ faker = Faker()
 class ClinicalStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://terminology.hl7.org/CodeSystem/condition-clinical",
                     code=faker.random_element(
                         elements=("active", "recurrence", "inactive", "resolved")
@@ -45,9 +46,9 @@ class ClinicalStatusGenerator(BaseGenerator):
 class VerificationStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
                     code=faker.random_element(elements=("provisional", "confirmed")),
                 )
@@ -59,9 +60,9 @@ class VerificationStatusGenerator(BaseGenerator):
 class CategoryGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://snomed.info/sct",
                     code=faker.random_element(
                         elements=("55607006", "404684003")
@@ -75,7 +76,7 @@ class CategoryGenerator(BaseGenerator):
 class ConditionStageGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return Condition_StageModel(
+        return ConditionStage(
             summary=generator_registry.get("CodeableConceptGenerator").generate(),
             assessment=generator_registry.get("ReferenceGenerator").generate(),
             type=generator_registry.get("CodeableConceptGenerator").generate(),
@@ -86,9 +87,9 @@ class ConditionStageGenerator(BaseGenerator):
 class SeverityGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://snomed.info/sct",
                     code=faker.random_element(
                         elements=("24484000", "6736007", "255604002")
@@ -118,9 +119,9 @@ class SnomedCodeGenerator(CodeableConceptGenerator):
 class BodySiteGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system="http://snomed.info/sct",
                     code=faker.random_element(elements=("38266002")),
                     display=faker.random_element(elements=("Entire body as a whole")),
@@ -133,7 +134,7 @@ class BodySiteGenerator(BaseGenerator):
 class ConditionParticipantGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return Condition_ParticipantModel(
+        return ConditionParticipant(
             type=generator_registry.get("CodeableConceptGenerator").generate(),
             individual=generator_registry.get("ReferenceGenerator").generate(),
         )
@@ -152,7 +153,7 @@ class ConditionGenerator(BaseGenerator):
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints
         )
-        return ConditionModel(
+        return Condition(
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
             verificationStatus=generator_registry.get(
@@ -162,8 +163,8 @@ class ConditionGenerator(BaseGenerator):
             severity=generator_registry.get("SeverityGenerator").generate(),
             code=code,
             bodySite=[generator_registry.get("BodySiteGenerator").generate()],
-            subject=ReferenceModel(reference=subject_reference),
-            encounter=ReferenceModel(reference=encounter_reference),
+            subject=Reference(reference=subject_reference),
+            encounter=Reference(reference=encounter_reference),
             onsetDateTime=generator_registry.get("DateGenerator").generate(),
             abatementDateTime=generator_registry.get(
                 "DateGenerator"

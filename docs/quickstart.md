@@ -90,7 +90,7 @@ You can use the data generator within a client function or on its own. The `.gen
     import healthchain as hc
     from healthchain.use_cases import ClinicalDecisionSupport
     from healthchain.models import CdsFhirData
-    from healthchain.data_generator import CdsDataGenerator
+    from healthchain.data_generators import CdsDataGenerator
 
     @hc.sandbox
     class MyCoolSandbox(ClinicalDecisionSupport):
@@ -110,8 +110,8 @@ You can use the data generator within a client function or on its own. The `.gen
 
 === "On its own"
     ```python
-    from healthchain.data_generator import CdsDataGenerator
-    from healthchain.base import Workflow
+    from healthchain.data_generators import CdsDataGenerator
+    from healthchain.workflow import Workflow
 
     # Initialise data generator
     data_generator = CdsDataGenerator()
@@ -156,7 +156,7 @@ A random text document from the `csv` file will be picked for each generation.
 
 ```python
 # Load free text into a DocumentResource FHIR resource
-data_generator.generate(free_text_csv="./dir/to/csv/file")
+data = data_generator.generate(free_text_csv="./dir/to/csv/file")
 ```
 
 
@@ -177,7 +177,7 @@ If you are using a model that requires initialisation steps, we recommend you in
     import healthchain as hc
 
     from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.data_generator import CdsDataGenerator
+    from healthchain.data_generators import CdsDataGenerator
     from healthchain.models import Card, CDSRequest, CdsFhirData
     from transformers import pipeline
 
@@ -218,8 +218,8 @@ If you are using a model that requires initialisation steps, we recommend you in
     import healthchain as hc
 
     from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.data_generator import CdsDataGenerator
-    from healthchain.models import Card, CdsFhirData, CDSRequest
+    from healthchain.data_generators import CdsDataGenerator
+    from healthchain.models import Card, CDSRequest, CdsFhirData
 
     from langchain_openai import ChatOpenAI
     from langchain_core.prompts import PromptTemplate

@@ -11,12 +11,10 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
-from .base import BaseUseCase, Workflow, UseCaseType
-from .clients import EHRClient
-from .service.service import Service
-from .data_generator.data_generator import CdsDataGenerator
-from .utils.apimethod import APIMethod
-from .utils.urlbuilder import UrlBuilder
+from .base import BaseUseCase
+from .service import Service
+from .utils import UrlBuilder
+from .use_cases.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
@@ -87,82 +85,6 @@ def register_method(instance, method, cls, name, attribute_name):
     return method_func()
 
 
-def ehr(
-    func: Optional[F] = None, *, workflow: Workflow, num: int = 1
-) -> Union[Callable[..., Any], Callable[[F], F]]:
-    """
-    A decorator that wraps around a data generator function and returns an EHRClient
-
-    Parameters:
-        func (Optional[Callable]): The function to be decorated. If None, this allows the decorator to
-                                   be used with arguments.
-        workflow ([str]): The workflow identifier which should match an item in the Workflow enum.
-                                  This specifies the context in which the EHR function will operate.
-        num (int): The number of requests to generate in the queue; defaults to 1.
-
-    Returns:
-        Callable: A decorated callable that incorporates EHR functionality or the decorator itself
-                  if 'func' is None, allowing it to be used as a parameterized decorator.
-
-    Raises:
-        ValueError: If the workflow does not correspond to any defined enum or if use case is not configured.
-        NotImplementedError: If the use case class is not one of the supported types.
-
-    Example:
-        @ehr(workflow='patient-view', num=2)
-        def generate_data(self, config):
-            # Function implementation
-    """
-
-    def decorator(func: F) -> F:
-        func.is_client = True
-
-        @wraps(func)
-        def wrapper(self, *args: Any, **kwargs: Any) -> EHRClient:
-            assert issubclass(
-                type(self), BaseUseCase
-            ), f"{self.__class__.__name__} must be subclass of valid Use Case strategy!"
-
-            try:
-                workflow_enum = Workflow(workflow)
-            except ValueError as e:
-                raise ValueError(
-                    f"{e}: please select from {[x.value for x in Workflow]}"
-                )
-
-            # Set workflow in data generator if configured
-            data_generator_attributes = find_attributes_of_type(self, CdsDataGenerator)
-            for i in range(len(data_generator_attributes)):
-                attribute_name = data_generator_attributes[i]
-                try:
-                    assign_to_attribute(
-                        self, attribute_name, "set_workflow", workflow_enum
-                    )
-                except Exception as e:
-                    log.error(
-                        f"Could not set workflow {workflow_enum.value} for data generator method {attribute_name}: {e}"
-                    )
-                if i > 1:
-                    log.warning("More than one DataGenerator instances found.")
-
-            if self.type in UseCaseType:
-                method = EHRClient(func, workflow=workflow_enum, strategy=self.strategy)
-                for _ in range(num):
-                    method.generate_request(self, *args, **kwargs)
-            else:
-                raise NotImplementedError(
-                    f"Use case {self.type} not recognised, check if implemented."
-                )
-            return method
-
-        return wrapper
-
-    if func is None:
-        return decorator
-    else:
-        return decorator(func)
-
-
 def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
     """
     A decorator that wraps a function in an APIMethod; this wraps a function that handles LLM/NLP
@@ -210,7 +132,7 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
     if callable(arg):
         # The decorator was used without parentheses, and a class was passed in directly
         cls = arg
-        return decorator()(cls)  # Apply default decorator with default settings
+        return sandbox_decorator()(cls)  # Apply default decorator with default settings
     else:
         # Arguments were provided, or no arguments but with parentheses
         if "service_config" not in kwargs:
@@ -219,10 +141,10 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
             )
         service_config = arg if arg is not None else kwargs.get("service_config", {})
 
-        return decorator(service_config)
+        return sandbox_decorator(service_config)
 
 
-def decorator(service_config: Optional[Dict] = None) -> Callable:
+def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
     """
     A decorator function that sets up a sandbox environment. It modifies the class initialization
     to incorporate service and client management based on provided configurations. It will:

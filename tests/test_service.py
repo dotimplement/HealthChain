@@ -1,8 +1,8 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 
-from healthchain.service.service import Service
-from healthchain.use_cases.cds import ClinicalDecisionSupport
+from healthchain.service import Service
+from healthchain.use_cases import ClinicalDecisionSupport
 
 cds = ClinicalDecisionSupport()
 service = Service(endpoints=cds.endpoints)

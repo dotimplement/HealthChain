@@ -1,10 +1,9 @@
 import pytest
 
 from unittest.mock import patch, MagicMock
-from healthchain.base import Workflow
-from healthchain.models.requests.cdsrequest import CDSRequest
-
-from healthchain.models.hooks.patientview import PatientViewContext
+from healthchain.workflows import Workflow
+from healthchain.models import CDSRequest
+from healthchain.models.hooks import PatientViewContext
 
 
 def test_valid_data_request_construction(cds_strategy, valid_data):

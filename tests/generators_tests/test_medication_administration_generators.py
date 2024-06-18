@@ -1,4 +1,4 @@
-from healthchain.data_generator.medication_administration_generators import (
+from healthchain.data_generators.medicationadministrationgenerators import (
     MedicationAdministrationDosageGenerator,
     MedicationAdministrationGenerator,
 )

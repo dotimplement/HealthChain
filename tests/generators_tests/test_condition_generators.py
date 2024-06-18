@@ -1,4 +1,4 @@
-from healthchain.data_generator.condition_generators import (
+from healthchain.data_generators.conditiongenerators import (
     ClinicalStatusGenerator,
     VerificationStatusGenerator,
     CategoryGenerator,

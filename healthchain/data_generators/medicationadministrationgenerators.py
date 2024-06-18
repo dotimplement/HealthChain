@@ -1,19 +1,20 @@
-from healthchain.fhir_resources.medication_administration_resources import (
-    MedicationAdministrationModel,
-    MedicationAdministration_DosageModel,
+from typing import Optional
+from faker import Faker
+
+from healthchain.fhir_resources.medicationadministration import (
+    MedicationAdministration,
+    MedicationAdministrationDosage,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    ReferenceModel,
-    CodeableReferenceModel,
+from healthchain.fhir_resources.generalpurpose import (
+    Reference,
+    CodeableReference,
 )
-from healthchain.data_generator.base_generators import (
+from healthchain.fhir_resources.medicationrequest import Medication
+from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
 )
-from healthchain.fhir_resources.medication_request_resources import MedicationModel
-from typing import Optional
-from faker import Faker
 
 
 faker = Faker()
@@ -23,7 +24,7 @@ faker = Faker()
 class MedicationAdministrationDosageGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return MedicationAdministration_DosageModel(
+        return MedicationAdministrationDosage(
             text=faker.random_element(
                 elements=(
                     "Take 1 tablet by mouth once daily",
@@ -41,20 +42,20 @@ class MedicationAdministrationGenerator(BaseGenerator):
         encounter_reference: str,
         constraints: Optional[list] = None,
     ):
-        contained_medication = MedicationModel(
+        contained_medication = Medication(
             code=generator_registry.get(
                 "MedicationRequestContainedGenerator"
             ).generate()
         )
-        return MedicationAdministrationModel(
+        return MedicationAdministration(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             contained=[contained_medication],
-            medication=CodeableReferenceModel(
-                reference=ReferenceModel(reference="Medication/123")
+            medication=CodeableReference(
+                reference=Reference(reference="Medication/123")
             ),
-            subject=ReferenceModel(reference=subject_reference),
-            encounter=ReferenceModel(reference=encounter_reference),
+            subject=Reference(reference=subject_reference),
+            encounter=Reference(reference=encounter_reference),
             authoredOn=generator_registry.get("DateGenerator").generate(),
             dosage=generator_registry.get(
                 "MedicationAdministrationDosageGenerator"
