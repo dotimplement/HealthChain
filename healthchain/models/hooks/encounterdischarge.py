@@ -1,8 +1,7 @@
 from pydantic import Field, model_validator
+from healthchain.utils.idgenerator import IdGenerator
 
 from .basehookcontext import BaseHookContext
-from ...utils.idgenerator import IdGenerator
-
 
 id_generator = IdGenerator(resource_types=["Practitioner", "PractitionerRole"])
 

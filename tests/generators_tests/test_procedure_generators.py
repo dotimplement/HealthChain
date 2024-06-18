@@ -1,5 +1,5 @@
-from healthchain.data_generator.procedure_generators import ProcedureGenerator
-from healthchain.data_generator.value_sets.procedure import ProcedureCodeSimple
+from healthchain.data_generators.proceduregenerators import ProcedureGenerator
+from healthchain.data_generators.value_sets.procedurecodes import ProcedureCodeSimple
 
 
 def test_ProcedureGenerator():

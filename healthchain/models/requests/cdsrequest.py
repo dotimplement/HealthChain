@@ -1,8 +1,8 @@
 from pydantic import BaseModel, HttpUrl, Field
 from typing import Optional, List, Dict, Any
 
-from ..hooks.basehookcontext import BaseHookContext
-from ...utils.idgenerator import IdGenerator
+from healthchain.models.hooks.basehookcontext import BaseHookContext
+from healthchain.utils.idgenerator import IdGenerator
 
 
 id_generator = IdGenerator()

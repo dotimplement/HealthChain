@@ -1,19 +1,17 @@
-from typing import Callable, Optional
-from healthchain.fhir_resources.bundle_resources import BundleModel, Bundle_EntryModel
-from healthchain.data_generator.base_generators import generator_registry
-from healthchain.fhir_resources.document_reference_resources import (
-    DocumentReferenceModel,
-)
-from healthchain.fhir_resources.general_purpose_resources import NarrativeModel
-from healthchain.base import Workflow
-from pydantic import BaseModel
-from pathlib import Path
-
-
 import random
 import csv
-
 import logging
+
+from pydantic import BaseModel
+from typing import Callable, Optional
+from pathlib import Path
+
+from healthchain.base import Workflow
+from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
+from healthchain.data_generators.basegenerators import generator_registry
+from healthchain.fhir_resources.documentreference import DocumentReference
+from healthchain.fhir_resources.generalpurpose import Narrative
+from healthchain.models.data.cdsfhirdata import CdsFhirData
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +34,11 @@ workflow_mappings = {
 # TODO: Some of the resources should be allowed to be multiplied
 
 
-class OutputDataModel(BaseModel):
-    context: dict = {}
-    resources: BundleModel
-
-
-class DataGenerator:
+class CdsDataGenerator:
     def __init__(self):
         self.registry = generator_registry
         self.mappings = workflow_mappings
-        self.data = []
+        self.data: CdsFhirData = None
 
     def fetch_generator(self, generator_name: str) -> Callable:
         return self.registry.get(generator_name)
@@ -69,7 +62,7 @@ class DataGenerator:
             generator = self.fetch_generator(generator_name)
             result = generator.generate(constraints=constraints)
 
-            results.append(Bundle_EntryModel(resource=result))
+            results.append(BundleEntry(resource=result))
 
         parsed_free_text = (
             self.free_text_parser(free_text_path, column_name)
@@ -77,8 +70,9 @@ class DataGenerator:
             else None
         )
         if parsed_free_text:
-            results.append(Bundle_EntryModel(resource=random.choice(parsed_free_text)))
-        output = OutputDataModel(context={}, resources=BundleModel(entry=results))
+            results.append(BundleEntry(resource=random.choice(parsed_free_text)))
+
+        output = CdsFhirData(prefetch=Bundle(entry=results))
         self.data = output
         return output
 
@@ -109,11 +103,11 @@ class DataGenerator:
 
         for x in column_data:
             # First parse x in to documentreferencemodel format
-            text = NarrativeModel(
+            text = Narrative(
                 status="generated",
                 div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
             )
-            doc = DocumentReferenceModel(text=text)
+            doc = DocumentReference(text=text)
             document_list.append(doc)
 
         return document_list

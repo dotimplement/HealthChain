@@ -1,9 +1,12 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 
+from healthchain.clients import ehr
+from healthchain.decorators import sandbox, api
+from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.models import Card
+
 from .conftest import MockDataGenerator
-from healthchain.decorators import sandbox, ehr, api
-from healthchain.use_cases.cds import ClinicalDecisionSupport
 
 
 @sandbox
@@ -18,15 +21,13 @@ class myCDS(ClinicalDecisionSupport):
 
     @api
     def llm(self, text: str):
-        return {
-            "cards": [
-                {
-                    "summary": self.data_generator.data.resources.condition,
-                    "indicator": "info",
-                    "source": {"label": "website"},
-                }
-            ]
-        }
+        return [
+            Card(
+                summary="test",
+                indicator="info",
+                source={"label": "website"},
+            )
+        ]
 
 
 cds = myCDS()

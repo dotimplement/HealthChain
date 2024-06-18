@@ -1,20 +1,18 @@
-from healthchain.data_generator.base_generators import (
+from typing import Optional
+from faker import Faker
+
+from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    ReferenceModel,
-)
-from healthchain.fhir_resources.procedure_resources import ProcedureModel
-from healthchain.data_generator.value_sets.procedure import (
+from healthchain.fhir_resources.generalpurpose import Reference
+from healthchain.fhir_resources.procedure import Procedure
+from healthchain.data_generators.value_sets.procedurecodes import (
     ProcedureCodeSimple,
     ProcedureCodeComplex,
 )
-
-from typing import Optional
-from faker import Faker
 
 
 faker = Faker()
@@ -50,11 +48,11 @@ class ProcedureGenerator(BaseGenerator):
         code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(
             constraints=constraints
         )
-        return ProcedureModel(
+        return Procedure(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             code=code,
-            subject=ReferenceModel(reference=subject_reference),
-            encounter=ReferenceModel(reference=encounter_reference),
+            subject=Reference(reference=subject_reference),
+            encounter=Reference(reference=encounter_reference),
             occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),
         )

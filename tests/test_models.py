@@ -1,7 +1,9 @@
-from healthchain.models.hooks.encounterdischarge import EncounterDischargeContext
-from healthchain.models.hooks.patientview import PatientViewContext
-from healthchain.models.hooks.orderselect import OrderSelectContext
-from healthchain.models.hooks.ordersign import OrderSignContext
+from healthchain.models.hooks import (
+    EncounterDischargeContext,
+    PatientViewContext,
+    OrderSelectContext,
+    OrderSignContext,
+)
 
 
 def test_default_id_generator():

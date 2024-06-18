@@ -1,9 +1,9 @@
 import pytest
-from healthchain.fhir_resources.patient_resources import (
-    PatientModel,
-    HumanNameModel,
-    ContactPointModel,
-    AddressModel,
+from healthchain.fhir_resources.patient import (
+    Patient,
+    HumanName,
+    ContactPoint,
+    Address,
 )
 
 
@@ -15,7 +15,7 @@ def test_PatientModel():
         "birthDate": "1980-01-01",
         "gender": "Male",
     }
-    patient = PatientModel(**data)
+    patient = Patient(**data)
     patient = patient.model_dump(by_alias=True)
     assert patient["resourceType"] == "Patient"
     assert patient["name"][0]["given"] == ["John"]
@@ -31,12 +31,12 @@ def test_PatientModel_invalid():
         "birthDate": "1980-00-00",
     }
     with pytest.raises(ValueError):
-        PatientModel(**data)
+        Patient(**data)
 
 
 def test_HumanNameModel():
     data = {"family": "Doe", "given": ["John"], "prefix": ["Mr."]}
-    name = HumanNameModel(**data)
+    name = HumanName(**data)
     name = name.model_dump(by_alias=True)
     assert name["family"] == "Doe"
     assert name["given"] == ["John"]
@@ -46,12 +46,12 @@ def test_HumanNameModel_invalid():
     # Fails due to invalid data type (int instead of str) for given
     data = {"family": "Doe", "given": [15], "prefix": ["Mr."]}
     with pytest.raises(ValueError):
-        HumanNameModel(**data)
+        HumanName(**data)
 
 
 def test_ContactPointModel():
     data = {"system": "phone", "value": "1234567890", "use": "home"}
-    contact = ContactPointModel(**data)
+    contact = ContactPoint(**data)
     contact = contact.model_dump(by_alias=True)
     assert contact["system"] == "phone"
     assert contact["value"] == "1234567890"
@@ -69,7 +69,7 @@ def test_AddressModel():
         "postalCode": "12345",
         "country": "US",
     }
-    address = AddressModel(**data)
+    address = Address(**data)
     address = address.model_dump(by_alias=True)
     assert address["use"] == "home"
     assert address["line"] == ["Apt 1"]

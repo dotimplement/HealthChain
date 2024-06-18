@@ -3,7 +3,8 @@
 import random
 import string
 
-from healthchain.fhir_resources.primitive_resources import (
+from faker import Faker
+from healthchain.fhir_resources.primitives import (
     booleanModel,
     canonicalModel,
     codeModel,
@@ -22,11 +23,11 @@ from healthchain.fhir_resources.primitive_resources import (
     urlModel,
     uuidModel,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    CodeableConceptModel,
-    CodingModel,
+from healthchain.fhir_resources.generalpurpose import (
+    CodeableConcept,
+    Coding,
 )
-from faker import Faker
+
 
 faker = Faker()
 
@@ -186,9 +187,9 @@ class CodeableConceptGenerator(BaseGenerator):
     @staticmethod
     def generate_from_valueset(ValueSet):
         value_set_instance = ValueSet()
-        return CodeableConceptModel(
+        return CodeableConcept(
             coding=[
-                CodingModel(
+                Coding(
                     system=value_set_instance.system,
                     code=faker.random_element(value_set_instance.value_set)["code"],
                     display=faker.random_element(value_set_instance.value_set)[

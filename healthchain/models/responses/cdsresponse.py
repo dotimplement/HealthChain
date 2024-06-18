@@ -79,7 +79,7 @@ class Link(BaseModel):
         return self
 
 
-class Coding(BaseModel):
+class SimpleCoding(BaseModel):
     """
     The Coding data type captures the concept of a code. This coding type is a standalone data type
     in CDS Hooks modeled after a trimmed down version of the FHIR Coding data type.
@@ -145,7 +145,7 @@ class Source(BaseModel):
     label: str
     url: Optional[HttpUrl] = None
     icon: Optional[HttpUrl] = None
-    topic: Optional[Coding] = None
+    topic: Optional[SimpleCoding] = None
 
 
 class Card(BaseModel):
@@ -165,7 +165,7 @@ class Card(BaseModel):
     detail: Optional[str] = None
     suggestions: Optional[List[Suggestion]] = None
     selectionBehavior: Optional[SelectionBehaviorEnum] = None
-    overrideReasons: Optional[List[Coding]] = None
+    overrideReasons: Optional[List[SimpleCoding]] = None
     links: Optional[List[Link]] = None
 
     @model_validator(mode="after")

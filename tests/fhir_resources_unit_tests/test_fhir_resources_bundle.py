@@ -1,6 +1,5 @@
-from healthchain.fhir_resources.bundle_resources import Bundle_EntryModel, BundleModel
-from healthchain.data_generator.patient_generators import PatientGenerator
-from healthchain.data_generator.encounter_generators import EncounterGenerator
+from healthchain.fhir_resources.bundleresources import BundleEntry, Bundle
+from healthchain.data_generators import PatientGenerator, EncounterGenerator
 
 
 def test_bundle_entry_model():
@@ -9,8 +8,8 @@ def test_bundle_entry_model():
     encounter_generator = EncounterGenerator()
     encounter = encounter_generator.generate()
 
-    bundle_patient_entry = Bundle_EntryModel(resource=patient)
-    bundle_encounter_entry = Bundle_EntryModel(resource=encounter)
-    bundle = BundleModel(entry=[bundle_patient_entry, bundle_encounter_entry])
+    bundle_patient_entry = BundleEntry(resource=patient)
+    bundle_encounter_entry = BundleEntry(resource=encounter)
+    bundle = Bundle(entry=[bundle_patient_entry, bundle_encounter_entry])
     assert bundle.entry_field[0].resource_field == patient
     assert bundle.entry_field[1].resource_field == encounter

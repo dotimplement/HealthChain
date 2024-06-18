@@ -2,8 +2,16 @@ import logging
 
 from typing import Dict
 
-from ..utils.apimethod import APIMethod
-from ..base import BaseUseCase, UseCaseMapping, UseCaseType, Workflow, validate_workflow
+from healthchain.base import BaseUseCase
+from healthchain.workflows import (
+    UseCaseMapping,
+    UseCaseType,
+    Workflow,
+    validate_workflow,
+)
+
+from .apimethod import APIMethod
+
 
 log = logging.getLogger(__name__)
 

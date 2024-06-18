@@ -1,6 +1,7 @@
 from pydantic import Field, BaseModel
 from typing import List
-from healthchain.fhir_resources.primitive_resources import (
+
+from healthchain.fhir_resources.primitives import (
     idModel,
     uriModel,
     codeModel,
@@ -8,77 +9,77 @@ from healthchain.fhir_resources.primitive_resources import (
     stringModel,
     dateModel,
 )
-from healthchain.fhir_resources.general_purpose_resources import (
-    IdentifierModel,
-    ReferenceModel,
-    ExtensionModel,
-    PeriodModel,
-    CodeableConceptModel,
-    MetaModel,
-    NarrativeModel,
+from healthchain.fhir_resources.generalpurpose import (
+    Identifier,
+    Reference,
+    Extension,
+    Period,
+    CodeableConcept,
+    Meta,
+    Narrative,
 )
-from healthchain.fhir_resources.patient_resources import (
-    HumanNameModel,
-    ContactPointModel,
-    AddressModel,
+from healthchain.fhir_resources.patient import (
+    HumanName,
+    ContactPoint,
+    Address,
 )
 
 
-class Practitioner_QualificationModel(BaseModel):
+class PractitionerQualification(BaseModel):
     id_field: stringModel = Field(
         default=None,
         alias="id",
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
-    extension_field: List[ExtensionModel] = Field(
-        default=None,
+    extension_field: List[Extension] = Field(
+        default_factory=list,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
-    modifierExtension_field: List[ExtensionModel] = Field(
-        default=None,
+    modifierExtension_field: List[Extension] = Field(
+        default_factory=list,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
-    identifier_field: List[IdentifierModel] = Field(
-        default=None,
+    identifier_field: List[Identifier] = Field(
+        default_factory=list,
         alias="identifier",
         description="An identifier that applies to this person's qualification.",
     )
-    code_field: CodeableConceptModel = Field(
+    code_field: CodeableConcept = Field(
         default=None,
         alias="code",
         description="Coded representation of the qualification.",
     )
-    period_field: PeriodModel = Field(
+    period_field: Period = Field(
         default=None,
         alias="period",
         description="Period during which the qualification is valid.",
     )
-    issuer_field: ReferenceModel = Field(
+    issuer_field: Reference = Field(
         default=None,
         alias="issuer",
         description="Organization that regulates and issues the qualification.",
     )
 
 
-class Practitioner_CommunicationModel(BaseModel):
+class PractitionerCommunication(BaseModel):
     id_field: stringModel = Field(
         default=None,
         alias="id",
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
-    extension_field: List[ExtensionModel] = Field(
-        default=None,
+    extension_field: List[Extension] = Field(
+        default_factory=list,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
-    modifierExtension_field: List[ExtensionModel] = Field(
-        default=None,
+    modifierExtension_field: List[Extension] = Field(
+        default_factory=list,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
-    language_field: CodeableConceptModel = Field(
+    language_field: CodeableConcept = Field(
         default=None,
         alias="language",
         description="The ISO-639-1 alpha 2 code in lower case for the language, optionally followed by a hyphen and the ISO-3166-1 alpha 2 code for the region in upper case; e.g. en for English, or en-US for American English versus en-AU for Australian English.",
@@ -90,14 +91,14 @@ class Practitioner_CommunicationModel(BaseModel):
     )
 
 
-class PractitionerModel(BaseModel):
+class Practitioner(BaseModel):
     resourceType: str = "Practitioner"
     id_field: idModel = Field(
         default=None,
         alias="id",
         description="The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.",
     )
-    meta_field: MetaModel = Field(
+    meta_field: Meta = Field(
         default=None,
         alias="meta",
         description="The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
@@ -112,24 +113,24 @@ class PractitionerModel(BaseModel):
         alias="language",
         description="The base language in which the resource is written.",
     )
-    text_field: NarrativeModel = Field(
+    text_field: Narrative = Field(
         default=None,
         alias="text",
         description="A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it clinically safe for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.",
     )
-    # contained_field: List[ResourceListModel] = Field(default=None, alias="contained", description="These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.")
-    extension_field: List[ExtensionModel] = Field(
-        default=None,
+    # contained_field: List[ResourceListModel] = Field(default_factory=list, alias="contained", description="These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.")
+    extension_field: List[Extension] = Field(
+        default_factory=list,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
-    modifierExtension_field: List[ExtensionModel] = Field(
-        default=None,
+    modifierExtension_field: List[Extension] = Field(
+        default_factory=list,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
-    identifier_field: List[IdentifierModel] = Field(
-        default=None,
+    identifier_field: List[Identifier] = Field(
+        default_factory=list,
         alias="identifier",
         description="An identifier that applies to this person in this role.",
     )
@@ -138,13 +139,13 @@ class PractitionerModel(BaseModel):
         alias="active",
         description="Whether this practitioner's record is in active use.",
     )
-    name_field: List[HumanNameModel] = Field(
-        default=None,
+    name_field: List[HumanName] = Field(
+        default_factory=list,
         alias="name",
         description="The name(s) associated with the practitioner.",
     )
-    telecom_field: List[ContactPointModel] = Field(
-        default=None,
+    telecom_field: List[ContactPoint] = Field(
+        default_factory=list,
         alias="telecom",
         description="A contact detail for the practitioner, e.g. a telephone number or an email address.",
     )
@@ -158,19 +159,19 @@ class PractitionerModel(BaseModel):
         alias="birthDate",
         description="The date of birth for the practitioner.",
     )
-    address_field: List[AddressModel] = Field(
-        default=None,
+    address_field: List[Address] = Field(
+        default_factory=list,
         alias="address",
         description="Address(es) of the practitioner that are not role specific (typically home address). ",
     )
-    # photo_field: List[AttachmentModel] = Field(default=None, alias="photo", description="Image of the person.")
-    qualification_field: List[Practitioner_QualificationModel] = Field(
-        default=None,
+    # photo_field: List[AttachmentModel] = Field(default_factory=list, alias="photo", description="Image of the person.")
+    qualification_field: List[PractitionerQualification] = Field(
+        default_factory=list,
         alias="qualification",
         description="The official qualifications, certifications, accreditations, training, licenses (and other types of educations/skills/capabilities) that authorize or otherwise pertain to the provision of care by the practitioner.",
     )
-    communication_field: List[Practitioner_CommunicationModel] = Field(
-        default=None,
+    communication_field: List[PractitionerCommunication] = Field(
+        default_factory=list,
         alias="communication",
         description="A language which may be used to communicate with the practitioner, often for correspondence/administrative purposes.",
     )

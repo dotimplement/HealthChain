@@ -1,11 +1,12 @@
-from healthchain.fhir_resources.resource_registry import ImplementedResourceRegistry
 from pydantic import Field, BaseModel, field_validator
 from typing import List, Any
 
-implemented_resources = [f"{item.value}Model" for item in ImplementedResourceRegistry]
+from healthchain.fhir_resources.resourceregistry import ImplementedResourceRegistry
+
+implemented_resources = [f"{item.value}" for item in ImplementedResourceRegistry]
 
 
-class Bundle_EntryModel(BaseModel):
+class BundleEntry(BaseModel):
     resource_field: Any = Field(
         default=None,
         alias="resource",
@@ -22,10 +23,10 @@ class Bundle_EntryModel(BaseModel):
         return value
 
 
-class BundleModel(BaseModel):
+class Bundle(BaseModel):
     resourceType_field: str = "Bundle"
-    entry_field: List[Bundle_EntryModel] = Field(
-        default=None,
+    entry_field: List[BundleEntry] = Field(
+        default_factory=list,
         alias="entry",
         description="An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only).",
     )

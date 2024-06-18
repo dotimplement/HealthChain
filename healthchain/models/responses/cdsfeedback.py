@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from enum import Enum
 
-from .cdsresponse import Coding
+from .cdsresponse import SimpleCoding
 
 
 class OutcomeEnum(str, Enum):
@@ -17,7 +17,7 @@ class OutcomeEnum(str, Enum):
 
 
 class OverrideReason(BaseModel):
-    reason: Coding
+    reason: SimpleCoding
     userComment: Optional[str] = None
 
 
