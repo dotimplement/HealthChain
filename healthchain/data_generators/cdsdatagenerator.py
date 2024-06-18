@@ -47,17 +47,15 @@ class CdsDataGenerator:
         self.workflow = workflow
 
     def generate(
-        self, constraints: Optional[list] = None, free_text_json: Optional[str] = None
+        self,
+        constraints: Optional[list] = None,
+        free_text_path: Optional[str] = None,
+        column_name: Optional[str] = None,
     ) -> BaseModel:
         results = []
 
         if self.workflow not in self.mappings.keys():
             raise ValueError(f"Workflow {self.workflow} not found in mappings")
-
-        if free_text_json is not None:
-            parsed_free_text = self.free_text_parser(free_text_json)
-        else:
-            parsed_free_text = {self.workflow.value: []}
 
         for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
@@ -65,6 +63,14 @@ class CdsDataGenerator:
             result = generator.generate(constraints=constraints)
 
             results.append(BundleEntry(resource=result))
+
+        parsed_free_text = (
+            self.free_text_parser(free_text_path, column_name)
+            if free_text_path
+            else None
+        )
+        if parsed_free_text:
+            results.append(BundleEntry(resource=random.choice(parsed_free_text)))
 
         if (
             self.workflow.value in parsed_free_text.keys()
