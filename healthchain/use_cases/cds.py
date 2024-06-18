@@ -57,7 +57,7 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             workflow (Workflow): The CDS hook name, e.g. patient-view.
 
         Returns:
-            Dict: A json-compatible CDS request.
+            CDSRequest: A Pydantic model that wraps a CDS request for REST
 
         Raises:
             ValueError: If the workflow is invalid or the data does not validate properly.

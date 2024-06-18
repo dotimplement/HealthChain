@@ -10,12 +10,13 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from termcolor import colored
 
-from .endpoints import Endpoint
+from .endpoints import Endpoint, Protocol
 
 log = logging.getLogger(__name__)
 
 
 class Service:
+    # TODO: rename class to avoid namespace clash?
     """
     A service wrapper which registers routes and starts a FastAPI service
 
@@ -42,12 +43,13 @@ class Service:
     def _register_routes(self) -> None:
         # TODO: add kwargs
         for endpoint in self.endpoints.values():
-            self.app.add_api_route(
-                endpoint.path,
-                endpoint.function,
-                methods=[endpoint.method],
-                response_model_exclude_none=True,
-            )
+            if endpoint.protocol == Protocol.rest:
+                self.app.add_api_route(
+                    endpoint.path,
+                    endpoint.function,
+                    methods=[endpoint.method],
+                    response_model_exclude_none=True,
+                )
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):

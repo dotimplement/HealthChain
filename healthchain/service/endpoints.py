@@ -1,5 +1,11 @@
+from enum import Enum
 from pydantic import BaseModel, field_validator
 from typing import Optional, Callable
+
+
+class Protocol(Enum):
+    soap = "SOAP"
+    rest = "REST"
 
 
 class Endpoint(BaseModel):
@@ -7,6 +13,7 @@ class Endpoint(BaseModel):
     method: str
     function: Callable
     description: Optional[str] = None
+    protocol: Protocol = Protocol.rest
 
     @field_validator("method")
     @classmethod

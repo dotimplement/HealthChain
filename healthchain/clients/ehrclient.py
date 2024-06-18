@@ -104,10 +104,15 @@ class EHRClient(BaseClient):
             use_case ([BaseUseCase]): The strategy object to construct requests based on the generated data.
             Should be a subclass of BaseUseCase. Example - ClinicalDecisionSupport()
         """
+        # TODO: Add option to pass in different provider options
         self.data_generator_func: Callable[..., Any] = func
         self.workflow: Workflow = workflow
         self.strategy: BaseStrategy = strategy
+        self.provider = None
         self.request_data: List[CDSRequest] = []
+
+    def set_provider(self, name):
+        pass
 
     def generate_request(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -135,7 +140,7 @@ class EHRClient(BaseClient):
             Notes:
                 This method logs errors rather than raising them, to avoid interrupting the batch processing of requests.
         """
-
+        # TODO: we need to route requests differently here depending on use case - SOAP/REST need to use data or json
         async with httpx.AsyncClient() as client:
             json_responses: List[Dict] = []
             for request in self.request_data:
