@@ -72,15 +72,6 @@ class CdsDataGenerator:
         if parsed_free_text:
             results.append(BundleEntry(resource=random.choice(parsed_free_text)))
 
-        if (
-            self.workflow.value in parsed_free_text.keys()
-            and parsed_free_text[self.workflow.value]
-        ):
-            results.append(
-                BundleEntry(
-                    resource=random.choice(parsed_free_text[self.workflow.value])
-                )
-            )
         output = CdsFhirData(prefetch=Bundle(entry=results))
         self.data = output
         return output
