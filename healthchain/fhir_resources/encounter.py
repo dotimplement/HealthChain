@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 from healthchain.fhir_resources.primitives import (
     stringModel,
@@ -196,12 +196,7 @@ class EncounterLocation(BaseModel):
 
 
 class Encounter(BaseModel):
-    resourceType_field: str = Field(
-        default="Encounter",
-        alias="resourceType",
-        const=True,
-        description="This resource is a type of Encounter",
-    )
+    resourceType: Literal["Encounter"] = "Encounter"
     id_field: idModel = Field(
         default=None,
         alias="id",

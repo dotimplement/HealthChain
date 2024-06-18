@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 from healthchain.fhir_resources.primitives import (
     stringModel,
@@ -91,12 +91,7 @@ class ProcedureFocalDevice(BaseModel):
 
 
 class Procedure(BaseModel):
-    resourceType_field: str = Field(
-        default="Procedure",
-        alias="resourceType",
-        const=True,
-        description="This resource is a Procedure resource",
-    )
+    resourceType: Literal["Procedure"] = "Procedure"
     id_field: idModel = Field(
         default=None,
         alias="id",

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 from healthchain.fhir_resources.primitives import (
     stringModel,
@@ -161,12 +161,7 @@ class Medication(BaseModel):
 
 
 class MedicationRequest(BaseModel):
-    resourceType_field: str = Field(
-        default="MedicationRequest",
-        alias="resourceType",
-        const=True,
-        description="This resource is a MedicationRequest resource",
-    )
+    resourceType: Literal["MedicationRequest"] = "MedicationRequest"
     id_field: idModel = Field(
         default=None,
         alias="id",

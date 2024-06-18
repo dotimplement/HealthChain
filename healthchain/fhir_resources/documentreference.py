@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 from healthchain.fhir_resources.primitives import (
     idModel,
@@ -135,11 +135,7 @@ class DocumentReferenceContent(BaseModel):
 
 
 class DocumentReference(BaseModel):
-    resourceType: str = Field(
-        default="DocumentReference",
-        const=True,
-        description="This resource is a DocumentReference resource",
-    )
+    resourceType: Literal["DocumentReference"] = "DocumentReference"
     id_field: idModel = Field(
         default=None,
         alias="id",
