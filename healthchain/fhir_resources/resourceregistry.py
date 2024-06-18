@@ -45,7 +45,6 @@ class UnimplementedResourceRegistry(Enum):
     CompartmentDefinition: str = "CompartmentDefinition"
     Composition: str = "Composition"
     ConceptMap: str = "ConceptMap"
-
     ConditionDefinition: str = "ConditionDefinition"
     Consent: str = "Consent"
     Contract: str = "Contract"
