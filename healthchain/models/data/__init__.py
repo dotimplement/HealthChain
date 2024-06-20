@@ -1,4 +1,4 @@
 from .cdsfhirdata import CdsFhirData
-from .cdadata import CdaData
+from .ccddata import CcdData
 
-__all__ = ["CdsFhirData", "CdaData"]
+__all__ = ["CdsFhirData", "CcdData"]

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class NoteReaderRequest(BaseModel):
+class CdaRequest(BaseModel):
     document: str

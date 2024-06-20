@@ -1,4 +1,4 @@
 from .cdsrequest import CDSRequest, FHIRAuthorization
-from .notereaderrequest import NoteReaderRequest
+from .cdarequest import CdaRequest
 
-__all__ = ["CDSRequest", "FHIRAuthorization", "NoteReaderRequest"]
+__all__ = ["CDSRequest", "FHIRAuthorization", "CdaRequest"]

@@ -1,4 +1,4 @@
-from .requests import CDSRequest, FHIRAuthorization, NoteReaderRequest
+from .requests import CDSRequest, FHIRAuthorization, CdaRequest
 from .responses import (
     Link,
     SimpleCoding,
@@ -11,9 +11,9 @@ from .responses import (
     OverrideReason,
     CDSService,
     CDSServiceInformation,
-    NoteReaderResponse,
+    CdaResponse,
 )
-from .data import CdsFhirData, CdaData
+from .data import CdsFhirData, CcdData
 
 __all__ = [
     "CDSRequest",
@@ -30,7 +30,7 @@ __all__ = [
     "Card",
     "CDSResponse",
     "CdsFhirData",
-    "NoteReaderRequest",
-    "NoteReaderResponse",
-    "CdaData",
+    "CdaRequest",
+    "CdaResponse",
+    "CcdData",
 ]

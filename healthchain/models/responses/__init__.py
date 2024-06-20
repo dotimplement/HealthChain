@@ -9,7 +9,7 @@ from .cdsresponse import (
     Card,
     CDSResponse,
 )
-from .notereaderresponse import NoteReaderResponse
+from .cdaresponse import CdaResponse
 
 __all__ = [
     "CDSService",
@@ -23,5 +23,5 @@ __all__ = [
     "Source",
     "Card",
     "CDSResponse",
-    "NoteReaderResponse",
+    "CdaResponse",
 ]
