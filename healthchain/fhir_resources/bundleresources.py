@@ -1,5 +1,5 @@
 from pydantic import Field, BaseModel, field_validator
-from typing import List, Any
+from typing import List, Literal, Any
 
 from healthchain.fhir_resources.resourceregistry import ImplementedResourceRegistry
 
@@ -24,9 +24,9 @@ class BundleEntry(BaseModel):
 
 
 class Bundle(BaseModel):
-    resourceType_field: str = "Bundle"
+    resourceType: Literal["Bundle"] = "Bundle"
     entry_field: List[BundleEntry] = Field(
-        default_factory=list,
+        default=None,
         alias="entry",
         description="An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only).",
     )

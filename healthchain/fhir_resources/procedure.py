@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 from healthchain.fhir_resources.primitives import (
     stringModel,
@@ -31,12 +31,12 @@ class ProcedurePerformer(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     modifierExtension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
@@ -69,12 +69,12 @@ class ProcedureFocalDevice(BaseModel):
         description="Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
     )
     extension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     modifierExtension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
@@ -91,7 +91,7 @@ class ProcedureFocalDevice(BaseModel):
 
 
 class Procedure(BaseModel):
-    resourceType: str = "Procedure"
+    resourceType: Literal["Procedure"] = "Procedure"
     id_field: idModel = Field(
         default=None,
         alias="id",
@@ -118,42 +118,42 @@ class Procedure(BaseModel):
         description="A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it clinically safe for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.",
     )
     # contained_field: List[ResourceListModel] = Field(
-    #     default_factory=list,
+    #     default=None,
     #     alias="contained",
     #     description="These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.",
     # )
     extension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="extension",
         description="May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
     )
     modifierExtension_field: List[Extension] = Field(
-        default_factory=list,
+        default=None,
         alias="modifierExtension",
         description="May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.",
     )
     identifier_field: List[Identifier] = Field(
-        default_factory=list,
+        default=None,
         alias="identifier",
         description="Business identifiers assigned to this procedure by the performer or other systems which remain constant as the resource is updated and is propagated from server to server.",
     )
     instantiatesCanonical_field: List[canonicalModel] = Field(
-        default_factory=list,
+        default=None,
         alias="instantiatesCanonical",
         description="The URL pointing to a FHIR-defined protocol, guideline, order set or other definition that is adhered to in whole or in part by this Procedure.",
     )
     instantiatesUri_field: List[uriModel] = Field(
-        default_factory=list,
+        default=None,
         alias="instantiatesUri",
         description="The URL pointing to an externally maintained protocol, guideline, order set or other definition that is adhered to in whole or in part by this Procedure.",
     )
     basedOn_field: List[Reference] = Field(
-        default_factory=list,
+        default=None,
         alias="basedOn",
         description="A reference to a resource that contains details of the request for this procedure.",
     )
     partOf_field: List[Reference] = Field(
-        default_factory=list,
+        default=None,
         alias="partOf",
         description="A larger event of which this particular procedure is a component or step.",
     )
@@ -168,7 +168,7 @@ class Procedure(BaseModel):
         description="Captures the reason for the current state of the procedure.",
     )
     category_field: List[CodeableConcept] = Field(
-        default_factory=list,
+        default=None,
         alias="category",
         description="A code that classifies the procedure for searching, sorting and display purposes (e.g. Surgical Procedure).",
     )
@@ -228,7 +228,7 @@ class Procedure(BaseModel):
         description="Indicates if this record was captured as a secondary 'reported' record rather than as an original primary source-of-truth record.  It may also indicate the source of the report.",
     )
     performer_field: List[ProcedurePerformer] = Field(
-        default_factory=list,
+        default=None,
         alias="performer",
         description="Indicates who or what performed the procedure and how they were involved.",
     )
@@ -238,12 +238,12 @@ class Procedure(BaseModel):
         description="The location where the procedure actually happened.  E.g. a newborn at home, a tracheostomy at a restaurant.",
     )
     reason_field: List[CodeableReference] = Field(
-        default_factory=list,
+        default=None,
         alias="reason",
         description="The coded reason or reference why the procedure was performed. This may be a coded entity of some type, be present as text, or be a reference to one of several resources that justify the procedure.",
     )
     bodySite_field: List[CodeableConcept] = Field(
-        default_factory=list,
+        default=None,
         alias="bodySite",
         description="Detailed and structured anatomical location information. Multiple locations are allowed - e.g. multiple punch biopsies of a lesion.",
     )
@@ -253,37 +253,37 @@ class Procedure(BaseModel):
         description="The outcome of the procedure - did it resolve the reasons for the procedure being performed?",
     )
     report_field: List[Reference] = Field(
-        default_factory=list,
+        default=None,
         alias="report",
         description="This could be a histology result, pathology report, surgical report, etc.",
     )
     complication_field: List[CodeableReference] = Field(
-        default_factory=list,
+        default=None,
         alias="complication",
         description="Any complications that occurred during the procedure, or in the immediate post-performance period. These are generally tracked separately from the notes, which will typically describe the procedure itself rather than any 'post procedure' issues.",
     )
     followUp_field: List[CodeableConcept] = Field(
-        default_factory=list,
+        default=None,
         alias="followUp",
         description="If the procedure required specific follow up - e.g. removal of sutures. The follow up may be represented as a simple note or could potentially be more complex, in which case the CarePlan resource can be used.",
     )
     # note_field: List[AnnotationModel] = Field(
-    #     default_factory=list,
+    #     default=None,
     #     alias="note",
     #     description="Any other notes and comments about the procedure.",
     # )
     focalDevice_field: List[ProcedureFocalDevice] = Field(
-        default_factory=list,
+        default=None,
         alias="focalDevice",
         description="A device that is implanted, removed or otherwise manipulated (calibration, battery replacement, fitting a prosthesis, attaching a wound-vac, etc.) as a focal portion of the Procedure.",
     )
     used_field: List[CodeableReference] = Field(
-        default_factory=list,
+        default=None,
         alias="used",
         description="Identifies medications, devices and any other substance used as part of the procedure.",
     )
     supportingInfo_field: List[Reference] = Field(
-        default_factory=list,
+        default=None,
         alias="supportingInfo",
         description="Other resources from the patient record that may be relevant to the procedure.  The information from these resources was either used to create the instance or is provided to help with its interpretation. This extension should not be used if more specific inline elements or extensions are available.",
     )

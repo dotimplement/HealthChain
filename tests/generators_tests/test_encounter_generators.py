@@ -33,8 +33,5 @@ def test_EncounterModel():
         "discharged",
         "cancelled",
     )
-    assert encounter.class_field is not None
-    assert encounter.type_field is not None
-    assert encounter.subject_field is not None
     assert encounter.subject_field.reference_field == "Patient/123"
     assert encounter.subject_field.display_field == "Patient/123"
