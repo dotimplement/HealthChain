@@ -14,5 +14,5 @@ def test_MedicationRequestGenerator():
     generator = MedicationRequestGenerator()
     medication_request = generator.generate()
     assert medication_request is not None
-    assert medication_request.resourceType_field == "MedicationRequest"
+    assert medication_request.resourceType == "MedicationRequest"
     assert medication_request.id_field is not None
