@@ -47,10 +47,12 @@ def ehr(
 
         @wraps(func)
         def wrapper(self, *args: Any, **kwargs: Any) -> EHRClient:
+            # Validate function decorated is a use case base class
             assert issubclass(
                 type(self), BaseUseCase
             ), f"{self.__class__.__name__} must be subclass of valid Use Case strategy!"
 
+            # Validate workflow is a valid workflow
             try:
                 workflow_enum = Workflow(workflow)
             except ValueError as e:
@@ -73,8 +75,10 @@ def ehr(
                 if i > 1:
                     log.warning("More than one DataGenerator instances found.")
 
+            # Wrap the function in EHRClient with workflow and strategy passed in
             if self.type in UseCaseType:
                 method = EHRClient(func, workflow=workflow_enum, strategy=self.strategy)
+                # Generate the number of requests specified with method
                 for _ in range(num):
                     method.generate_request(self, *args, **kwargs)
             else:
@@ -108,7 +112,7 @@ class EHRClient(BaseClient):
         self.data_generator_func: Callable[..., Any] = func
         self.workflow: Workflow = workflow
         self.strategy: BaseStrategy = strategy
-        self.provider = None
+        self.vendor = None
         self.request_data: List[CDSRequest] = []
 
     def set_provider(self, name):
@@ -147,11 +151,20 @@ class EHRClient(BaseClient):
                 try:
                     # TODO: pass timeout as config
                     timeout = httpx.Timeout(10.0, read=None)
-                    response = await client.post(
-                        url=url,
-                        json=request.model_dump(exclude_none=True),
-                        timeout=timeout,
-                    )
+                    if self.strategy.api_protocol == "SOAP":
+                        headers = {"Content-Type": "text/xml; charset=utf-8"}
+                        response = await client.post(
+                            url=url,
+                            data=request,
+                            headers=headers,
+                            timeout=timeout,
+                        )
+                    else:
+                        response = await client.post(
+                            url=url,
+                            json=request.model_dump(exclude_none=True),
+                            timeout=timeout,
+                        )
                     response.raise_for_status()
                     json_responses.append(response.json())
                 except httpx.HTTPStatusError as exc:

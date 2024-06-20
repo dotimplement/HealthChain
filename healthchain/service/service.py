@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from termcolor import colored
 
-from .endpoints import Endpoint, Protocol
+from .endpoints import Endpoint, ApiProtocol
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class Service:
     def _register_routes(self) -> None:
         # TODO: add kwargs
         for endpoint in self.endpoints.values():
-            if endpoint.protocol == Protocol.rest:
+            if endpoint.api_protocol == ApiProtocol.rest:
                 self.app.add_api_route(
                     endpoint.path,
                     endpoint.function,

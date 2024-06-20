@@ -5,7 +5,7 @@ from typing import Dict, Optional, List
 
 from healthchain.service import Service
 from healthchain.models import CdsFhirData
-from healthchain.service.endpoints import Endpoint
+from healthchain.service.endpoints import Endpoint, ApiProtocol
 from healthchain.utils import UrlBuilder
 from healthchain.base import BaseUseCase, BaseStrategy, BaseClient
 from healthchain.workflows import (
@@ -40,6 +40,7 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
     """
 
     def __init__(self) -> None:
+        self.api_protocol = ApiProtocol.rest
         self.context_mapping = {
             Workflow.order_select: OrderSelectContext,
             Workflow.order_sign: OrderSignContext,
@@ -110,21 +111,30 @@ class ClinicalDecisionSupport(BaseUseCase):
         self._type = UseCaseType.cds
         self._strategy = ClinicalDecisionSupportStrategy()
         # do we need keys? just in case
+        # TODO make configurable
         self._endpoints = {
             "info": Endpoint(
-                path="/cds-services", method="GET", function=self.cds_discovery
+                path="/cds-services",
+                method="GET",
+                function=self.cds_discovery,
+                api_protocol="REST",
             ),
             "service_mount": Endpoint(
-                path="/cds-services/{id}", method="POST", function=self.cds_service
+                path="/cds-services/{id}",
+                method="POST",
+                function=self.cds_service,
+                api_protocol="REST",
             ),
         }
+
+        self._service_api: APIMethod = service_api
+        self._service: Service = service
+        self._client: BaseClient = client
+
+        self.service_config: Dict = service_config
+        self.responses: List[Dict[str, str]] = []
         self.sandbox_id: str = None
         self.url: UrlBuilder = None
-        self.service_api: APIMethod = service_api
-        self.service_config: Dict = service_config
-        self.service: Service = service
-        self.client: BaseClient = client
-        self.responses: List[Dict[str, str]] = []
 
     @property
     def description(self) -> str:
@@ -146,12 +156,12 @@ class ClinicalDecisionSupport(BaseUseCase):
         """
         CDS discovery endpoint for FastAPI app, should be mounted to /cds-services
         """
-        if self.client is None:
+        if self._client is None:
             log.warning("CDS 'client' not configured, check class init.")
             return CDSServiceInformation(services=[])
 
         service_info = CDSService(
-            hook=self.client.workflow.value,
+            hook=self._client.workflow.value,
             description="A test CDS hook service.",
             id="1",
         )
@@ -162,17 +172,17 @@ class ClinicalDecisionSupport(BaseUseCase):
         CDS service endpoint for FastAPI app, should be mounted to /cds-services/{id}
         """
         # TODO: can register multiple services and fetch with id
-        if self.service_api is None:
+        if self._service_api is None:
             log.warning("CDS 'service_api' not configured, check class init.")
             return CDSResponse(cards=[])
 
-        signature = inspect.signature(self.service_api.func)
+        signature = inspect.signature(self._service_api.func)
         assert (
             len(signature.parameters) == 2
         ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; CDS Service functions currently only accept 'self' and a single input argument."
 
         service_input = request
-        params = iter(inspect.signature(self.service_api.func).parameters.items())
+        params = iter(inspect.signature(self._service_api.func).parameters.items())
         for name, param in params:
             if name != "self":
                 if param.annotation == str:
@@ -180,7 +190,7 @@ class ClinicalDecisionSupport(BaseUseCase):
                 elif param.annotation == Dict:
                     service_input = request.model_dump(exclude_none=True)
 
-        result = self.service_api.func(self, service_input)
+        result = self._service_api.func(self, service_input)
 
         # TODO: could use llm to check and fix results here?
         if result is None:

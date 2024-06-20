@@ -3,7 +3,7 @@ from pydantic import BaseModel, field_validator
 from typing import Optional, Callable
 
 
-class Protocol(Enum):
+class ApiProtocol(Enum):
     soap = "SOAP"
     rest = "REST"
 
@@ -13,7 +13,7 @@ class Endpoint(BaseModel):
     method: str
     function: Callable
     description: Optional[str] = None
-    protocol: Protocol = Protocol.rest
+    api_protocol: ApiProtocol = ApiProtocol.rest
 
     @field_validator("method")
     @classmethod
