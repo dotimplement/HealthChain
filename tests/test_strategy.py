@@ -47,12 +47,12 @@ def test_context_mapping(cds_strategy, valid_data):
 
 def test_workflow_validation_decorator(cds_strategy, valid_data):
     with pytest.raises(ValueError) as excinfo:
-        cds_strategy.construct_request(Workflow.notereader_sign_inpatient, valid_data)
+        cds_strategy.construct_request(Workflow.sign_note_inpatient, valid_data)
     assert "Invalid workflow" in str(excinfo.value)
 
     with pytest.raises(ValueError) as excinfo:
         cds_strategy.construct_request(
-            data=valid_data, workflow=Workflow.notereader_sign_inpatient
+            data=valid_data, workflow=Workflow.sign_note_inpatient
         )
     assert "Invalid workflow" in str(excinfo.value)
 
