@@ -3,11 +3,14 @@ import logging
 from spyne import rpc, Service, Unicode, ByteArray
 from typing import Callable
 
+from .models.notereaderresponse import Response
+
 
 log = logging.getLogger(__name__)
 
 
-class ICDSServices(Service):
+class CDSServices(Service):
+    # Ugh WHY did Epic name it like this - I'm not sure if this is something you can change so I will keep it like this
     def __init__(self, service_func: Callable) -> None:
         super().__init__()
         self._service_func = service_func
@@ -24,11 +27,11 @@ class ICDSServices(Service):
             "document": "Document",
         },
         _wsdl_part_name="parameters",
-        # _returns=Response
+        _returns=Response,
         # _faults=[ClientFault, ServerFault]
     )
-    def ProcessDocument(ctx, sessionId, workType, organizationId, document):
+    def ProcessDocument(self, ctx, sessionId, workType, organizationId, document):
         # will this work?
-        # response = ctx._service_func(document)
+        response = self._service_func(document)
 
-        pass
+        return response

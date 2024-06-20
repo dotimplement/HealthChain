@@ -2,12 +2,12 @@ from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 
-from .icdsservices import ICDSServices
+from .cdsservices import CDSServices
 
 
-def start_wsgi():
+def start_wsgi(service_func):
     application = Application(
-        [ICDSServices],
+        [CDSServices(service_func=service_func)],
         name="ICDSServices",
         tns="urn:epic-com:Common.2013.Services",
         in_protocol=Soap11(validator="lxml"),
