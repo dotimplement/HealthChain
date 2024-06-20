@@ -25,7 +25,7 @@ class OpenAIIntegration(AIIntegrationBase):
                 responses.append(response.choices[0].text.strip())
         else:
             response = openai.Completion.create(
-                model=self.model_name, prompt=data, max_tokens=50
+                model=self.model_name, prompt=data, **self.params
             )
             responses.append(response.choices[0].text.strip())
         return responses
