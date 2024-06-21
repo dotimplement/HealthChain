@@ -10,10 +10,10 @@
             <urn:SessionID>0000-0000-0000-0000</urn:SessionID>
             <!--Optional:-->
             <!--type: string-->
-            <urn:OrganizationID>UCLH</urn:OrganizationID>
+            <urn:WorkType>2</urn:WorkType>
             <!--Optional:-->
             <!--type: string-->
-            <urn:WorkType>2</urn:WorkType>
+            <urn:OrganizationID>UCLH</urn:OrganizationID>
             <!--Optional:-->
             <!--type: base64Binary-->
             <urn:Document>
