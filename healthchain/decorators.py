@@ -4,12 +4,15 @@ import asyncio
 import json
 import uuid
 import requests
+import traceback
 
 from time import sleep
 from pathlib import Path
 from datetime import datetime
 from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
+
+from healthchain.workflows import UseCaseType
 
 from .base import BaseUseCase
 from .service import Service
@@ -18,21 +21,26 @@ from .use_cases.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
+traceback.print_exc()
 
 F = TypeVar("F", bound=Callable)
 
 
-def generate_filename(prefix: str, unique_id: str, index: int):
+def generate_filename(prefix: str, unique_id: str, index: int, extension: str):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.json"
+    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.{extension}"
     return filename
 
 
-def save_as_json(data, prefix, sandbox_id, index, save_dir):
-    save_name = generate_filename(prefix, str(sandbox_id), index)
+def save_file(data, prefix, sandbox_id, index, save_dir, extension):
+    save_name = generate_filename(prefix, str(sandbox_id), index, extension)
     file_path = save_dir / save_name
-    with open(file_path, "w") as outfile:
-        json.dump(data, outfile, indent=4)
+    if extension == "json":
+        with open(file_path, "w") as outfile:
+            json.dump(data, outfile, indent=4)
+    elif extension == "xml":
+        with open(file_path, "w") as outfile:
+            outfile.write(data)
 
 
 def ensure_directory_exists(directory):
@@ -41,10 +49,10 @@ def ensure_directory_exists(directory):
     return path
 
 
-def save_data_to_directory(data_list, data_type, sandbox_id, save_dir):
+def save_data_to_directory(data_list, data_type, sandbox_id, save_dir, extension):
     for i, data in enumerate(data_list):
         try:
-            save_as_json(data, data_type, sandbox_id, i, save_dir)
+            save_file(data, data_type, sandbox_id, i, save_dir, extension)
         except Exception as e:
             log.warning(f"Error saving file {i} at {save_dir}: {e}")
 
@@ -254,20 +262,39 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             if save_data:
                 save_dir = Path(save_dir)
                 request_path = ensure_directory_exists(save_dir / "requests")
-                save_data_to_directory(
-                    [
-                        request.model_dump(exclude_none=True)
-                        for request in self._client.request_data
-                    ],
-                    "request",
-                    self.sandbox_id,
-                    request_path,
-                )
+                if self.type == UseCaseType.clindoc:
+                    extension = "xml"
+                    save_data_to_directory(
+                        [
+                            request.model_dump_xml()
+                            for request in self._client.request_data
+                        ],
+                        "request",
+                        self.sandbox_id,
+                        request_path,
+                        extension,
+                    )
+                else:
+                    extension = "json"
+                    save_data_to_directory(
+                        [
+                            request.model_dump(exclude_none=True)
+                            for request in self._client.request_data
+                        ],
+                        "request",
+                        self.sandbox_id,
+                        request_path,
+                        extension,
+                    )
                 log.info(f"Saved request data at {request_path}/")
 
                 response_path = ensure_directory_exists(save_dir / "responses")
                 save_data_to_directory(
-                    self.responses, "response", self.sandbox_id, response_path
+                    self.responses,
+                    "response",
+                    self.sandbox_id,
+                    response_path,
+                    extension,
                 )
                 log.info(f"Saved response data at {response_path}/")
 
