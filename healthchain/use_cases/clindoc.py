@@ -1,5 +1,7 @@
 import logging
 import importlib
+import xmltodict
+import base64
 
 from typing import Dict, List, Optional
 
@@ -13,6 +15,7 @@ from healthchain.workflows import (
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
+from healthchain.utils.cdaparser import insert_at_key
 
 from .apimethod import APIMethod
 
@@ -26,20 +29,21 @@ class ClinicalDocumentationStrategy(BaseStrategy):
     """
 
     def __init__(self) -> None:
-        self.api_protocol = ApiProtocol.soap
-        self.soap_envelope_template = self._load_soap_envelope()
+        self.api_protocol: ApiProtocol = ApiProtocol.soap
+        self.soap_envelope: Dict = self._load_soap_envelope()
 
     def _load_soap_envelope(self):
         path = importlib.resources.files("healthchain.templates") / "soap_envelope.xml"
 
         with open(path, "r") as file:
-            soap_envelope_template = file.read()
+            soap_envelope_template = xmltodict.parse(file.read())
 
         return soap_envelope_template
 
     def construct_cda_xml_document(self):
         """
-        This function should wrap FHIR data from CcdFhirData into a template CDA file (dep. vendor)"""
+        This function should wrap FHIR data from CcdFhirData into a template CDA file (dep. vendor
+        """
         pass
 
     @validate_workflow(UseCaseMapping.ClinicalDocumentation)
@@ -59,11 +63,18 @@ class ClinicalDocumentationStrategy(BaseStrategy):
         """
         # TODO: handle converting fhir data from data generator to cda
         if data.cda_xml is not None:
-            # NOTE This should be base64 encoded. for readability we'll skip this for now
-            soap_request = self.soap_envelope_template.replace(
-                "<!-- Your XML content here -->", data.cda_xml
-            )
-            return CdaRequest(document=soap_request)
+            # Encode the cda xml in base64
+            encoded_xml = base64.b64encode(data.cda_xml.encode("utf-8")).decode("utf-8")
+            # Make a copy of the SOAP envelope template
+            soap_envelope = self.soap_envelope.copy()
+            # Insert encoded cda in the Document section
+            if not insert_at_key(soap_envelope, "urn:Document", encoded_xml):
+                raise ValueError(
+                    "Key 'urn:Document' missing from SOAP envelope template!"
+                )
+            request = CdaRequest.from_dict(soap_envelope)
+
+            return request
         else:
             log.warning(
                 "Data generation methods for CDA documents not implemented yet!"
@@ -87,7 +98,7 @@ class ClinicalDocumentation(BaseUseCase):
         self._strategy = ClinicalDocumentationStrategy()
         self._endpoints = {
             "service_mount": Endpoint(
-                path="/notereader",
+                path="/notereader/",
                 method="POST",
                 function=self.process_notereader_document,
                 api_protocol="SOAP",
@@ -122,4 +133,9 @@ class ClinicalDocumentation(BaseUseCase):
         """
         NoteReader endpoint
         """
-        pass
+        # TODO: implement this
+        result = self._service_api.func(self, request)
+        print(result)
+
+        response = CdaResponse(document=request.document)
+        return response
