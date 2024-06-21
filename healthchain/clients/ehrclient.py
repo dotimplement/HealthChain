@@ -6,6 +6,8 @@ from functools import wraps
 
 from healthchain.data_generators import CdsDataGenerator
 from healthchain.decorators import assign_to_attribute, find_attributes_of_type
+from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.service.endpoints import ApiProtocol
 from healthchain.workflows import UseCaseType, Workflow
 from healthchain.models import CDSRequest
 from healthchain.base import BaseStrategy, BaseClient, BaseUseCase
@@ -115,8 +117,8 @@ class EHRClient(BaseClient):
         self.vendor = None
         self.request_data: List[CDSRequest] = []
 
-    def set_provider(self, name):
-        pass
+    def set_vendor(self, name) -> None:
+        self.vendor = name
 
     def generate_request(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -146,39 +148,42 @@ class EHRClient(BaseClient):
         """
         # TODO: we need to route requests differently here depending on use case - SOAP/REST need to use data or json
         async with httpx.AsyncClient() as client:
-            json_responses: List[Dict] = []
+            responses: List[Dict] = []
+            # TODO: pass timeout as config
+            timeout = httpx.Timeout(10.0, read=None)
             for request in self.request_data:
                 try:
-                    # TODO: pass timeout as config
-                    timeout = httpx.Timeout(10.0, read=None)
-                    if self.strategy.api_protocol == "SOAP":
+                    if self.strategy.api_protocol == ApiProtocol.soap:
                         headers = {"Content-Type": "text/xml; charset=utf-8"}
                         response = await client.post(
                             url=url,
-                            data=request,
+                            data=request.document,
                             headers=headers,
                             timeout=timeout,
                         )
+                        response.raise_for_status()
+                        response_model = CdaResponse(document=response.text)
+                        responses.append(response_model.model_dump_xml())
                     else:
                         response = await client.post(
                             url=url,
                             json=request.model_dump(exclude_none=True),
                             timeout=timeout,
                         )
-                    response.raise_for_status()
-                    json_responses.append(response.json())
+                        response.raise_for_status()
+                        responses.append(response.json())
                 except httpx.HTTPStatusError as exc:
                     log.error(
                         f"Error response {exc.response.status_code} while requesting {exc.request.url!r}."
                     )
-                    json_responses.append({})
+                    responses.append({})
                 except httpx.TimeoutException as exc:
                     log.error(f"Request to {exc.request.url!r} timed out!")
-                    json_responses.append({})
+                    responses.append({})
                 except httpx.RequestError as exc:
                     log.error(
                         f"An error occurred while requesting {exc.request.url!r}."
                     )
-                    json_responses.append({})
+                    responses.append({})
 
-        return json_responses
+        return responses
