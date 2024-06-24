@@ -19,7 +19,6 @@ log = logging.getLogger(__name__)
 
 
 class Service:
-    # TODO: rename class to avoid namespace clash?
     """
     A service wrapper which registers routes and starts a FastAPI service
 

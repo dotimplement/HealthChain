@@ -146,7 +146,6 @@ class EHRClient(BaseClient):
             Notes:
                 This method logs errors rather than raising them, to avoid interrupting the batch processing of requests.
         """
-        # TODO: we need to route requests differently here depending on use case - SOAP/REST need to use data or json
         async with httpx.AsyncClient() as client:
             responses: List[Dict] = []
             # TODO: pass timeout as config
