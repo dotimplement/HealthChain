@@ -4,7 +4,7 @@ import xmltodict
 from pydantic import BaseModel
 from typing import Optional, Dict
 
-from healthchain.utils.cdaparser import search_key_from_xml_string
+from healthchain.cda_parser.cdaparser import search_key_from_xml_string
 
 
 class CdaResponse(BaseModel):

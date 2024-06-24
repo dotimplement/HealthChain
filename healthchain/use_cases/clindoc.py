@@ -15,7 +15,7 @@ from healthchain.workflows import (
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
-from healthchain.utils.cdaparser import insert_at_key
+from healthchain.cda_parser.cdaparser import insert_at_key
 
 from .apimethod import APIMethod
 
@@ -133,9 +133,18 @@ class ClinicalDocumentation(BaseUseCase):
         """
         NoteReader endpoint
         """
-        # TODO: implement this
+        # 1. Convert xml to dictionary
+        # cda_dict = request.model_dump()
+        # 2. Then we have to find the relevant sections: problems, medications, allergies, note
+        # 3. From each section, extract the list of codes into fhir resources then wrap in CcdData
+        # 4. Return Ccd data to user function
+
         result = self._service_api.func(self, request)
         print(result)
+
+        # 5. User returns Ccd data with annotated data
+        # 6. Convert Ccd data back to xml doc with .unparse method
+        # 7. Wrap xml doc in CdaResponse model
 
         response = CdaResponse(document=request.document)
         return response
