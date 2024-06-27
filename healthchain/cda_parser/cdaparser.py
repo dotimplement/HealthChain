@@ -1,5 +1,6 @@
 import xmltodict
 import uuid
+import re
 
 from enum import Enum
 from datetime import datetime
@@ -83,22 +84,32 @@ def search_key_from_xml_string(xml: str, key: str):
     return search_key(xml_dict, key)
 
 
-class LazyCdaParser:
+class CdaAnnotator:
     def __init__(self, cda_data: CDA, extractor_method="LLM") -> None:
         self.clinical_document = cda_data
         self.extractor_method = extractor_method
         self._get_ccd_sections()
+        self._extract_data()
 
     @classmethod
     def from_dict(cls, data: Dict):
         clinical_document_model = CDA(**data.get("ClinicalDocument", {}))
         return cls(cda_data=clinical_document_model)
 
-    def _get_ccd_sections(self):
+    def __str__(self):
+        return "\n".join([problem.model_dump_json() for problem in self.problem_list])
+
+    def _get_ccd_sections(self) -> None:
         self.problems_section = self._find_problems_section()
         self.medications_section = self._find_medications_section()
         self.allergies_section = self._find_allergies_section()
         self.notes_section = self._find_notes_section()
+
+    def _extract_data(self) -> None:
+        self.problem_list = self._extract_problems()
+        self.medication_list = self._extract_medications()
+        self.allergy_list = self._extract_allergies()
+        self.note = self._extract_note()
 
     def _find_section_by_template_id(self, section_id: str) -> Optional[Section]:
         components = self.clinical_document.component.structuredBody.component
@@ -131,6 +142,7 @@ class LazyCdaParser:
         return self._find_section_by_template_id(SectionId.NOTE.value)
 
     def _get_concept_from_cda_value(self, value: Dict) -> ProblemConcept:
+        # TODO use cda data types
         concept = ProblemConcept()
         concept.code = value.get("@code")
         concept.code_system = value.get("@codeSystem")
@@ -146,7 +158,7 @@ class LazyCdaParser:
         act_id: str,
         problem_reference_name: str,
     ) -> None:
-        # TODO: this will need work
+        # TODO: This will need work
         template = {
             "act": {
                 "@classCode": "ACT",
@@ -223,7 +235,8 @@ class LazyCdaParser:
         new_entry = Entry(**template)
         self.problems_section.entry.append(new_entry)
 
-    def extract(self) -> List[Concept]:
+    def _extract_problems(self) -> List[Concept]:
+        # idea - llm extraction
         concepts = []
         if isinstance(self.problems_section.entry, list):
             for entry in self.problems_section.entry:
@@ -243,10 +256,28 @@ class LazyCdaParser:
 
         return concepts
 
-    def add_to_problem_list(self, problems: List[ProblemConcept]) -> None:
+    def _extract_medications(self) -> List[Concept]:
+        pass
+
+    def _extract_allergies(self) -> List[Concept]:
+        pass
+
+    def _extract_note(self) -> str:
+        pass
+
+    def add_to_problem_list(
+        self, problems: List[ProblemConcept], overwrite: bool = False
+    ) -> None:
+        """
+        Adds a list of problem lists to the problems section
+        """
         timestamp = datetime.now().strftime(format="%Y%m%d")
         act_id = str(uuid.uuid4())
         problem_reference_name = "#p" + str(uuid.uuid4())[:8] + "name"
+
+        if overwrite:
+            self.problems_section.entry = []
+            self.problem_list = []
 
         for problem in problems:
             self._add_new_problem_entry(
@@ -256,8 +287,28 @@ class LazyCdaParser:
                 problem_reference_name=problem_reference_name,
             )
 
+        self.problem_list.append(problem)
+
     def add_to_allergy_list(self, allergies: List[AllergyConcept]) -> None:
         raise NotImplementedError("Method not implemented yet!")
 
     def add_to_medication_list(self, medications: List[MedicationConcept]) -> None:
         raise NotImplementedError("Method not implemented yet!")
+
+    def export(self) -> str:
+        """
+        Exports CDA document as an XML string
+        """
+        out_string = xmltodict.unparse(
+            {
+                "ClinicalDocument": self.clinical_document.model_dump(
+                    exclude_none=True, exclude_unset=True, by_alias=True
+                )
+            },
+            pretty=True,
+        )
+        # Fixes self closing tags - this is not strictly necessary, just looks more readable
+        pattern = r"(<(\w+)(\s+[^>]*?)?)></\2>"
+        export_xml = re.sub(pattern, r"\1/>", out_string)
+
+        return export_xml
