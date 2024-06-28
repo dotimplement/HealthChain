@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 from healthchain.base import BaseClient, BaseUseCase, BaseStrategy
 from healthchain.service import Service
 from healthchain.service.endpoints import Endpoint, ApiProtocol
+from healthchain.utils.utils import insert_at_key
 from healthchain.workflows import (
     UseCaseMapping,
     UseCaseType,
@@ -15,7 +16,7 @@ from healthchain.workflows import (
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
-from healthchain.cda_parser.cdaparser import insert_at_key
+from healthchain.cda_parser import CdaAnnotator
 
 from .apimethod import APIMethod
 
@@ -133,18 +134,21 @@ class ClinicalDocumentation(BaseUseCase):
         """
         NoteReader endpoint
         """
-        # 1. Convert xml to dictionary
-        # cda_dict = request.model_dump()
-        # 2. Then we have to find the relevant sections: problems, medications, allergies, note
-        # 3. From each section, extract the list of codes into fhir resources then wrap in CcdData
-        # 4. Return Ccd data to user function
+        cda_doc = CdaAnnotator.from_xml(request.document)
+        ccd_data = CcdData(
+            problems=cda_doc.problem_list,
+            medications=cda_doc.medication_list,
+            allergies=cda_doc.allergy_list,
+            note=cda_doc.note,
+        )
+        result = self._service_api.func(self, ccd_data)
 
-        result = self._service_api.func(self, request)
-        print(result)
+        cda_doc.add_to_problem_list(result.problems, overwrite=True)
+        cda_doc.add_to_allergy_list(result.allergies, overwrite=True)
+        cda_doc.add_to_medication_list(result.medications, overwrite=True)
 
-        # 5. User returns Ccd data with annotated data
-        # 6. Convert Ccd data back to xml doc with .unparse method
-        # 7. Wrap xml doc in CdaResponse model
+        response_document = cda_doc.export()
 
-        response = CdaResponse(document=request.document)
+        response = CdaResponse(document=response_document)
+
         return response
