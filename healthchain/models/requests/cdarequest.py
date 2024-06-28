@@ -1,10 +1,13 @@
 import base64
 import xmltodict
+import logging
 
 from pydantic import BaseModel
 from typing import Dict
 
-from healthchain.cda_parser.cdaparser import search_key_from_xml_string
+from healthchain.utils.utils import search_key
+
+log = logging.getLogger(__name__)
 
 
 class CdaRequest(BaseModel):
@@ -27,7 +30,11 @@ class CdaRequest(BaseModel):
         """
         Decodes and dumps document as an xml string
         """
-        document = search_key_from_xml_string(self.document, "urn:Document")
+        xml_dict = xmltodict.parse(self.document)
+        document = search_key(xml_dict, "urn:Document")
+        if document is None:
+            log.warning("Coudln't find document under namespace 'urn:Document")
+            return ""
         cda = base64.b64decode(document).decode("UTF-8")
 
         return cda

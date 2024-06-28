@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 
-from typing import Dict, Optional
+from typing import Optional, List, Union, Dict
 
-from healthchain.fhir_resources.condition import Condition
-from healthchain.fhir_resources.medicationadministration import MedicationAdministration
-from healthchain.fhir_resources.documentreference import DocumentReference
+from healthchain.models.data.concept import (
+    ProblemConcept,
+    MedicationConcept,
+    AllergyConcept,
+)
 
 
 class CcdData(BaseModel):
@@ -13,10 +15,8 @@ class CcdData(BaseModel):
     Data is stored as FHIR.
     """
 
-    problems: Optional[Condition] = None
-    allergies: Optional[Dict] = None  # TODO: IMPLEMENT ALLERGIES
-    medications: Optional[MedicationAdministration] = (
-        None  # TODO: IMPLEMENT MEDICATIONSTATEMENT
-    )
-    note: Optional[DocumentReference] = None
+    problems: Optional[List[ProblemConcept]] = None
+    allergies: Optional[List[AllergyConcept]] = None
+    medications: Optional[List[MedicationConcept]] = None
+    note: Optional[Union[Dict, str]] = None
     cda_xml: Optional[str] = None

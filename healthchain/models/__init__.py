@@ -13,7 +13,14 @@ from .responses import (
     CDSServiceInformation,
     CdaResponse,
 )
-from .data import CdsFhirData, CcdData
+from .data import (
+    Concept,
+    ProblemConcept,
+    AllergyConcept,
+    MedicationConcept,
+    CdsFhirData,
+    CcdData,
+)
 
 __all__ = [
     "CDSRequest",
@@ -33,4 +40,8 @@ __all__ = [
     "CdaRequest",
     "CdaResponse",
     "CcdData",
+    "Concept",
+    "ProblemConcept",
+    "AllergyConcept",
+    "MedicationConcept",
 ]
