@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Union
 
 
 class ANY(BaseModel):
-    nullFlavor: Optional[str] = Field(default=None, alias="@nullFalvor")
+    nullFlavor: Optional[str] = Field(default=None, alias="@nullFlavor")
 
 
 class BIN(ANY):
@@ -28,7 +28,7 @@ class URL(ANY):
     URL data.
     """
 
-    value: Optional[float] = Field(default=None, alias="@value")
+    value: Optional[str] = Field(default=None, alias="@value")
 
 
 class TEL(URL):

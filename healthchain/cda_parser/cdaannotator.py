@@ -1,21 +1,23 @@
 import xmltodict
 import uuid
 import re
+import logging
 
 from enum import Enum
 from datetime import datetime
-from collections import deque
 from typing import Dict, Optional, List
 
-from healthchain.models.data.concept import (
-    Concept,
+from healthchain.models import (
     ProblemConcept,
     MedicationConcept,
     AllergyConcept,
 )
 
-from .model.cda import CDA
+from .model.cda import ClinicalDocument
 from .model.sections import Entry, Section
+
+
+log = logging.getLogger(__name__)
 
 
 class SectionId(Enum):
@@ -35,97 +37,79 @@ class ProblemCodes(Enum):
     DIAGNOSIS = "282291009"
 
 
-def search_key(dictionary: Dict, key: str) -> Optional[str]:
-    if key in dictionary:
-        return dictionary[key]
-
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            result = search_key(v, key)
-            if result is not None:
-                return result
-
-    return None
-
-
-def search_key_breadth_first(dictionary: Dict, key: str) -> Optional[str]:
-    queue = deque([dictionary])
-
-    while queue:
-        current_dict = queue.popleft()
-
-        if key in current_dict:
-            return current_dict[key]
-
-        for k, v in current_dict.items():
-            if isinstance(v, dict):
-                queue.append(v)
-
-    return None
-
-
-def insert_at_key(dictionary: Dict, key: str, value: str) -> bool:
-    if key in dictionary:
-        dictionary[key] = value
-        return True
-
-    for k, v in dictionary.items():
-        if isinstance(v, dict):
-            result = insert_at_key(v, key, value)
-            if result:
-                return True
-
-    return False
-
-
-def search_key_from_xml_string(xml: str, key: str):
-    xml_dict = xmltodict.parse(xml)
-
-    return search_key(xml_dict, key)
-
-
 class CdaAnnotator:
-    def __init__(self, cda_data: CDA, extractor_method="LLM") -> None:
+    def __init__(self, cda_data: ClinicalDocument, fallback="LLM") -> None:
         self.clinical_document = cda_data
-        self.extractor_method = extractor_method
+        self.fallback = fallback
         self._get_ccd_sections()
         self._extract_data()
 
     @classmethod
     def from_dict(cls, data: Dict):
-        clinical_document_model = CDA(**data.get("ClinicalDocument", {}))
+        clinical_document_model = ClinicalDocument(**data.get("ClinicalDocument", {}))
+        return cls(cda_data=clinical_document_model)
+
+    @classmethod
+    def from_xml(cls, data: str):
+        cda_dict = xmltodict.parse(data)
+        clinical_document_model = ClinicalDocument(
+            **cda_dict.get("ClinicalDocument", {})
+        )
         return cls(cda_data=clinical_document_model)
 
     def __str__(self):
-        return "\n".join([problem.model_dump_json() for problem in self.problem_list])
+        problems = ""
+        allergies = ""
+        medications = ""
+
+        if self.problem_list:
+            problems = "\n".join(
+                [problem.model_dump_json() for problem in self.problem_list]
+            )
+        if self.allergy_list:
+            allergies = "\n".join(
+                [allergy.model_dump_json() for allergy in self.allergy_list]
+            )
+        if self.medication_list:
+            medications = "\n".join(
+                [medication.model_dump_json() for medication in self.medication_list]
+            )
+
+        return problems + allergies + medications
 
     def _get_ccd_sections(self) -> None:
-        self.problems_section = self._find_problems_section()
-        self.medications_section = self._find_medications_section()
-        self.allergies_section = self._find_allergies_section()
-        self.notes_section = self._find_notes_section()
+        self._problem_section = self._find_problems_section()
+        self._medication_section = self._find_medications_section()
+        self._allergy_section = self._find_allergies_section()
+        self._note_section = self._find_notes_section()
 
     def _extract_data(self) -> None:
-        self.problem_list = self._extract_problems()
-        self.medication_list = self._extract_medications()
-        self.allergy_list = self._extract_allergies()
-        self.note = self._extract_note()
+        self.problem_list: List[ProblemConcept] = self._extract_problems()
+        self.medication_list: List[MedicationConcept] = self._extract_medications()
+        self.allergy_list: List[AllergyConcept] = self._extract_allergies()
+        self.note: str = self._extract_note()
 
     def _find_section_by_template_id(self, section_id: str) -> Optional[Section]:
+        # NOTE not all CDAs have template ids in each section (don't ask me why)
+        # TODO: It's probably safer to parse by 'code' which is a required field
         components = self.clinical_document.component.structuredBody.component
-
         # Ensure components is a list
         if not isinstance(components, list):
             components = [components]
 
         for component in components:
             template_ids = component.section.templateId
+            if template_ids is None:
+                continue
+
             if isinstance(template_ids, list):
                 for template_id in template_ids:
                     if template_id.root == section_id:
                         return component.section
             elif template_ids.root == section_id:
                 return component.section
+
+        log.warning(f"Unable to find section templateId {section_id}")
 
         return None
 
@@ -171,6 +155,7 @@ class CdaAnnotator:
                     {"@root": "2.16.840.1.113883.3.88.11.83.7"},
                 ],
                 "id": {"@root": act_id},
+                "code": {"@nullflavor": "NA"},
                 "statusCode": {"@code": "active"},
                 "effectiveTime": {"low": {"@value": timestamp}},
                 "entryRelationship": {
@@ -229,17 +214,21 @@ class CdaAnnotator:
                 },
             }
         }
-        if not isinstance(self.problems_section.entry, list):
-            self.problems_section.entry = [self.problems_section.entry]
+        if not isinstance(self._problem_section.entry, list):
+            self._problem_section.entry = [self._problem_section.entry]
 
         new_entry = Entry(**template)
-        self.problems_section.entry.append(new_entry)
+        self._problem_section.entry.append(new_entry)
 
-    def _extract_problems(self) -> List[Concept]:
+    def _extract_problems(self) -> List[ProblemConcept]:
         # idea - llm extraction
+        if not self._problem_section:
+            log.warning("Empty problem section!")
+            return []
+
         concepts = []
-        if isinstance(self.problems_section.entry, list):
-            for entry in self.problems_section.entry:
+        if isinstance(self._problem_section.entry, list):
+            for entry in self._problem_section.entry:
                 entry_relationship = entry.act.entryRelationship
                 if isinstance(entry_relationship, list):
                     for entry_relationship_item in entry_relationship:
@@ -250,20 +239,25 @@ class CdaAnnotator:
                 concept = self._get_concept_from_cda_value(value)
                 concepts.append(concept)
         else:
-            value = self.problems_section.entry.act.entryRelationship.observation.value
+            value = self._problem_section.entry.act.entryRelationship.observation.value
             concept = self._get_concept_from_cda_value(value)
             concepts.append(concept)
 
         return concepts
 
-    def _extract_medications(self) -> List[Concept]:
+    def _extract_medications(self) -> List[MedicationConcept]:
         pass
 
-    def _extract_allergies(self) -> List[Concept]:
+    def _extract_allergies(self) -> List[AllergyConcept]:
         pass
 
     def _extract_note(self) -> str:
-        pass
+        # TODO: need to handle / escape html tags within the note section, parse with right field
+        if not self._note_section:
+            log.warning("Empty notes section!")
+            return []
+
+        return self._note_section.text
 
     def add_to_problem_list(
         self, problems: List[ProblemConcept], overwrite: bool = False
@@ -276,7 +270,7 @@ class CdaAnnotator:
         problem_reference_name = "#p" + str(uuid.uuid4())[:8] + "name"
 
         if overwrite:
-            self.problems_section.entry = []
+            self._problem_section.entry = []
             self.problem_list = []
 
         for problem in problems:
@@ -289,13 +283,17 @@ class CdaAnnotator:
 
         self.problem_list.append(problem)
 
-    def add_to_allergy_list(self, allergies: List[AllergyConcept]) -> None:
-        raise NotImplementedError("Method not implemented yet!")
+    def add_to_allergy_list(
+        self, allergies: List[AllergyConcept], overwrite: bool = False
+    ) -> None:
+        pass
 
-    def add_to_medication_list(self, medications: List[MedicationConcept]) -> None:
-        raise NotImplementedError("Method not implemented yet!")
+    def add_to_medication_list(
+        self, medications: List[MedicationConcept], overwrite: bool = False
+    ) -> None:
+        pass
 
-    def export(self) -> str:
+    def export(self, pretty_print: bool = True) -> str:
         """
         Exports CDA document as an XML string
         """
@@ -305,7 +303,7 @@ class CdaAnnotator:
                     exclude_none=True, exclude_unset=True, by_alias=True
                 )
             },
-            pretty=True,
+            pretty=pretty_print,
         )
         # Fixes self closing tags - this is not strictly necessary, just looks more readable
         pattern = r"(<(\w+)(\s+[^>]*?)?)></\2>"
