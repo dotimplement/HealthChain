@@ -5,6 +5,10 @@ from healthchain.fhir_resources.bundleresources import Bundle
 
 
 class CdsFhirData(BaseModel):
+    """
+    Data model for CDS FHIR data, this matches the expected fields in CDSRequests
+    """
+
     context: Dict = Field(default={})
     prefetch: Bundle
 

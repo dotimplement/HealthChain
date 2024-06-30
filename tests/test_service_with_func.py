@@ -32,7 +32,7 @@ class myCDS(ClinicalDecisionSupport):
 
 cds = myCDS()
 
-client = TestClient(cds.service.app)
+client = TestClient(cds._service.app)
 
 
 def test_cds_discover():
