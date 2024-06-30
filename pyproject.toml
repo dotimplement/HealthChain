@@ -22,19 +22,18 @@ classifiers = [
 "Repository" = "https://github.com/dotimplement/HealthChain"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.8,<3.12"
 pydantic = "^2.7.1"
 requests = "^2.31.0"
 colorama = "^0.4.6"
 faker = "^25.1.0"
 fastapi = "^0.111.0"
 termcolor = "^2.4.0"
-streamlit = "^1.34.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
 pytest = "^8.2.0"
-pre-commit = "^3.7.0"
+pre-commit = "^3.5.0"
 pytest-anyio = "^0.0.0"
 trio = "^0.25.0"
 
