@@ -74,6 +74,7 @@ This will populate your EHR client with the data generation method you have defi
 Note this is currently not meant to be a frontend to the EHR client, so you will have to run it separately from the sandbox application.
 
 ```bash
+pip install streamlit
 streamlit streamlit-demo/app.py
 ```
 

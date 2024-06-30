@@ -279,7 +279,11 @@ This will start a server by default at `http://127.0.0.1:8000`, and you can inte
 ## Inspect generated data in Streamlit 🎈
 The streamlit dashboard is run separately and is currently purely for visualisation purposes.
 
-To run the streamlit app:
+You need to install streamlit separately first:
+```bash
+pip install streamlit
+```
+Then run:
 
 ```bash
 cd streamlist_demo
