@@ -1,13 +1,13 @@
 import logging
 import inspect
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 from healthchain.service import Service
 from healthchain.models import CdsFhirData
 from healthchain.service.endpoints import Endpoint, ApiProtocol
-from healthchain.utils import UrlBuilder
 from healthchain.base import BaseUseCase, BaseStrategy, BaseClient
+from healthchain.apimethod import APIMethod
 from healthchain.workflows import (
     UseCaseMapping,
     UseCaseType,
@@ -27,8 +27,6 @@ from healthchain.models.hooks import (
     PatientViewContext,
     EncounterDischargeContext,
 )
-
-from .apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
@@ -108,6 +106,12 @@ class ClinicalDecisionSupport(BaseUseCase):
         service: Optional[Service] = None,
         client: Optional[BaseClient] = None,
     ) -> None:
+        super().__init__(
+            service_api=service_api,
+            service_config=service_config,
+            service=service,
+            client=client,
+        )
         self._type = UseCaseType.cds
         self._strategy = ClinicalDecisionSupportStrategy()
         # do we need keys? just in case
@@ -126,15 +130,6 @@ class ClinicalDecisionSupport(BaseUseCase):
                 api_protocol="REST",
             ),
         }
-
-        self._service_api: APIMethod = service_api
-        self._service: Service = service
-        self._client: BaseClient = client
-
-        self.service_config: Dict = service_config
-        self.responses: List[Dict[str, str]] = []
-        self.sandbox_id: str = None
-        self.url: UrlBuilder = None
 
     @property
     def description(self) -> str:

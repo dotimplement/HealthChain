@@ -3,7 +3,7 @@ import importlib
 import xmltodict
 import base64
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from healthchain.base import BaseClient, BaseUseCase, BaseStrategy
 from healthchain.service import Service
@@ -17,8 +17,7 @@ from healthchain.workflows import (
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
 from healthchain.cda_parser import CdaAnnotator
-
-from .apimethod import APIMethod
+from healthchain.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
@@ -87,7 +86,6 @@ class ClinicalDocumentation(BaseUseCase):
     Implements EHR backend strategy for clinical documentation (NoteReader)
     """
 
-    # TODO: maybe add these attributes to BaseUseCase so don't have to copy and paste for every use case
     def __init__(
         self,
         service_api: Optional[APIMethod] = None,
@@ -95,6 +93,12 @@ class ClinicalDocumentation(BaseUseCase):
         service: Optional[Service] = None,
         client: Optional[BaseClient] = None,
     ) -> None:
+        super().__init__(
+            service_api=service_api,
+            service_config=service_config,
+            service=service,
+            client=client,
+        )
         self._type = UseCaseType.clindoc
         self._strategy = ClinicalDocumentationStrategy()
         self._endpoints = {
@@ -105,14 +109,6 @@ class ClinicalDocumentation(BaseUseCase):
                 api_protocol="SOAP",
             )
         }
-        self._service_api: APIMethod = service_api
-        self._service: Service = service
-        self._client: BaseClient = client
-
-        self.service_config: service_config = service_config
-        self.responses: List[Dict[str, str]] = []
-        self.sandbox_id = None
-        self.url = None
 
     @property
     def description(self) -> str:

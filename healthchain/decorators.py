@@ -13,11 +13,11 @@ from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
 from healthchain.workflows import UseCaseType
+from healthchain.apimethod import APIMethod
 
 from .base import BaseUseCase
 from .service import Service
 from .utils import UrlBuilder
-from .use_cases.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
