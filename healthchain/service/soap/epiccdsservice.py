@@ -4,7 +4,7 @@ from spyne import rpc, ServiceBase, Unicode, ByteArray
 
 from healthchain.models.requests.cdarequest import CdaRequest
 
-from .model.epicresponse import Response
+from .model import Response, ClientFault, ServerFault
 
 
 log = logging.getLogger(__name__)
@@ -28,17 +28,33 @@ class CDSServices(ServiceBase):
         },
         _wsdl_part_name="parameters",
         _returns=Response,
-        # _faults=[ClientFault, ServerFault]
-        # TODO Add faults
+        _faults=[ClientFault, ServerFault],
     )
     def ProcessDocument(ctx, sessionId, workType, organizationId, document):
-        request_document_xml = document[0].decode("UTF-8")
+        try:
+            if not sessionId or not workType or not organizationId or not document:
+                raise ClientFault("Missing required parameters")
 
-        cda_request = CdaRequest(document=request_document_xml)
-        cda_response = ctx.descriptor.service_class._service(cda_request)
+            request_document_xml = document[0].decode("UTF-8")
 
-        response = Response(
-            Document=cda_response.document.encode("UTF-8"), Error=cda_response.error
-        )
+            cda_request = CdaRequest(document=request_document_xml)
+            cda_response = ctx.descriptor.service_class._service(cda_request)
 
-        return response
+            if cda_response.error:
+                raise ServerFault(f"Server processing error: {cda_response.error}")
+
+            response = Response(
+                Document=cda_response.document.encode("UTF-8"), Error=cda_response.error
+            )
+
+            return response
+
+        except ClientFault as e:
+            # Re-raise client faults
+            raise e
+        except ServerFault as e:
+            # Re-raise server faults
+            raise e
+        except Exception as e:
+            # Catch all other exceptions and raise as server faults
+            raise ServerFault(f"An unexpected error occurred: {str(e)}")

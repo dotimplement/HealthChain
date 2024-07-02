@@ -5,6 +5,9 @@ from spyne.server.wsgi import WsgiApplication
 from typing import Callable
 
 from .epiccdsservice import CDSServices
+from .model import ClientFault, ServerFault
+
+# TODO: make namespace configurable
 
 
 def start_wsgi(
@@ -20,7 +23,7 @@ def start_wsgi(
         tns=tns,
         in_protocol=Soap11(validator="lxml"),
         out_protocol=Soap11(),
-        # classes=[FaultType, ServerFault, ClientFault],
+        classes=[ServerFault, ClientFault],
         # documents_container=CustomInterfaceDocuments,
     )
 
