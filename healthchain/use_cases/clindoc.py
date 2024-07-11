@@ -1,3 +1,4 @@
+import inspect
 import logging
 import importlib
 import xmltodict
@@ -62,11 +63,14 @@ class ClinicalDocumentationStrategy(BaseStrategy):
             ValueError: If the workflow is invalid or the data does not validate properly.
         """
         # TODO: handle converting fhir data from data generator to cda
+        # TODO: handle different workflows
         if data.cda_xml is not None:
             # Encode the cda xml in base64
             encoded_xml = base64.b64encode(data.cda_xml.encode("utf-8")).decode("utf-8")
+
             # Make a copy of the SOAP envelope template
             soap_envelope = self.soap_envelope.copy()
+
             # Insert encoded cda in the Document section
             if not insert_at_key(soap_envelope, "urn:Document", encoded_xml):
                 raise ValueError(
@@ -128,8 +132,26 @@ class ClinicalDocumentation(BaseUseCase):
 
     def process_notereader_document(self, request: CdaRequest) -> CdaResponse:
         """
-        NoteReader endpoint
+        Process the NoteReader document.
+
+        Args:
+            request (CdaRequest): The CdaRequest object containing the document.
+
+        Returns:
+            CdaResponse: The CdaResponse object containing the processed document.
         """
+        # Check service_api
+        if self._service_api is None:
+            log.warning("'service_api' not configured, check class init.")
+            return CdaResponse(document="")
+
+        # Check service function signature
+        signature = inspect.signature(self._service_api.func)
+        assert (
+            len(signature.parameters) == 2
+        ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; service functions currently only accept 'self' and a single input argument."
+
+        # Parse the CDA document
         cda_doc = CdaAnnotator.from_xml(request.document)
         ccd_data = CcdData(
             problems=cda_doc.problem_list,
@@ -137,14 +159,23 @@ class ClinicalDocumentation(BaseUseCase):
             allergies=cda_doc.allergy_list,
             note=cda_doc.note,
         )
+
+        # Call the service function
         result = self._service_api.func(self, ccd_data)
 
+        # Check return type
+        if not isinstance(result, CcdData):
+            raise TypeError(
+                f"Expected return type CcdData, got {type(result)} instead."
+            )
+
+        # Update the CDA document with the results
         cda_doc.add_to_problem_list(result.problems, overwrite=True)
         cda_doc.add_to_allergy_list(result.allergies, overwrite=True)
         cda_doc.add_to_medication_list(result.medications, overwrite=True)
 
+        # Export the updated CDA document
         response_document = cda_doc.export()
-
         response = CdaResponse(document=response_document)
 
         return response

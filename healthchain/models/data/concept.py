@@ -30,8 +30,8 @@ class MedicationConcept(Concept):
     Contains medication specific fields
     """
 
-    dosage: Optional[str]
-    precondition: Optional[str]
+    dosage: Optional[str] = None
+    precondition: Optional[str] = None
 
 
 class AllergyConcept(Concept):
@@ -39,6 +39,6 @@ class AllergyConcept(Concept):
     Contains allergy specific fields
     """
 
-    allergy_type: Optional[str]
-    severity: Optional[str]
-    reaction: Optional[str]
+    allergy_type: Optional[str] = None
+    severity: Optional[str] = None
+    reaction: Optional[str] = None
