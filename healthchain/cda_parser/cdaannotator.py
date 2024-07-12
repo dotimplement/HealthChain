@@ -20,6 +20,17 @@ from .model.sections import Entry, Section
 log = logging.getLogger(__name__)
 
 
+def get_concept_from_cda_value(value: Dict) -> ProblemConcept:
+    # TODO use cda data types
+    concept = ProblemConcept()
+    concept.code = value.get("@code")
+    concept.code_system = value.get("@codeSystem")
+    concept.code_system_name = value.get("@codeSystemName")
+    concept.display_name = value.get("@displayName")
+
+    return concept
+
+
 class SectionId(Enum):
     PROBLEM = "2.16.840.1.113883.10.20.1.11"
     MEDICATION = "2.16.840.1.113883.10.20.1.8"
@@ -38,6 +49,27 @@ class ProblemCodes(Enum):
 
 
 class CdaAnnotator:
+    """
+    Annotates a Clinical Document Architecture (CDA) document.
+
+    Args:
+        cda_data (ClinicalDocument): The CDA document data.
+        fallback (str, optional): The fallback value. Defaults to "LLM".
+
+    Attributes:
+        clinical_document (ClinicalDocument): The CDA document data.
+        fallback (str): The fallback value.
+        problem_list (List[ProblemConcept]): The list of problems extracted from the CDA document.
+        medication_list (List[MedicationConcept]): The list of medications extracted from the CDA document.
+        allergy_list (List[AllergyConcept]): The list of allergies extracted from the CDA document.
+        note (str): The note extracted from the CDA document.
+
+    Methods:
+        from_dict(cls, data: Dict): Creates a CdaAnnotator instance from a dictionary.
+        from_xml(cls, data: str): Creates a CdaAnnotator instance from an XML string.
+        add_to_problem_list(problems: List[ProblemConcept], overwrite: bool = False) -> None: Adds a list of problem concepts to the problems section.
+    """
+
     def __init__(self, cda_data: ClinicalDocument, fallback="LLM") -> None:
         self.clinical_document = cda_data
         self.fallback = fallback
@@ -46,11 +78,29 @@ class CdaAnnotator:
 
     @classmethod
     def from_dict(cls, data: Dict):
+        """
+        Creates an instance of the class from a dictionary.
+
+        Args:
+            data (Dict): The dictionary containing the dictionary representation of the cda xml (using xmltodict.parse).
+
+        Returns:
+            CdaAnnotator: An instance of the class initialized with the data from the dictionary.
+        """
         clinical_document_model = ClinicalDocument(**data.get("ClinicalDocument", {}))
         return cls(cda_data=clinical_document_model)
 
     @classmethod
     def from_xml(cls, data: str):
+        """
+        Creates an instance of the CDAAnnotator class from an XML string.
+
+        Args:
+            data (str): The XML string representing the CDA document.
+
+        Returns:
+            CDAAnnotator: An instance of the CDAAnnotator class initialized with the parsed CDA data.
+        """
         cda_dict = xmltodict.parse(data)
         clinical_document_model = ClinicalDocument(
             **cda_dict.get("ClinicalDocument", {})
@@ -78,18 +128,45 @@ class CdaAnnotator:
         return problems + allergies + medications
 
     def _get_ccd_sections(self) -> None:
+        """
+        Retrieves the different sections of the CCD document.
+
+        This method finds and assigns the problem section, medication section,
+        allergy section, and note section of the CCD document.
+
+        Returns:
+            None
+        """
         self._problem_section = self._find_problems_section()
         self._medication_section = self._find_medications_section()
         self._allergy_section = self._find_allergies_section()
         self._note_section = self._find_notes_section()
 
     def _extract_data(self) -> None:
+        """
+        Extracts data from the CDA document and assigns it to instance variables.
+
+        This method extracts problem list, medication list, allergy list, and note from the CDA document
+        and assigns them to the corresponding instance variables.
+
+        Returns:
+            None
+        """
         self.problem_list: List[ProblemConcept] = self._extract_problems()
         self.medication_list: List[MedicationConcept] = self._extract_medications()
         self.allergy_list: List[AllergyConcept] = self._extract_allergies()
         self.note: str = self._extract_note()
 
     def _find_section_by_template_id(self, section_id: str) -> Optional[Section]:
+        """
+        Finds a section in the clinical document by its template ID.
+
+        Args:
+            section_id (str): The template ID of the section to find.
+
+        Returns:
+            Optional[Section]: The section with the specified template ID, or None if not found.
+        """
         # NOTE not all CDAs have template ids in each section (don't ask me why)
         # TODO: It's probably safer to parse by 'code' which is a required field
         components = self.clinical_document.component.structuredBody.component
@@ -125,16 +202,6 @@ class CdaAnnotator:
     def _find_notes_section(self) -> Optional[Section]:
         return self._find_section_by_template_id(SectionId.NOTE.value)
 
-    def _get_concept_from_cda_value(self, value: Dict) -> ProblemConcept:
-        # TODO use cda data types
-        concept = ProblemConcept()
-        concept.code = value.get("@code")
-        concept.code_system = value.get("@codeSystem")
-        concept.code_system_name = value.get("@codeSystemName")
-        concept.display_name = value.get("@displayName")
-
-        return concept
-
     def _add_new_problem_entry(
         self,
         new_problem: ProblemConcept,
@@ -142,6 +209,18 @@ class CdaAnnotator:
         act_id: str,
         problem_reference_name: str,
     ) -> None:
+        """
+        Adds a new problem entry to the problem section of the CDA document.
+
+        Args:
+            new_problem (ProblemConcept): The new problem concept to be added.
+            timestamp (str): The timestamp of the entry.
+            act_id (str): The ID of the act.
+            problem_reference_name (str): The reference name of the problem.
+
+        Returns:
+            None
+        """
         # TODO: This will need work
         template = {
             "act": {
@@ -221,6 +300,12 @@ class CdaAnnotator:
         self._problem_section.entry.append(new_entry)
 
     def _extract_problems(self) -> List[ProblemConcept]:
+        """
+        Extracts problem concepts from the problem section of the CDA document.
+
+        Returns:
+            A list of ProblemConcept objects representing the extracted problem concepts.
+        """
         # idea - llm extraction
         if not self._problem_section:
             log.warning("Empty problem section!")
@@ -236,11 +321,11 @@ class CdaAnnotator:
                             value = entry_relationship_item.observation.value
                 else:
                     value = entry.act.entryRelationship.observation.value
-                concept = self._get_concept_from_cda_value(value)
+                concept = get_concept_from_cda_value(value)
                 concepts.append(concept)
         else:
             value = self._problem_section.entry.act.entryRelationship.observation.value
-            concept = self._get_concept_from_cda_value(value)
+            concept = get_concept_from_cda_value(value)
             concepts.append(concept)
 
         return concepts
@@ -252,6 +337,12 @@ class CdaAnnotator:
         pass
 
     def _extract_note(self) -> str:
+        """
+        Extracts the note section from the CDA document.
+
+        Returns:
+            str: The extracted note section as a string.
+        """
         # TODO: need to handle / escape html tags within the note section, parse with right field
         if not self._note_section:
             log.warning("Empty notes section!")
@@ -286,12 +377,12 @@ class CdaAnnotator:
     def add_to_allergy_list(
         self, allergies: List[AllergyConcept], overwrite: bool = False
     ) -> None:
-        pass
+        raise NotImplementedError("Allergy list not implemented yet")
 
     def add_to_medication_list(
         self, medications: List[MedicationConcept], overwrite: bool = False
     ) -> None:
-        pass
+        raise NotImplementedError("Medication list not implemented yet")
 
     def export(self, pretty_print: bool = True) -> str:
         """

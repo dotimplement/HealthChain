@@ -15,6 +15,17 @@ def start_wsgi(
     app_name: str = "ICDSServices",
     tns: str = "urn:epic-com:Common.2013.Services",
 ):
+    """
+    Starts the WSGI application for the SOAP service.
+
+    Args:
+        service (Callable): The service function to be used.
+        app_name (str, optional): The name of the application. Defaults to "ICDSServices".
+        tns (str, optional): The target namespace for the SOAP service. Defaults to "urn:epic-com:Common.2013.Services".
+
+    Returns:
+        WsgiApplication: The WSGI application for the SOAP service.
+    """
     CDSServices._service = service
 
     application = Application(

@@ -171,8 +171,10 @@ class ClinicalDocumentation(BaseUseCase):
 
         # Update the CDA document with the results
         cda_doc.add_to_problem_list(result.problems, overwrite=True)
-        cda_doc.add_to_allergy_list(result.allergies, overwrite=True)
-        cda_doc.add_to_medication_list(result.medications, overwrite=True)
+
+        # TODO: add meds and allergies
+        # cda_doc.add_to_allergy_list(result.allergies, overwrite=True)
+        # cda_doc.add_to_medication_list(result.medications, overwrite=True)
 
         # Export the updated CDA document
         response_document = cda_doc.export()

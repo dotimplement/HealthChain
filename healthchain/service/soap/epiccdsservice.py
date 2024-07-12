@@ -1,7 +1,6 @@
 import logging
 
 from spyne import rpc, ServiceBase, Unicode, ByteArray
-
 from healthchain.models.requests.cdarequest import CdaRequest
 
 from .model import Response, ClientFault, ServerFault
@@ -12,14 +11,19 @@ log = logging.getLogger(__name__)
 
 # I'm not happy about this name either but that's what Epic wants
 class CDSServices(ServiceBase):
+    """
+    Represents a CDSServices object that provides methods for processing documents.
+    """
+
     _service = None
 
+    # TODO The _in_arg_names are order sensitive here so need to find a way to make this
+    # configurable and easier to catch errors
     @rpc(
         Unicode,
         Unicode,
         Unicode,
         ByteArray,
-        # NOTE order sensitive
         _in_arg_names={
             "sessionId": "SessionID",
             "workType": "WorkType",
@@ -31,9 +35,33 @@ class CDSServices(ServiceBase):
         _faults=[ClientFault, ServerFault],
     )
     def ProcessDocument(ctx, sessionId, workType, organizationId, document):
+        """
+        Processes a document using the specified session ID, work type, organization ID, and document.
+
+        Args:
+            ctx (object): The context object.
+            sessionId (str): The session ID.
+            workType (str): The work type.
+            organizationId (str): The organization ID.
+            document (bytes): The document to be processed.
+
+        Returns:
+            Response: The response object containing the processed document and any errors.
+
+        Raises:
+            ClientFault: If any of the required parameters are missing.
+            ServerFault: If there is a server processing error.
+            ServerFault: If an unexpected error occurs.
+        """
         try:
-            if not sessionId or not workType or not organizationId or not document:
-                raise ClientFault("Missing required parameters")
+            if not sessionId:
+                raise ClientFault("Missing required parameter: sessionId")
+            if not workType:
+                raise ClientFault("Missing required parameter: workType")
+            if not organizationId:
+                raise ClientFault("Missing required parameter: organizationId")
+            if not document:
+                raise ClientFault("Missing required parameter: document")
 
             request_document_xml = document[0].decode("UTF-8")
 
