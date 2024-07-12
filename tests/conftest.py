@@ -15,6 +15,8 @@ from healthchain.models.data.concept import (
     ProblemConcept,
 )
 from healthchain.models.requests.cdarequest import CdaRequest
+from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.service.soap.epiccdsservice import CDSServices
 from healthchain.use_cases.cds import (
     ClinicalDecisionSupport,
     ClinicalDecisionSupportStrategy,
@@ -309,6 +311,19 @@ def test_cda_request():
 
 
 @pytest.fixture
+def mock_cda_response():
+    return CdaResponse(document="testing")
+
+
+@pytest.fixture
+def test_soap_request():
+    with open("./tests/data/test_soap_request.xml", "r") as file:
+        test_soap = file.read()
+
+    return CdaRequest(document=test_soap)
+
+
+@pytest.fixture
 def test_ccd_data():
     return CcdData(
         problems=[ProblemConcept(code="test")],
@@ -323,3 +338,8 @@ def cda_annotator():
         test_cda = file.read()
 
     return CdaAnnotator.from_xml(test_cda)
+
+
+@pytest.fixture
+def cdsservices():
+    return CDSServices()
