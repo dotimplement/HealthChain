@@ -1,106 +1,94 @@
-from healthchain.use_cases.cds import ClinicalDecisionSupport
-from healthchain.decorators import ehr, api, sandbox
-import dataclasses
-from pydantic import BaseModel
-import random
-import json
+import healthchain as hc
+
+from healthchain.models.data.ccddata import CcdData
+from healthchain.models.data.concept import ProblemConcept
+from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.data_generators import CdsDataGenerator
+from healthchain.models import Card, CdsFhirData, CDSRequest
+
+from healthchain.use_cases.clindoc import ClinicalDocumentation
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+from typing import List
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-def run():
-    class MockBundle(BaseModel):
-        resource: str = "medication"
+@hc.sandbox
+class MyCoolSandbox(ClinicalDecisionSupport):
+    def __init__(self, testing=True):
+        self.testing = testing
+        self.chain = self._init_llm_chain()
+        self.data_generator = CdsDataGenerator()
 
-    @dataclasses.dataclass
-    class synth_data:
-        context: dict
-        resources: MockBundle
+    def _init_llm_chain(self):
+        prompt = PromptTemplate.from_template(
+            "Extract conditions from the FHIR resource below and summarize in one sentence using simple language \n'''{text}'''"
+        )
+        model = ChatOpenAI(model="gpt-4o")
+        parser = StrOutputParser()
 
-    class DataGenerator:
-        def __init__(self) -> None:
-            self.data = None
-            self.workflow = None
+        chain = prompt | model | parser
+        return chain
 
-        def set_workflow(self, workflow):
-            self.workflow = workflow
+    @hc.ehr(workflow="patient-view")
+    def load_data_in_client(self) -> CdsFhirData:
+        data = self.data_generator.generate()
+        return data
 
-        def generate(self, constraint):
-            examples = ["medication", "problems", "procedures"]
-            data = MockBundle(resource=random.choice(examples))
-            data = synth_data(context={}, resources=data)
-            print(
-                f"This is synthetic FHIR data from the generator, the param is {constraint}, the workflow is {self.workflow}"
-            )
+    @hc.api
+    def my_service(self, request: CDSRequest) -> List[Card]:
+        if self.testing:
+            result = "test"
+        else:
+            result = self.chain.invoke(str(request.prefetch))
 
-            self.data = data
+        return Card(
+            summary="Patient summary",
+            indicator="info",
+            source={"label": "openai"},
+            detail=result,
+        )
 
-    @sandbox(service_config={"port": 9000})
-    class myCDS(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            self.data_generator = DataGenerator()
-            self.chain = self.define_chain()
 
-        def define_chain(self):
-            return "This will be processed by llm"
-            # llm = OpenAI()
-            # prompt = ""
-            # parser = JsonOutputParser()
-            # chain = prompt | llm | parser
-            # return chain
+@hc.sandbox
+class NotereaderSandbox(ClinicalDocumentation):
+    def __init__(self, testing=True):
+        self.testing = testing
 
-        # decorator sets up an instance of ehr configured with use case CDS
-        @ehr(workflow="encounter-discharge", num=3)
-        def load_data(self):
-            self.data_generator.generate(
-                constraint=[
-                    "long_encounter_period",
-                    "short_encounter_period",
-                    "has_problem_list",
-                    "has_medication_requests",
-                    "has_procedures",
-                ]
-            )
-            # self.data_generator.update({"Condition/ClinicalStatus": "active"})
-            # self.data_generator.load_free_text("./dir/")
+    @hc.ehr(workflow="sign-note-inpatient")
+    def load_data_in_client(self) -> CcdData:
+        # data = self.data_generator.generate()
+        # return data
 
-            return self.data_generator.data
+        with open("./resources/epic_cda.xml", "r") as file:
+            xml_string = file.read()
 
-        @api
-        def llm(self, text: str):
-            # result = self.chain.invoke(text)
-            # return result
-            print(text)
-            request = json.loads(text)
-            prefetch = request.get("prefetch")
-            resource = prefetch.get("resource", "")
-            return {
-                "cards": [
-                    {
-                        "summary": self.chain,
-                        "indicator": "info",
-                        "source": {"label": resource},
-                    }
-                ]
-            }
+        return CcdData(cda_xml=xml_string)
 
-    cds = myCDS()
-    cds.start_sandbox(save_data=False)
-    print(cds.responses)
-    cds.stop_sandbox()
+    @hc.api
+    def my_service(self, ccd_data: CcdData) -> CcdData:
+        # if self.testing:
+        #     result = "test"
 
-    # ehr_client = cds.load_data("123")
-    # request = ehr_client.request_data
-    # for i in range(len(request)):
-    #     print(request[i].model_dump_json(exclude_none=True))
+        new_problem = ProblemConcept(
+            code="38341003",
+            code_system="2.16.840.1.113883.6.96",
+            code_system_name="SNOMED CT",
+            display_name="Hypertension",
+        )
+        ccd_data.problems = [new_problem]
+        print(ccd_data.note)
 
-    # cds_dict = {
-    #     "hook": "patient-view",
-    #     "hookInstance": "29e93987-c345-4cb7-9a92-b5136289c2a4",
-    #     "context": {"userId": "Practitioner/123", "patientId": "123"},
-    # }
-    # request = CDSRequest(**cds_dict)
-    # result = cds.llm(request)
-    # print(result)
+        return ccd_data
 
 
 if __name__ == "__main__":
-    run()
+    # cds = MyCoolSandbox()
+    # cds.start_sandbox()
+
+    cds = NotereaderSandbox()
+    cds.start_sandbox()
