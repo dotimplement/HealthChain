@@ -1,6 +1,6 @@
 import inspect
 import logging
-import importlib
+import pkgutil
 import xmltodict
 import base64
 
@@ -34,12 +34,8 @@ class ClinicalDocumentationStrategy(BaseStrategy):
         self.soap_envelope: Dict = self._load_soap_envelope()
 
     def _load_soap_envelope(self):
-        path = importlib.resources.files("healthchain.templates") / "soap_envelope.xml"
-
-        with open(path, "r") as file:
-            soap_envelope_template = xmltodict.parse(file.read())
-
-        return soap_envelope_template
+        data = pkgutil.get_data("healthchain", "templates/soap_envelope.xml")
+        return xmltodict.parse(data.decode("utf-8"))
 
     def construct_cda_xml_document(self):
         """
