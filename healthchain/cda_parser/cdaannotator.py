@@ -68,6 +68,7 @@ class CdaAnnotator:
         from_dict(cls, data: Dict): Creates a CdaAnnotator instance from a dictionary.
         from_xml(cls, data: str): Creates a CdaAnnotator instance from an XML string.
         add_to_problem_list(problems: List[ProblemConcept], overwrite: bool = False) -> None: Adds a list of problem concepts to the problems section.
+        export(pretty_print: bool = True) -> str: Exports the CDA document as an XML string.
     """
 
     def __init__(self, cda_data: ClinicalDocument, fallback="LLM") -> None:

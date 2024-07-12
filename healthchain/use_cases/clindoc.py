@@ -40,6 +40,7 @@ class ClinicalDocumentationStrategy(BaseStrategy):
     def construct_cda_xml_document(self):
         """
         This function should wrap FHIR data from CcdFhirData into a template CDA file (dep. vendor
+        TODO: implement this function
         """
         pass
 
