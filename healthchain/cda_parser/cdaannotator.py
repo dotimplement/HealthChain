@@ -20,7 +20,7 @@ from .model.sections import Entry, Section
 log = logging.getLogger(__name__)
 
 
-def get_concept_from_cda_value(value: Dict) -> ProblemConcept:
+def get_problem_concept_from_cda_value(value: Dict) -> ProblemConcept:
     # TODO use cda data types
     concept = ProblemConcept()
     concept.code = value.get("@code")
@@ -29,6 +29,24 @@ def get_concept_from_cda_value(value: Dict) -> ProblemConcept:
     concept.display_name = value.get("@displayName")
 
     return concept
+
+
+def get_medication_concept_from_cda_value(value: Dict) -> MedicationConcept:
+    concept = MedicationConcept()
+    concept.code = value.get("@code")
+    concept.code_system = value.get("@codeSystem")
+    concept.code_system_name = value.get("@codeSystemName")
+    concept.display_name = value.get("@displayName")
+
+    return concept
+
+
+def get_allergy_concept_from_cda_value(value: Dict) -> AllergyConcept:
+    concept = AllergyConcept()
+    concept.code = value.get("@code")
+    concept.code_system = value.get("@codeSystem")
+    concept.code_system_name = value.get("@codeSystemName")
+    concept.display_name = value.get("@displayName")
 
 
 class SectionId(Enum):
@@ -322,20 +340,75 @@ class CdaAnnotator:
                             value = entry_relationship_item.observation.value
                 else:
                     value = entry.act.entryRelationship.observation.value
-                concept = get_concept_from_cda_value(value)
+                concept = get_problem_concept_from_cda_value(value)
                 concepts.append(concept)
         else:
             value = self._problem_section.entry.act.entryRelationship.observation.value
-            concept = get_concept_from_cda_value(value)
+            concept = get_problem_concept_from_cda_value(value)
             concepts.append(concept)
 
         return concepts
 
     def _extract_medications(self) -> List[MedicationConcept]:
-        pass
+        """
+        Extracts problem concepts from the problem section of the CDA document.
+
+        Returns:
+            A list of ProblemConcept objects representing the extracted problem concepts.
+        """
+        # idea - llm extraction
+        if not self._medication_section:
+            log.warning("Empty medication section!")
+            return []
+
+        def get_medication_from_entry(entry):
+            substance_administration = entry.act.substanceAdministration
+            value = substance_administration.consumable.code
+            value["dosage"] = " ".join(
+                [
+                    substance_administration.doseQuantity.value,
+                    substance_administration.doseQuantity.unit,
+                ]
+            )
+            value["route"] = substance_administration.routeCode.code
+            return value
+
+        concepts = []
+        if isinstance(self._medication_section.entry, list):
+            for entry in self._medication_section.entry:
+                value = get_medication_from_entry(entry)
+                concept = get_medication_concept_from_cda_value(value)
+                concepts.append(concept)
+        else:
+            value = get_medication_from_entry(self._medication_section.entry)
+            concept = get_medication_concept_from_cda_value(value)
+            concepts.append(concept)
+
+        return concepts
 
     def _extract_allergies(self) -> List[AllergyConcept]:
-        pass
+        if not self._allergy_section:
+            log.warning("Empty allergy section!")
+            return []
+
+        concepts = []
+        if isinstance(self._allergy_section.entry, list):
+            for entry in self._allergy_section.entry:
+                entry_relationship = entry.act.entryRelationship
+                if isinstance(entry_relationship, list):
+                    for entry_relationship_item in entry_relationship:
+                        if entry_relationship_item.observation:
+                            value = entry_relationship_item.observation.value
+                else:
+                    value = entry.act.entryRelationship.observation.value
+                concept = get_allergy_concept_from_cda_value(value)
+                concepts.append(concept)
+        else:
+            value = self._allergy_section.entry.act.entryRelationship.observation.value
+            concept = get_allergy_concept_from_cda_value(value)
+            concepts.append(concept)
+
+        return concepts
 
     def _extract_note(self) -> str:
         """
