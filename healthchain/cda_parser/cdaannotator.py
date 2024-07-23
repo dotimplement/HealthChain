@@ -48,6 +48,20 @@ def get_allergy_concept_from_cda_value(value: Dict) -> AllergyConcept:
     concept.code_system_name = value.get("@codeSystemName")
     concept.display_name = value.get("@displayName")
 
+    return concept
+
+
+def get_value_from_entry_relationship(entry_relationship):
+    values = []
+    if isinstance(entry_relationship, list):
+        for item in entry_relationship:
+            if item.observation:
+                values.append(item.observation.value)
+    else:
+        if entry_relationship.observation:
+            values.append(entry_relationship.observation.value)
+    return values
+
 
 class SectionId(Enum):
     PROBLEM = "2.16.840.1.113883.10.20.1.11"
@@ -325,27 +339,24 @@ class CdaAnnotator:
         Returns:
             A list of ProblemConcept objects representing the extracted problem concepts.
         """
-        # idea - llm extraction
         if not self._problem_section:
             log.warning("Empty problem section!")
             return []
 
         concepts = []
-        if isinstance(self._problem_section.entry, list):
-            for entry in self._problem_section.entry:
-                entry_relationship = entry.act.entryRelationship
-                if isinstance(entry_relationship, list):
-                    for entry_relationship_item in entry_relationship:
-                        if entry_relationship_item.observation:
-                            value = entry_relationship_item.observation.value
-                else:
-                    value = entry.act.entryRelationship.observation.value
+
+        entries = (
+            self._problem_section.entry
+            if isinstance(self._problem_section.entry, list)
+            else [self._problem_section.entry]
+        )
+
+        for entry in entries:
+            entry_relationship = entry.act.entryRelationship
+            values = get_value_from_entry_relationship(entry_relationship)
+            for value in values:
                 concept = get_problem_concept_from_cda_value(value)
                 concepts.append(concept)
-        else:
-            value = self._problem_section.entry.act.entryRelationship.observation.value
-            concept = get_problem_concept_from_cda_value(value)
-            concepts.append(concept)
 
         return concepts
 
@@ -362,15 +373,40 @@ class CdaAnnotator:
             return []
 
         def get_medication_from_entry(entry):
-            substance_administration = entry.act.substanceAdministration
-            value = substance_administration.consumable.code
-            value["dosage"] = " ".join(
-                [
-                    substance_administration.doseQuantity.value,
-                    substance_administration.doseQuantity.unit,
-                ]
-            )
-            value["route"] = substance_administration.routeCode.code
+            # Safely access nested dictionary values with .get()
+            try:
+                substance_administration = entry.substanceAdministration
+            except AttributeError as e:
+                log.warning(f"Error extracting substance from medication: {e}")
+                return None
+
+            consumable = substance_administration.get("consumable", {})
+            manufactured_product = consumable.get("manufacturedProduct", {})
+            manufactured_material = manufactured_product.get("manufacturedMaterial", {})
+            code = manufactured_material.get("code", {})
+
+            # Check if required fields are present before proceeding
+            if not code:
+                raise ValueError(
+                    "Code not found in the consumable's manufactured material"
+                )
+
+            dose_quantity = substance_administration.get("doseQuantity", {})
+            route_code = substance_administration.get("routeCode", {})
+
+            # Construct the value dictionary with additional checks
+            value = {
+                "code": code.get("code"),
+                "displayName": code.get("displayName"),
+                "codeSystem": code.get("codeSystem"),
+                "dosage": " ".join(
+                    [
+                        dose_quantity.get("@value", "N/A"),
+                        dose_quantity.get("@unit", "N/A"),
+                    ]
+                ),
+                "route": route_code.get("code", "N/A"),
+            }
             return value
 
         concepts = []
@@ -392,22 +428,19 @@ class CdaAnnotator:
             return []
 
         concepts = []
-        if isinstance(self._allergy_section.entry, list):
-            for entry in self._allergy_section.entry:
-                entry_relationship = entry.act.entryRelationship
-                if isinstance(entry_relationship, list):
-                    for entry_relationship_item in entry_relationship:
-                        if entry_relationship_item.observation:
-                            value = entry_relationship_item.observation.value
-                else:
-                    value = entry.act.entryRelationship.observation.value
+
+        entries = (
+            self._allergy_section.entry
+            if isinstance(self._allergy_section.entry, list)
+            else [self._allergy_section.entry]
+        )
+
+        for entry in entries:
+            entry_relationship = entry.act.entryRelationship
+            values = get_value_from_entry_relationship(entry_relationship)
+            for value in values:
                 concept = get_allergy_concept_from_cda_value(value)
                 concepts.append(concept)
-        else:
-            value = self._allergy_section.entry.act.entryRelationship.observation.value
-            concept = get_allergy_concept_from_cda_value(value)
-            concepts.append(concept)
-
         return concepts
 
     def _extract_note(self) -> str:
