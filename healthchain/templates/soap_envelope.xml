@@ -1,0 +1,25 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:urn="urn:epic-com:Common.2013.Services"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <urn:ProcessDocument>
+            <!--Optional:-->
+            <!--type: string-->
+            <urn:SessionID>0000-0000-0000-0000</urn:SessionID>
+            <!--Optional:-->
+            <!--type: string-->
+            <urn:WorkType>2</urn:WorkType>
+            <!--Optional:-->
+            <!--type: string-->
+            <urn:OrganizationID>UCLH</urn:OrganizationID>
+            <!--Optional:-->
+            <!--type: base64Binary-->
+            <urn:Document>
+            <!-- Your XML content here -->
+            </urn:Document>
+            <!--urn:Document xsi:type="xsd:base64Binary">cid:666</urn:Document-->
+        </urn:ProcessDocument>
+    </soapenv:Body>
+</soapenv:Envelope>

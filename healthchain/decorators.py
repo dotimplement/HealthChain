@@ -4,6 +4,7 @@ import asyncio
 import json
 import uuid
 import requests
+import traceback
 
 from time import sleep
 from pathlib import Path
@@ -11,28 +12,35 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
+from healthchain.workflows import UseCaseType
+from healthchain.apimethod import APIMethod
+
 from .base import BaseUseCase
 from .service import Service
 from .utils import UrlBuilder
-from .use_cases.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
+traceback.print_exc()
 
 F = TypeVar("F", bound=Callable)
 
 
-def generate_filename(prefix: str, unique_id: str, index: int):
+def generate_filename(prefix: str, unique_id: str, index: int, extension: str):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.json"
+    filename = f"{timestamp}_sandbox_{unique_id[:8]}_{prefix}_{index}.{extension}"
     return filename
 
 
-def save_as_json(data, prefix, sandbox_id, index, save_dir):
-    save_name = generate_filename(prefix, str(sandbox_id), index)
+def save_file(data, prefix, sandbox_id, index, save_dir, extension):
+    save_name = generate_filename(prefix, str(sandbox_id), index, extension)
     file_path = save_dir / save_name
-    with open(file_path, "w") as outfile:
-        json.dump(data, outfile, indent=4)
+    if extension == "json":
+        with open(file_path, "w") as outfile:
+            json.dump(data, outfile, indent=4)
+    elif extension == "xml":
+        with open(file_path, "w") as outfile:
+            outfile.write(data)
 
 
 def ensure_directory_exists(directory):
@@ -41,10 +49,10 @@ def ensure_directory_exists(directory):
     return path
 
 
-def save_data_to_directory(data_list, data_type, sandbox_id, save_dir):
+def save_data_to_directory(data_list, data_type, sandbox_id, save_dir, extension):
     for i, data in enumerate(data_list):
         try:
-            save_as_json(data, data_type, sandbox_id, i, save_dir)
+            save_file(data, data_type, sandbox_id, i, save_dir, extension)
         except Exception as e:
             log.warning(f"Error saving file {i} at {save_dir}: {e}")
 
@@ -184,18 +192,20 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                     # Get the function decorated with @api and register it to inject in service
                     if is_service_route(attr):
                         service_route_count += 1
-                        validate_single_registration(service_route_count, "service_api")
-                        self.service_api = register_method(
-                            self, attr, cls, name, "service_api"
+                        validate_single_registration(
+                            service_route_count, "_service_api"
+                        )
+                        self._service_api = register_method(
+                            self, attr, cls, name, "_service_api"
                         )
 
                     if is_client(attr):
                         client_count += 1
-                        validate_single_registration(client_count, "client")
-                        self.client = register_method(self, attr, cls, name, "client")
+                        validate_single_registration(client_count, "_client")
+                        self._client = register_method(self, attr, cls, name, "_client")
 
             # Create a Service instance and register routes from strategy
-            self.service = Service(endpoints=self.endpoints)
+            self._service = Service(endpoints=self.endpoints)
 
         # Set the new init
         cls.__init__ = new_init
@@ -212,7 +222,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             NOTE: service_id is hardcoded "1" by default, don't change.
             """
             # TODO: revisit this - default to a single service with id "1", we could have a service registry if useful
-            if self.service_api is None or self.client is None:
+            if self._service_api is None or self._client is None:
                 raise RuntimeError(
                     "Service API or Client is not configured. Please check your class initialization."
                 )
@@ -224,7 +234,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                 f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
             )
             server_thread = threading.Thread(
-                target=lambda: self.service.run(config=self.service_config)
+                target=lambda: self._service.run(config=self.service_config)
             )
             server_thread.start()
 
@@ -239,12 +249,12 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
             # Send async request from client
             log.info(
-                f"Sending {len(self.client.request_data)} requests generated by {self.client.__class__.__name__} to {self.url.route}"
+                f"Sending {len(self._client.request_data)} requests generated by {self._client.__class__.__name__} to {self.url.route}"
             )
 
             try:
                 self.responses = asyncio.run(
-                    self.client.send_request(url=self.url.service)
+                    self._client.send_request(url=self.url.service)
                 )
             except Exception as e:
                 log.error(f"Couldn't start client: {e}")
@@ -252,20 +262,39 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             if save_data:
                 save_dir = Path(save_dir)
                 request_path = ensure_directory_exists(save_dir / "requests")
-                save_data_to_directory(
-                    [
-                        request.model_dump(exclude_none=True)
-                        for request in self.client.request_data
-                    ],
-                    "request",
-                    self.sandbox_id,
-                    request_path,
-                )
+                if self.type == UseCaseType.clindoc:
+                    extension = "xml"
+                    save_data_to_directory(
+                        [
+                            request.model_dump_xml()
+                            for request in self._client.request_data
+                        ],
+                        "request",
+                        self.sandbox_id,
+                        request_path,
+                        extension,
+                    )
+                else:
+                    extension = "json"
+                    save_data_to_directory(
+                        [
+                            request.model_dump(exclude_none=True)
+                            for request in self._client.request_data
+                        ],
+                        "request",
+                        self.sandbox_id,
+                        request_path,
+                        extension,
+                    )
                 log.info(f"Saved request data at {request_path}/")
 
                 response_path = ensure_directory_exists(save_dir / "responses")
                 save_data_to_directory(
-                    self.responses, "response", self.sandbox_id, response_path
+                    self.responses,
+                    "response",
+                    self.sandbox_id,
+                    response_path,
+                    extension,
                 )
                 log.info(f"Saved response data at {response_path}/")
 

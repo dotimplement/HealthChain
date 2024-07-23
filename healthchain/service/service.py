@@ -7,10 +7,13 @@ from typing import Dict
 
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import JSONResponse
+from fastapi.middleware.wsgi import WSGIMiddleware
 from contextlib import asynccontextmanager
 from termcolor import colored
 
-from .endpoints import Endpoint
+from healthchain.service.soap.wsgi import start_wsgi
+
+from .endpoints import Endpoint, ApiProtocol
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class Service:
 
     def __init__(self, endpoints: Dict[str, Endpoint] = None):
         self.app = FastAPI(lifespan=self.lifespan)
-        self.endpoints = endpoints
+        self.endpoints: Endpoint = endpoints
 
         if self.endpoints is not None:
             self._register_routes()
@@ -42,12 +45,16 @@ class Service:
     def _register_routes(self) -> None:
         # TODO: add kwargs
         for endpoint in self.endpoints.values():
-            self.app.add_api_route(
-                endpoint.path,
-                endpoint.function,
-                methods=[endpoint.method],
-                response_model_exclude_none=True,
-            )
+            if endpoint.api_protocol == ApiProtocol.soap:
+                wsgi_app = start_wsgi(endpoint.function)
+                self.app.mount(endpoint.path, WSGIMiddleware(wsgi_app))
+            else:
+                self.app.add_api_route(
+                    endpoint.path,
+                    endpoint.function,
+                    methods=[endpoint.method],
+                    response_model_exclude_none=True,
+                )
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):

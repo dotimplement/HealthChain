@@ -9,19 +9,22 @@ def test_sandbox_init(correct_sandbox_class):
 
     assert "cds_discovery" in attributes
     assert "cds_service" in attributes
-    assert "service" in attributes
-    assert "service_api" in attributes
-    assert "client" in attributes
     assert "service_config" in attributes
     assert "start_sandbox" in attributes
+    assert "_service" in attributes
+    assert "_service_api" in attributes
+    assert "_client" in attributes
 
-    assert test_sandbox.service_api == "bar"
-    assert test_sandbox.client == "foo"
+    assert test_sandbox._service_api == "bar"
+    assert test_sandbox._client == "foo"
 
-    assert test_sandbox.service is not None
-    assert test_sandbox.service.endpoints.get("info").path == "/cds-services"
+    print(test_sandbox._service)
+
+    assert test_sandbox._service is not None
+    assert test_sandbox._service.endpoints.get("info").path == "/cds-services"
     assert (
-        test_sandbox.service.endpoints.get("service_mount").path == "/cds-services/{id}"
+        test_sandbox._service.endpoints.get("service_mount").path
+        == "/cds-services/{id}"
     )
 
 
@@ -48,13 +51,13 @@ def test_incorrect_sandbox_usage(
 ):
     with pytest.raises(
         RuntimeError,
-        match="Multiple methods are registered as service_api. Only one is allowed.",
+        match="Multiple methods are registered as _service_api. Only one is allowed.",
     ):
         incorrect_api_num_sandbox_class()
 
     with pytest.raises(
         RuntimeError,
-        match="Multiple methods are registered as client. Only one is allowed.",
+        match="Multiple methods are registered as _client. Only one is allowed.",
     ):
         incorrect_client_num_sandbox_class()
 

@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3">
+   <realmCode code="US" />
+   <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+   <templateId root="1.2.840.114350.1.72.1.51693" />
+   <templateId root="2.16.840.1.113883.10" extension="IMPL_CDAR2_LEVEL1" />
+   <templateId root="2.16.840.1.113883.10.20.3" />
+   <templateId root="2.16.840.1.113883.10.20.1" />
+   <templateId root="2.16.840.1.113883.3.88.11.32.1" />
+   <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.5" />
+   <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.2" />
+   <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.1" />
+   <id assigningAuthorityName="EPC" extension="1bd28084-3ddf-11e4-837f-fa0353e6d08b" root="1.2.840.114350.1.13.7.1.7.1.1" />
+   <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Summarization of Episode Note" />
+   <title>CDA for NoteReader (NLP integration)</title>
+   <effectiveTime value="20140916152158-0500" />
+   <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" />
+   <languageCode code="EN-US" />
+   <recordTarget>
+      <patientRole>
+         <id nullFlavor="UNK" />
+         <addr nullFlavor="UNK">
+            <streetAddressLine nullFlavor="UNK" />
+            <city nullFlavor="UNK" />
+         </addr>
+         <telecom nullFlavor="UNK" />
+         <patient>
+            <name use="L">
+               <given>John</given>
+               <family>Smith</family>
+            </name>
+            <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGenderCode" displayName="Male" />
+            <birthTime value="19810916" />
+            <maritalStatusCode nullFlavor="UNK" />
+            <raceCode nullFlavor="UNK" />
+            <ethnicGroupCode codeSystem="2.16.840.1.113883.6.238" codeSystemName="CDC Race and Ethnicity" nullFlavor="UNK" />
+            <languageCommunication>
+               <languageCode code="eng" />
+               <preferenceInd value="true" />
+            </languageCommunication>
+         </patient>
+         <providerOrganization>
+            <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+            <name>XPJK SA</name>
+            <telecom nullFlavor="NA" />
+            <addr nullFlavor="NA" />
+         </providerOrganization>
+      </patientRole>
+   </recordTarget>
+   <author>
+      <time value="20140916152158" />
+      <assignedAuthor>
+         <id extension="1" root="1.2.840.114350.1.13.7.1.7.2.836982" />
+         <addr nullFlavor="UNK">
+            <streetAddressLine nullFlavor="UNK" />
+            <city nullFlavor="UNK" />
+         </addr>
+         <telecom nullFlavor="UNK" />
+         <assignedPerson>
+            <name>
+               <given>Matthew</given>
+               <family>Glenz</family>
+            </name>
+         </assignedPerson>
+         <representedOrganization>
+            <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+            <name>XPJK SA</name>
+            <telecom nullFlavor="NA" />
+            <addr nullFlavor="NA" />
+         </representedOrganization>
+      </assignedAuthor>
+   </author>
+   <author>
+      <time value="20140916152158" />
+      <assignedAuthor>
+         <id extension="8.2" root="1.2.840.114350.1.1" />
+         <addr nullFlavor="NA">
+            <streetAddressLine nullFlavor="UNK" />
+            <city nullFlavor="UNK" />
+         </addr>
+         <telecom nullFlavor="NA" />
+         <assignedAuthoringDevice>
+            <manufacturerModelName>Epic - Version 8.2</manufacturerModelName>
+            <softwareName>Epic - Version 8.2</softwareName>
+         </assignedAuthoringDevice>
+         <representedOrganization>
+            <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+            <name>XPJK SA</name>
+            <telecom nullFlavor="NA" />
+            <addr nullFlavor="NA" />
+         </representedOrganization>
+      </assignedAuthor>
+   </author>
+   <custodian>
+      <assignedCustodian>
+         <representedCustodianOrganization>
+            <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+            <name>XPJK SA</name>
+            <telecom nullFlavor="NA" />
+            <addr nullFlavor="NA" />
+         </representedCustodianOrganization>
+      </assignedCustodian>
+   </custodian>
+   <componentOf>
+      <encompassingEncounter>
+         <id root="1.2.840.114350.1.13.7.1.7.3.698084.7" />
+         <effectiveTime value="20140916">
+            <low value="20140916" />
+         </effectiveTime>
+         <encounterParticipant typeCode="ATND">
+            <time value="20140916" />
+            <assignedEntity>
+               <id extension="1" root="1.2.840.114350.1.13.7.1.7.2.836982" />
+               <addr nullFlavor="UNK" />
+               <telecom nullFlavor="UNK" />
+               <assignedPerson>
+                  <name>
+                     <given>Matthew</given>
+                     <family>Glenz</family>
+                  </name>
+               </assignedPerson>
+            </assignedEntity>
+         </encounterParticipant>
+         <location>
+            <healthCareFacility>
+               <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+            </healthCareFacility>
+         </location>
+      </encompassingEncounter>
+   </componentOf>
+   <component>
+      <structuredBody>
+         <component>
+            <section>
+               <templateId root="2.16.840.1.113883.10.20.1.2" />
+               <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.13" />
+               <templateId root="2.16.840.1.113883.3.88.11.83.102" />
+               <id root="1BD4128C-3DDF-11E4-837F-FA0353E6D08B" />
+               <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies, Adverse Reactions, Alerts" />
+               <title>Active Allergies and Adverse Reactions - as of 09/16/2014</title>
+               <text>
+                  <table>
+                     <colgroup>
+                        <col width="25%" />
+                        <col width="13%" />
+                        <col width="12%" />
+                        <col width="25%" />
+                        <col width="25%" />
+                     </colgroup>
+                     <thead>
+                        <tr>
+                           <th>Allergen</th>
+                           <th>Noted Date</th>
+                           <th>Severity</th>
+                           <th>Reactions</th>
+                           <th>Comments</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr ID="allergy1">
+                           <td ID="allergy1allergen">Insulins</td>
+                           <td ID="allergy1noted">09/16/2014</td>
+                           <td ID="allergy1severity" />
+                           <td />
+                           <td ID="allergy1comments" />
+                        </tr>
+                     </tbody>
+                  </table>
+               </text>
+               <entry>
+                  <act classCode="ACT" moodCode="EVN">
+                     <templateId root="2.16.840.1.113883.10.20.1.27" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                     <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                     <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                     <id extension="31976" root="1.2.840.114350.1.13.7.1.7.2.768076" />
+                     <code nullFlavor="NA" />
+                     <statusCode code="active" />
+                     <effectiveTime>
+                        <low value="20140916" />
+                     </effectiveTime>
+                     <entryRelationship inversionInd="false" typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                           <templateId root="2.16.840.1.113883.10.20.1.18" />
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                           <templateId root="2.16.840.1.113883.10.20.1.28" />
+                           <id extension="31976" root="1.2.840.114350.1.13.7.1.7.2.768076" />
+                           <code code="420134006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Propensity to adverse reactions" />
+                           <text>
+                              <reference value="#allergy1" />
+                           </text>
+                           <statusCode code="completed" />
+                           <effectiveTime>
+                              <low value="20140916" />
+                              <high nullFlavor="PINF" />
+                           </effectiveTime>
+                           <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="N0000183505" codeSystem="2.16.840.1.113883.3.26.1.5" codeSystemName="NDF-RT" xsi:type="CD" />
+                           <author>
+                              <time value="20140916" />
+                              <assignedAuthor>
+                                 <id extension="17188" root="1.2.840.114350.1.13.7.1.7.2.697780" />
+                                 <addr nullFlavor="UNK" />
+                                 <telecom use="WP" value="tel:+1-271-9000 X" />
+                                 <assignedPerson>
+                                    <name>
+                                       <given>Peter</given>
+                                       <family>Chen</family>
+                                    </name>
+                                 </assignedPerson>
+                                 <representedOrganization>
+                                    <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+                                    <name>XPJK SA</name>
+                                    <telecom nullFlavor="NA" />
+                                    <addr nullFlavor="NA" />
+                                 </representedOrganization>
+                              </assignedAuthor>
+                           </author>
+                           <participant typeCode="CSM">
+                              <participantRole classCode="MANU">
+                                 <playingEntity classCode="MMAT">
+                                    <code code="N0000183505" codeSystem="2.16.840.1.113883.3.26.1.5" codeSystemName="NDF-RT">
+                                       <originalText>
+                                          <reference value="#allergy1allergen" />
+                                       </originalText>
+                                    </code>
+                                    <name>INSULINS</name>
+                                 </playingEntity>
+                              </participantRole>
+                           </participant>
+                           <entryRelationship inversionInd="true" typeCode="REFR">
+                              <observation classCode="OBS" moodCode="EVN">
+                                 <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                 <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                 <statusCode code="completed" />
+                                 <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active" />
+                              </observation>
+                           </entryRelationship>
+                        </observation>
+                     </entryRelationship>
+                  </act>
+               </entry>
+            </section>
+         </component>
+         <component>
+            <section>
+               <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="HISTORY OF MEDICATION USE" />
+               <title>Current Medications - as of 09/16/2014</title>
+               <text>
+                  <table>
+                     <colgroup>
+                        <col width="25%" />
+                        <col width="25%" />
+                        <col width="13%" />
+                        <col width="12%" />
+                        <col width="8%" />
+                        <col width="8%" />
+                        <col width="9%" />
+                     </colgroup>
+                     <thead>
+                        <tr>
+                           <th>Prescription</th>
+                           <th>Sig.</th>
+                           <th>Disp.</th>
+                           <th>Refills</th>
+                           <th>Start Date</th>
+                           <th>End Date</th>
+                           <th>Status</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr ID="currx2">
+                           <td ID="med2">TYLENOL 325 mg oral tablet</td>
+                           <td ID="sig2">1</td>
+                           <td>
+                              <paragraph>30mg</paragraph>
+                           </td>
+                           <td>1</td>
+                           <td>09/16/2014</td>
+                           <td />
+                           <td>Active</td>
+                        </tr>
+                     </tbody>
+                  </table>
+               </text>
+               <entry>
+                  <substanceAdministration classCode="SBADM" moodCode="INT">
+                     <templateId root="2.16.840.1.113883.10.20.1.24" />
+                     <templateId root="2.16.840.1.113883.3.88.11.83.8" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" />
+                     <templateId root="2.16.840.1.113883.3.88.11.32.8" />
+                     <id extension="213600" root="1.2.840.114350.1.13.7.1.7.2.798268" />
+                     <text mediaType="text/xml">
+                        <reference value="#sig2" />
+                     </text>
+                     <statusCode code="completed" />
+                     <effectiveTime xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="IVL_TS">
+                        <low value="20140916" />
+                        <high nullFlavor="UNK" />
+                     </effectiveTime>
+                     <routeCode codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="oral" />
+                     <consumable typeCode="CSM">
+                        <manufacturedProduct classCode="MANU">
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" />
+                           <templateId root="2.16.840.1.113883.10.20.1.53" />
+                           <templateId root="2.16.840.1.113883.3.88.11.32.9" />
+                           <templateId root="2.16.840.1.113883.3.88.11.83.8.2" />
+                           <templateId root="2.16.840.1.113883.3.249.11.100.13" />
+                           <manufacturedMaterial>
+                              <code nullFlavor="UNK">
+                                 <originalText>
+                                    <reference value="#med2" />
+                                 </originalText>
+                                 <translation code="209387" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Tylenol 325 Mg Or Tab" />
+                                 <translation code="261893" codeSystem="2.16.840.1.113883.6.208" codeSystemName="NDDF (First DataBank)" displayName="Tylenol 325 Mg Or Tab" />
+                              </code>
+                           </manufacturedMaterial>
+                        </manufacturedProduct>
+                     </consumable>
+                     <author>
+                        <time value="20140916202013+0000" />
+                        <assignedAuthor>
+                           <id extension="1" root="1.2.840.114350.1.13.7.1.7.2.836982" />
+                           <addr nullFlavor="UNK" />
+                           <telecom nullFlavor="UNK" />
+                           <assignedPerson>
+                              <name>
+                                 <given>Matthew</given>
+                                 <family>Glenz</family>
+                              </name>
+                           </assignedPerson>
+                           <representedOrganization>
+                              <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+                              <name>XPJK SA</name>
+                              <telecom nullFlavor="NA" />
+                              <addr nullFlavor="NA" />
+                           </representedOrganization>
+                        </assignedAuthor>
+                     </author>
+                     <entryRelationship typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                           <templateId root="2.16.840.1.113883.3.88.11.32.10" />
+                           <templateId root="2.16.840.1.113883.3.88.11.83.8.1" />
+                           <code code="329505003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Over the counter products" />
+                           <statusCode code="completed" />
+                        </observation>
+                     </entryRelationship>
+                     <entryRelationship inversionInd="true" typeCode="SUBJ">
+                        <act classCode="ACT" moodCode="EVN">
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                           <templateId root="2.16.840.1.113883.10.20.1.40" />
+                           <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                           <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                           <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                           <text>
+                              <reference value="#sig2" />
+                           </text>
+                           <statusCode code="completed" />
+                           <author>
+                              <time value="20140916202013+0000" />
+                              <assignedAuthor>
+                                 <id extension="1" root="1.2.840.114350.1.13.7.1.7.2.836982" />
+                                 <addr nullFlavor="UNK" />
+                                 <telecom nullFlavor="UNK" />
+                                 <assignedPerson>
+                                    <name>
+                                       <given>Matthew</given>
+                                       <family>Glenz</family>
+                                    </name>
+                                 </assignedPerson>
+                                 <representedOrganization>
+                                    <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+                                    <name>XPJK SA</name>
+                                    <telecom nullFlavor="NA" />
+                                    <addr nullFlavor="NA" />
+                                 </representedOrganization>
+                              </assignedAuthor>
+                           </author>
+                        </act>
+                     </entryRelationship>
+                     <entryRelationship typeCode="REFR">
+                        <supply classCode="SPLY" moodCode="INT">
+                           <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                           <id extension="213600" root="1.2.840.114350.1.13.7.1.7.2.798268" />
+                           <statusCode code="completed" />
+                           <repeatNumber value="2" />
+                           <product>
+                              <manufacturedProduct classCode="MANU">
+                                 <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" />
+                                 <templateId root="2.16.840.1.113883.10.20.1.53" />
+                                 <templateId root="2.16.840.1.113883.3.88.11.32.9" />
+                                 <templateId root="2.16.840.1.113883.3.88.11.83.8.2" />
+                                 <templateId root="2.16.840.1.113883.3.249.11.100.13" />
+                                 <manufacturedMaterial>
+                                    <code nullFlavor="UNK">
+                                       <originalText>
+                                          <reference value="#med2" />
+                                       </originalText>
+                                       <translation code="209387" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Tylenol 325 Mg Or Tab" />
+                                       <translation code="261893" codeSystem="2.16.840.1.113883.6.208" codeSystemName="NDDF (First DataBank)" displayName="Tylenol 325 Mg Or Tab" />
+                                    </code>
+                                 </manufacturedMaterial>
+                              </manufacturedProduct>
+                           </product>
+                        </supply>
+                     </entryRelationship>
+                     <entryRelationship typeCode="REFR">
+                        <observation classCode="OBS" moodCode="EVN">
+                           <templateId root="2.16.840.1.113883.10.20.1.47" />
+                           <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Status" />
+                           <statusCode code="completed" />
+                           <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="55561003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CE" displayName="Active" />
+                        </observation>
+                     </entryRelationship>
+                  </substanceAdministration>
+               </entry>
+            </section>
+         </component>
+         <component>
+            <section>
+               <templateId root="2.16.840.1.113883.10.20.1.11" />
+               <id root="1BD645AC-3DDF-11E4-837F-FA0353E6D08B" />
+               <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="PROBLEM LIST" />
+               <title>Problems - as of 09/16/2014</title>
+               <text>
+                  <table>
+                     <colgroup>
+                        <col width="25%" />
+                        <col width="75%" />
+                     </colgroup>
+                     <thead>
+                        <tr>
+                           <th>Active Problems</th>
+                           <th>Noted Date</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        <tr ID="problem3" styleCode="normRow">
+                           <td ID="problem3name" styleCode="header">CHF</td>
+                           <td>09/16/2014</td>
+                        </tr>
+                     </tbody>
+                  </table>
+               </text>
+               <entry>
+                  <act classCode="ACT" moodCode="EVN">
+                     <templateId root="2.16.840.1.113883.10.20.1.27" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                     <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" />
+                     <templateId root="2.16.840.1.113883.3.88.11.32.7" />
+                     <templateId root="2.16.840.1.113883.3.88.11.83.7" />
+                     <id extension="31974" root="1.2.840.114350.1.13.7.1.7.2.768076" />
+                     <code nullFlavor="NA" />
+                     <statusCode code="active" />
+                     <effectiveTime>
+                        <low value="20140916" />
+                     </effectiveTime>
+                     <entryRelationship inversionInd="false" typeCode="SUBJ">
+                        <observation classCode="OBS" moodCode="EVN">
+                           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                           <templateId root="2.16.840.1.113883.10.20.1.28" />
+                           <id extension="31974" root="1.2.840.114350.1.13.7.1.7.2.768076" />
+                           <code code="55607006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Problem" />
+                           <text>
+                              <reference value="#problem3name" />
+                           </text>
+                           <statusCode code="completed" />
+                           <effectiveTime>
+                              <low value="20140916" />
+                           </effectiveTime>
+                           <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CD" nullFlavor="UNK">
+                              <originalText>
+                                 <reference value="#problem3name" />
+                              </originalText>
+                           </value>
+                           <author>
+                              <time value="20140916201919+0000" />
+                              <assignedAuthor>
+                                 <id extension="17188" root="1.2.840.114350.1.13.7.1.7.2.697780" />
+                                 <addr nullFlavor="UNK" />
+                                 <telecom use="WP" value="tel:+1-271-9000 X" />
+                                 <assignedPerson>
+                                    <name>
+                                       <given>Peter</given>
+                                       <family>Chen</family>
+                                    </name>
+                                 </assignedPerson>
+                                 <representedOrganization>
+                                    <id extension="7" root="1.2.840.114350.1.13.7.1.7.2.696570" />
+                                    <name>XPJK SA</name>
+                                    <telecom nullFlavor="NA" />
+                                    <addr nullFlavor="NA" />
+                                 </representedOrganization>
+                              </assignedAuthor>
+                           </author>
+                           <entryRelationship typeCode="REFR">
+                              <observation classCode="OBS" moodCode="EVN">
+                                 <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                 <statusCode code="completed" />
+                                 <effectiveTime>
+                                    <low value="20140916" />
+                                 </effectiveTime>
+                                 <value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active" />
+                              </observation>
+                           </entryRelationship>
+                        </observation>
+                     </entryRelationship>
+                  </act>
+               </entry>
+            </section>
+         </component>
+         <component>
+            <section>
+               <templateId root="1.2.840.114350.1.72.1.200001" />
+               <code code="51847-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="ASSESSMENT AND PLAN" />
+               <title>Progress Notes</title>
+               <text>
+                  <paragraph>
+                     Chief Complaint:
+                     <br />
+                     Headaches times three months
+                     <br />
+                     HPI:
+                     <br />
+                     The patient describes the development of 4 severe headaches over the last three months. The headaches are described as localized to specific area usually behind the right or left eye. The headache is rated as a 10 out of 10 in severity of pain and is not relieved by over-the-counter medication such as Tylenol, aspirin, or ibuprofen. During the headache the patient is sensitive to light. The last two headaches were preceded by flashing lights. Associated symptoms include nausea, lightheadedness, and, at times, a spinning sensation. She denies any trauma to the head recently or in the past. Her mother suffered from migraine headaches as does her sister. In the past she reports having previous headaches (last one in 1993), but these headaches are different.
+                     <br />
+                     Current medications.
+                     <br />
+                     The patient is allergic to peanut oil.
+                     <br />
+                     Baby aspirin qd
+                     <br />
+                     Cardizem CD 240mg qd
+                     <br />
+                     Synthroid 100mcg qd
+                     <br />
+                     Zocor 40mg qhs
+                     <br />
+                     Past medical history
+                     <br />
+                     Essential hypertension
+                     <br />
+                     Cluster headaches
+                     <br />
+                     Gastroesophageal reflux disease
+                     <br />
+                     Congestive heart failure
+                     <br />
+                     Social history
+                     <br />
+                     Quit tobacco use in 1999
+                     <br />
+                     Alcohol use of approximately 1 ounce per week
+                     <br />
+                     Exam:
+                     <br />
+                     Vitals: BP 140/72, Temp 98.8 F, Resp 16, Ht 5' 6", Wt 142 lbs, Postmenopausal
+                     <br />
+                     Eyes: PERRLA, ROM intact
+                     <br />
+                     ENT: TM's normal, oral mucosa normal
+                     <br />
+                     Neck: Supple, no nodes
+                     <br />
+                     Lungs: Clear
+                     <br />
+                     Heart: RRR, no murmur
+                     <br />
+                     Abdomen: Soft, non-tender, normal BS
+                     <br />
+                     Assessment and Plan:
+                     <br />
+                     Patient's clinical history is most consistent with migraine headaches. Patient was given educational materials about migraines as well a prescription for Imitrex. I provided her with instructions on how to take the Imitrex.
+                  </paragraph>
+               </text>
+            </section>
+         </component>
+      </structuredBody>
+   </component>
+</ClinicalDocument>

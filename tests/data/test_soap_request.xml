@@ -1,0 +1,12 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:urn="urn:epic-com:Common.2013.Services">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <urn:ProcessDocument>
+            <urn:SessionID>0000-0000-0000-0000</urn:SessionID>
+            <urn:WorkType>2</urn:WorkType>
+            <urn:OrganizationID>Testing</urn:OrganizationID>
+            <urn:Document>dGVzdGluZw==</urn:Document>
+        </urn:ProcessDocument>
+    </soapenv:Body>
+</soapenv:Envelope>

@@ -6,7 +6,7 @@ authors = ["Adam Kells <adamjkells93@gmail.com>", "Jennifer Jiang-Kells <jennife
 license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://dotimplement.github.io/HealthChain/"
-keywords = ["nlp", "ai", "llm", "healthcare", "ehr"]
+keywords = ["nlp", "ai", "llm", "healthcare", "ehr", "mlops"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+include = ["healthchain/templates/*"]
 
 [project.urls]
 "Homepage" = "https://dotimplement.github.io/HealthChain/"
@@ -29,6 +30,9 @@ colorama = "^0.4.6"
 faker = "^25.1.0"
 fastapi = "^0.111.0"
 termcolor = "^2.4.0"
+spyne = "^2.14.0"
+lxml = "^5.2.2"
+xmltodict = "^0.13.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"

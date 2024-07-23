@@ -5,14 +5,25 @@ from unittest.mock import Mock
 from pydantic import BaseModel
 
 from healthchain.base import BaseStrategy, BaseUseCase
+from healthchain.cda_parser.cdaannotator import CdaAnnotator
 from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
 from healthchain.models import CDSRequest, CdsFhirData
+from healthchain.models.data.ccddata import CcdData
+from healthchain.models.data.concept import (
+    AllergyConcept,
+    MedicationConcept,
+    ProblemConcept,
+)
+from healthchain.models.requests.cdarequest import CdaRequest
+from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.service.soap.epiccdsservice import CDSServices
 from healthchain.use_cases.cds import (
     ClinicalDecisionSupport,
     ClinicalDecisionSupportStrategy,
 )
 from healthchain.clients.ehrclient import EHRClient
 from healthchain.decorators import sandbox
+from healthchain.use_cases.clindoc import ClinicalDocumentation
 from healthchain.workflows import UseCaseType
 
 
@@ -274,3 +285,61 @@ def cds():
         service=service_mock,
         client=client_mock,
     )
+
+
+@pytest.fixture
+def clindoc():
+    service_api_mock = Mock()
+    service_config = {"host": "localhost", "port": 8080}
+    service_mock = Mock()
+    client_mock = Mock()
+    client_mock.workflow.value = "hook1"
+    return ClinicalDocumentation(
+        service_api=service_api_mock,
+        service_config=service_config,
+        service=service_mock,
+        client=client_mock,
+    )
+
+
+@pytest.fixture
+def test_cda_request():
+    with open("./tests/data/test_cda.xml", "r") as file:
+        test_cda = file.read()
+
+    return CdaRequest(document=test_cda)
+
+
+@pytest.fixture
+def mock_cda_response():
+    return CdaResponse(document="testing")
+
+
+@pytest.fixture
+def test_soap_request():
+    with open("./tests/data/test_soap_request.xml", "r") as file:
+        test_soap = file.read()
+
+    return CdaRequest(document=test_soap)
+
+
+@pytest.fixture
+def test_ccd_data():
+    return CcdData(
+        problems=[ProblemConcept(code="test")],
+        medications=[MedicationConcept(code="test")],
+        allergies=[AllergyConcept(code="test")],
+    )
+
+
+@pytest.fixture
+def cda_annotator():
+    with open("./tests/data/test_cda.xml", "r") as file:
+        test_cda = file.read()
+
+    return CdaAnnotator.from_xml(test_cda)
+
+
+@pytest.fixture
+def cdsservices():
+    return CDSServices()

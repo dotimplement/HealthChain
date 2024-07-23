@@ -12,8 +12,8 @@ class Workflow(Enum):
     order_select = "order-select"
     order_sign = "order-sign"
     encounter_discharge = "encounter-discharge"
-    notereader_sign_inpatient = "notereader-sign-inpatient"
-    notereader_sign_outpatient = "notereader-sign-outpatient"
+    sign_note_inpatient = "sign-note-inpatient"
+    sign_note_outpatient = "sign-note-outpatient"
 
 
 class UseCaseMapping(Enum):
@@ -23,7 +23,7 @@ class UseCaseMapping(Enum):
         "order-sign",
         "encounter-discharge",
     )
-    ClinicalDocumentation = ("notereader-sign-inpatient", "notereader-sign-outpatient")
+    ClinicalDocumentation = ("sign-note-inpatient", "sign-note-outpatient")
 
     def __init__(self, *workflows):
         self.allowed_workflows = workflows
