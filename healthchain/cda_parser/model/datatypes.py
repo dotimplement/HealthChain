@@ -98,7 +98,9 @@ class CD(ANY):
     or more translations into different coding systems.
     """
 
-    originalText: Optional[ED] = None
+    originalText: Optional[Union[str, Dict]] = (
+        None  # parse as dict or str for more flexibility
+    )
     qualifier: Optional[Union[str, List[str]]] = None  # CR
     translation: Optional[Union[CD, List[CD]]] = Field(default=None)
     code: Optional[str] = Field(default=None, alias="@code")

@@ -12,6 +12,7 @@ from healthchain.models import (
     MedicationConcept,
     AllergyConcept,
 )
+from healthchain.models.data.concept import Concept, Quantity, Range, TimeInterval
 
 from .model.cda import ClinicalDocument
 from .model.sections import Entry, Section
@@ -21,18 +22,16 @@ log = logging.getLogger(__name__)
 
 
 def get_problem_concept_from_cda_value(value: Dict) -> ProblemConcept:
-    # TODO use cda data types
-    concept = ProblemConcept()
-    concept.code = value.get("@code")
-    concept.code_system = value.get("@codeSystem")
-    concept.code_system_name = value.get("@codeSystemName")
-    concept.display_name = value.get("@displayName")
+    """
+    Retrieves a ProblemConcept object from a CDA value dictionary.
 
-    return concept
+    Args:
+        value (Dict): The CDA value dictionary.
 
-
-def get_medication_concept_from_cda_value(value: Dict) -> MedicationConcept:
-    concept = MedicationConcept()
+    Returns:
+        ProblemConcept: The ProblemConcept object created from the CDA value dictionary.
+    """
+    concept = ProblemConcept(_standard="cda")
     concept.code = value.get("@code")
     concept.code_system = value.get("@codeSystem")
     concept.code_system_name = value.get("@codeSystemName")
@@ -42,7 +41,7 @@ def get_medication_concept_from_cda_value(value: Dict) -> MedicationConcept:
 
 
 def get_allergy_concept_from_cda_value(value: Dict) -> AllergyConcept:
-    concept = AllergyConcept()
+    concept = AllergyConcept(_standard="cda")
     concept.code = value.get("@code")
     concept.code_system = value.get("@codeSystem")
     concept.code_system_name = value.get("@codeSystemName")
@@ -51,7 +50,46 @@ def get_allergy_concept_from_cda_value(value: Dict) -> AllergyConcept:
     return concept
 
 
+def get_time_range_from_cda_value(value: Dict) -> Range:
+    """
+    Converts a dictionary representing a time range from a CDA value into a Range object.
+
+    Args:
+        value (Dict): A dictionary representing the CDA value.
+
+    Returns:
+        Range: A Range object representing the time range.
+
+    """
+    range_model = Range(
+        low=Quantity(
+            value=value.get("low", {}).get("@value"),
+            unit=value.get("low", {}).get("@unit"),
+        ),
+        high=Quantity(
+            value=value.get("high", {}).get("@value"),
+            unit=value.get("high", {}).get("@unit"),
+        ),
+    )
+    if range_model.low.value is None:
+        range_model.low = None
+    if range_model.high.value is None:
+        range_model.high = None
+
+    return range_model
+
+
 def get_value_from_entry_relationship(entry_relationship):
+    """
+    Retrieves the values from the given entry_relationship.
+
+    Args:
+        entry_relationship: The entry_relationship object to extract values from.
+
+    Returns:
+        A list of values extracted from the entry_relationship.
+
+    """
     values = []
     if isinstance(entry_relationship, list):
         for item in entry_relationship:
@@ -235,6 +273,171 @@ class CdaAnnotator:
     def _find_notes_section(self) -> Optional[Section]:
         return self._find_section_by_template_id(SectionId.NOTE.value)
 
+    def _extract_problems(self) -> List[ProblemConcept]:
+        """
+        Extracts problem concepts from the problem section of the CDA document.
+
+        Returns:
+            A list of ProblemConcept objects representing the extracted problem concepts.
+        """
+        if not self._problem_section:
+            log.warning("Empty problem section!")
+            return []
+
+        concepts = []
+
+        entries = (
+            self._problem_section.entry
+            if isinstance(self._problem_section.entry, list)
+            else [self._problem_section.entry]
+        )
+
+        for entry in entries:
+            entry_relationship = entry.act.entryRelationship
+            values = get_value_from_entry_relationship(entry_relationship)
+            for value in values:
+                concept = get_problem_concept_from_cda_value(value)
+                concepts.append(concept)
+
+        return concepts
+
+    def _extract_medications(self) -> List[MedicationConcept]:
+        """
+        Extracts medication concepts from the medication section of the CDA document.
+
+        Returns:
+            A list of MedicationConcept objects representing the extracted medication concepts.
+        """
+        if not self._medication_section:
+            log.warning("Empty medication section!")
+            return []
+
+        def get_medication_from_entry(entry: Entry) -> MedicationConcept:
+            substance_administration = entry.substanceAdministration
+            if not substance_administration:
+                log.warning("Substance administration not found in entry.")
+                return None
+
+            # Get the medication code from the consumable
+            consumable = substance_administration.consumable
+            manufactured_product = (
+                consumable.manufacturedProduct if consumable else None
+            )
+            manufactured_material = (
+                manufactured_product.manufacturedMaterial
+                if manufactured_product
+                else None
+            )
+            code = manufactured_material.code if manufactured_material else None
+            if not code:
+                log.warning("Code not found in the consumable's manufactured material.")
+                return None
+
+            # Create the medication concept
+            concept = MedicationConcept(_standard="cda")
+            concept.code = code.code
+            concept.code_system = code.codeSystem
+            concept.code_system_name = code.codeSystemName
+            concept.display_name = code.displayName
+
+            # Get the dosage and route information
+            if substance_administration.doseQuantity:
+                concept.dosage = Quantity(
+                    _source=substance_administration.doseQuantity.model_dump(),
+                    value=substance_administration.doseQuantity.value,
+                    unit=substance_administration.doseQuantity.unit,
+                )
+            if substance_administration.routeCode:
+                concept.route = Concept(
+                    code=substance_administration.routeCode.code,
+                    code_system=substance_administration.routeCode.codeSystem,
+                    code_system_name=substance_administration.routeCode.codeSystemName,
+                    display_name=substance_administration.routeCode.displayName,
+                )
+
+            # Get the duration and frequency information
+            if substance_administration.effectiveTime:
+                effective_times = substance_administration.effectiveTime
+                effective_times = (
+                    effective_times
+                    if isinstance(effective_times, list)
+                    else [effective_times]
+                )
+                # TODO: could refactor this into a pydantic validator
+                for effective_time in effective_times:
+                    if effective_time.get("@xsi:type") == "IVL_TS":
+                        concept.duration = get_time_range_from_cda_value(effective_time)
+                        concept.duration._source = effective_time
+                    elif effective_time.get("@xsi:type") == "PIVL_TS":
+                        period = effective_time.get("period")
+                        if period:
+                            concept.frequency = TimeInterval(
+                                period=Quantity(
+                                    value=period.get("@value"), unit=period.get("@unit")
+                                ),
+                                institution_specified=effective_time.get(
+                                    "@institutionSpecified"
+                                ),
+                            )
+                        concept.frequency._source = effective_time
+
+            # TODO: this is read-only for now! can also extract status, translations, supply in entryRelationships
+            precondition = substance_administration.precondition
+            concept.precondition = (
+                precondition.model_dump(exclude_none=True, by_alias=True)
+                if precondition
+                else None
+            )
+
+            return concept
+
+        concepts = []
+
+        if isinstance(self._medication_section.entry, list):
+            for entry in self._medication_section.entry:
+                concept = get_medication_from_entry(entry)
+                concepts.append(concept)
+        else:
+            concept = get_medication_from_entry(self._medication_section.entry)
+            concepts.append(concept)
+
+        return concepts
+
+    def _extract_allergies(self) -> List[AllergyConcept]:
+        if not self._allergy_section:
+            log.warning("Empty allergy section!")
+            return []
+
+        concepts = []
+
+        entries = (
+            self._allergy_section.entry
+            if isinstance(self._allergy_section.entry, list)
+            else [self._allergy_section.entry]
+        )
+
+        for entry in entries:
+            entry_relationship = entry.act.entryRelationship
+            values = get_value_from_entry_relationship(entry_relationship)
+            for value in values:
+                concept = get_allergy_concept_from_cda_value(value)
+                concepts.append(concept)
+        return concepts
+
+    def _extract_note(self) -> str:
+        """
+        Extracts the note section from the CDA document.
+
+        Returns:
+            str: The extracted note section as a string.
+        """
+        # TODO: need to handle / escape html tags within the note section, parse with right field
+        if not self._note_section:
+            log.warning("Empty notes section!")
+            return []
+
+        return self._note_section.text
+
     def _add_new_problem_entry(
         self,
         new_problem: ProblemConcept,
@@ -332,136 +535,19 @@ class CdaAnnotator:
         new_entry = Entry(**template)
         self._problem_section.entry.append(new_entry)
 
-    def _extract_problems(self) -> List[ProblemConcept]:
-        """
-        Extracts problem concepts from the problem section of the CDA document.
-
-        Returns:
-            A list of ProblemConcept objects representing the extracted problem concepts.
-        """
-        if not self._problem_section:
-            log.warning("Empty problem section!")
-            return []
-
-        concepts = []
-
-        entries = (
-            self._problem_section.entry
-            if isinstance(self._problem_section.entry, list)
-            else [self._problem_section.entry]
-        )
-
-        for entry in entries:
-            entry_relationship = entry.act.entryRelationship
-            values = get_value_from_entry_relationship(entry_relationship)
-            for value in values:
-                concept = get_problem_concept_from_cda_value(value)
-                concepts.append(concept)
-
-        return concepts
-
-    def _extract_medications(self) -> List[MedicationConcept]:
-        """
-        Extracts problem concepts from the problem section of the CDA document.
-
-        Returns:
-            A list of ProblemConcept objects representing the extracted problem concepts.
-        """
-        # idea - llm extraction
-        if not self._medication_section:
-            log.warning("Empty medication section!")
-            return []
-
-        def get_medication_from_entry(entry):
-            # Safely access nested dictionary values with .get()
-            try:
-                substance_administration = entry.substanceAdministration
-            except AttributeError as e:
-                log.warning(f"Error extracting substance from medication: {e}")
-                return None
-
-            consumable = substance_administration.get("consumable", {})
-            manufactured_product = consumable.get("manufacturedProduct", {})
-            manufactured_material = manufactured_product.get("manufacturedMaterial", {})
-            code = manufactured_material.get("code", {})
-
-            # Check if required fields are present before proceeding
-            if not code:
-                raise ValueError(
-                    "Code not found in the consumable's manufactured material"
-                )
-
-            dose_quantity = substance_administration.get("doseQuantity", {})
-            route_code = substance_administration.get("routeCode", {})
-
-            # Construct the value dictionary with additional checks
-            value = {
-                "code": code.get("code"),
-                "displayName": code.get("displayName"),
-                "codeSystem": code.get("codeSystem"),
-                "dosage": " ".join(
-                    [
-                        dose_quantity.get("@value", "N/A"),
-                        dose_quantity.get("@unit", "N/A"),
-                    ]
-                ),
-                "route": route_code.get("code", "N/A"),
-            }
-            return value
-
-        concepts = []
-        if isinstance(self._medication_section.entry, list):
-            for entry in self._medication_section.entry:
-                value = get_medication_from_entry(entry)
-                concept = get_medication_concept_from_cda_value(value)
-                concepts.append(concept)
-        else:
-            value = get_medication_from_entry(self._medication_section.entry)
-            concept = get_medication_concept_from_cda_value(value)
-            concepts.append(concept)
-
-        return concepts
-
-    def _extract_allergies(self) -> List[AllergyConcept]:
-        if not self._allergy_section:
-            log.warning("Empty allergy section!")
-            return []
-
-        concepts = []
-
-        entries = (
-            self._allergy_section.entry
-            if isinstance(self._allergy_section.entry, list)
-            else [self._allergy_section.entry]
-        )
-
-        for entry in entries:
-            entry_relationship = entry.act.entryRelationship
-            values = get_value_from_entry_relationship(entry_relationship)
-            for value in values:
-                concept = get_allergy_concept_from_cda_value(value)
-                concepts.append(concept)
-        return concepts
-
-    def _extract_note(self) -> str:
-        """
-        Extracts the note section from the CDA document.
-
-        Returns:
-            str: The extracted note section as a string.
-        """
-        # TODO: need to handle / escape html tags within the note section, parse with right field
-        if not self._note_section:
-            log.warning("Empty notes section!")
-            return []
-
-        return self._note_section.text
-
     def add_to_problem_list(
         self, problems: List[ProblemConcept], overwrite: bool = False
     ) -> None:
         """
-        Adds a list of problem lists to the problems section
+        Adds a list of problem lists to the problems section.
+
+        Args:
+            problems (List[ProblemConcept]): A list of problem concepts to be added.
+            overwrite (bool, optional): If True, the existing problem list will be overwritten.
+                Defaults to False.
+
+        Returns:
+            None
         """
         timestamp = datetime.now().strftime(format="%Y%m%d")
         act_id = str(uuid.uuid4())
@@ -481,15 +567,174 @@ class CdaAnnotator:
 
         self.problem_list.append(problem)
 
-    def add_to_allergy_list(
-        self, allergies: List[AllergyConcept], overwrite: bool = False
-    ) -> None:
-        raise NotImplementedError("Allergy list not implemented yet")
+    def _add_new_medication_entry(
+        self,
+        new_medication: MedicationConcept,
+        timestamp: str,
+        subad_id: str,
+        medication_reference_name: str,
+    ):
+        effective_times = []
+        if new_medication.frequency:
+            effective_times.append(
+                {
+                    "@xsi:type": "PIVL_TS",
+                    "@institutionSpecified": new_medication.frequency.institution_specified,
+                    "@operator": "A",
+                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    "period": {
+                        "@unit": new_medication.frequency.period.unit,
+                        "@value": new_medication.frequency.period.value,
+                    },
+                }
+            )
+        if new_medication.duration:
+            low = {"@nullFlavor": "UNK"}
+            high = {"@nullFlavor": "UNK"}
+            if new_medication.duration.low:
+                low = {"@value": new_medication.duration.low.value}
+            if new_medication.duration.high:
+                high = {"@value": new_medication.duration.high.value}
+            effective_times.append(
+                {
+                    "@xsi:type": "IVL_TS",
+                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    "low": low,
+                    "high": high,
+                }
+            )
+
+        if len(effective_times) == 1:
+            effective_times = effective_times[0]
+
+        template = {
+            "substanceAdministration": {
+                "@classCode": "SBADM",
+                "@moodCode": "INT",
+                "templateId": [
+                    {"@root": "2.16.840.1.113883.10.20.1.24"},
+                    {"@root": "2.16.840.1.113883.3.88.11.83.8"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.7"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.7.1"},
+                    {"@root": "2.16.840.1.113883.3.88.11.32.8"},
+                ],
+                "id": {"@root": subad_id},
+                "statusCode": {"@code": "completed"},
+            }
+        }
+        # Add dosage, route, duration, frequency
+        if effective_times:
+            template["substanceAdministration"]["effectiveTime"] = effective_times
+        if new_medication.route:
+            template["substanceAdministration"]["routeCode"] = {
+                "@code": new_medication.route.code,
+                "@codeSystem": new_medication.route.code_system,
+                "@codeSystemDisplayName": new_medication.route.code_system_name,
+                "@displayName": new_medication.route.display_name,
+            }
+        if new_medication.dosage:
+            template["substanceAdministration"]["doseQuantity"] = {
+                "@value": new_medication.dosage.value,
+                "@unit": new_medication.dosage.unit,
+            }
+
+        # Add medication entry
+        template["substanceAdministration"]["consumable"] = {
+            "@typeCode": "CSM",
+            "manufacturedProduct": {
+                "@classCode": "MANU",
+                "templateId": [
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.7.2"},
+                    {"@root": "2.16.840.1.113883.10.20.1.53"},
+                    {"@root": "2.16.840.1.113883.3.88.11.32.9"},
+                    {"@root": "2.16.840.1.113883.3.88.11.83.8.2"},
+                ],
+                "manufacturedMaterial": {
+                    "code": {
+                        "@code": new_medication.code,
+                        "@codeSystem": new_medication.code_system,
+                        "@codeSystemName": new_medication.code_system_name,
+                        "@displayName": new_medication.display_name,
+                        "originalText": {
+                            "reference": {"@value": medication_reference_name}
+                        },
+                    }
+                },
+            },
+        }
+
+        # Add an Active status
+        template["substanceAdministration"]["entryRelationship"] = (
+            {
+                "@typeCode": "REFR",
+                "observation": {
+                    "@classCode": "OBS",
+                    "@moodCode": "EVN",
+                    "effectiveTime": {"low": {"@value": timestamp}},
+                    "templateId": {"@root": "2.16.840.1.113883.10.20.1.47"},
+                    "code": {
+                        "@code": "33999-4",
+                        "@codeSystem": "2.16.840.1.113883.6.1",
+                        "@codeSystemName": "LOINC",
+                        "@displayName": "Status",
+                    },
+                    "value": {
+                        "@code": "755561003",
+                        "@codeSystem": "2.16.840.1.113883.6.96",
+                        "@codeSystemName": "SNOMED CT",
+                        "@xsi:type": "CE",
+                        "@displayName": "Active",
+                        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    },
+                    "statusCode": {"@code": "completed"},
+                },
+            },
+        )
+        template["substanceAdministration"]["precondition"] = (
+            new_medication.precondition
+        )
+
+        if not isinstance(self._medication_section.entry, list):
+            self._medication_section.entry = [self._medication_section.entry]
+
+        new_entry = Entry(**template)
+        self._medication_section.entry.append(new_entry)
 
     def add_to_medication_list(
         self, medications: List[MedicationConcept], overwrite: bool = False
     ) -> None:
-        raise NotImplementedError("Medication list not implemented yet")
+        """
+        Adds medications to the medication list.
+
+        Args:
+            medications (List[MedicationConcept]): A list of MedicationConcept objects representing the medications to be added.
+            overwrite (bool, optional): If True, the existing medication list will be overwritten. Defaults to False.
+
+        Returns:
+            None
+        """
+        timestamp = datetime.now().strftime(format="%Y%m%d")
+        subad_id = str(uuid.uuid4())
+        medication_reference_name = "#m" + str(uuid.uuid4())[:8] + "name"
+
+        if overwrite:
+            self._medication_section.entry = []
+            self.medication_list = []
+
+        for medication in medications:
+            self._add_new_medication_entry(
+                new_medication=medication,
+                timestamp=timestamp,
+                subad_id=subad_id,
+                medication_reference_name=medication_reference_name,
+            )
+
+        self.medication_list.append(medication)
+
+    def add_to_allergy_list(
+        self, allergies: List[AllergyConcept], overwrite: bool = False
+    ) -> None:
+        raise NotImplementedError("Allergy list not implemented yet")
 
     def export(self, pretty_print: bool = True) -> str:
         """

@@ -6,7 +6,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Union
 
-from .datatypes import CD, CS, CE, II, IVL_TS
+from .datatypes import CD, CS, CE, II, IVL_PQ, IVL_TS
 
 
 class PlayingEntity(BaseModel):
@@ -47,7 +47,7 @@ class EntryRelationship(BaseModel):
     inversionInd: bool = Field(False, alias="@inversionInd")
     act: Optional[Act] = None
     observation: Optional[Observation] = None
-    substanceAdministration: Optional[Dict] = None
+    substanceAdministration: Optional[SubstanceAdministration] = None
     supply: Optional[Dict] = None
 
 
@@ -67,7 +67,7 @@ class Act(BaseModel):
 
 class Entry(BaseModel):
     act: Optional[Act] = None
-    substanceAdministration: Optional[Dict] = None
+    substanceAdministration: Optional[SubstanceAdministration] = None
 
 
 class Section(BaseModel):
@@ -79,23 +79,49 @@ class Section(BaseModel):
     entry: Optional[Union[Entry, List[Entry]]] = None
 
 
-# TODO: medication models - this is incomplete - better to parse it as a Dict and preserve all information
-# than parsing it into a model with incomplete fields esp. with meds so leaving this here for now
-# class SubstanceAdministration(BaseModel):
-#     """
-#     https://gazelle.ihe.net/CDAGenerator/cda/POCDMT000040SubstanceAdministration.html
-#     """
+class ManufacturedMaterial(BaseModel):
+    code: Optional[CE] = None
 
-#     classCode: str = "SBADM"
-#     moodCode: str = "INT"
-#     templateId: Optional[Union[II, List[II]]] = None
-#     id: Optional[Union[II, List[II]]] = None
-#     code: Optional[CD] = None
-#     text: Optional[Dict] = None
-#     statusCode: Optional[CS] = None
-#     effectiveTime: Optional[Union[SXCM_TS, List[SXCM_TS]]] = None
-#     routeCode: Optional[CE] = None
-#     doseQuantity: Optional[IVL_PQ] = None
-#     consumable: Consumable
-#     entryRelationship: Optional[Union[EntryRelationship, List[EntryRelationship]]] = None
-#     precondition: Optional[Union[Precondition, List[Precondition]]] = None
+
+class ManufacturedProduct(BaseModel):
+    classCode: str = Field("MANU", alias="@classCode")
+    templateId: Optional[Union[II, List[II]]] = None
+    manufacturedMaterial: Optional[ManufacturedMaterial] = None
+
+
+class Consumable(BaseModel):
+    typeCode: str = Field("CSM", alias="@typeCode")
+    manufacturedProduct: ManufacturedProduct
+
+
+class Criterion(BaseModel):
+    templateId: Optional[Union[II, List[II]]] = None
+    code: Optional[CD] = None
+    value: Optional[Dict] = None
+
+
+class Precondition(BaseModel):
+    typeCode: str = Field("PRCN", alias="@typeCode")
+    criterion: Criterion
+
+
+class SubstanceAdministration(BaseModel):
+    """
+    https://gazelle.ihe.net/CDAGenerator/cda/POCDMT000040SubstanceAdministration.html
+    """
+
+    classCode: str = Field("SBADM", alias="@classCode")
+    moodCode: str = Field("INT", alias="@moodCode")
+    templateId: Optional[Union[II, List[II]]] = None
+    id: Optional[Union[II, List[II]]] = None
+    code: Optional[CD] = None
+    text: Optional[Dict] = None
+    statusCode: Optional[CS] = None
+    effectiveTime: Optional[Union[Dict, List[Dict]]] = None  # parse as dict
+    routeCode: Optional[CE] = None
+    doseQuantity: Optional[IVL_PQ] = None
+    consumable: Consumable
+    entryRelationship: Optional[Union[EntryRelationship, List[EntryRelationship]]] = (
+        None
+    )
+    precondition: Optional[Union[Precondition, List[Precondition]]] = None
