@@ -1,6 +1,7 @@
 from healthchain.cda_parser.cdaannotator import (
     SectionId,
     ProblemConcept,
+    AllergyConcept,
 )
 from healthchain.models.data.concept import (
     Concept,
@@ -117,14 +118,14 @@ def test_add_to_medication_list_overwrite(cda_annotator, test_ccd_data):
     assert len(cda_annotator.medication_list) == 2
 
 
-# def test_add_to_allergy_list_overwrite(cda_annotator, test_ccd_data):
-#     # Test if allergies are added to the allergy list correctly with overwrite=True
-#     allergies = test_ccd_data.allergies
-#     cda_annotator.add_to_allergy_list(allergies, overwrite=True)
-#     assert len(cda_annotator.allergy_list) == 1
+def test_add_to_allergy_list_overwrite(cda_annotator, test_ccd_data):
+    # Test if allergies are added to the allergy list correctly with overwrite=True
+    allergies = test_ccd_data.allergies
+    cda_annotator.add_to_allergy_list(allergies, overwrite=True)
+    assert len(cda_annotator.allergy_list) == 1
 
-#     cda_annotator.add_to_allergy_list(allergies)
-#     assert len(cda_annotator.allergy_list) == 2
+    cda_annotator.add_to_allergy_list(allergies)
+    assert len(cda_annotator.allergy_list) == 2
 
 
 def test_export_pretty_print(cda_annotator):
@@ -261,3 +262,53 @@ def test_add_new_medication_entry(cda_annotator):
     assert consumable_code.originalText == {"reference": {"@value": med_reference_name}}
 
     assert subad.entryRelationship[0].observation.effectiveTime.low.value == timestamp
+
+
+def test_add_new_allergy_entry(cda_annotator):
+    # Test if a new problem entry is added correctly
+    new_allergy = AllergyConcept()
+    new_allergy.code = "12345678"
+    new_allergy.code_system = "2.16.840.1.113883.6.96"
+    new_allergy.code_system_name = "SNOMED CT"
+    new_allergy.display_name = "Test Allergy"
+    new_allergy.allergy_type = Concept(**{"code": "ABC"})
+    new_allergy.reaction = Concept(**{"code": "DEF"})
+    new_allergy.severity = Concept(**{"code": "GHI"})
+    timestamp = "20220101"
+    act_id = "12345678"
+    allergy_reference_name = "#a12345678name"
+
+    cda_annotator._add_new_allergy_entry(
+        new_allergy=new_allergy,
+        timestamp=timestamp,
+        act_id=act_id,
+        allergy_reference_name=allergy_reference_name,
+    )
+
+    assert len(cda_annotator._allergy_section.entry) == 2
+    assert cda_annotator._allergy_section.entry[1].act.id.root == act_id
+    assert (
+        cda_annotator._allergy_section.entry[1].act.effectiveTime.low.value == timestamp
+    )
+    assert cda_annotator._allergy_section.entry[
+        1
+    ].act.entryRelationship.observation.text == {
+        "reference": {"@value": allergy_reference_name}
+    }
+    assert cda_annotator._allergy_section.entry[
+        1
+    ].act.entryRelationship.observation.value == {
+        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "@code": new_allergy.code,
+        "@codeSystem": new_allergy.code_system,
+        "@codeSystemName": new_allergy.code_system_name,
+        "@displayName": new_allergy.display_name,
+        "originalText": {"reference": {"@value": allergy_reference_name}},
+        "@xsi:type": "CD",
+    }
+    assert (
+        cda_annotator._allergy_section.entry[
+            1
+        ].act.entryRelationship.observation.entryRelationship.observation.value["@code"]
+        == "DEF"
+    )

@@ -15,7 +15,7 @@ from healthchain.models import (
 from healthchain.models.data.concept import Concept, Quantity, Range, TimeInterval
 
 from .model.cda import ClinicalDocument
-from .model.sections import Entry, Section
+from .model.sections import Entry, Section, EntryRelationship, Observation
 
 
 log = logging.getLogger(__name__)
@@ -32,16 +32,6 @@ def get_problem_concept_from_cda_value(value: Dict) -> ProblemConcept:
         ProblemConcept: The ProblemConcept object created from the CDA value dictionary.
     """
     concept = ProblemConcept(_standard="cda")
-    concept.code = value.get("@code")
-    concept.code_system = value.get("@codeSystem")
-    concept.code_system_name = value.get("@codeSystemName")
-    concept.display_name = value.get("@displayName")
-
-    return concept
-
-
-def get_allergy_concept_from_cda_value(value: Dict) -> AllergyConcept:
-    concept = AllergyConcept(_standard="cda")
     concept.code = value.get("@code")
     concept.code_system = value.get("@codeSystem")
     concept.code_system_name = value.get("@codeSystemName")
@@ -410,6 +400,30 @@ class CdaAnnotator:
 
         concepts = []
 
+        def get_allergy_concept_from_cda_value(
+            value: Dict, allergy_type, reaction, severity
+        ) -> AllergyConcept:
+            concept = AllergyConcept(_standard="cda")
+            concept.code = value.get("@code")
+            concept.code_system = value.get("@codeSystem")
+            concept.code_system_name = value.get("@codeSystemName")
+            concept.display_name = value.get("@displayName")
+
+            concept.allergy_type = allergy_type
+            concept.reaction = reaction
+            concept.severity = severity
+
+            return concept
+
+        def check_for_entry_observation(entry):
+            if isinstance(entry, EntryRelationship):
+                if entry.observation:
+                    return True
+            elif isinstance(entry, Observation):
+                if entry.entryRelationship:
+                    return check_for_entry_observation(entry.entryRelationship)
+            return False
+
         entries = (
             self._allergy_section.entry
             if isinstance(self._allergy_section.entry, list)
@@ -419,8 +433,23 @@ class CdaAnnotator:
         for entry in entries:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
+
+            allergy_type = None
+            reaction = None
+            severity = None
+
+            if check_for_entry_observation(entry):
+                allergy_type = entry_relationship.observation.code
+                if check_for_entry_observation(entry_relationship.observation):
+                    reaction = entry_relationship.observation.entry_relationship.observation.value
+                    if check_for_entry_observation(
+                        entry_relationship.observation.entry_relationship.observation
+                    ):
+                        severity = entry_relationship.observation.entry_relationship.observation.entry_relationship.observation.value
             for value in values:
-                concept = get_allergy_concept_from_cda_value(value)
+                concept = get_allergy_concept_from_cda_value(
+                    value, allergy_type, reaction, severity
+                )
                 concepts.append(concept)
         return concepts
 
@@ -731,10 +760,167 @@ class CdaAnnotator:
 
         self.medication_list.append(medication)
 
+    def _add_new_allergy_entry(
+        self,
+        new_allergy: AllergyConcept,
+        timestamp: str,
+        act_id: str,
+        allergy_reference_name: str,
+    ) -> None:
+        """
+        Adds a new allergy entry to the allergy section of the CDA document.
+
+        Args:
+            new_allergy (AllergyConcept): The new allergy concept to be added.
+            timestamp (str): The timestamp of the entry.
+            act_id (str): The ID of the act.
+            allergy_reference_name (str): The reference name of the allergy.
+
+        Returns:
+            None
+        """
+
+        template = {
+            "act": {
+                "@classCode": "ACT",
+                "@moodCode": "EVN",
+                "templateId": [
+                    {"@root": "2.16.840.1.113883.10.20.1.27"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.2"},
+                    {"@root": "2.16.840.1.113883.3.88.11.32.7"},
+                    {"@root": "2.16.840.1.113883.3.88.11.83.7"},
+                ],
+                "id": {"@root": act_id},
+                "code": {"@nullflavor": "NA"},
+                "statusCode": {"@code": "active"},
+                "effectiveTime": {"low": {"@value": timestamp}},
+                "text": {"reference": {"@value": allergy_reference_name}},
+                "entryRelationship": {
+                    "@typeCode": "SUBJ",
+                    "@inversionInd": False,
+                    "observation": {
+                        "@classCode": "OBS",
+                        "@moodCode": "EVN",
+                        "templateId": [
+                            {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5"},
+                            {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.6"},
+                            {"@root": "2.16.840.1.113883.10.20.1.18"},
+                            {
+                                "@root": "1.3.6.1.4.1.19376.1.5.3.1",
+                                "@extension": "allergy",
+                            },
+                            {"@root": "2.16.840.1.113883.10.20.1.28"},
+                        ],
+                        "text": {"reference": {"@value": allergy_reference_name}},
+                        "value": {
+                            "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                            "@code": new_allergy.code,
+                            "@codeSystem": new_allergy.code_system,
+                            "@codeSystemName": new_allergy.code_system_name,
+                            "@displayName": new_allergy.display_name,
+                            "originalText": {
+                                "reference": {"@value": allergy_reference_name}
+                            },
+                            "@xsi:type": "CD",
+                        },
+                        "statusCode": {"@code": "completed"},
+                    },
+                },
+            }
+        }
+
+        if new_allergy.allergy_type:
+            template["act"]["entryRelationship"]["observation"]["code"] = {
+                "@code": new_allergy.allergy_type.code,
+                "@codeSystem": "2.16.840.1.113883.6.96",
+                "@codeSystemName": "SNOMED CT",
+                "@displayName": new_allergy.allergy_type.display_name,
+            }
+        else:
+            raise ValueError("Allergy_type code cannot be missing when adding allergy.")
+
+        if new_allergy.reaction:
+            template["act"]["entryRelationship"]["observation"]["entryRelationship"] = {
+                "@typeCode": "MFST",
+                "observation": {
+                    "@classCode": "OBS",
+                    "@moodCode": "EVN",
+                    "templateId": [
+                        {"@root": "2.16.840.1.113883.10.20.1.54"},
+                        {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5"},
+                        {
+                            "@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5",
+                            "@extension": "reaction",
+                        },
+                        {"@root": "2.16.840.1.113883.10.20.1.28"},
+                    ],
+                    "code": {"@code": "RXNASSESS"},
+                    "value": {
+                        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                        "@code": new_allergy.reaction.code,
+                        "@codeSystem": new_allergy.reaction.code_system,
+                        "@displayName": new_allergy.reaction.display_name,
+                        "@xsi:type": "CD",
+                    },
+                    "entryRelationship": [],
+                },
+            }
+
+        if new_allergy.severity:
+            template["act"]["entryRelationship"]["observation"]["entryRelationship"][
+                "observation"
+            ]["entryRelationship"] = {
+                "@typeCode": "SUBJ",
+                "observation": {
+                    "@classCode": "OBS",
+                    "@moodCode": "EVN",
+                    "templateId": [
+                        {"@root": "2.16.840.1.113883.10.20.1.55"},
+                        {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.1"},
+                    ],
+                    "code": {
+                        "@code": "SEV",
+                        "@codeSystem": "2.16.840.1.113883.5.4",
+                        "@codeSystemName": "ActCode",
+                        "@displayName": "Severity",
+                    },
+                    "value": {
+                        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                        "@code": new_allergy.reaction.code,
+                        "@codeSystem": new_allergy.reaction.code_system,
+                        "@displayName": new_allergy.reaction.display_name,
+                        "@xsi:type": "CD",
+                    },
+                },
+            }
+
+        if not isinstance(self._allergy_section.entry, list):
+            self._allergy_section.entry = [self._allergy_section.entry]
+
+        new_entry = Entry(**template)
+        self._allergy_section.entry.append(new_entry)
+
     def add_to_allergy_list(
         self, allergies: List[AllergyConcept], overwrite: bool = False
     ) -> None:
-        raise NotImplementedError("Allergy list not implemented yet")
+        timestamp = datetime.now().strftime(format="%Y%m%d")
+        act_id = str(uuid.uuid4())
+        allergy_reference_name = "#a" + str(uuid.uuid4())[:8] + "name"
+
+        if overwrite:
+            self._allergy_section.entry = []
+            self.allergy_list = []
+
+        for allergy in allergies:
+            self._add_new_allergy_entry(
+                new_allergy=allergy,
+                timestamp=timestamp,
+                act_id=act_id,
+                allergy_reference_name=allergy_reference_name,
+            )
+
+        self.allergy_list.append(allergy)
 
     def export(self, pretty_print: bool = True) -> str:
         """

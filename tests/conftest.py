@@ -328,7 +328,7 @@ def test_ccd_data():
     return CcdData(
         problems=[ProblemConcept(code="test")],
         medications=[MedicationConcept(code="test")],
-        allergies=[AllergyConcept(code="test")],
+        allergies=[AllergyConcept(code="test", allergy_type={})],
     )
 
 

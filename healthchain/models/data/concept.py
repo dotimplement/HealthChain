@@ -74,6 +74,6 @@ class AllergyConcept(Concept):
     Contains allergy specific fields
     """
 
-    allergy_type: Optional[str] = None
-    severity: Optional[str] = None
-    reaction: Optional[str] = None
+    allergy_type: Optional[Concept] = None
+    severity: Optional[Concept] = None
+    reaction: Optional[Concept] = None
