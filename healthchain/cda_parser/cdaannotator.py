@@ -5,8 +5,9 @@ import logging
 
 from enum import Enum
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Union
 
+from healthchain.cda_parser.model.datatypes import CD, CE, IVL_PQ
 from healthchain.models import (
     ProblemConcept,
     MedicationConcept,
@@ -15,29 +16,16 @@ from healthchain.models import (
 from healthchain.models.data.concept import Concept, Quantity, Range, TimeInterval
 
 from .model.cda import ClinicalDocument
-from .model.sections import Entry, Section, EntryRelationship, Observation
+from .model.sections import (
+    Entry,
+    Section,
+    EntryRelationship,
+    Observation,
+    SubstanceAdministration,
+)
 
 
 log = logging.getLogger(__name__)
-
-
-def get_problem_concept_from_cda_value(value: Dict) -> ProblemConcept:
-    """
-    Retrieves a ProblemConcept object from a CDA value dictionary.
-
-    Args:
-        value (Dict): The CDA value dictionary.
-
-    Returns:
-        ProblemConcept: The ProblemConcept object created from the CDA value dictionary.
-    """
-    concept = ProblemConcept(_standard="cda")
-    concept.code = value.get("@code")
-    concept.code_system = value.get("@codeSystem")
-    concept.code_system_name = value.get("@codeSystemName")
-    concept.display_name = value.get("@displayName")
-
-    return concept
 
 
 def get_time_range_from_cda_value(value: Dict) -> Range:
@@ -89,6 +77,50 @@ def get_value_from_entry_relationship(entry_relationship):
         if entry_relationship.observation:
             values.append(entry_relationship.observation.value)
     return values
+
+
+def check_has_template_id(section, template_id):
+    """
+    Check if the given section has a matching template ID.
+
+    Args:
+        section: The section to check.
+        template_id: The template ID to match.
+
+    Returns:
+        True if the section has a matching template ID, False otherwise.
+    """
+
+    if section.templateId is None:
+        return False
+
+    if isinstance(section.templateId, list):
+        for template in section.templateId:
+            if template.root == template_id:
+                return True
+    elif section.templateId.root == template_id:
+        return True
+
+    return False
+
+
+def check_for_entry_observation(entry):
+    """
+    Checks if the given entry contains an observation.
+
+    Args:
+        entry: The entry to check.
+
+    Returns:
+        True if the entry contains an observation, False otherwise.
+    """
+    if isinstance(entry, EntryRelationship):
+        if entry.observation:
+            return True
+    elif isinstance(entry, Observation):
+        if entry.entryRelationship:
+            return check_for_entry_observation(entry.entryRelationship)
+    return False
 
 
 class SectionId(Enum):
@@ -276,6 +308,15 @@ class CdaAnnotator:
 
         concepts = []
 
+        def get_problem_concept_from_cda_data_field(value: Dict) -> ProblemConcept:
+            concept = ProblemConcept(_standard="cda")
+            concept.code = value.get("@code")
+            concept.code_system = value.get("@codeSystem")
+            concept.code_system_name = value.get("@codeSystemName")
+            concept.display_name = value.get("@displayName")
+
+            return concept
+
         entries = (
             self._problem_section.entry
             if isinstance(self._problem_section.entry, list)
@@ -286,7 +327,7 @@ class CdaAnnotator:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
             for value in values:
-                concept = get_problem_concept_from_cda_value(value)
+                concept = get_problem_concept_from_cda_data_field(value)
                 concepts.append(concept)
 
         return concepts
@@ -302,52 +343,33 @@ class CdaAnnotator:
             log.warning("Empty medication section!")
             return []
 
-        def get_medication_from_entry(entry: Entry) -> MedicationConcept:
-            substance_administration = entry.substanceAdministration
-            if not substance_administration:
-                log.warning("Substance administration not found in entry.")
-                return None
-
-            # Get the medication code from the consumable
-            consumable = substance_administration.consumable
-            manufactured_product = (
-                consumable.manufacturedProduct if consumable else None
-            )
-            manufactured_material = (
-                manufactured_product.manufacturedMaterial
-                if manufactured_product
-                else None
-            )
-            code = manufactured_material.code if manufactured_material else None
-            if not code:
-                log.warning("Code not found in the consumable's manufactured material.")
-                return None
-
-            # Create the medication concept
+        def get_medication_concept_from_cda_data_field(
+            code: CD,
+            dose_quantity: Optional[IVL_PQ],
+            route_code: Optional[CE],
+            effective_times: Optional[Union[List[Dict], Dict]],
+            precondition: Optional[Dict],
+        ) -> MedicationConcept:
             concept = MedicationConcept(_standard="cda")
             concept.code = code.code
             concept.code_system = code.codeSystem
             concept.code_system_name = code.codeSystemName
             concept.display_name = code.displayName
 
-            # Get the dosage and route information
-            if substance_administration.doseQuantity:
+            if dose_quantity:
                 concept.dosage = Quantity(
-                    _source=substance_administration.doseQuantity.model_dump(),
-                    value=substance_administration.doseQuantity.value,
-                    unit=substance_administration.doseQuantity.unit,
+                    _source=dose_quantity.model_dump(),
+                    value=dose_quantity.value,
+                    unit=dose_quantity.unit,
                 )
-            if substance_administration.routeCode:
+            if route_code:
                 concept.route = Concept(
-                    code=substance_administration.routeCode.code,
-                    code_system=substance_administration.routeCode.codeSystem,
-                    code_system_name=substance_administration.routeCode.codeSystemName,
-                    display_name=substance_administration.routeCode.displayName,
+                    code=route_code.code,
+                    code_system=route_code.codeSystem,
+                    code_system_name=route_code.codeSystemName,
+                    display_name=route_code.displayName,
                 )
-
-            # Get the duration and frequency information
-            if substance_administration.effectiveTime:
-                effective_times = substance_administration.effectiveTime
+            if effective_times:
                 effective_times = (
                     effective_times
                     if isinstance(effective_times, list)
@@ -372,23 +394,65 @@ class CdaAnnotator:
                         concept.frequency._source = effective_time
 
             # TODO: this is read-only for now! can also extract status, translations, supply in entryRelationships
-            precondition = substance_administration.precondition
-            concept.precondition = (
-                precondition.model_dump(exclude_none=True, by_alias=True)
-                if precondition
-                else None
-            )
+            if precondition:
+                concept.precondition = precondition.model_dump(
+                    exclude_none=True, by_alias=True
+                )
 
             return concept
 
+        def get_medication_details_from_substance_administration(
+            substance_administration: SubstanceAdministration,
+        ) -> tuple[
+            Optional[CD],
+            Optional[CE],
+            Optional[IVL_PQ],
+            Optional[Union[List[Dict], Dict]],
+            Optional[Dict],
+        ]:
+            # Get the medication code from the consumable
+            consumable = substance_administration.consumable
+            manufactured_product = (
+                consumable.manufacturedProduct if consumable else None
+            )
+            manufactured_material = (
+                manufactured_product.manufacturedMaterial
+                if manufactured_product
+                else None
+            )
+            code = manufactured_material.code if manufactured_material else None
+
+            return (
+                code,
+                substance_administration.doseQuantity,
+                substance_administration.routeCode,
+                substance_administration.effectiveTime,
+                substance_administration.precondition,
+            )
+
         concepts = []
 
-        if isinstance(self._medication_section.entry, list):
-            for entry in self._medication_section.entry:
-                concept = get_medication_from_entry(entry)
-                concepts.append(concept)
-        else:
-            concept = get_medication_from_entry(self._medication_section.entry)
+        entries = (
+            self._medication_section.entry
+            if isinstance(self._medication_section.entry, list)
+            else [self._medication_section.entry]
+        )
+        for entry in entries:
+            substance_administration = entry.substanceAdministration
+            if not substance_administration:
+                log.warning("Substance administration not found in entry.")
+                continue
+            code, dose_quantity, route_code, effective_times, precondition = (
+                get_medication_details_from_substance_administration(
+                    substance_administration
+                )
+            )
+            if not code:
+                log.warning("Code not found in the consumable")
+                continue
+            concept = get_medication_concept_from_cda_data_field(
+                code, dose_quantity, route_code, effective_times, precondition
+            )
             concepts.append(concept)
 
         return concepts
@@ -400,8 +464,8 @@ class CdaAnnotator:
 
         concepts = []
 
-        def get_allergy_concept_from_cda_value(
-            value: Dict, allergy_type, reaction, severity
+        def get_allergy_concept_from_cda_data_fields(
+            value: Dict, allergy_type: CD, reaction: Dict, severity: Dict
         ) -> AllergyConcept:
             concept = AllergyConcept(_standard="cda")
             concept.code = value.get("@code")
@@ -409,48 +473,77 @@ class CdaAnnotator:
             concept.code_system_name = value.get("@codeSystemName")
             concept.display_name = value.get("@displayName")
 
-            concept.allergy_type = allergy_type
-            concept.reaction = reaction
-            concept.severity = severity
+            if allergy_type:
+                concept.allergy_type = Concept()
+                concept.allergy_type.code = allergy_type.code
+                concept.allergy_type.code_system = allergy_type.codeSystem
+                concept.allergy_type.code_system_name = allergy_type.codeSystemName
+                concept.allergy_type.display_name = allergy_type.displayName
+
+            if reaction:
+                concept.reaction = Concept()
+                concept.reaction.code = reaction.get("@code")
+                concept.reaction.code_system = reaction.get("@codeSystem")
+                concept.reaction.code_system_name = reaction.get("@codeSystemName")
+                concept.reaction.display_name = reaction.get("@displayName")
+
+            if severity:
+                concept.severity = Concept()
+                concept.severity.code = severity.get("@code")
+                concept.severity.code_system = severity.get("@codeSystem")
+                concept.severity.code_system_name = severity.get("@codeSystemName")
+                concept.severity.display_name = severity.get("@displayName")
 
             return concept
 
-        def check_for_entry_observation(entry):
-            if isinstance(entry, EntryRelationship):
-                if entry.observation:
-                    return True
-            elif isinstance(entry, Observation):
-                if entry.entryRelationship:
-                    return check_for_entry_observation(entry.entryRelationship)
-            return False
+        def get_allergy_details_from_entry_relationship(
+            entry_relationship: EntryRelationship,
+        ) -> tuple[CD, Dict, Dict]:
+            allergy_type = None
+            reaction = None
+            severity = None
+
+            if check_for_entry_observation(entry_relationship):
+                allergy_type = entry_relationship.observation.code
+                observation = entry_relationship.observation
+
+                if check_for_entry_observation(observation):
+                    if check_has_template_id(
+                        observation.entryRelationship.observation,
+                        "1.3.6.1.4.1.19376.1.5.3.1.4.5",
+                    ):
+                        reaction = observation.entryRelationship.observation.value
+
+                    if check_for_entry_observation(
+                        observation.entryRelationship.observation
+                    ):
+                        if check_has_template_id(
+                            observation.entryRelationship.observation.entryRelationship.observation,
+                            "1.3.6.1.4.1.19376.1.5.3.1.4.1",
+                        ):
+                            severity = observation.entryRelationship.observation.entryRelationship.observation.value
+
+            return allergy_type, reaction, severity
 
         entries = (
             self._allergy_section.entry
             if isinstance(self._allergy_section.entry, list)
             else [self._allergy_section.entry]
         )
-
         for entry in entries:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
 
-            allergy_type = None
-            reaction = None
-            severity = None
+            allergy_type, reaction, severity = (
+                get_allergy_details_from_entry_relationship(entry_relationship)
+            )
 
-            if check_for_entry_observation(entry):
-                allergy_type = entry_relationship.observation.code
-                if check_for_entry_observation(entry_relationship.observation):
-                    reaction = entry_relationship.observation.entry_relationship.observation.value
-                    if check_for_entry_observation(
-                        entry_relationship.observation.entry_relationship.observation
-                    ):
-                        severity = entry_relationship.observation.entry_relationship.observation.entry_relationship.observation.value
             for value in values:
-                concept = get_allergy_concept_from_cda_value(
+                concept = get_allergy_concept_from_cda_data_fields(
                     value, allergy_type, reaction, severity
                 )
                 concepts.append(concept)
+
         return concepts
 
     def _extract_note(self) -> str:
@@ -785,17 +878,15 @@ class CdaAnnotator:
                 "@classCode": "ACT",
                 "@moodCode": "EVN",
                 "templateId": [
-                    {"@root": "2.16.840.1.113883.10.20.1.27"},
-                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
-                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.2"},
-                    {"@root": "2.16.840.1.113883.3.88.11.32.7"},
-                    {"@root": "2.16.840.1.113883.3.88.11.83.7"},
+                    {"root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
+                    {"root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"},
+                    {"root": "2.16.840.1.113883.3.88.11.32.6"},
+                    {"root": "2.16.840.1.113883.3.88.11.83.6"},
                 ],
                 "id": {"@root": act_id},
                 "code": {"@nullflavor": "NA"},
                 "statusCode": {"@code": "active"},
                 "effectiveTime": {"low": {"@value": timestamp}},
-                "text": {"reference": {"@value": allergy_reference_name}},
                 "entryRelationship": {
                     "@typeCode": "SUBJ",
                     "@inversionInd": False,
@@ -812,35 +903,58 @@ class CdaAnnotator:
                             },
                             {"@root": "2.16.840.1.113883.10.20.1.28"},
                         ],
+                        "id": {"@root": act_id},
                         "text": {"reference": {"@value": allergy_reference_name}},
-                        "value": {
-                            "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                            "@code": new_allergy.code,
-                            "@codeSystem": new_allergy.code_system,
-                            "@codeSystemName": new_allergy.code_system_name,
-                            "@displayName": new_allergy.display_name,
-                            "originalText": {
-                                "reference": {"@value": allergy_reference_name}
-                            },
-                            "@xsi:type": "CD",
-                        },
                         "statusCode": {"@code": "completed"},
+                        "effectiveTime": {"low": {"@value": timestamp}},
                     },
                 },
             }
         }
-
+        # Attach allergy type code
         if new_allergy.allergy_type:
             template["act"]["entryRelationship"]["observation"]["code"] = {
                 "@code": new_allergy.allergy_type.code,
-                "@codeSystem": "2.16.840.1.113883.6.96",
-                "@codeSystemName": "SNOMED CT",
+                "@codeSystem": new_allergy.allergy_type.code_system,
+                "@codeSystemName": new_allergy.allergy_type.code_system_name,
                 "@displayName": new_allergy.allergy_type.display_name,
             }
         else:
             raise ValueError("Allergy_type code cannot be missing when adding allergy.")
 
-        if new_allergy.reaction:
+        # Attach allergen code to value and participant
+        template["act"]["entryRelationship"]["observation"]["value"] = {
+            "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            "@code": new_allergy.code,
+            "@codeSystem": new_allergy.code_system,
+            "@codeSystemName": new_allergy.code_system_name,
+            "@displayName": new_allergy.display_name,
+            "originalText": {"reference": {"@value": allergy_reference_name}},
+            "@xsi:type": "CD",
+        }
+
+        template["act"]["entryRelationship"]["observation"]["participant"] = {
+            "@typeCode": "CSM",
+            "participantRole": {
+                "@classCode": "MANU",
+                "playingEntity": {
+                    "@classCode": "MMAT",
+                    "code": {
+                        "originalText": {
+                            "reference": {"@value": allergy_reference_name}
+                        },
+                        "@code": new_allergy.code,
+                        "@codeSystem": new_allergy.code_system,
+                        "@codeSystemName": new_allergy.code_system_name,
+                        "@displayName": new_allergy.display_name,
+                    },
+                    "name": new_allergy.display_name,
+                },
+            },
+        }
+
+        # We need an entryRelationship if either reaction or severity is present
+        if new_allergy.reaction or new_allergy.severity:
             template["act"]["entryRelationship"]["observation"]["entryRelationship"] = {
                 "@typeCode": "MFST",
                 "observation": {
@@ -853,47 +967,72 @@ class CdaAnnotator:
                             "@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5",
                             "@extension": "reaction",
                         },
-                        {"@root": "2.16.840.1.113883.10.20.1.28"},
                     ],
+                    "id": {"@root": act_id},
                     "code": {"@code": "RXNASSESS"},
-                    "value": {
-                        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                        "@code": new_allergy.reaction.code,
-                        "@codeSystem": new_allergy.reaction.code_system,
-                        "@displayName": new_allergy.reaction.display_name,
-                        "@xsi:type": "CD",
+                    "text": {
+                        "reference": {"@value": allergy_reference_name + "reaction"}
                     },
-                    "entryRelationship": [],
+                    "statusCode": {"@code": "completed"},
+                    "effectiveTime": {"low": {"@value": timestamp}},
                 },
             }
-
-        if new_allergy.severity:
-            template["act"]["entryRelationship"]["observation"]["entryRelationship"][
-                "observation"
-            ]["entryRelationship"] = {
-                "@typeCode": "SUBJ",
-                "observation": {
-                    "@classCode": "OBS",
-                    "@moodCode": "EVN",
-                    "templateId": [
-                        {"@root": "2.16.840.1.113883.10.20.1.55"},
-                        {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.1"},
-                    ],
-                    "code": {
-                        "@code": "SEV",
-                        "@codeSystem": "2.16.840.1.113883.5.4",
-                        "@codeSystemName": "ActCode",
-                        "@displayName": "Severity",
+            # Attach reaction code if given otherwise attach nullFlavor
+            if new_allergy.reaction:
+                template["act"]["entryRelationship"]["observation"][
+                    "entryRelationship"
+                ]["observation"]["value"] = {
+                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    "@code": new_allergy.reaction.code,
+                    "@codeSystem": new_allergy.reaction.code_system,
+                    "@codeSystemName": new_allergy.reaction.code_system_name,
+                    "@displayName": new_allergy.reaction.display_name,
+                    "@xsi:type": "CD",
+                    "originalText": {
+                        "reference": {"@value": allergy_reference_name + "reaction"}
                     },
-                    "value": {
-                        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                        "@code": new_allergy.reaction.code,
-                        "@codeSystem": new_allergy.reaction.code_system,
-                        "@displayName": new_allergy.reaction.display_name,
-                        "@xsi:type": "CD",
+                }
+            else:
+                template["act"]["entryRelationship"]["observation"][
+                    "entryRelationship"
+                ]["value"] = {
+                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    "@nullFlavor": "OTH",
+                    "@xsi:type": "CD",
+                }
+            # Attach severity code if given
+            if new_allergy.severity:
+                template["act"]["entryRelationship"]["observation"][
+                    "entryRelationship"
+                ]["observation"]["entryRelationship"] = {
+                    "@typeCode": "SUBJ",
+                    "observation": {
+                        "@classCode": "OBS",
+                        "@moodCode": "EVN",
+                        "templateId": [
+                            {"@root": "2.16.840.1.113883.10.20.1.55"},
+                            {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.1"},
+                        ],
+                        "code": {
+                            "@code": "SEV",
+                            "@codeSystem": "2.16.840.1.113883.5.4",
+                            "@codeSystemName": "ActCode",
+                            "@displayName": "Severity",
+                        },
+                        "text": {
+                            "reference": {"@value": allergy_reference_name + "severity"}
+                        },
+                        "statusCode": {"@code": "completed"},
+                        "value": {
+                            "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                            "@code": new_allergy.severity.code,
+                            "@codeSystem": new_allergy.severity.code_system,
+                            "@codeSystemName": new_allergy.severity.code_system_name,
+                            "@displayName": new_allergy.severity.display_name,
+                            "@xsi:type": "CD",
+                        },
                     },
-                },
-            }
+                }
 
         if not isinstance(self._allergy_section.entry, list):
             self._allergy_section.entry = [self._allergy_section.entry]

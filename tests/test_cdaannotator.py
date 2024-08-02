@@ -54,7 +54,6 @@ def test_extract_problems(cda_annotator):
 
 def test_extract_medications(cda_annotator):
     medications = cda_annotator._extract_medications()
-    print(medications[0].model_dump(exclude_none=True))
 
     assert len(medications) == 1
     assert medications[0].code == "314076"
@@ -223,7 +222,6 @@ def test_add_new_medication_entry(cda_annotator):
         medication_reference_name=med_reference_name,
     )
     assert len(cda_annotator._medication_section.entry) == 2
-    print(cda_annotator._medication_section.entry[1])
 
     subad = cda_annotator._medication_section.entry[1].substanceAdministration
 

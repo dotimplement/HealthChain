@@ -32,14 +32,14 @@ class Observation(BaseModel):
     id: Optional[Union[II, List[II]]] = None
     code: CD
     text: Optional[Dict] = None
-    value: Optional[Union[Dict, List[Dict]]] = None
     statusCode: Optional[CS] = None
     effectiveTime: Optional[IVL_TS] = None
+    value: Optional[Union[Dict, List[Dict]]] = None
+    participant: Optional[Participant] = None
     entryRelationship: Optional[Union[EntryRelationship, List[EntryRelationship]]] = (
         None
     )
     precondition: Optional[str] = None
-    participant: Optional[Participant] = None
 
 
 class EntryRelationship(BaseModel):
