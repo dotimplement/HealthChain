@@ -5,7 +5,7 @@ import logging
 
 from enum import Enum
 from datetime import datetime
-from typing import Dict, Optional, List, Union
+from typing import Dict, Optional, List, Tuple, Union
 
 from healthchain.cda_parser.model.datatypes import CD, CE, IVL_PQ
 from healthchain.models import (
@@ -403,7 +403,7 @@ class CdaAnnotator:
 
         def get_medication_details_from_substance_administration(
             substance_administration: SubstanceAdministration,
-        ) -> tuple[
+        ) -> Tuple[
             Optional[CD],
             Optional[CE],
             Optional[IVL_PQ],
@@ -498,7 +498,7 @@ class CdaAnnotator:
 
         def get_allergy_details_from_entry_relationship(
             entry_relationship: EntryRelationship,
-        ) -> tuple[CD, Dict, Dict]:
+        ) -> Tuple[CD, Dict, Dict]:
             allergy_type = None
             reaction = None
             severity = None
