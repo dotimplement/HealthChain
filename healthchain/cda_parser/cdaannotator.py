@@ -911,9 +911,11 @@ class CdaAnnotator:
                 },
             }
         }
+        allergen_observation = template["act"]["entryRelationship"]["observation"]
+
         # Attach allergy type code
         if new_allergy.allergy_type:
-            template["act"]["entryRelationship"]["observation"]["code"] = {
+            allergen_observation["code"] = {
                 "@code": new_allergy.allergy_type.code,
                 "@codeSystem": new_allergy.allergy_type.code_system,
                 "@codeSystemName": new_allergy.allergy_type.code_system_name,
@@ -923,7 +925,7 @@ class CdaAnnotator:
             raise ValueError("Allergy_type code cannot be missing when adding allergy.")
 
         # Attach allergen code to value and participant
-        template["act"]["entryRelationship"]["observation"]["value"] = {
+        allergen_observation["value"] = {
             "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
             "@code": new_allergy.code,
             "@codeSystem": new_allergy.code_system,
@@ -933,7 +935,7 @@ class CdaAnnotator:
             "@xsi:type": "CD",
         }
 
-        template["act"]["entryRelationship"]["observation"]["participant"] = {
+        allergen_observation["participant"] = {
             "@typeCode": "CSM",
             "participantRole": {
                 "@classCode": "MANU",
@@ -955,7 +957,7 @@ class CdaAnnotator:
 
         # We need an entryRelationship if either reaction or severity is present
         if new_allergy.reaction or new_allergy.severity:
-            template["act"]["entryRelationship"]["observation"]["entryRelationship"] = {
+            allergen_observation["entryRelationship"] = {
                 "@typeCode": "MFST",
                 "observation": {
                     "@classCode": "OBS",
@@ -979,9 +981,7 @@ class CdaAnnotator:
             }
             # Attach reaction code if given otherwise attach nullFlavor
             if new_allergy.reaction:
-                template["act"]["entryRelationship"]["observation"][
-                    "entryRelationship"
-                ]["observation"]["value"] = {
+                allergen_observation["entryRelationship"]["observation"]["value"] = {
                     "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
                     "@code": new_allergy.reaction.code,
                     "@codeSystem": new_allergy.reaction.code_system,
@@ -993,18 +993,16 @@ class CdaAnnotator:
                     },
                 }
             else:
-                template["act"]["entryRelationship"]["observation"][
-                    "entryRelationship"
-                ]["value"] = {
+                allergen_observation["entryRelationship"]["observation"]["value"] = {
                     "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
                     "@nullFlavor": "OTH",
                     "@xsi:type": "CD",
                 }
             # Attach severity code if given
             if new_allergy.severity:
-                template["act"]["entryRelationship"]["observation"][
+                allergen_observation["entryRelationship"]["observation"][
                     "entryRelationship"
-                ]["observation"]["entryRelationship"] = {
+                ] = {
                     "@typeCode": "SUBJ",
                     "observation": {
                         "@classCode": "OBS",

@@ -269,7 +269,7 @@ def test_add_new_allergy_entry(cda_annotator):
     new_allergy.code_system = "2.16.840.1.113883.6.96"
     new_allergy.code_system_name = "SNOMED CT"
     new_allergy.display_name = "Test Allergy"
-    new_allergy.allergy_type = Concept(**{"code": "ABC"})
+    new_allergy.allergy_type = Concept(**{"code": "ABC", "code_system": "snomed"})
     new_allergy.reaction = Concept(**{"code": "DEF"})
     new_allergy.severity = Concept(**{"code": "GHI"})
     timestamp = "20220101"
@@ -288,14 +288,17 @@ def test_add_new_allergy_entry(cda_annotator):
     assert (
         cda_annotator._allergy_section.entry[1].act.effectiveTime.low.value == timestamp
     )
-    assert cda_annotator._allergy_section.entry[
+    allergen_observation = cda_annotator._allergy_section.entry[
         1
-    ].act.entryRelationship.observation.text == {
+    ].act.entryRelationship.observation
+    assert allergen_observation.id.root == act_id
+    assert allergen_observation.text == {
         "reference": {"@value": allergy_reference_name}
     }
-    assert cda_annotator._allergy_section.entry[
-        1
-    ].act.entryRelationship.observation.value == {
+    assert allergen_observation.effectiveTime.low.value == timestamp
+    assert allergen_observation.code.code == "ABC"
+    assert allergen_observation.code.codeSystem == "snomed"
+    assert allergen_observation.value == {
         "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
         "@code": new_allergy.code,
         "@codeSystem": new_allergy.code_system,
@@ -305,8 +308,55 @@ def test_add_new_allergy_entry(cda_annotator):
         "@xsi:type": "CD",
     }
     assert (
+        allergen_observation.participant.participantRole.playingEntity.code.code
+        == new_allergy.code
+    )
+    assert (
+        allergen_observation.participant.participantRole.playingEntity.code.codeSystem
+        == new_allergy.code_system
+    )
+    assert (
+        allergen_observation.participant.participantRole.playingEntity.code.codeSystemName
+        == new_allergy.code_system_name
+    )
+    assert (
+        allergen_observation.participant.participantRole.playingEntity.code.displayName
+        == new_allergy.display_name
+    )
+    assert (
+        allergen_observation.participant.participantRole.playingEntity.name
+        == new_allergy.display_name
+    )
+
+    assert allergen_observation.entryRelationship.observation.value["@code"] == "DEF"
+    assert (
+        allergen_observation.entryRelationship.observation.entryRelationship.observation.value[
+            "@code"
+        ]
+        == "GHI"
+    )
+
+    # Test adding withhout a reaction
+    new_allergy.reaction = None
+    cda_annotator._add_new_allergy_entry(
+        new_allergy=new_allergy,
+        timestamp=timestamp,
+        act_id=act_id,
+        allergy_reference_name=allergy_reference_name,
+    )
+    assert (
         cda_annotator._allergy_section.entry[
-            1
-        ].act.entryRelationship.observation.entryRelationship.observation.value["@code"]
-        == "DEF"
+            2
+        ].act.entryRelationship.observation.entryRelationship.observation.value[
+            "@nullFlavor"
+        ]
+        == "OTH"
+    )
+    assert (
+        cda_annotator._allergy_section.entry[
+            2
+        ].act.entryRelationship.observation.entryRelationship.observation.entryRelationship.observation.value[
+            "@code"
+        ]
+        == "GHI"
     )
