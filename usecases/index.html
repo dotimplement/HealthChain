@@ -1,0 +1,1409 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Simplify prototyping and testing NLP applications in a healthcare context.">
+      
+      
+        <meta name="author" content="Jennifer Jiang-Kells">
+      
+      
+      
+        <link rel="prev" href="../quickstart/">
+      
+      
+        <link rel="next" href="../license-page/">
+      
+      
+      <link rel="icon" href="../assets/healthchain_logo.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.31">
+    
+    
+      
+        <title>Use Cases - HealthChain 💫 🏥</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function n(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],n("js",new Date),n("config","G-JZW5MPV5Y4"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){this.value&&n("event","search",{search_term:this.value})}),document$.subscribe(function(){var a=document.forms.feedback;if(void 0!==a)for(var e of a.querySelectorAll("[type=submit]"))e.addEventListener("click",function(e){e.preventDefault();var t=document.location.pathname,e=this.getAttribute("data-md-value");n("event","feedback",{page:t,data:e}),a.firstElementChild.disabled=!0;e=a.querySelector(".md-feedback__note [data-md-value='"+e+"']");e&&(e.hidden=!1)}),a.hidden=!1}),location$.subscribe(function(e){n("config","G-JZW5MPV5Y4",{page_path:e.pathname})})});var e=document.createElement("script");e.async=!0,e.src="https://www.googletagmanager.com/gtag/js?id=G-JZW5MPV5Y4",document.getElementById("__analytics").insertAdjacentElement("afterEnd",e)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#use-cases" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HealthChain 💫 🏥" class="md-header__button md-logo" aria-label="HealthChain 💫 🏥" data-md-component="logo">
+      
+  <img src="../assets/healthchain_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HealthChain 💫 🏥
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Use Cases
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/dotimplement/healthchain" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    dotimplement/healthchain
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../cookbook/" class="md-tabs__link">
+          
+  
+  Cookbook
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
+  
+  Docs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../community/" class="md-tabs__link">
+          
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HealthChain 💫 🏥" class="md-nav__button md-logo" aria-label="HealthChain 💫 🏥" data-md-component="logo">
+      
+  <img src="../assets/healthchain_logo.png" alt="logo">
+
+    </a>
+    HealthChain 💫 🏥
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/dotimplement/healthchain" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    dotimplement/healthchain
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Use Cases
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Use Cases
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-decision-support-cds" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clinical Decision Support (CDS)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Decision Support (CDS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-cdsrequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CDSRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-cdsresponse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CDSResponse
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implemented-fhir-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implemented FHIR Resources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clinical Documentation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-cdarequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CdaRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-cdaresponse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CdaResponse
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implemented-cda-sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implemented CDA Sections
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license-page/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Licence
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Cookbook
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Cookbook
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cookbook
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Docs
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Docs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Community
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Community
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Community
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-decision-support-cds" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clinical Decision Support (CDS)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Decision Support (CDS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-cdsrequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CDSRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-cdsresponse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CDSResponse
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implemented-fhir-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implemented FHIR Resources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clinical Documentation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-cdarequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CdaRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-cdaresponse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example CdaResponse
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implemented-cda-sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implemented CDA Sections
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="use-cases">Use Cases</h1>
+<h2 id="clinical-decision-support-cds">Clinical Decision Support (CDS)</h2>
+<p><a href="https://cds-hooks.org/">CDS Hooks</a> is an <a href="https://cds-hooks.hl7.org">HL7</a> published specification for clinical decision support. For more information please consult the <a href="https://cds-hooks.org/">official documentation</a>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">When</th>
+<th style="text-align: left;">Where</th>
+<th style="text-align: left;">What you receive</th>
+<th>What you send back</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Triggered at certain events during a clinician's workflow, e.g. when a patient record is opened.</td>
+<td style="text-align: left;">EHR</td>
+<td style="text-align: left;">The context of the event and FHIR resources that are requested by your service. e.g. patient ID, <code>Encounter</code> and <code>Patient</code>.</td>
+<td>“Cards” displaying text, actionable suggestions, or links to launch a <a href="https://smarthealthit.org/">SMART</a> app from within the workflow.</td>
+</tr>
+</tbody>
+</table>
+<p>Each workflow has associated <code>context</code> and <code>prefetch</code> FHIR resource returned from it.</p>
+<p>If you use the <code>DataGenerator</code>, a pre-configured list of FHIR resources is randomly generated and placed in the <code>prefetch</code> field of a <code>CDSRequest</code>.</p>
+<p>Current implemented workflows:</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Implementation Completeness</th>
+<th>Generated Synthetic Resources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://cds-hooks.org/hooks/patient-view/">patient-view</a></td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7Z"/></svg></span></td>
+<td><code>Patient</code>, <code>Encounter</code> (Future: <code>MedicationStatement</code>, <code>AllergyIntolerance</code>)</td>
+</tr>
+<tr>
+<td><a href="https://cds-hooks.org/hooks/encounter-discharge/">encounter-discharge</a></td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M.41 13.41 6 19l1.41-1.42L1.83 12m20.41-6.42L11.66 16.17 7.5 12l-1.43 1.41L11.66 19l12-12M18 7l-1.41-1.42-6.35 6.35 1.42 1.41L18 7Z"/></svg></span></td>
+<td><code>Patient</code>, <code>Encounter</code>, <code>Procedure</code>, <code>MedicationRequest</code>, Optional <code>DocumentReference</code></td>
+</tr>
+<tr>
+<td><a href="https://cds-hooks.org/hooks/order-sign/">order-sign</a></td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 7 9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7Z"/></svg></span> Partial</td>
+<td>Future: <code>MedicationRequest</code>, <code>ProcedureRequest</code>, <code>ServiceRequest</code></td>
+</tr>
+<tr>
+<td><a href="https://cds-hooks.org/hooks/order-select/">order-select</a></td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 7 9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7Z"/></svg></span> Partial</td>
+<td>Future: <code>MedicationRequest</code>, <code>ProcedureRequest</code>, <code>ServiceRequest</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-cdsrequest">Example <code>CDSRequest</code></h3>
+<div class="language-json highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span style="color: #89DDFF">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span style="color: #EEFFFF">   </span><span style="color: #FF5370">&quot;hookInstance&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;23f1a303-991f-4118-86c5-11d99a39222e&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span style="color: #EEFFFF">   </span><span style="color: #FF5370">&quot;fhirServer&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;https://fhir.example.org&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span style="color: #EEFFFF">   </span><span style="color: #FF5370">&quot;hook&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;patient-view&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span style="color: #EEFFFF">   </span><span style="color: #FF5370">&quot;context&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span style="color: #EEFFFF">     </span><span style="color: #FF5370">&quot;patientId&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;1288992&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span style="color: #EEFFFF">     </span><span style="color: #FF5370">&quot;userId&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;Practitioner/example&quot;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span style="color: #EEFFFF">    </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span style="color: #EEFFFF">   </span><span style="color: #FF5370">&quot;prefetch&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&quot;patientToGreet&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&quot;resourceType&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;Patient&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&quot;gender&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;male&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&quot;birthDate&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;1925-12-23&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&quot;id&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;1288992&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&quot;active&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">true</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span style="color: #EEFFFF">      </span><span style="color: #89DDFF">}</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span style="color: #EEFFFF">   </span><span style="color: #89DDFF">}</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span style="color: #89DDFF">}</span>
+</span></code></pre></div>
+<h3 id="example-cdsresponse">Example <code>CDSResponse</code></h3>
+<div class="language-json highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span style="color: #89DDFF">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&quot;summary&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;Bilirubin: Based on the age of this patient consider overlaying bilirubin [Mass/volume] results over a time-based risk chart&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&quot;indicator&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;info&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&quot;detail&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;The focus of this app is to reduce the incidence of severe hyperbilirubinemia and bilirubin encephalopathy while minimizing the risks of unintended harm such as maternal anxiety, decreased breastfeeding, and unnecessary costs or treatment.&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&quot;source&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&quot;label&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;Intermountain&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&quot;url&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">null</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span style="color: #EEFFFF">  </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&quot;links&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #89DDFF">[</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span style="color: #EEFFFF">    </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&quot;label&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;Bilirubin SMART app&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&quot;url&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;https://example.com/launch&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&quot;type&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EEFFFF"> </span><span style="color: #C3E88D">&quot;smart&quot;</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span style="color: #EEFFFF">   </span><span style="color: #89DDFF">}</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span style="color: #EEFFFF">  </span><span style="color: #89DDFF">]</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span style="color: #89DDFF">}</span>
+</span></code></pre></div>
+<h3 id="implemented-fhir-resources">Implemented FHIR Resources</h3>
+<ul>
+<li><code>Patient</code></li>
+<li><code>Encounter</code></li>
+<li><code>Procedure</code></li>
+<li><code>MedicationRequest</code></li>
+</ul>
+<h2 id="clinical-documentation">Clinical Documentation</h2>
+<p>The <code>ClinicalDocumentation</code> use case implements a real-time Clinical Documentation Improvement (CDI) service. It currently implements the Epic-integrated NoteReader CDI specification, which communicates with a third-party natural language processing (NLP) engine to analyse clinical notes and extract structured data. It helps convert free-text medical documentation into coded information that can be used for billing, quality reporting, and clinical decision support.</p>
+<p><code>ClinicalDocumentation</code> communicates using <a href="https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7">CDAs (Clinical Document Architecture)</a>. CDAs are standardized electronic documents for exchanging clinical information. They provide a common structure for capturing and sharing patient data like medical history, medications, and care plans between different healthcare systems and providers. The communication protocol is over a SOAP-based API.</p>
+<p>Note that NoteReader is a vendor-specific component (Epic). This particular note-based workfow is one type of CDI service.</p>
+<p>In HealthChain, the workflow is named <code>sign-note-inpatient</code>. We plan to implement additional CDI services and workflows for different vendor specifications.</p>
+<p>The <code>DataGenerator</code> currently does not support synthetic CDA data - we're working on it! At the moment, you can only load and return a prexisting CDA from your sandbox api function.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">When</th>
+<th style="text-align: left;">Where</th>
+<th style="text-align: left;">What you receive</th>
+<th>What you send back</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Triggered when a clinician opts in to a CDI functionality and signs or pends a note after writing it.</td>
+<td style="text-align: left;">Specific modules in EHR where clinical documentation takes place, such as NoteReader in Epic.</td>
+<td style="text-align: left;">A CDA document which contains continuity of care data and free-text data, e.g. a patient's problem list and the progress note that the clinician has entered in the EHR.</td>
+<td>A CDA document which contains additional structured data extracted and returned by your CDI service.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-cdarequest">Example <code>CdaRequest</code></h3>
+<div class="language-xml highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span style="color: #546E7A; font-style: italic">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span style="color: #FF5370">&lt;ClinicalDocument</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xmlns=</span><span style="color: #C3E88D">&quot;urn:hl7-org:v3&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;typeId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.1.3&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">extension=</span><span style="color: #C3E88D">&quot;POCD_HD000040&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.1.2&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.19.5.99999.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;34133-9&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Summarization of Episode Note&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;LOINC&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;title&gt;</span>CDA<span style="color: #EEFFFF"> </span>Document<span style="color: #EEFFFF"> </span>with<span style="color: #EEFFFF"> </span>Problem<span style="color: #EEFFFF"> </span>List<span style="color: #EEFFFF"> </span>and<span style="color: #EEFFFF"> </span>Progress<span style="color: #EEFFFF"> </span>Note<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;effectiveTime</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;confidentialityCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;N&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.5.25&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;languageCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;en-US&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&lt;structuredBody&gt;</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span style="color: #EEFFFF">      </span><span style="color: #546E7A; font-style: italic">&lt;!-- Problem List Section --&gt;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;section&gt;</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.2.5.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;11450-4&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Problem List&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;title&gt;</span>Problems<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;text&gt;</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;list&gt;</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;item&gt;</span>Hypertension<span style="color: #FF5370">&lt;/item&gt;</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/list&gt;</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;entry&gt;</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;act</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;ACT&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.3&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;ab1791b0-5c71-11db-b0de-0800200c9a66&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;CONC&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.5.6&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;statusCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;active&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;effectiveTime&gt;</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;low</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/effectiveTime&gt;</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;entryRelationship</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">typeCode=</span><span style="color: #C3E88D">&quot;SUBJ&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;observation</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;OBS&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.4&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;ab1791b0-5c71-11db-b0de-0800200c9a66&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;55607006&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Problem&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.96&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;SNOMED CT&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;text&gt;</span>Hypertension<span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;statusCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;completed&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;effectiveTime&gt;</span>
+</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span style="color: #EEFFFF">                    </span><span style="color: #FF5370">&lt;low</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;/effectiveTime&gt;</span>
+</span><span id="__span-2-44"><a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;value</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xsi:type=</span><span style="color: #C3E88D">&quot;CD&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;59621000&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Essential hypertension&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.96&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;SNOMED CT&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-45"><a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;/observation&gt;</span>
+</span><span id="__span-2-46"><a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/entryRelationship&gt;</span>
+</span><span id="__span-2-47"><a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/act&gt;</span>
+</span><span id="__span-2-48"><a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/entry&gt;</span>
+</span><span id="__span-2-49"><a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;/section&gt;</span>
+</span><span id="__span-2-50"><a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-2-51"><a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a>
+</span><span id="__span-2-52"><a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span style="color: #EEFFFF">      </span><span style="color: #546E7A; font-style: italic">&lt;!-- Progress Note Section --&gt;</span>
+</span><span id="__span-2-53"><a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-2-54"><a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;section&gt;</span>
+</span><span id="__span-2-55"><a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.2.65&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-56"><a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;11506-3&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Progress Note&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-2-57"><a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;title&gt;</span>Progress<span style="color: #EEFFFF"> </span>Note<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-2-58"><a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;text&gt;</span>
+</span><span id="__span-2-59"><a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;paragraph&gt;</span>Patient&#39;s<span style="color: #EEFFFF"> </span>blood<span style="color: #EEFFFF"> </span>pressure<span style="color: #EEFFFF"> </span>remains<span style="color: #EEFFFF"> </span>elevated.<span style="color: #EEFFFF"> </span>Discussed<span style="color: #EEFFFF"> </span>lifestyle<span style="color: #EEFFFF"> </span>modifications<span style="color: #EEFFFF"> </span>and<span style="color: #EEFFFF"> </span>medication<span style="color: #EEFFFF"> </span>adherence.<span style="color: #EEFFFF"> </span>Started<span style="color: #EEFFFF"> </span>Lisinopril<span style="color: #EEFFFF"> </span>10<span style="color: #EEFFFF"> </span>mg<span style="color: #EEFFFF"> </span>daily<span style="color: #EEFFFF"> </span>for<span style="color: #EEFFFF"> </span>hypertension<span style="color: #EEFFFF"> </span>management.<span style="color: #EEFFFF"> </span>Will<span style="color: #EEFFFF"> </span>follow<span style="color: #EEFFFF"> </span>up<span style="color: #EEFFFF"> </span>in<span style="color: #EEFFFF"> </span>3<span style="color: #EEFFFF"> </span>months<span style="color: #EEFFFF"> </span>to<span style="color: #EEFFFF"> </span>assess<span style="color: #EEFFFF"> </span>response<span style="color: #EEFFFF"> </span>to<span style="color: #EEFFFF"> </span>treatment.<span style="color: #FF5370">&lt;/paragraph&gt;</span>
+</span><span id="__span-2-60"><a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-2-61"><a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;/section&gt;</span>
+</span><span id="__span-2-62"><a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-2-63"><a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&lt;/structuredBody&gt;</span>
+</span><span id="__span-2-64"><a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-2-65"><a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span style="color: #FF5370">&lt;/ClinicalDocument&gt;</span>
+</span></code></pre></div>
+<h3 id="example-cdaresponse">Example <code>CdaResponse</code></h3>
+<div class="language-xml highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span style="color: #546E7A; font-style: italic">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span style="color: #FF5370">&lt;ClinicalDocument</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xmlns=</span><span style="color: #C3E88D">&quot;urn:hl7-org:v3&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;typeId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.1.3&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">extension=</span><span style="color: #C3E88D">&quot;POCD_HD000040&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.1.2&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.19.5.99999.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;34133-9&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Summarization of Episode Note&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;LOINC&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;title&gt;</span>CDA<span style="color: #EEFFFF"> </span>Document<span style="color: #EEFFFF"> </span>with<span style="color: #EEFFFF"> </span>Problem<span style="color: #EEFFFF"> </span>List,<span style="color: #EEFFFF"> </span>Medication,<span style="color: #EEFFFF"> </span>and<span style="color: #EEFFFF"> </span>Progress<span style="color: #EEFFFF"> </span>Note<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;effectiveTime</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;confidentialityCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;N&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.5.25&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;languageCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;en-US&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&lt;structuredBody&gt;</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span style="color: #EEFFFF">      </span><span style="color: #546E7A; font-style: italic">&lt;!-- Problem List Section --&gt;</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;section&gt;</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.2.5.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;11450-4&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Problem List&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;title&gt;</span>Problems<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;text&gt;</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;list&gt;</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;item&gt;</span>Hypertension<span style="color: #FF5370">&lt;/item&gt;</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/list&gt;</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;entry&gt;</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;act</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;ACT&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.3&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;ab1791b0-5c71-11db-b0de-0800200c9a66&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;CONC&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.5.6&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;statusCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;active&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;effectiveTime&gt;</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;low</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/effectiveTime&gt;</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;entryRelationship</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">typeCode=</span><span style="color: #C3E88D">&quot;SUBJ&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;observation</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;OBS&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.4&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;ab1791b0-5c71-11db-b0de-0800200c9a66&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;55607006&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Problem&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.96&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;SNOMED CT&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;text&gt;</span>Hypertension<span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;statusCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;completed&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;effectiveTime&gt;</span>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span style="color: #EEFFFF">                    </span><span style="color: #FF5370">&lt;low</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;/effectiveTime&gt;</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;value</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xsi:type=</span><span style="color: #C3E88D">&quot;CD&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;59621000&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Essential hypertension&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.96&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystemName=</span><span style="color: #C3E88D">&quot;SNOMED CT&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;/observation&gt;</span>
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/entryRelationship&gt;</span>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/act&gt;</span>
+</span><span id="__span-3-48"><a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/entry&gt;</span>
+</span><span id="__span-3-49"><a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;/section&gt;</span>
+</span><span id="__span-3-50"><a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-3-51"><a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a>
+</span><span id="__span-3-52"><a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a><span style="color: #EEFFFF">      </span><span style="color: #546E7A; font-style: italic">&lt;!-- Medications Section --&gt;</span>
+</span><span id="__span-3-53"><a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-3-54"><a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;section&gt;</span>
+</span><span id="__span-3-55"><a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.2.1.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-56"><a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;10160-0&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;History of medication use&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-57"><a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;title&gt;</span>Medications<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-3-58"><a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;text&gt;</span>
+</span><span id="__span-3-59"><a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;list&gt;</span>
+</span><span id="__span-3-60"><a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;item&gt;</span>Lisinopril<span style="color: #EEFFFF"> </span>10<span style="color: #EEFFFF"> </span>mg<span style="color: #EEFFFF"> </span>oral<span style="color: #EEFFFF"> </span>tablet,<span style="color: #EEFFFF"> </span>once<span style="color: #EEFFFF"> </span>daily<span style="color: #FF5370">&lt;/item&gt;</span>
+</span><span id="__span-3-61"><a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/list&gt;</span>
+</span><span id="__span-3-62"><a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-3-63"><a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;entry&gt;</span>
+</span><span id="__span-3-64"><a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;substanceAdministration</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;SBADM&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-65"><a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.16&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-66"><a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;id</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;cdbd33f0-6cde-11db-9fe1-0800200c9a66&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-67"><a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;statusCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;active&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-68"><a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;effectiveTime</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xsi:type=</span><span style="color: #C3E88D">&quot;IVL_TS&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-69"><a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;low</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;20240712&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-70"><a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/effectiveTime&gt;</span>
+</span><span id="__span-3-71"><a id="__codelineno-3-71" name="__codelineno-3-71" href="#__codelineno-3-71"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;routeCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;PO&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.5.112&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Oral&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-72"><a id="__codelineno-3-72" name="__codelineno-3-72" href="#__codelineno-3-72"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;doseQuantity</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">value=</span><span style="color: #C3E88D">&quot;1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-73"><a id="__codelineno-3-73" name="__codelineno-3-73" href="#__codelineno-3-73"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;administrationUnitCode</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;C48542&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Tablet&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.3.26.1.1&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-74"><a id="__codelineno-3-74" name="__codelineno-3-74" href="#__codelineno-3-74"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;consumable&gt;</span>
+</span><span id="__span-3-75"><a id="__codelineno-3-75" name="__codelineno-3-75" href="#__codelineno-3-75"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;manufacturedProduct</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;MANU&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-76"><a id="__codelineno-3-76" name="__codelineno-3-76" href="#__codelineno-3-76"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.23&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-77"><a id="__codelineno-3-77" name="__codelineno-3-77" href="#__codelineno-3-77"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;manufacturedMaterial&gt;</span>
+</span><span id="__span-3-78"><a id="__codelineno-3-78" name="__codelineno-3-78" href="#__codelineno-3-78"></a><span style="color: #EEFFFF">                    </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;197884&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.88&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Lisinopril 10 MG Oral Tablet&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-79"><a id="__codelineno-3-79" name="__codelineno-3-79" href="#__codelineno-3-79"></a><span style="color: #EEFFFF">                      </span><span style="color: #FF5370">&lt;originalText&gt;</span>Lisinopril<span style="color: #EEFFFF"> </span>10<span style="color: #EEFFFF"> </span>mg<span style="color: #EEFFFF"> </span>oral<span style="color: #EEFFFF"> </span>tablet<span style="color: #FF5370">&lt;/originalText&gt;</span>
+</span><span id="__span-3-80"><a id="__codelineno-3-80" name="__codelineno-3-80" href="#__codelineno-3-80"></a><span style="color: #EEFFFF">                    </span><span style="color: #FF5370">&lt;/code&gt;</span>
+</span><span id="__span-3-81"><a id="__codelineno-3-81" name="__codelineno-3-81" href="#__codelineno-3-81"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;/manufacturedMaterial&gt;</span>
+</span><span id="__span-3-82"><a id="__codelineno-3-82" name="__codelineno-3-82" href="#__codelineno-3-82"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;/manufacturedProduct&gt;</span>
+</span><span id="__span-3-83"><a id="__codelineno-3-83" name="__codelineno-3-83" href="#__codelineno-3-83"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/consumable&gt;</span>
+</span><span id="__span-3-84"><a id="__codelineno-3-84" name="__codelineno-3-84" href="#__codelineno-3-84"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;entryRelationship</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">typeCode=</span><span style="color: #C3E88D">&quot;SUBJ&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-85"><a id="__codelineno-3-85" name="__codelineno-3-85" href="#__codelineno-3-85"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;observation</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">classCode=</span><span style="color: #C3E88D">&quot;OBS&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">moodCode=</span><span style="color: #C3E88D">&quot;EVN&quot;</span><span style="color: #FF5370">&gt;</span>
+</span><span id="__span-3-86"><a id="__codelineno-3-86" name="__codelineno-3-86" href="#__codelineno-3-86"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.4.20&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-87"><a id="__codelineno-3-87" name="__codelineno-3-87" href="#__codelineno-3-87"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;33999-4&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Indication&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-88"><a id="__codelineno-3-88" name="__codelineno-3-88" href="#__codelineno-3-88"></a><span style="color: #EEFFFF">                  </span><span style="color: #FF5370">&lt;value</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">xsi:type=</span><span style="color: #C3E88D">&quot;CD&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;59621000&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Essential hypertension&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.96&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-89"><a id="__codelineno-3-89" name="__codelineno-3-89" href="#__codelineno-3-89"></a><span style="color: #EEFFFF">                </span><span style="color: #FF5370">&lt;/observation&gt;</span>
+</span><span id="__span-3-90"><a id="__codelineno-3-90" name="__codelineno-3-90" href="#__codelineno-3-90"></a><span style="color: #EEFFFF">              </span><span style="color: #FF5370">&lt;/entryRelationship&gt;</span>
+</span><span id="__span-3-91"><a id="__codelineno-3-91" name="__codelineno-3-91" href="#__codelineno-3-91"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;/substanceAdministration&gt;</span>
+</span><span id="__span-3-92"><a id="__codelineno-3-92" name="__codelineno-3-92" href="#__codelineno-3-92"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/entry&gt;</span>
+</span><span id="__span-3-93"><a id="__codelineno-3-93" name="__codelineno-3-93" href="#__codelineno-3-93"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;/section&gt;</span>
+</span><span id="__span-3-94"><a id="__codelineno-3-94" name="__codelineno-3-94" href="#__codelineno-3-94"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-3-95"><a id="__codelineno-3-95" name="__codelineno-3-95" href="#__codelineno-3-95"></a>
+</span><span id="__span-3-96"><a id="__codelineno-3-96" name="__codelineno-3-96" href="#__codelineno-3-96"></a><span style="color: #EEFFFF">      </span><span style="color: #546E7A; font-style: italic">&lt;!-- Progress Note Section --&gt;</span>
+</span><span id="__span-3-97"><a id="__codelineno-3-97" name="__codelineno-3-97" href="#__codelineno-3-97"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;component&gt;</span>
+</span><span id="__span-3-98"><a id="__codelineno-3-98" name="__codelineno-3-98" href="#__codelineno-3-98"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;section&gt;</span>
+</span><span id="__span-3-99"><a id="__codelineno-3-99" name="__codelineno-3-99" href="#__codelineno-3-99"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;templateId</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">root=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.10.20.22.2.65&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-100"><a id="__codelineno-3-100" name="__codelineno-3-100" href="#__codelineno-3-100"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;code</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">code=</span><span style="color: #C3E88D">&quot;11506-3&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">codeSystem=</span><span style="color: #C3E88D">&quot;2.16.840.1.113883.6.1&quot;</span><span style="color: #EEFFFF"> </span><span style="color: #BB80B3">displayName=</span><span style="color: #C3E88D">&quot;Progress Note&quot;</span><span style="color: #FF5370">/&gt;</span>
+</span><span id="__span-3-101"><a id="__codelineno-3-101" name="__codelineno-3-101" href="#__codelineno-3-101"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;title&gt;</span>Progress<span style="color: #EEFFFF"> </span>Note<span style="color: #FF5370">&lt;/title&gt;</span>
+</span><span id="__span-3-102"><a id="__codelineno-3-102" name="__codelineno-3-102" href="#__codelineno-3-102"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;text&gt;</span>
+</span><span id="__span-3-103"><a id="__codelineno-3-103" name="__codelineno-3-103" href="#__codelineno-3-103"></a><span style="color: #EEFFFF">            </span><span style="color: #FF5370">&lt;paragraph&gt;</span>Patient&#39;s<span style="color: #EEFFFF"> </span>blood<span style="color: #EEFFFF"> </span>pressure<span style="color: #EEFFFF"> </span>remains<span style="color: #EEFFFF"> </span>elevated.<span style="color: #EEFFFF"> </span>Discussed<span style="color: #EEFFFF"> </span>lifestyle<span style="color: #EEFFFF"> </span>modifications<span style="color: #EEFFFF"> </span>and<span style="color: #EEFFFF"> </span>medication<span style="color: #EEFFFF"> </span>adherence.<span style="color: #EEFFFF"> </span>Started<span style="color: #EEFFFF"> </span>Lisinopril<span style="color: #EEFFFF"> </span>10<span style="color: #EEFFFF"> </span>mg<span style="color: #EEFFFF"> </span>daily<span style="color: #EEFFFF"> </span>for<span style="color: #EEFFFF"> </span>hypertension<span style="color: #EEFFFF"> </span>management.<span style="color: #EEFFFF"> </span>Will<span style="color: #EEFFFF"> </span>follow<span style="color: #EEFFFF"> </span>up<span style="color: #EEFFFF"> </span>in<span style="color: #EEFFFF"> </span>3<span style="color: #EEFFFF"> </span>months<span style="color: #EEFFFF"> </span>to<span style="color: #EEFFFF"> </span>assess<span style="color: #EEFFFF"> </span>response<span style="color: #EEFFFF"> </span>to<span style="color: #EEFFFF"> </span>treatment.<span style="color: #FF5370">&lt;/paragraph&gt;</span>
+</span><span id="__span-3-104"><a id="__codelineno-3-104" name="__codelineno-3-104" href="#__codelineno-3-104"></a><span style="color: #EEFFFF">          </span><span style="color: #FF5370">&lt;/text&gt;</span>
+</span><span id="__span-3-105"><a id="__codelineno-3-105" name="__codelineno-3-105" href="#__codelineno-3-105"></a><span style="color: #EEFFFF">        </span><span style="color: #FF5370">&lt;/section&gt;</span>
+</span><span id="__span-3-106"><a id="__codelineno-3-106" name="__codelineno-3-106" href="#__codelineno-3-106"></a><span style="color: #EEFFFF">      </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-3-107"><a id="__codelineno-3-107" name="__codelineno-3-107" href="#__codelineno-3-107"></a><span style="color: #EEFFFF">    </span><span style="color: #FF5370">&lt;/structuredBody&gt;</span>
+</span><span id="__span-3-108"><a id="__codelineno-3-108" name="__codelineno-3-108" href="#__codelineno-3-108"></a><span style="color: #EEFFFF">  </span><span style="color: #FF5370">&lt;/component&gt;</span>
+</span><span id="__span-3-109"><a id="__codelineno-3-109" name="__codelineno-3-109" href="#__codelineno-3-109"></a><span style="color: #FF5370">&lt;/ClinicalDocument&gt;</span>
+</span></code></pre></div>
+<h3 id="implemented-cda-sections">Implemented CDA Sections</h3>
+<ul>
+<li>Problems</li>
+<li>Medications (Coming soon)</li>
+<li>Allergies (Coming soon)</li>
+<li>Progress Note</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      dotimplement
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "navigation.expand", "navigation.tabs", "navigation.sections", "header.autohide", "announce.dismiss"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>
