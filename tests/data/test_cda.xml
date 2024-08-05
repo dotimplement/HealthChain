@@ -154,6 +154,10 @@
                                 <low nullFlavor="UNK" />
                                 <high value="20221020" />
                             </effectiveTime>
+                            <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A"
+                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                <period unit="d" value=".5" />
+                            </effectiveTime>
                             <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="Oral">
                                 <originalText>Oral</originalText>
                             </routeCode>
@@ -165,7 +169,7 @@
                                     <templateId root="2.16.840.1.113883.3.88.11.32.9" />
                                     <templateId root="2.16.840.1.113883.3.88.11.83.8.2" />
                                     <manufacturedMaterial>
-                                        <code codeSystem="2.16.840.1.113883.6.88" nullFlavor="UNK">
+                                        <code code="314076" displayName="lisinopril 10 MG Oral Tablet" codeSystem="2.16.840.1.113883.6.88" nullFlavor="UNK">
                                             <originalText>
                                                 <reference value="#med10" />
                                             </originalText>
@@ -221,6 +225,15 @@
                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
                                 </observation>
                             </entryRelationship>
+                            <precondition typeCode="PRCN">
+                                <criterion>
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.25" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.25" extension="2014-06-09" />
+                                    <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+                                    <value nullFlavor="NI" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                </criterion>
+                            </precondition>
                         </substanceAdministration>
                     </entry>
                 </section>

@@ -333,6 +333,15 @@ def test_ccd_data():
 
 
 @pytest.fixture
+def test_multiple_ccd_data():
+    return CcdData(
+        problems=[ProblemConcept(code="test1"), ProblemConcept(code="test2")],
+        medications=[MedicationConcept(code="test1"), MedicationConcept(code="test2")],
+        allergies=[AllergyConcept(code="test1"), AllergyConcept(code="tes2")],
+    )
+
+
+@pytest.fixture
 def cda_annotator():
     with open("./tests/data/test_cda.xml", "r") as file:
         test_cda = file.read()
