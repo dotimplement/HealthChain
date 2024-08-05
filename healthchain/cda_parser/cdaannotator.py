@@ -120,6 +120,14 @@ def check_for_entry_observation(entry):
     elif isinstance(entry, Observation):
         if entry.entryRelationship:
             return check_for_entry_observation(entry.entryRelationship)
+    elif isinstance(entry, list):
+        for item in entry:
+            if isinstance(item, EntryRelationship):
+                if item.observation:
+                    return True
+            elif isinstance(item, Observation):
+                if item.entryRelationship:
+                    return check_for_entry_observation(item.entryRelationship)
     return False
 
 
@@ -465,13 +473,19 @@ class CdaAnnotator:
         concepts = []
 
         def get_allergy_concept_from_cda_data_fields(
-            value: Dict, allergy_type: CD, reaction: Dict, severity: Dict
+            value: Dict,
+            allergen_name: str,
+            allergy_type: CD,
+            reaction: Dict,
+            severity: Dict,
         ) -> AllergyConcept:
             concept = AllergyConcept(_standard="cda")
             concept.code = value.get("@code")
             concept.code_system = value.get("@codeSystem")
             concept.code_system_name = value.get("@codeSystemName")
             concept.display_name = value.get("@displayName")
+            if concept.display_name is None:
+                concept.display_name = allergen_name
 
             if allergy_type:
                 concept.allergy_type = Concept()
@@ -498,32 +512,50 @@ class CdaAnnotator:
 
         def get_allergy_details_from_entry_relationship(
             entry_relationship: EntryRelationship,
-        ) -> Tuple[CD, Dict, Dict]:
+        ) -> Tuple[str, CD, Dict, Dict]:
+            allergen_name = None
             allergy_type = None
             reaction = None
             severity = None
 
-            if check_for_entry_observation(entry_relationship):
-                allergy_type = entry_relationship.observation.code
-                observation = entry_relationship.observation
+            # TODO: Improve this
 
-                if check_for_entry_observation(observation):
-                    if check_has_template_id(
-                        observation.entryRelationship.observation,
-                        "1.3.6.1.4.1.19376.1.5.3.1.4.5",
-                    ):
-                        reaction = observation.entryRelationship.observation.value
+            entry_relationships = (
+                entry_relationship
+                if isinstance(entry_relationship, list)
+                else [entry_relationship]
+            )
+            for entry_relationship in entry_relationships:
+                if check_for_entry_observation(entry_relationship):
+                    allergy_type = entry_relationship.observation.code
+                    observation = entry_relationship.observation
+                    allergen_name = (
+                        observation.participant.participantRole.playingEntity.name
+                    )
 
-                    if check_for_entry_observation(
-                        observation.entryRelationship.observation
-                    ):
-                        if check_has_template_id(
-                            observation.entryRelationship.observation.entryRelationship.observation,
-                            "1.3.6.1.4.1.19376.1.5.3.1.4.1",
+                    if check_for_entry_observation(observation):
+                        observation_entry_relationships = (
+                            observation.entryRelationship
+                            if isinstance(observation.entryRelationship, list)
+                            else [observation.entryRelationship]
+                        )
+                        for observation_entry_rel in observation_entry_relationships:
+                            if check_has_template_id(
+                                observation_entry_rel.observation,
+                                "1.3.6.1.4.1.19376.1.5.3.1.4.5",
+                            ):
+                                reaction = observation_entry_rel.observation.value
+
+                        if check_for_entry_observation(
+                            observation_entry_rel.observation
                         ):
-                            severity = observation.entryRelationship.observation.entryRelationship.observation.value
+                            if check_has_template_id(
+                                observation_entry_rel.observation.entryRelationship.observation,
+                                "1.3.6.1.4.1.19376.1.5.3.1.4.1",
+                            ):
+                                severity = observation_entry_rel.observation.entryRelationship.observation.value
 
-            return allergy_type, reaction, severity
+            return allergen_name, allergy_type, reaction, severity
 
         entries = (
             self._allergy_section.entry
@@ -534,13 +566,13 @@ class CdaAnnotator:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
 
-            allergy_type, reaction, severity = (
+            allergen_name, allergy_type, reaction, severity = (
                 get_allergy_details_from_entry_relationship(entry_relationship)
             )
 
             for value in values:
                 concept = get_allergy_concept_from_cda_data_fields(
-                    value, allergy_type, reaction, severity
+                    value, allergen_name, allergy_type, reaction, severity
                 )
                 concepts.append(concept)
 
@@ -671,23 +703,40 @@ class CdaAnnotator:
         Returns:
             None
         """
+        if self._problem_section is None:
+            log.warning(
+                "Skipping: No problem section to add to, check your CDA configuration"
+            )
+            return
+
         timestamp = datetime.now().strftime(format="%Y%m%d")
         act_id = str(uuid.uuid4())
         problem_reference_name = "#p" + str(uuid.uuid4())[:8] + "name"
 
         if overwrite:
             self._problem_section.entry = []
-            self.problem_list = []
+
+        added_problems = []
 
         for problem in problems:
+            if problem in self.problem_list:
+                log.debug(
+                    f"Skipping: Problem {problem.display_name} already exists in the problem list."
+                )
+                continue
+            log.debug(f"Adding problem: {problem}")
             self._add_new_problem_entry(
                 new_problem=problem,
                 timestamp=timestamp,
                 act_id=act_id,
                 problem_reference_name=problem_reference_name,
             )
+            added_problems.append(problem)
 
-        self.problem_list.append(problem)
+        if overwrite:
+            self.problem_list = added_problems
+        else:
+            self.problem_list.extend(added_problems)
 
     def _add_new_medication_entry(
         self,
@@ -835,23 +884,40 @@ class CdaAnnotator:
         Returns:
             None
         """
+        if self._medication_section is None:
+            log.warning(
+                "Skipping: No medication section to add to, check your CDA configuration"
+            )
+            return
+
         timestamp = datetime.now().strftime(format="%Y%m%d")
         subad_id = str(uuid.uuid4())
         medication_reference_name = "#m" + str(uuid.uuid4())[:8] + "name"
 
         if overwrite:
             self._medication_section.entry = []
-            self.medication_list = []
+
+        added_medications = []
 
         for medication in medications:
+            if medication in self.medication_list:
+                log.debug(
+                    f"Skipping: medication {medication.display_name} already exists in the medication list."
+                )
+                continue
+            log.debug(f"Adding medication {medication}")
             self._add_new_medication_entry(
                 new_medication=medication,
                 timestamp=timestamp,
                 subad_id=subad_id,
                 medication_reference_name=medication_reference_name,
             )
+            added_medications.append(medication)
 
-        self.medication_list.append(medication)
+        if overwrite:
+            self.medication_list = added_medications
+        else:
+            self.medication_list.extend(added_medications)
 
     def _add_new_allergy_entry(
         self,
@@ -878,13 +944,13 @@ class CdaAnnotator:
                 "@classCode": "ACT",
                 "@moodCode": "EVN",
                 "templateId": [
-                    {"root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
-                    {"root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"},
-                    {"root": "2.16.840.1.113883.3.88.11.32.6"},
-                    {"root": "2.16.840.1.113883.3.88.11.83.6"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
+                    {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"},
+                    {"@root": "2.16.840.1.113883.3.88.11.32.6"},
+                    {"@root": "2.16.840.1.113883.3.88.11.83.6"},
                 ],
                 "id": {"@root": act_id},
-                "code": {"@nullflavor": "NA"},
+                "code": {"@nullFlavor": "NA"},
                 "statusCode": {"@code": "active"},
                 "effectiveTime": {"low": {"@value": timestamp}},
                 "entryRelationship": {
@@ -1041,23 +1107,40 @@ class CdaAnnotator:
     def add_to_allergy_list(
         self, allergies: List[AllergyConcept], overwrite: bool = False
     ) -> None:
+        if self._allergy_section is None:
+            log.warning(
+                "Skipping: No allergy section to add to, check your CDA configuration"
+            )
+            return
+
         timestamp = datetime.now().strftime(format="%Y%m%d")
         act_id = str(uuid.uuid4())
         allergy_reference_name = "#a" + str(uuid.uuid4())[:8] + "name"
 
         if overwrite:
             self._allergy_section.entry = []
-            self.allergy_list = []
+
+        added_allergies = []
 
         for allergy in allergies:
+            if allergy in self.allergy_list:
+                log.debug(
+                    f"Skipping: Allergy {allergy.display_name} already exists in the allergy list."
+                )
+                continue
+            log.debug(f"Adding allergy: {allergy}")
             self._add_new_allergy_entry(
                 new_allergy=allergy,
                 timestamp=timestamp,
                 act_id=act_id,
                 allergy_reference_name=allergy_reference_name,
             )
+            added_allergies.append(allergy)
 
-        self.allergy_list.append(allergy)
+        if overwrite:
+            self.allergy_list = added_allergies
+        else:
+            self.allergy_list.extend(added_allergies)
 
     def export(self, pretty_print: bool = True) -> str:
         """

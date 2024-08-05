@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Union
 
 
@@ -62,7 +62,7 @@ class MedicationConcept(Concept):
     Contains medication specific fields
     """
 
-    dosage: Optional[Union[Range, Quantity]] = None
+    dosage: Optional[Quantity] = None
     route: Optional[Concept] = None
     frequency: Optional[TimeInterval] = None
     duration: Optional[Range] = None
@@ -72,8 +72,17 @@ class MedicationConcept(Concept):
 class AllergyConcept(Concept):
     """
     Contains allergy specific fields
+
+    Defaults allergy type to propensity to adverse reactions in SNOMED CT
     """
 
-    allergy_type: Optional[Concept] = None
+    allergy_type: Optional[Concept] = Field(
+        default=Concept(
+            code="420134006",
+            code_system="2.16.840.1.113883.6.96",
+            code_system_name="SNOMED CT",
+            display_name="Propensity to adverse reactions",
+        )
+    )
     severity: Optional[Concept] = None
     reaction: Optional[Concept] = None

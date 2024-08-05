@@ -85,6 +85,17 @@ class ClinicalDocumentationStrategy(BaseStrategy):
 class ClinicalDocumentation(BaseUseCase):
     """
     Implements EHR backend strategy for clinical documentation (NoteReader)
+
+    This class represents the backend strategy for clinical documentation using the NoteReader system.
+    It inherits from the `BaseUseCase` class and provides methods for processing NoteReader documents.
+
+    Attributes:
+        service_api (Optional[APIMethod]): The service API method to be used for processing the documents.
+        service_config (Optional[Dict]): The configuration for the service.
+        service (Optional[Service]): The service to be used for processing the documents.
+        client (Optional[BaseClient]): The client to be used for communication with the service.
+        overwrite (bool): Whether to overwrite existing data in the CDA document.
+
     """
 
     def __init__(
@@ -110,6 +121,7 @@ class ClinicalDocumentation(BaseUseCase):
                 api_protocol="SOAP",
             )
         }
+        self.overwrite: bool = False
 
     @property
     def description(self) -> str:
@@ -167,11 +179,19 @@ class ClinicalDocumentation(BaseUseCase):
             )
 
         # Update the CDA document with the results
-        cda_doc.add_to_problem_list(result.problems, overwrite=True)
-
-        # TODO: add meds and allergies
-        # cda_doc.add_to_allergy_list(result.allergies, overwrite=True)
-        # cda_doc.add_to_medication_list(result.medications, overwrite=True)
+        if result.problems:
+            log.debug(f"Updating CDA document with {len(result.problems)} problem(s).")
+            cda_doc.add_to_problem_list(result.problems, overwrite=self.overwrite)
+        if result.allergies:
+            log.debug(
+                f"Updating CDA document with {len(result.allergies)} allergy(ies)."
+            )
+            cda_doc.add_to_allergy_list(result.allergies, overwrite=self.overwrite)
+        if result.medications:
+            log.debug(
+                f"Updating CDA document with {len(result.medications)} medication(s)."
+            )
+            cda_doc.add_to_medication_list(result.medications, overwrite=self.overwrite)
 
         # Export the updated CDA document
         response_document = cda_doc.export()
