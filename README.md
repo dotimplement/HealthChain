@@ -1,8 +1,16 @@
 ![GitHub License](https://img.shields.io/github/license/dotimplement/HealthChain)
+![PyPI Version](https://img.shields.io/pypi/v/healthchain)
+![Python Versions](https://img.shields.io/pypi/pyversions/healthchain)
+![Downloads](https://img.shields.io/pypi/dm/healthchain)
+
 
 # HealthChain
 
-Simplify prototyping and testing AI/NLP applications in a healthcare context 💫 🏥.
+<div style="text-align: center;">
+    <img src="assets/logo.png" alt="Logo" width="400"/>
+</div>
+
+Simplify prototyping and testing AI and NLP applications in a healthcare context 💫 🏥.
 
 Building applications that integrate in healthcare systems is complex, and so is designing reliable, reactive algorithms involving unstructured data. Let's try to change that.
 
@@ -79,7 +87,7 @@ streamlit streamlit-demo/app.py
 ```
 
 ## Road Map
-- [ ] 📝 Adding Clinical Documentation use case
+- [x] 📝 Adding Clinical Documentation use case
 - [ ] 🎛️ Version and test different EHR backend configurations
 - [ ] 🤖 Integrations with popular LLM and NLP libraries
 - [ ] ❓ Evaluation framework for pipelines and use cases
@@ -89,7 +97,7 @@ streamlit streamlit-demo/app.py
 
 ## Contribute
 We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
-- 💡 Let's chat! [Discord](https://discord.gg/jG4UWCUh)
+- 💡 Let's chat! [Discord](https://discord.gg/4v6XgGBZ)
 - 🛠️ [Contribution Guidelines](CONTRIBUTING.md)
 
 ## Acknowledgement

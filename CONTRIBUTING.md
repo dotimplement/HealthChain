@@ -1,6 +1,4 @@
 # Contributing
-> If you're reading this, you're early! We're still finalising our guidelines as this is an early release so please [drop us a message](https://discord.gg/jG4UWCUh) instead!
->
 
 First of all, thank you for being interested in contributing to HealthChain, we welcome contributions of all kinds! Listed below are some of the ways you can get involved.
 
@@ -28,17 +26,19 @@ If you're a developer, there are many ways you can contribute code:
 
 ## Join Our Discord
 
-Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/jG4UWCUh) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
+Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/4v6XgGBZ) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
 
 We believe that every contribution, big or small, makes a difference. Thank you for being a part of our community!
 
 ## How to Contribute Code
 
+This project uses `poetry` for dependency management. For more information see the [poetry documentation](https://python-poetry.org/docs/).
+
 1. Fork the repository to your own GitHub account. For more details check out [github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
 
 2. Clone the forked repository to your local machine.
 
-3. Run `poetry install` to install all the necessary dependencies.
+3. Run `poetry install --with dev` to install all the necessary development dependencies.
 
 4. Try running `poetry run pytest` to check that all is working as expected.
 
@@ -68,6 +68,25 @@ We believe that every contribution, big or small, makes a difference. Thank you 
 
 9. Open a pull request on the original repository.
 
+### Contributing to Documentation
+
+We use `Mkdocs` for our documentation site. To download the dependencies for documentation, run:
+```shell
+poetry install --with docs
+```
+
+To preview the docs page in development:
+```shell
+poetry run mkdocs serve
+```
+#### Writing Clear Documentation
+
+- **Be Concise**: Use clear and concise language to explain concepts and instructions.
+- **Use Headings**: Organize content with headings and subheadings to improve readability.
+- **Code Examples**: Include code examples to illustrate usage and functionality.
+- **Consistent Style**: Follow a consistent style and format throughout the documentation.
+- **Active Voice**: Write in the active voice to make instructions direct and easy to follow.
+- **Bullet Points**: Use bullet points or numbered lists for steps and key points.
 
 ## Testing
 
