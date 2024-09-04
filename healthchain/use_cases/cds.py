@@ -89,8 +89,6 @@ class ClinicalDecisionSupport(BaseUseCase):
     Implements EHR backend simulator for Clinical Decision Support (CDS)
 
     Parameters:
-        sandbox_id (str): unique ID assigned to an instance
-        url (UrlBuilder): Contains url of the service
         service_api (APIMethod): the function body to inject into the main service
         service_config (Dict): the config kwargs for the uvicorn server passed into service
         service (Service): the service runner object

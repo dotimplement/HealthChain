@@ -19,6 +19,14 @@ nav:
       - reference/index.md
   - API Reference:
       - api/index.md
+      - api/use_cases.md
+      - api/cds_hooks.md
+      - api/service.md
+      - api/clients.md
+      - api/cda_parser.md
+      - api/data_generators.md
+      - api/data_models.md
+
   - Community:
       - community/index.md
 
@@ -83,6 +91,8 @@ plugins:
         python:
           options:
             show_submodules: true
+            heading_level: 2
+            docstring_section_style: spacy
   - search
   # - section-index
   # - social:

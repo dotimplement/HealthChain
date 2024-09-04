@@ -103,12 +103,13 @@ class EHRClient(BaseClient):
     ):
         """
         Initializes the EHRClient with a data generator function and optional workflow and use case.
+        Should be a subclass of BaseUseCase. Example - ClinicalDecisionSupport()
 
         Parameters:
             func (Callable[..., Any]): A function to generate data for requests.
             workflow ([Workflow]): The workflow context to apply to the data generator.
-            use_case ([BaseUseCase]): The strategy object to construct requests based on the generated data.
-            Should be a subclass of BaseUseCase. Example - ClinicalDecisionSupport()
+            strategy (BaseStrategy): The strategy object to construct requests based on the generated data.
+
         """
         # TODO: Add option to pass in different provider options
         self.data_generator_func: Callable[..., Any] = func

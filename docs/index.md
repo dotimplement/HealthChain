@@ -2,7 +2,7 @@
 
 HealthChain💫🏥 is an open-source Python package that provides a framework for testing and validating AI/NLP applications in a healthcare context.
 
-[ :fontawesome-brands-discord: Join our Discord](https://discord.gg/jG4UWCUh){ .md-button .md-button--primary }
+[ :fontawesome-brands-discord: Join our Discord](https://discord.gg/4v6XgGBZ){ .md-button .md-button--primary }
 
 <div class="grid cards" markdown>
 

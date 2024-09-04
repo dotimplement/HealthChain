@@ -77,7 +77,7 @@ The aim of the data generator is not to generate realistic data suitable for use
 For this reason the data generator is opiniated by use case and workflow. See [Use Cases](usecases.md) for more information.
 
 !!! note
-    We're aware we may not cover everyone's use cases, so if you have strong opinions about this, please [reach out](https://discord.gg/jG4UWCUh)!
+    We're aware we may not cover everyone's use cases, so if you have strong opinions about this, please [reach out](https://discord.gg/4v6XgGBZ)!
 
 On the synthetic data spectrum defined by [this UK ONS methodology working paper](https://www.ons.gov.uk/methodology/methodologicalpublications/generalmethodology/onsworkingpaperseries/onsmethodologyworkingpaperseriesnumber16syntheticdatapilot#:~:text=Synthetic%20data%20at%20ONS&text=Synthetic%20data%20is%20created%20by,that%20provided%20the%20original%20data.%E2%80%9D), HealthChain generates level 1: synthetic structural data.
 

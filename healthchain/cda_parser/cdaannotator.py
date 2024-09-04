@@ -57,7 +57,7 @@ def get_time_range_from_cda_value(value: Dict) -> Range:
     return range_model
 
 
-def get_value_from_entry_relationship(entry_relationship):
+def get_value_from_entry_relationship(entry_relationship: EntryRelationship) -> List:
     """
     Retrieves the values from the given entry_relationship.
 
@@ -79,7 +79,7 @@ def get_value_from_entry_relationship(entry_relationship):
     return values
 
 
-def check_has_template_id(section, template_id):
+def check_has_template_id(section: Section, template_id: str) -> bool:
     """
     Check if the given section has a matching template ID.
 
@@ -104,7 +104,7 @@ def check_has_template_id(section, template_id):
     return False
 
 
-def check_for_entry_observation(entry):
+def check_for_entry_observation(entry: Entry) -> bool:
     """
     Checks if the given entry contains an observation.
 
@@ -178,7 +178,7 @@ class CdaAnnotator:
         self._extract_data()
 
     @classmethod
-    def from_dict(cls, data: Dict):
+    def from_dict(cls, data: Dict) -> "CdaAnnotator":
         """
         Creates an instance of the class from a dictionary.
 
@@ -192,7 +192,7 @@ class CdaAnnotator:
         return cls(cda_data=clinical_document_model)
 
     @classmethod
-    def from_xml(cls, data: str):
+    def from_xml(cls, data: str) -> "CdaAnnotator":
         """
         Creates an instance of the CDAAnnotator class from an XML string.
 

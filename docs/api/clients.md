@@ -1,0 +1,3 @@
+# Clients
+
+::: healthchain.clients.ehrclient

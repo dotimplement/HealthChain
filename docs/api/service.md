@@ -1,0 +1,3 @@
+# Service
+
+::: healthchain.service.service
