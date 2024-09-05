@@ -12,7 +12,7 @@ nav:
       - Installation: installation.md
       - Quickstart: quickstart.md
       - Use Cases: usecases.md
-      - Licence: documentation-licence.md
+      - Licence: distribution.md
   - Cookbook:
       - cookbook/index.md
   - Docs:
