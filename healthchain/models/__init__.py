@@ -20,6 +20,9 @@ from .data import (
     MedicationConcept,
     CdsFhirData,
     CcdData,
+    Quantity,
+    Range,
+    TimeInterval,
 )
 
 __all__ = [
@@ -44,4 +47,7 @@ __all__ = [
     "ProblemConcept",
     "AllergyConcept",
     "MedicationConcept",
+    "Quantity",
+    "Range",
+    "TimeInterval",
 ]

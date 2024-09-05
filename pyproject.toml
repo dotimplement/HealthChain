@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "healthchain"
-version = "0.2.0"
+version = "0.0.0"
 description = "Remarkably simple testing and validation of AI/NLP applications in healthcare context."
-authors = ["Adam Kells <adamjkells93@gmail.com>", "Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>"]
+authors = ["Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>", "Adam Kells <adamjkells93@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://dotimplement.github.io/HealthChain/"
@@ -41,6 +41,11 @@ pre-commit = "^3.5.0"
 pytest-anyio = "^0.0.0"
 trio = "^0.25.0"
 
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.5.34"
+mkdocstrings = "^0.26.0"
+mkdocstrings-python = "^1.11.1"
 
 [tool.poetry.scripts]
 healthchain = "healthchain.cli:main"

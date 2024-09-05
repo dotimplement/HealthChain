@@ -3,7 +3,7 @@ import csv
 import logging
 
 from pydantic import BaseModel
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 from pathlib import Path
 
 from healthchain.base import Workflow
@@ -35,15 +35,39 @@ workflow_mappings = {
 
 
 class CdsDataGenerator:
+    """
+    A class to generate CDS (Clinical Decision Support) data based on specified workflows and constraints.
+
+    Attributes:
+        registry (dict): A registry of data generators.
+        mappings (dict): A mapping of workflows to their respective data generators.
+        data (CdsFhirData): The generated CDS FHIR data.
+    """
+
     def __init__(self):
         self.registry = generator_registry
         self.mappings = workflow_mappings
         self.data: CdsFhirData = None
 
     def fetch_generator(self, generator_name: str) -> Callable:
+        """
+        Fetches a data generator function by its name from the registry.
+
+        Parameters:
+            generator_name (str): The name of the data generator to fetch.
+
+        Returns:
+            Callable: The data generator function.
+        """
         return self.registry.get(generator_name)
 
-    def set_workflow(self, workflow: str):
+    def set_workflow(self, workflow: str) -> None:
+        """
+        Sets the current workflow to be used for data generation.
+
+        Parameters:
+            workflow (str): The name of the workflow to set.
+        """
         self.workflow = workflow
 
     def generate(
@@ -52,6 +76,17 @@ class CdsDataGenerator:
         free_text_path: Optional[str] = None,
         column_name: Optional[str] = None,
     ) -> BaseModel:
+        """
+        Generates CDS data based on the current workflow, constraints, and optional free text data.
+
+        Parameters:
+            constraints (Optional[list]): A list of constraints to apply to the data generation.
+            free_text_path (Optional[str]): The path to a CSV file containing free text data.
+            column_name (Optional[str]): The column name in the CSV file to use for free text data.
+
+        Returns:
+            BaseModel: The generated CDS FHIR data.
+        """
         results = []
 
         if self.workflow not in self.mappings.keys():
@@ -76,7 +111,17 @@ class CdsDataGenerator:
         self.data = output
         return output
 
-    def free_text_parser(self, path_to_csv: str, column_name: str) -> dict:
+    def free_text_parser(self, path_to_csv: str, column_name: str) -> Dict:
+        """
+        Parses free text data from a CSV file and converts it into a list of DocumentReference models.
+
+        Parameters:
+            path_to_csv (str): The path to the CSV file containing free text data.
+            column_name (str): The column name in the CSV file to use for free text data.
+
+        Returns:
+            dict: A dictionary of parsed free text data converted into DocumentReference models.
+        """
         column_data = []
 
         # Check that path_to_csv is a valid path with pathlib
