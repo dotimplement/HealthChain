@@ -22,6 +22,41 @@ Current implemented workflows:
 | [order-sign](https://cds-hooks.org/hooks/order-sign/)| :material-check: Partial | Future: `MedicationRequest`, `ProcedureRequest`, `ServiceRequest` |
 | [order-select](https://cds-hooks.org/hooks/order-select/) | :material-check: Partial | Future: `MedicationRequest`, `ProcedureRequest`, `ServiceRequest` |
 
+`ClinicalDecisionSupport` functions receive `CdsRequest` and return a list of `Card`.
+
+```python
+class Card(BaseModel):
+    """
+    Cards can provide a combination of information (for reading), suggested actions
+    (to be applied if a user selects them), and links (to launch an app if the user selects them).
+    The CDS Client decides how to display cards, but this specification recommends displaying suggestions
+    using buttons, and links using underlined text.
+
+    https://cds-hooks.org/specification/current/#card-attributes
+    """
+
+    summary: str = Field(..., max_length=140)
+    indicator: IndicatorEnum
+    source: Source
+    uuid: Optional[str] = None
+    detail: Optional[str] = None
+    suggestions: Optional[List[Suggestion]] = None
+    selectionBehavior: Optional[SelectionBehaviorEnum] = None
+    overrideReasons: Optional[List[SimpleCoding]] = None
+    links: Optional[List[Link]] = None
+```
+
+ The `DataGenerator` returns data represented as `CdsFhirData`, which contains a `Bundle` of FHIR resources in the `prefetch` field.
+
+```python
+class CdsFhirData(BaseModel):
+    """
+    Data model for CDS FHIR data, this matches the expected fields in CDSRequests
+    """
+
+    context: Dict = Field(default={})
+    prefetch: Bundle
+```
 
 ### Example `CDSRequest`
 
@@ -127,15 +162,32 @@ The `ClinicalDocumentation` use case implements a real-time Clinical Documentati
 
 `ClinicalDocumentation` communicates using [CDAs (Clinical Document Architecture)](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7). CDAs are standardised electronic documents for exchanging clinical information. They provide a common structure for capturing and sharing patient data like medical history, medications, and care plans between different healthcare systems and providers. Think of it as a collaborative Google Doc that you can add, amend, and remove entries from. CDAs typically uses a SOAP-based communication protocol (unfortunately).
 
-Note that NoteReader is a vendor-specific component (Epic). This particular note-based workfow is one type of CDI service. Different EHR vendors will have different support for third-party CDI services.
-
-In HealthChain, the workflow is named `sign-note-inpatient`. We support parsing of problems, medications, and allergies sections, though some of the data fields may be limited. We plan to implement additional CDI services and workflows for different vendor specifications.
-
-The `DataGenerator` currently does not support synthetic CDA data - we're working on it! At the moment, you can only load and return a pre-existing CDA from your sandbox api function.
+Note that NoteReader is a vendor-specific component (Epic). This particular note-based workflow is one type of CDI service. Different EHR vendors will have different support for third-party CDI services.
 
 | When      | Where | What you receive            | What you send back         |
 | :-------- | :-----| :-------------------------- |----------------------------|
 | Triggered when a clinician opts in to a CDI functionality and signs or pends a note after writing it. | Specific modules in EHR where clinical documentation takes place, such as NoteReader in Epic.  | A CDA document which contains continuity of care data and free-text data, e.g. a patient's problem list and the progress note that the clinician has entered in the EHR.  | A CDA document which contains additional structured data extracted and returned by your CDI service. |
+
+In HealthChain, the workflow is named `sign-note-inpatient` or `sign-note-outpatient`. We support parsing of problems, medications, and allergies sections, though some of the data fields may be limited. We plan to implement additional CDI services and workflows for different vendor specifications.
+
+A `ClinicalDocumentation` function receives and returns `CcdData`:
+
+```python
+class CcdData(BaseModel):
+  """
+  Data model for CCD (Continuity of Care Document) that can be converted to CDA.
+  """
+
+  problems: Optional[List[ProblemConcept]] = None
+  allergies: Optional[List[AllergyConcept]] = None
+  medications: Optional[List[MedicationConcept]] = None
+  note: Optional[Union[Dict, str]] = None
+  cda_xml: Optional[str] = None
+```
+For more information check out the [API Reference](api/data_models.md).
+
+The `DataGenerator` currently does not support synthetic CDA data - we're working on it! At the moment, you can only load and return a pre-existing CDA from your sandbox api function.
+
 
 ### Example `CdaRequest`
 
@@ -333,7 +385,7 @@ A sandbox example of NoteReader clinical documentation improvement which extract
 ```python
 import healthchain as hc
 from healthchain.use_cases import ClinicalDocumentation
-from healthchain.models.data.concept import (
+from healthchain.models import (
     CcdData,
     AllergyConcept,
     Concept,
@@ -345,11 +397,11 @@ from healthchain.models.data.concept import (
 @hc.sandbox
 class NotereaderSandbox(ClinicalDocumentation):
   def __init__(self):
-      self.overwrite = True
+      self.cda_path = "./resources/uclh_cda.xml"
 
   @hc.ehr(workflow="sign-note-inpatient")
   def load_data_in_client(self) -> CcdData:
-      with open("./resources/uclh_cda.xml", "r") as file:
+      with open(self.cda_path, "r") as file:
           xml_string = file.read()
 
       return CcdData(cda_xml=xml_string)

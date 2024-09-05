@@ -81,7 +81,7 @@ For this reason the data generator is opiniated by use case and workflow. See [U
 
 On the synthetic data spectrum defined by [this UK ONS methodology working paper](https://www.ons.gov.uk/methodology/methodologicalpublications/generalmethodology/onsworkingpaperseries/onsmethodologyworkingpaperseriesnumber16syntheticdatapilot#:~:text=Synthetic%20data%20at%20ONS&text=Synthetic%20data%20is%20created%20by,that%20provided%20the%20original%20data.%E2%80%9D), HealthChain generates level 1: synthetic structural data.
 
-![Synthetic data](assets/synthetic_data_ons.png)
+![Synthetic data](assets/images/synthetic_data_ons.png)
 
 You can use the data generator within a client function or on its own. The `.generate()` is dependent on workflow. For CDS use cases, it will return a `CdsFhirData` model with the `prefetch` field populated with a [Bundle](https://www.hl7.org/fhir/bundle.html) of generated structural synthetic FHIR data.
 
