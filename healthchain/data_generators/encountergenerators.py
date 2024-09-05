@@ -24,6 +24,14 @@ faker = Faker()
 
 @register_generator
 class PeriodGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR Period resources.
+
+    Methods:
+        generate() -> Period:
+            Generates a FHIR Period resource with random start and end times.
+    """
+
     @staticmethod
     def generate():
         start = faker.date_time()
@@ -37,8 +45,16 @@ class PeriodGenerator(BaseGenerator):
 
 @register_generator
 class ClassGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR Class resources.
+
+    Methods:
+        generate() -> CodeableConcept:
+            Generates a FHIR Class resource.
+    """
+
     @staticmethod
-    def generate():
+    def generate() -> CodeableConcept:
         patient_class_mapping = {"IMP": "inpatient", "AMB": "ambulatory"}
         patient_class = faker.random_element(elements=("IMP", "AMB"))
         return CodeableConcept(
@@ -54,8 +70,16 @@ class ClassGenerator(BaseGenerator):
 
 @register_generator
 class EncounterTypeGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR EncounterType resources.
+
+    Methods:
+        generate() -> CodeableConcept:
+            Generates a FHIR EncounterType resource.
+    """
+
     @staticmethod
-    def generate():
+    def generate() -> CodeableConcept:
         encounter_type_mapping = {"11429006": "consultation", "50849002": "emergency"}
         encounter_type = faker.random_element(elements=("11429006", "50849002"))
         return CodeableConcept(
@@ -71,8 +95,16 @@ class EncounterTypeGenerator(BaseGenerator):
 
 @register_generator
 class EncounterPriorityGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR EncounterPriority resources.
+
+    Methods:
+        generate() -> CodeableConcept:
+            Generates a FHIR EncounterPriority resource.
+    """
+
     @staticmethod
-    def generate():
+    def generate() -> CodeableConcept:
         encounter_priority_mapping = {"17621005": "normal", "24484000": "critical"}
         encounter_priority = faker.random_element(elements=("17621005", "24484000"))
         return CodeableConcept(
@@ -88,8 +120,16 @@ class EncounterPriorityGenerator(BaseGenerator):
 
 @register_generator
 class EncounterLocationGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR EncounterLocation resources.
+
+    Methods:
+        generate() -> EncounterLocation:
+            Generates a FHIR EncounterLocation resource.
+    """
+
     @staticmethod
-    def generate():
+    def generate() -> EncounterLocation:
         return EncounterLocation(
             location=Reference(reference="Location/123"),
             status=faker.random_element(elements=("active", "completed")),
@@ -99,10 +139,18 @@ class EncounterLocationGenerator(BaseGenerator):
 
 @register_generator
 class EncounterGenerator(BaseGenerator):
+    """
+    A generator class for creating FHIR Encounter resources.
+
+    Methods:
+        generate(constraints: Optional[list] = None) -> Encounter:
+            Generates a FHIR Encounter resource with optional constraints.
+    """
+
     @staticmethod
     def generate(
         constraints: Optional[list] = None,
-    ):
+    ) -> Encounter:
         patient_reference = "Patient/123"
         return Encounter(
             resourceType="Encounter",

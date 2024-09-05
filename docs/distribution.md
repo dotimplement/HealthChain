@@ -1,4 +1,4 @@
-# Licence
+# Licence and citations
 
 HealthChain is licensed under Apache 2.0. To comply with the licence you need to add the following notice at the top every file that uses part of HealthChain code:
 

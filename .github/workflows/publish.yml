@@ -16,14 +16,12 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Bump version
+      run: poetry version $(git describe --tags --abbrev=0)
     - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+      run: poetry build
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
@@ -50,6 +48,3 @@ jobs:
         path: dist/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      
-
-
