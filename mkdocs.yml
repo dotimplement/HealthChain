@@ -33,8 +33,8 @@ nav:
 copyright: dotimplement
 theme:
   name: material
-  favicon: assets/healthchain_logo.png
-  logo: assets/healthchain_logo.png
+  favicon: assets/images/healthchain_logo.png
+  logo: assets/images/healthchain_logo.png
   icon:
     repo: fontawesome/brands/github
   features:
