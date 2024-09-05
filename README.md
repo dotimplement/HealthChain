@@ -2,7 +2,7 @@
 
 # HealthChain 💫 🏥
 
-<img src="./docs/assets/images/healthchain_logo.png" alt="HealthChain Logo" width=300></img>
+<img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/healthchain_logo.png" alt="HealthChain Logo" width=300></img>
 
 ![GitHub License](https://img.shields.io/github/license/dotimplement/HealthChain)
 ![PyPI Version](https://img.shields.io/pypi/v/healthchain) ![Python Versions](https://img.shields.io/pypi/pyversions/healthchain)
