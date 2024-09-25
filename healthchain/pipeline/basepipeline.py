@@ -1,10 +1,11 @@
+from abc import ABC, abstractmethod
 from typing import Callable, Type, Union, List, Literal, Dict, TypeVar, Generic
 from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
 
-from healthchain.pipeline.container import DataContainer
-from healthchain.pipeline.component import Component
+from healthchain.io.containers import DataContainer
+from healthchain.pipeline.components.basecomponent import BaseComponent, Component
 
 T = TypeVar("T")
 
@@ -35,10 +36,11 @@ class PipelineNode(Generic[T]):
     dependencies: List[str] = field(default_factory=list)
 
 
-class Pipeline(Generic[T]):
+class BasePipeline(Generic[T], ABC):
     """
-    Pipeline class for creating and managing a data processing pipeline.
-    The Pipeline class allows users to create a data processing pipeline by adding components and defining their dependencies and execution order. It provides methods for adding, removing, and replacing components, as well as building and executing the pipeline.
+    Abstract BasePipeline class for creating and managing a data processing pipeline.
+    The BasePipeline class allows users to create a data processing pipeline by adding components and defining their dependencies and execution order. It provides methods for adding, removing, and replacing components, as well as building and executing the pipeline.
+    This is an abstract base class and should be subclassed to create specific pipeline implementations.
     Attributes:
         components (List[PipelineNode]): A list of PipelineNode objects representing the components in the pipeline.
         stages (Dict[str, List[Callable]]): A dictionary mapping stage names to lists of component functions.
@@ -52,10 +54,20 @@ class Pipeline(Generic[T]):
         components_repr = "\n".join([repr(component) for component in self.components])
         return f"[\n{components_repr}\n]"
 
+    @classmethod
+    def load(cls, model_path: str) -> "BasePipeline":
+        pipeline = cls()
+        pipeline.configure_pipeline(model_path)
+        return pipeline
+
+    @abstractmethod
+    def configure_pipeline(self, model_path: str) -> None:
+        pass
+
     def add(
         self,
         component: Union[
-            Component[T], Callable[[DataContainer[T]], DataContainer[T]]
+            BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]
         ] = None,
         *,
         position: PositionType = "default",
@@ -70,8 +82,8 @@ class Pipeline(Generic[T]):
         Adds a component to the pipeline.
 
         Args:
-            component (Union[Component[T], Callable[[DataContainer[T]], DataContainer[T]]], optional):
-                The component to be added. It can be either a Component object or a callable function.
+            component (Union[BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]], optional):
+                The component to be added. It can be either a BaseComponent object or a callable function.
                 Defaults to None.
             position (PositionType, optional):
                 The position at which the component should be added in the pipeline.
@@ -125,7 +137,12 @@ class Pipeline(Generic[T]):
                 position=position,
                 reference=reference,
                 stage=stage,
-                name=name or func.__name__,
+                name=name
+                or (
+                    component.__class__.__name__
+                    if hasattr(component, "__class__")
+                    else func.__name__
+                ),
                 dependencies=dependencies,
             )
 
@@ -151,8 +168,10 @@ class Pipeline(Generic[T]):
 
         if component is None:
             return wrapper
-        if isinstance(component, Component):
+        if isinstance(component, BaseComponent):
             return wrapper(component)
+        elif isinstance(component, Component):
+            return wrapper(component.__call__)
         else:
             return wrapper(component)
 
@@ -174,7 +193,7 @@ class Pipeline(Generic[T]):
         self,
         old_component_name: str,
         new_component: Union[
-            Component[T], Callable[[DataContainer[T]], DataContainer[T]]
+            BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]
         ],
     ) -> None:
         """
@@ -182,7 +201,7 @@ class Pipeline(Generic[T]):
 
         Args:
             old_component_name (str): The name of the component to be replaced.
-            new_component (Union[Component[T], Callable[[DataContainer[T]], DataContainer[T]]]):
+            new_component (Union[BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]]):
                 The new component to replace the old component with.
 
         Returns:
@@ -233,3 +252,22 @@ class Pipeline(Generic[T]):
             return reduce(lambda d, comp: comp(d), ordered_components, data)
 
         return pipeline
+
+
+class Pipeline(BasePipeline):
+    """
+    Default Pipeline class for creating a basic data processing pipeline.
+    This class inherits from BasePipeline and provides a default implementation
+    of the configure_pipeline method, which does not add any specific components.
+    """
+
+    def configure_pipeline(self, model_path: str) -> None:
+        """
+        Configures the pipeline by adding components based on the provided model path.
+        This default implementation does not add any specific components.
+
+        Args:
+            model_path (str): The path to the model used for configuring the pipeline.
+        """
+        # Default implementation: No specific components added
+        pass
