@@ -23,6 +23,7 @@ pipeline = MedicalCodingPipeline.load("./path/to/model")
 nlp = pipeline.build()
 text_input = "OpenAI released GPT-4 in 2023."
 result = nlp(Document(text_input))
+print(pipeline)
 print(f"Processed Text: {result.text}")
 print(f"Tokens: {result.tokens}")
 print(f"Entities: {result.entities}")

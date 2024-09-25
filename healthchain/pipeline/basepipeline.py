@@ -1,4 +1,6 @@
+import logging
 from abc import ABC, abstractmethod
+from inspect import signature
 from typing import Callable, Type, Union, List, Literal, Dict, TypeVar, Generic
 from functools import reduce
 from pydantic import BaseModel
@@ -6,6 +8,8 @@ from dataclasses import dataclass, field
 
 from healthchain.io.containers import DataContainer
 from healthchain.pipeline.components.basecomponent import BaseComponent, Component
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -51,18 +55,46 @@ class BasePipeline(Generic[T], ABC):
         self.stages: Dict[str, List[Callable]] = {}
 
     def __repr__(self) -> str:
-        components_repr = "\n".join([repr(component) for component in self.components])
-        return f"[\n{components_repr}\n]"
+        components_repr = ", ".join([component.name for component in self.components])
+        return f"[{components_repr}]"
 
     @classmethod
     def load(cls, model_path: str) -> "BasePipeline":
+        """
+        Load and configure a pipeline from a given model path.
+
+        This class method creates a new instance of the pipeline, configures it
+        using the provided model path, and returns the configured pipeline.
+
+        Args:
+            model_path (str): The path to the model used for configuring the pipeline.
+
+        Returns:
+            BasePipeline: A new instance of the pipeline, configured with the given model.
+        """
         pipeline = cls()
         pipeline.configure_pipeline(model_path)
+
         return pipeline
 
     @abstractmethod
     def configure_pipeline(self, model_path: str) -> None:
-        pass
+        """
+        Configure the pipeline based on the provided model path.
+
+        This method should be implemented by subclasses to add specific components
+        and configure the pipeline according to the given model.
+
+        Args:
+            model_path (str): The path to the model used for configuring the pipeline.
+
+        Returns:
+            None
+
+        Raises:
+            NotImplementedError: If the method is not implemented by a subclass.
+        """
+        raise NotImplementedError("This method must be implemented by subclasses.")
 
     def add(
         self,
@@ -118,14 +150,14 @@ class BasePipeline(Generic[T], ABC):
             def validated_component(data: DataContainer[T]) -> DataContainer[T]:
                 # Validate input if input_model is provided
                 if input_model:
-                    input_model(**data.data.__dict__)
+                    input_model(**data.__dict__)
 
                 # Run the component
                 result = func(data)
 
                 # Validate output if output_model is provided
                 if output_model:
-                    output_model(**result.data.__dict__)
+                    output_model(**result.__dict__)
 
                 return result
 
@@ -145,24 +177,18 @@ class BasePipeline(Generic[T], ABC):
                 ),
                 dependencies=dependencies,
             )
-
-            if position == "first":
-                self.components.insert(0, new_component)
-            elif position == "last":
-                self.components.append(new_component)
-            elif position in ["after", "before"]:
-                ref_index = next(
-                    i for i, c in enumerate(self.components) if c.name == reference
-                )
-                insert_index = ref_index if position == "before" else ref_index + 1
-                self.components.insert(insert_index, new_component)
-            else:
-                self.components.append(new_component)
+            try:
+                self._add_component_at_position(new_component, position, reference)
+            except Exception as e:
+                raise ValueError(f"Error adding component: {str(e)}")
 
             if stage:
                 if stage not in self.stages:
                     self.stages[stage] = []
                 self.stages[stage].append(func)
+                logger.debug(
+                    f"Successfully added component '{new_component.name}' to stage '{stage}'."
+                )
 
             return func
 
@@ -175,6 +201,62 @@ class BasePipeline(Generic[T], ABC):
         else:
             return wrapper(component)
 
+    def _add_component_at_position(self, new_component, position, reference):
+        """
+        Add a new component to the pipeline at a specified position.
+
+        Args:
+            new_component (PipelineNode): The new component to be added to the pipeline.
+            position (str): The position where the component should be added.
+                            Valid values are 'first', 'last', 'after', 'before', or 'default'.
+            reference (str, optional): The name of the reference component when using 'after' or 'before' positions.
+
+        Raises:
+            ValueError: If an invalid position is provided or if a reference is required but not provided.
+
+        This method handles the insertion of a new component into the pipeline based on the specified position:
+        - 'first': Inserts the component at the beginning of the pipeline.
+        - 'last' or 'default': Appends the component to the end of the pipeline.
+        - 'after' or 'before': Inserts the component relative to a reference component.
+
+        For 'after' and 'before' positions, a reference component name must be provided.
+        """
+        if position == "first":
+            self.components.insert(0, new_component)
+        elif position in ["last", "default"]:
+            self.components.append(new_component)
+        elif position in ["after", "before"]:
+            if not reference:
+                raise ValueError(
+                    f"Reference must be provided for position '{position}'."
+                )
+            offset = 1 if position == "after" else 0
+            self._insert_relative_position(new_component, reference, offset)
+        else:
+            raise ValueError(
+                f"Invalid position '{position}'. Must be 'first', 'last', 'after', 'before', or 'default'."
+            )
+
+    def _insert_relative_position(self, component, reference, offset):
+        """
+        Insert a component relative to a reference component in the pipeline.
+
+        Args:
+            component (PipelineNode): The component to be inserted.
+            reference (str): The name of the reference component.
+            offset (int): The offset from the reference component (0 for before, 1 for after).
+
+        Raises:
+            ValueError: If the reference component is not found in the pipeline.
+        """
+        ref_index = next(
+            (i for i, c in enumerate(self.components) if c.name == reference), None
+        )
+        if ref_index is None:
+            raise ValueError(f"Reference component '{reference}' not found.")
+
+        self.components.insert(ref_index + offset, component)
+
     def remove(self, component_name: str) -> None:
         """
         Removes a component from the pipeline.
@@ -184,10 +266,35 @@ class BasePipeline(Generic[T], ABC):
 
         Returns:
         None
+
+        Logs:
+        - WARNING: If the component is not found in the pipeline or fails to be removed.
         """
+        # Check if the component exists in the pipeline
+        if not any(c.name == component_name for c in self.components):
+            logger.warning(f"Component '{component_name}' not found in the pipeline.")
+            return
+
+        # Remove the component from self.components
+        original_count = len(self.components)
         self.components = [c for c in self.components if c.name != component_name]
+
+        # Remove the component from stages
         for stage in self.stages.values():
             stage[:] = [c for c in stage if c.__name__ != component_name]
+
+        # Validate that the component was removed
+        if len(self.components) == original_count or any(
+            c.__name__ == component_name
+            for stage in self.stages.values()
+            for c in stage
+        ):
+            logger.warning(
+                f"Failed to remove component '{component_name}' from the pipeline."
+            )
+        logger.debug(
+            f"Successfully removed component '{component_name}' from the pipeline."
+        )
 
     def replace(
         self,
@@ -206,16 +313,58 @@ class BasePipeline(Generic[T], ABC):
 
         Returns:
             None
+
+        Logs:
+            WARNING: If the old component is not found in the pipeline.
+            WARNING: If the new component is not a BaseComponent or a callable.
+            WARNING: If the new component callable doesn't have the correct signature.
         """
-        for c in self.components:
+
+        if isinstance(new_component, BaseComponent):
+            # It's a valid BaseComponent, no further checks needed
+            pass
+        elif callable(new_component):
+            sig = signature(new_component)
+            if (
+                len(sig.parameters) != 1
+                or list(sig.parameters.values())[0].annotation != DataContainer
+            ):
+                raise ValueError(
+                    "New component callable must accept a single DataContainer argument."
+                )
+        else:
+            raise ValueError("New component must be a BaseComponent or a callable.")
+
+        old_component_found = False
+
+        # Replace in self.components
+        for i, c in enumerate(self.components):
             if c.name == old_component_name:
-                c.func = new_component
-                break
+                self.components[i] = PipelineNode(
+                    func=new_component,
+                    name=old_component_name,
+                    position=c.position,
+                    reference=c.reference,
+                    stage=c.stage,
+                    dependencies=c.dependencies,
+                )
+                old_component_found = True
+
+        # Replace in self.stages
         for stage in self.stages.values():
             for i, c in enumerate(stage):
-                if c.__name__ == old_component_name:
+                if getattr(c, "name", c.__name__) == old_component_name:
                     stage[i] = new_component
-                    break
+                    old_component_found = True
+
+        if not old_component_found:
+            logger.warning(
+                f"Component '{old_component_name}' not found in the pipeline."
+            )
+        else:
+            logger.debug(
+                f"Successfully replaced component '{old_component_name}' in the pipeline."
+            )
 
     def build(self) -> None:
         """
