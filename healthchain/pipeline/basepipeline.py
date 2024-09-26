@@ -107,7 +107,15 @@ class BasePipeline(Generic[T], ABC):
         for stage, components in self._stages.items():
             output.append(f"  {stage}:")
             for component in components:
-                component_name = getattr(component, "name", component.__name__)
+                component_name = (
+                    component.__name__
+                    if hasattr(component, "__name__")
+                    else (
+                        component.__class__.__name__
+                        if hasattr(component, "__class__")
+                        else str(component)
+                    )
+                )
                 output.append(f"    - {component_name}")
         if not self._stages:
             output.append("  No stages defined.")
