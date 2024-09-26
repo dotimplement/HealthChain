@@ -21,7 +21,7 @@ class DataContainer(Generic[T]):
         return f"DataContainer({self.__dict__})"
 
 
-class Document(DataContainer[T]):
+class Document(DataContainer[str]):
     """
     A container for document data, inheriting from DataContainer.
 
@@ -38,7 +38,7 @@ class Document(DataContainer[T]):
         data (T): The input data for the document, typically a string containing the text content.
     """
 
-    def __init__(self, data: T):
+    def __init__(self, data: str):
         super().__init__(data)
         self.text: str = data
         self.tokens: List[str] = []

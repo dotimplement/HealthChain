@@ -51,11 +51,13 @@ class BasePipeline(Generic[T], ABC):
     """
 
     def __init__(self):
-        self.components: List[PipelineNode[T]] = []
-        self.stages: Dict[str, List[Callable]] = {}
+        self._components: List[PipelineNode[T]] = []
+        self._stages: Dict[str, List[Callable]] = {}
 
     def __repr__(self) -> str:
-        components_repr = ", ".join([component.name for component in self.components])
+        components_repr = ", ".join(
+            [f'"{component.name}"' for component in self._components]
+        )
         return f"[{components_repr}]"
 
     @classmethod
@@ -95,6 +97,32 @@ class BasePipeline(Generic[T], ABC):
             NotImplementedError: If the method is not implemented by a subclass.
         """
         raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @property
+    def stages(self):
+        """
+        Returns a human-readable representation of the pipeline stages.
+        """
+        output = ["Pipeline Stages:"]
+        for stage, components in self._stages.items():
+            output.append(f"  {stage}:")
+            for component in components:
+                component_name = getattr(component, "name", component.__name__)
+                output.append(f"    - {component_name}")
+        if not self._stages:
+            output.append("  No stages defined.")
+        return "\n".join(output)
+
+    @stages.setter
+    def stages(self, new_stages: Dict[str, List[Callable]]):
+        """
+        Sets the stages of the pipeline.
+
+        Args:
+            new_stages (Dict[str, List[Callable]]): A dictionary where keys are stage names
+                                                    and values are lists of callable components.
+        """
+        self._stages = new_stages
 
     def add(
         self,
@@ -170,10 +198,15 @@ class BasePipeline(Generic[T], ABC):
                 reference=reference,
                 stage=stage,
                 name=name
-                or (
-                    component.__class__.__name__
-                    if hasattr(component, "__class__")
-                    else func.__name__
+                if name is not None
+                else (
+                    component_func.__name__
+                    if hasattr(component_func, "__name__")
+                    else (
+                        component_func.__class__.__name__
+                        if hasattr(component_func, "__class__")
+                        else str(component_func)
+                    )
                 ),
                 dependencies=dependencies,
             )
@@ -183,9 +216,9 @@ class BasePipeline(Generic[T], ABC):
                 raise ValueError(f"Error adding component: {str(e)}")
 
             if stage:
-                if stage not in self.stages:
-                    self.stages[stage] = []
-                self.stages[stage].append(func)
+                if stage not in self._stages:
+                    self._stages[stage] = []
+                self._stages[stage].append(func)
                 logger.debug(
                     f"Successfully added component '{new_component.name}' to stage '{stage}'."
                 )
@@ -222,9 +255,9 @@ class BasePipeline(Generic[T], ABC):
         For 'after' and 'before' positions, a reference component name must be provided.
         """
         if position == "first":
-            self.components.insert(0, new_component)
+            self._components.insert(0, new_component)
         elif position in ["last", "default"]:
-            self.components.append(new_component)
+            self._components.append(new_component)
         elif position in ["after", "before"]:
             if not reference:
                 raise ValueError(
@@ -250,12 +283,12 @@ class BasePipeline(Generic[T], ABC):
             ValueError: If the reference component is not found in the pipeline.
         """
         ref_index = next(
-            (i for i, c in enumerate(self.components) if c.name == reference), None
+            (i for i, c in enumerate(self._components) if c.name == reference), None
         )
         if ref_index is None:
             raise ValueError(f"Reference component '{reference}' not found.")
 
-        self.components.insert(ref_index + offset, component)
+        self._components.insert(ref_index + offset, component)
 
     def remove(self, component_name: str) -> None:
         """
@@ -271,22 +304,22 @@ class BasePipeline(Generic[T], ABC):
         - WARNING: If the component is not found in the pipeline or fails to be removed.
         """
         # Check if the component exists in the pipeline
-        if not any(c.name == component_name for c in self.components):
+        if not any(c.name == component_name for c in self._components):
             logger.warning(f"Component '{component_name}' not found in the pipeline.")
             return
 
         # Remove the component from self.components
-        original_count = len(self.components)
-        self.components = [c for c in self.components if c.name != component_name]
+        original_count = len(self._components)
+        self._components = [c for c in self._components if c.name != component_name]
 
         # Remove the component from stages
-        for stage in self.stages.values():
+        for stage in self._stages.values():
             stage[:] = [c for c in stage if c.__name__ != component_name]
 
         # Validate that the component was removed
-        if len(self.components) == original_count or any(
+        if len(self._components) == original_count or any(
             c.__name__ == component_name
-            for stage in self.stages.values()
+            for stage in self._stages.values()
             for c in stage
         ):
             logger.warning(
@@ -325,12 +358,12 @@ class BasePipeline(Generic[T], ABC):
             pass
         elif callable(new_component):
             sig = signature(new_component)
-            if (
-                len(sig.parameters) != 1
-                or list(sig.parameters.values())[0].annotation != DataContainer
+            param = list(sig.parameters.values())[0]
+            if len(sig.parameters) != 1 or not issubclass(
+                param.annotation, DataContainer
             ):
                 raise ValueError(
-                    "New component callable must accept a single DataContainer argument."
+                    "New component callable must accept a single argument that is a subclass of DataContainer."
                 )
         else:
             raise ValueError("New component must be a BaseComponent or a callable.")
@@ -338,9 +371,9 @@ class BasePipeline(Generic[T], ABC):
         old_component_found = False
 
         # Replace in self.components
-        for i, c in enumerate(self.components):
+        for i, c in enumerate(self._components):
             if c.name == old_component_name:
-                self.components[i] = PipelineNode(
+                self._components[i] = PipelineNode(
                     func=new_component,
                     name=old_component_name,
                     position=c.position,
@@ -351,7 +384,7 @@ class BasePipeline(Generic[T], ABC):
                 old_component_found = True
 
         # Replace in self.stages
-        for stage in self.stages.values():
+        for stage in self._stages.values():
             for i, c in enumerate(stage):
                 if getattr(c, "name", c.__name__) == old_component_name:
                     stage[i] = new_component
@@ -377,7 +410,7 @@ class BasePipeline(Generic[T], ABC):
 
         def resolve_dependencies():
             resolved = []
-            unresolved = self.components.copy()
+            unresolved = self._components.copy()
 
             while unresolved:
                 for component in unresolved:
@@ -403,7 +436,7 @@ class BasePipeline(Generic[T], ABC):
         return pipeline
 
 
-class Pipeline(BasePipeline):
+class Pipeline(BasePipeline, Generic[T]):
     """
     Default Pipeline class for creating a basic data processing pipeline.
     This class inherits from BasePipeline and provides a default implementation

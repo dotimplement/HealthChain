@@ -37,8 +37,8 @@ def basic_pipeline():
 # Test adding components
 def test_add_component(basic_pipeline):
     basic_pipeline.add(mock_component, name="test_component")
-    assert len(basic_pipeline.components) == 1
-    assert basic_pipeline.components[0].name == "test_component"
+    assert len(basic_pipeline._components) == 1
+    assert basic_pipeline._components[0].name == "test_component"
 
 
 # Test adding component with position
@@ -60,14 +60,14 @@ def test_add_component_with_position(basic_pipeline):
         mock_component, name="third", position="before", reference="last"
     )
 
-    assert len(basic_pipeline.components) == 4
-    assert basic_pipeline.components[0].name == "first"
-    assert basic_pipeline.components[0].stage == "preprocessing"
-    assert basic_pipeline.components[1].name == "second"
-    assert basic_pipeline.components[1].stage == "other_processing"
-    assert basic_pipeline.components[2].name == "third"
-    assert basic_pipeline.components[-1].name == "last"
-    assert basic_pipeline.components[-1].stage == "other_processing"
+    assert len(basic_pipeline._components) == 4
+    assert basic_pipeline._components[0].name == "first"
+    assert basic_pipeline._components[0].stage == "preprocessing"
+    assert basic_pipeline._components[1].name == "second"
+    assert basic_pipeline._components[1].stage == "other_processing"
+    assert basic_pipeline._components[2].name == "third"
+    assert basic_pipeline._components[-1].name == "last"
+    assert basic_pipeline._components[-1].stage == "other_processing"
 
 
 def test_add_component_with_invalid_position(basic_pipeline):
@@ -88,16 +88,16 @@ def test_add_component_with_dependencies(basic_pipeline):
     basic_pipeline.add(mock_component, name="dep2")
     basic_pipeline.add(mock_component, name="main", dependencies=["dep1", "dep2"])
 
-    assert len(basic_pipeline.components) == 3
-    assert basic_pipeline.components[-1].name == "main"
-    assert basic_pipeline.components[-1].dependencies == ["dep1", "dep2"]
+    assert len(basic_pipeline._components) == 3
+    assert basic_pipeline._components[-1].name == "main"
+    assert basic_pipeline._components[-1].dependencies == ["dep1", "dep2"]
 
 
 # Test removing component
 def test_remove_component(basic_pipeline):
     basic_pipeline.add(mock_component, name="test_component")
     basic_pipeline.remove("test_component")
-    assert len(basic_pipeline.components) == 0
+    assert len(basic_pipeline._components) == 0
 
 
 # Test replacing component
@@ -109,7 +109,7 @@ def test_replace_component(basic_pipeline, caplog):
         return data
 
     basic_pipeline.replace("original", new_component)
-    assert basic_pipeline.components[0].func == new_component
+    assert basic_pipeline._components[0].func == new_component
 
     # Test replacing with an invalid callable (wrong signature)
     def invalid_component(data):
@@ -125,7 +125,7 @@ def test_replace_component(basic_pipeline, caplog):
 
     new_base_component = NewComponent()
     basic_pipeline.replace("original", new_base_component)
-    assert basic_pipeline.components[0].func == new_base_component
+    assert basic_pipeline._components[0].func == new_base_component
 
     # Test replacing a non-existent component
     caplog.set_level(logging.WARNING)

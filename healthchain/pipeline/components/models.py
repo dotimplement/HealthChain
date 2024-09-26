@@ -15,7 +15,7 @@ class MedCATModel(Component[T], Generic[T]):
     def __init__(self, model_path: str):
         self.model = load_model(model_path)
 
-    def __call__(self, doc: Document[T]) -> Document[T]:
+    def __call__(self, doc: Document) -> Document:
         # Dummy NER logic for illustration
         doc.entities = [token for token in doc.tokens if token == "openai"]
         return doc
