@@ -7,11 +7,11 @@ T = TypeVar("T")
 
 def load_model(model_path: str):
     # Implement your model loading logic here
-    print("Loading model")
+    print("Loading model...")
 
 
 # TODO: implement this class
-class MedCATModel(Component[T], Generic[T]):
+class Model(Component[T], Generic[T]):
     def __init__(self, model_path: str):
         self.model = load_model(model_path)
 
