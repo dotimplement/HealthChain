@@ -66,9 +66,6 @@ class TextPostProcessor(Component[T]):
 
         refined_entities = []
         for entity in doc.get_entities():
-            print(doc.entities)
-            print(entity)
-            print(self.entity_lookup)
             entity_text = entity["text"]
             if entity_text in self.entity_lookup:
                 entity["text"] = self.entity_lookup[entity_text]
