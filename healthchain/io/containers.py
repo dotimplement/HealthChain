@@ -122,7 +122,7 @@ class Document(DataContainer[str]):
 
     def get_entities(self) -> List[Dict[str, Any]]:
         if self._doc is None:
-            return [{"text": ent} for ent in self.entities]
+            return self.entities
         return [
             {
                 "text": ent.text,
