@@ -1,12 +1,11 @@
 from healthchain.fhir_resources.bundleresources import BundleEntry, Bundle
-from healthchain.data_generators import PatientGenerator, EncounterGenerator
+from healthchain.fhir_resources.patient import Patient
+from healthchain.fhir_resources.encounter import Encounter
 
 
 def test_bundle_entry_model():
-    patient_generator = PatientGenerator()
-    patient = patient_generator.generate()
-    encounter_generator = EncounterGenerator()
-    encounter = encounter_generator.generate()
+    patient = Patient()
+    encounter = Encounter()
 
     bundle_patient_entry = BundleEntry(resource=patient)
     bundle_encounter_entry = BundleEntry(resource=encounter)

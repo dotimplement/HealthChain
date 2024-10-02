@@ -4,7 +4,7 @@ import httpx
 from typing import Any, Callable, List, Dict, Optional, Union, TypeVar
 from functools import wraps
 
-from healthchain.data_generators import CdsDataGenerator
+# from healthchain.data_generators import CdsDataGenerator
 from healthchain.decorators import assign_to_attribute, find_attributes_of_type
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.service.endpoints import ApiProtocol
@@ -62,20 +62,20 @@ def ehr(
                     f"{e}: please select from {[x.value for x in Workflow]}"
                 )
 
-            # Set workflow in data generator if configured
-            data_generator_attributes = find_attributes_of_type(self, CdsDataGenerator)
-            for i in range(len(data_generator_attributes)):
-                attribute_name = data_generator_attributes[i]
-                try:
-                    assign_to_attribute(
-                        self, attribute_name, "set_workflow", workflow_enum
-                    )
-                except Exception as e:
-                    log.error(
-                        f"Could not set workflow {workflow_enum.value} for data generator method {attribute_name}: {e}"
-                    )
-                if i > 1:
-                    log.warning("More than one DataGenerator instances found.")
+            # # Set workflow in data generator if configured
+            # data_generator_attributes = find_attributes_of_type(self, CdsDataGenerator)
+            # for i in range(len(data_generator_attributes)):
+            #     attribute_name = data_generator_attributes[i]
+            #     try:
+            #         assign_to_attribute(
+            #             self, attribute_name, "set_workflow", workflow_enum
+            #         )
+            #     except Exception as e:
+            #         log.error(
+            #             f"Could not set workflow {workflow_enum.value} for data generator method {attribute_name}: {e}"
+            #         )
+            #     if i > 1:
+            #         log.warning("More than one DataGenerator instances found.")
 
             # Wrap the function in EHRClient with workflow and strategy passed in
             if self.type in UseCaseType:
