@@ -1,33 +1,12 @@
 import re
-from dataclasses import dataclass, field
-from healthchain.pipeline.components.basecomponent import Component
+from healthchain.pipeline.components.basecomponent import BaseComponent
 from healthchain.io.containers import Document
 from typing import Callable, List, TypeVar, Tuple
 
 T = TypeVar("T")
 
 
-@dataclass
-class TextPreprocessorConfig:
-    """
-    Configuration for the TextPreprocessor.
-
-    Attributes:
-        tokenizer (str): The tokenizer to use. Defaults to "basic".
-        lowercase (bool): Whether to convert text to lowercase. Defaults to False.
-        remove_punctuation (bool): Whether to remove punctuation. Defaults to False.
-        standardize_spaces (bool): Whether to standardize spaces. Defaults to False.
-        regex (List[Tuple[str, str]]): List of regex patterns and replacements. Defaults to an empty list.
-    """
-
-    tokenizer: str = "basic"
-    lowercase: bool = False
-    remove_punctuation: bool = False
-    standardize_spaces: bool = False
-    regex: List[Tuple[str, str]] = field(default_factory=list)
-
-
-class TextPreProcessor(Component[str]):
+class TextPreProcessor(BaseComponent):
     """
     A component for preprocessing text documents.
 
@@ -35,21 +14,38 @@ class TextPreProcessor(Component[str]):
     based on the provided configuration.
 
     Attributes:
-        config (TextPreprocessorConfig): Configuration for the preprocessor.
-        tokenizer (Callable[[str], List[str]]): The tokenization function.
+        tokenizer (str): The tokenizer to use. Defaults to "basic".
+        lowercase (bool): Whether to convert text to lowercase. Defaults to False.
+        remove_punctuation (bool): Whether to remove punctuation. Defaults to False.
+        standardize_spaces (bool): Whether to standardize spaces. Defaults to False.
+        regex (List[Tuple[str, str]]): List of regex patterns and replacements. Defaults to an empty list.
+        tokenizer_func (Callable[[str], List[str]]): The tokenization function.
         cleaning_steps (List[Callable[[str], str]]): List of text cleaning functions.
     """
 
-    def __init__(self, config: TextPreprocessorConfig = None):
+    def __init__(
+        self,
+        tokenizer: str = "basic",
+        lowercase: bool = False,
+        remove_punctuation: bool = False,
+        standardize_spaces: bool = False,
+        regex: List[Tuple[str, str]] = None,
+    ):
         """
         Initialize the TextPreprocessor with the given configuration.
 
         Args:
-            config (TextPreprocessorConfig, optional): Configuration for the preprocessor.
-                If None, a default configuration will be used.
+            tokenizer (str): The tokenizer to use. Defaults to "basic".
+            lowercase (bool): Whether to convert text to lowercase. Defaults to False.
+            remove_punctuation (bool): Whether to remove punctuation. Defaults to False.
+            standardize_spaces (bool): Whether to standardize spaces. Defaults to False.
+            regex (List[Tuple[str, str]], optional): List of regex patterns and replacements. Defaults to None.
         """
-        self.config = config or TextPreprocessorConfig()
-        self.tokenizer = self._get_tokenizer(self.config.tokenizer)
+        self.lowercase = lowercase
+        self.remove_punctuation = remove_punctuation
+        self.standardize_spaces = standardize_spaces
+        self.regex = regex or []
+        self.tokenizer = self._get_tokenizer(tokenizer)
         self.cleaning_steps = self._configure_cleaning_steps()
 
     def _get_tokenizer(self, tokenizer: str) -> Callable[[str], List[str]]:
@@ -92,22 +88,22 @@ class TextPreProcessor(Component[str]):
             List[Callable[[str], str]]: List of text cleaning functions.
         """
         steps = []
-        if self.config.lowercase:
+        if self.lowercase:
             steps.append(lambda text: text.lower())
 
         regex_steps = []
-        if self.config.regex:
-            regex_steps.extend(self.config.regex)
+        if self.regex:
+            regex_steps.extend(self.regex)
         else:
-            if self.config.remove_punctuation:
+            if self.remove_punctuation:
                 regex_steps.append((r"[^\w\s]", ""))
-            if self.config.standardize_spaces:
+            if self.standardize_spaces:
                 regex_steps.append((r"\s+", " "))
 
         for pattern, repl in regex_steps:
             steps.append(self._create_regex_step(pattern, repl))
 
-        if self.config.standardize_spaces:
+        if self.standardize_spaces:
             steps.append(str.strip)
 
         return steps
@@ -154,12 +150,12 @@ class TextPreProcessor(Component[str]):
         """
         # Preprocess text
         preprocessed_text = self._clean_text(doc.text)
+        doc.preprocessed_text = preprocessed_text
 
         # Tokenize
         tokens = self.tokenizer(preprocessed_text)
 
         # Update document
         doc.tokens = tokens
-        doc.preprocessed_text = " ".join(tokens)
 
         return doc

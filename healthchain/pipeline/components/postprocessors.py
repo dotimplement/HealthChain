@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from healthchain.pipeline.components.basecomponent import Component
+from healthchain.pipeline.components.basecomponent import BaseComponent
 from healthchain.io.containers import Document
 from typing import TypeVar, Dict
 
@@ -7,20 +6,7 @@ from typing import TypeVar, Dict
 T = TypeVar("T")
 
 
-@dataclass
-class TextPostProcessorConfig:
-    """
-    Configuration for the TextPostProcessor.
-
-    Attributes:
-        postcoordination_lookup (Dict[str, str], optional): A dictionary for entity refinement lookups.
-            Defaults to None.
-    """
-
-    postcoordination_lookup: Dict[str, str] = None
-
-
-class TextPostProcessor(Component[T]):
+class TextPostProcessor(BaseComponent):
     """
     A component for post-processing text documents, specifically for refining entities.
 
@@ -28,21 +14,18 @@ class TextPostProcessor(Component[T]):
     replacing entities with their refined versions based on a lookup dictionary.
 
     Attributes:
-        config (TextPostProcessorConfig): Configuration for the post-processor.
         entity_lookup (Dict[str, str]): A dictionary for entity refinement lookups.
-
     """
 
-    def __init__(self, config: TextPostProcessorConfig = None):
+    def __init__(self, postcoordination_lookup: Dict[str, str] = None):
         """
-        Initialize the TextPostProcessor with an optional configuration.
+        Initialize the TextPostProcessor with an optional postcoordination lookup.
 
         Args:
-            config (TextPostProcessorConfig, optional): Configuration for the post-processor.
-                If not provided, a default configuration will be used.
+            postcoordination_lookup (Dict[str, str], optional): A dictionary for entity refinement lookups.
+                If not provided, an empty dictionary will be used.
         """
-        self.config = config or TextPostProcessorConfig()
-        self.entity_lookup = self.config.postcoordination_lookup or {}
+        self.entity_lookup = postcoordination_lookup or {}
 
     def __call__(self, doc: Document) -> Document:
         """

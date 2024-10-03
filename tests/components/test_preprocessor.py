@@ -1,19 +1,15 @@
 import pytest
-from healthchain.pipeline.components.preprocessors import (
-    TextPreProcessor,
-    TextPreprocessorConfig,
-)
+from healthchain.pipeline.components.preprocessors import TextPreProcessor
 from healthchain.io.containers import Document
 
 
 def test_text_preprocessor_basic_config():
-    basic_config = TextPreprocessorConfig(
+    basic_preprocessor = TextPreProcessor(
         tokenizer="basic",
         lowercase=True,
         remove_punctuation=True,
         standardize_spaces=True,
     )
-    basic_preprocessor = TextPreProcessor(basic_config)
 
     doc = Document("Hello, World!  This is a TEST.")
     processed_doc = basic_preprocessor(doc)
@@ -23,13 +19,12 @@ def test_text_preprocessor_basic_config():
 
 
 def test_text_preprocessor_custom_regex_config():
-    custom_regex_config = TextPreprocessorConfig(
+    custom_regex_preprocessor = TextPreProcessor(
         tokenizer="basic",
         regex=[
             (r"\d+", "<NUM>"),  # Replace numbers with <NUM>
         ],
     )
-    custom_regex_preprocessor = TextPreProcessor(custom_regex_config)
 
     doc = Document("There are 42 apples and 7 oranges!")
     processed_doc = custom_regex_preprocessor(doc)
@@ -49,8 +44,7 @@ def test_text_preprocessor_custom_regex_config():
 
 
 def test_text_preprocessor_default_config():
-    config = TextPreprocessorConfig()  # Default config
-    preprocessor = TextPreProcessor(config)
+    preprocessor = TextPreProcessor()  # Default config
 
     doc = Document("Hello, World! This is a TEST with 42 numbers.")
     processed_doc = preprocessor(doc)
@@ -74,4 +68,4 @@ def test_text_preprocessor_default_config():
 
 def test_text_preprocessor_invalid_tokenizer():
     with pytest.raises(ValueError, match="Unsupported tokenizer: invalid"):
-        TextPreProcessor(TextPreprocessorConfig(tokenizer="invalid"))
+        TextPreProcessor(tokenizer="invalid")

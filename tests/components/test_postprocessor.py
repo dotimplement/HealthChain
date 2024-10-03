@@ -1,18 +1,14 @@
-from healthchain.pipeline.components.postprocessors import (
-    TextPostProcessor,
-    TextPostProcessorConfig,
-)
+from healthchain.pipeline.components.postprocessors import TextPostProcessor
 from healthchain.io.containers import Document
 
 
 def test_text_postprocessor_initialization_and_processing():
-    # Test initialization without config
+    # Test initialization without lookup
     processor = TextPostProcessor()
     assert processor.entity_lookup == {}
 
-    # Test initialization with config
-    config = TextPostProcessorConfig(postcoordination_lookup={"a": "b"})
-    processor = TextPostProcessor(config)
+    # Test initialization with lookup
+    processor = TextPostProcessor(postcoordination_lookup={"a": "b"})
     assert processor.entity_lookup == {"a": "b"}
 
     # Test processing with empty lookup
@@ -31,9 +27,7 @@ def test_text_postprocessor_initialization_and_processing():
 
 
 def test_text_postprocessor_with_entities(sample_lookup):
-    processor = TextPostProcessor(
-        TextPostProcessorConfig(postcoordination_lookup=sample_lookup)
-    )
+    processor = TextPostProcessor(postcoordination_lookup=sample_lookup)
 
     # Test with matching entities
     doc = Document(data="")
@@ -67,9 +61,7 @@ def test_text_postprocessor_with_entities(sample_lookup):
 
 
 def test_text_postprocessor_edge_cases(sample_lookup):
-    processor = TextPostProcessor(
-        TextPostProcessorConfig(postcoordination_lookup=sample_lookup)
-    )
+    processor = TextPostProcessor(postcoordination_lookup=sample_lookup)
 
     # Test with document without entities
     doc = Document(data="This is a test document")
