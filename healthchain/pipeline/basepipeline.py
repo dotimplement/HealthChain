@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from dataclasses import dataclass, field
 
 from healthchain.io.containers import DataContainer
-from healthchain.pipeline.components.basecomponent import BaseComponent, Component
+from healthchain.pipeline.components.basecomponent import BaseComponent
 
 logger = logging.getLogger(__name__)
 
@@ -235,12 +235,10 @@ class BasePipeline(Generic[T], ABC):
 
         if component is None:
             return wrapper
-        if isinstance(component, BaseComponent):
+        if callable(component):
             return wrapper(component)
-        elif isinstance(component, Component):
-            return wrapper(component.__call__)
         else:
-            return wrapper(component)
+            raise ValueError("Component must be callable")
 
     def _add_component_at_position(self, new_component, position, reference):
         """
