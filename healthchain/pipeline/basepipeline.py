@@ -300,19 +300,22 @@ class BasePipeline(Generic[T], ABC):
         """
         Removes a component from the pipeline.
 
-        Parameters:
-        - component_name (str): The name of the component to be removed.
+        Args:
+            component_name (str): The name of the component to be removed.
+
+        Raises:
+            ValueError: If the component is not found in the pipeline.
 
         Returns:
-        None
+            None
 
         Logs:
-        - WARNING: If the component is not found in the pipeline or fails to be removed.
+            DEBUG: When the component is successfully removed.
+            WARNING: If the component fails to be removed after attempting to do so.
         """
         # Check if the component exists in the pipeline
         if not any(c.name == component_name for c in self._components):
-            logger.warning(f"Component '{component_name}' not found in the pipeline.")
-            return
+            raise ValueError(f"Component '{component_name}' not found in the pipeline.")
 
         # Remove the component from self.components
         original_count = len(self._components)
@@ -353,10 +356,13 @@ class BasePipeline(Generic[T], ABC):
         Returns:
             None
 
+        Raises:
+            ValueError: If the old component is not found in the pipeline.
+            ValueError: If the new component is not a BaseComponent or a callable.
+            ValueError: If the new component callable doesn't have the correct signature.
+
         Logs:
-            WARNING: If the old component is not found in the pipeline.
-            WARNING: If the new component is not a BaseComponent or a callable.
-            WARNING: If the new component callable doesn't have the correct signature.
+            DEBUG: When the component is successfully replaced.
         """
 
         if isinstance(new_component, BaseComponent):
@@ -397,7 +403,7 @@ class BasePipeline(Generic[T], ABC):
                     old_component_found = True
 
         if not old_component_found:
-            logger.warning(
+            raise ValueError(
                 f"Component '{old_component_name}' not found in the pipeline."
             )
         else:

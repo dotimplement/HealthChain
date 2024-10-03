@@ -1,5 +1,4 @@
 import pytest
-import logging
 from pydantic import BaseModel, Field, ValidationError
 from healthchain.pipeline.basepipeline import BasePipeline, Pipeline, BaseComponent
 from healthchain.io.containers import DataContainer
@@ -99,6 +98,9 @@ def test_remove_component(basic_pipeline):
     basic_pipeline.remove("test_component")
     assert len(basic_pipeline._components) == 0
 
+    with pytest.raises(ValueError):
+        basic_pipeline.remove("nonexistent_component")
+
 
 # Test replacing component
 def test_replace_component(basic_pipeline, caplog):
@@ -128,9 +130,8 @@ def test_replace_component(basic_pipeline, caplog):
     assert basic_pipeline._components[0].func == new_base_component
 
     # Test replacing a non-existent component
-    caplog.set_level(logging.WARNING)
-    basic_pipeline.replace("non_existent", new_component)
-    assert "Component 'non_existent' not found in the pipeline" in caplog.text
+    with pytest.raises(ValueError):
+        basic_pipeline.replace("non_existent", new_component)
 
     # Test replacing with an invalid type
     with pytest.raises(ValueError):
