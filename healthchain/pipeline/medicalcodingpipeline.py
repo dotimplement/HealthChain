@@ -1,5 +1,5 @@
 from healthchain.pipeline.basepipeline import BasePipeline
-from healthchain.pipeline.components.preprocessors import TextPreprocessor
+from healthchain.pipeline.components.preprocessors import TextPreProcessor
 from healthchain.pipeline.components.postprocessors import TextPostProcessor
 from healthchain.pipeline.components.models import Model
 
@@ -8,7 +8,7 @@ from healthchain.pipeline.components.models import Model
 class MedicalCodingPipeline(BasePipeline):
     def configure_pipeline(self, model_path: str) -> None:
         # Add preprocessing component
-        self.add(TextPreprocessor(), stage="preprocessing")
+        self.add(TextPreProcessor(), stage="preprocessing")
 
         # Add NER component
         model = Model(model_path)

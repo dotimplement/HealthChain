@@ -27,7 +27,7 @@ class TextPreprocessorConfig:
     regex: List[Tuple[str, str]] = field(default_factory=list)
 
 
-class TextPreprocessor(Component[str]):
+class TextPreProcessor(Component[str]):
     """
     A component for preprocessing text documents.
 

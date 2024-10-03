@@ -1,7 +1,7 @@
 import pytest
 
 from healthchain.pipeline.components.preprocessors import (
-    TextPreprocessor,
+    TextPreProcessor,
     TextPreprocessorConfig,
 )
 
@@ -14,7 +14,7 @@ def basic_preprocessor():
         remove_punctuation=True,
         standardize_spaces=True,
     )
-    return TextPreprocessor(config)
+    return TextPreProcessor(config)
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def custom_regex_preprocessor():
             (r"\d+", "<NUM>"),  # Replace numbers with <NUM>
         ],
     )
-    return TextPreprocessor(config)
+    return TextPreProcessor(config)
 
 
 @pytest.fixture
