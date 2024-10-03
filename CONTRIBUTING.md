@@ -26,7 +26,7 @@ If you're a developer, there are many ways you can contribute code:
 
 ## Join Our Discord
 
-Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/4v6XgGBZ) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
+Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/UQC6uAepUz) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
 
 We believe that every contribution, big or small, makes a difference. Thank you for being a part of our community!
 
