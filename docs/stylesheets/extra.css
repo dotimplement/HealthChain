@@ -113,3 +113,13 @@
   code {
     white-space : pre-wrap !important;
   }
+
+  .md-content a {
+    color: #ed4e80; /* Default link color */
+    text-decoration: none; /* Remove underline by default */
+    transition: all 0.2s ease-in-out; /* Smooth transition for hover effect */
+  }
+
+  .md-content a:hover {
+    color: #2e78d8; /* Darker shade for hover state */
+  }
