@@ -29,7 +29,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 ## Why use HealthChain?
 -  **EHR integrations are manual and time-consuming** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
 -  **It's difficult to track and evaluate multiple integration instances** - HealthChain provides a framework to test the real-world resilience of your whole system, not just your models.
--  **Most healthcare data is unstructured** - HealthChain is optimized for real-time AI and NLP applications that deal with realistic healthcare data.
+-  [**Most healthcare data is unstructured**](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/) - HealthChain is optimized for real-time AI and NLP applications that deal with realistic healthcare data.
 - **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
 
 ## Pipeline
