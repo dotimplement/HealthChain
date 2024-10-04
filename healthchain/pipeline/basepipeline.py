@@ -1,7 +1,17 @@
 import logging
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Callable, Type, Union, List, Literal, Dict, TypeVar, Generic
+from typing import (
+    Callable,
+    Optional,
+    Type,
+    Union,
+    List,
+    Literal,
+    Dict,
+    TypeVar,
+    Generic,
+)
 from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
@@ -53,6 +63,7 @@ class BasePipeline(Generic[T], ABC):
     def __init__(self):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
+        self._built_pipeline: Optional[Callable] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -411,7 +422,12 @@ class BasePipeline(Generic[T], ABC):
                 f"Successfully replaced component '{old_component_name}' in the pipeline."
             )
 
-    def build(self) -> None:
+    def __call__(self, data: Union[T, DataContainer[T]]) -> DataContainer[T]:
+        if self._built_pipeline is None:
+            self._built_pipeline = self.build()
+        return self._built_pipeline(data)
+
+    def build(self) -> Callable:
         """
         Builds and returns a pipeline function that applies a series of components to the input data.
         Returns:
@@ -444,6 +460,8 @@ class BasePipeline(Generic[T], ABC):
             if not isinstance(data, DataContainer):
                 data = DataContainer(data)
             return reduce(lambda d, comp: comp(d), ordered_components, data)
+
+        self._built_pipeline = pipeline
 
         return pipeline
 
