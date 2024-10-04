@@ -1,4 +1,5 @@
 import dataclasses
+import logging
 import pytest
 
 from unittest.mock import Mock
@@ -25,6 +26,12 @@ from healthchain.clients.ehrclient import EHRClient
 from healthchain.decorators import sandbox
 from healthchain.use_cases.clindoc import ClinicalDocumentation
 from healthchain.workflows import UseCaseType
+
+
+@pytest.fixture(autouse=True)
+def setup_caplog(caplog):
+    caplog.set_level(logging.WARNING)
+    return caplog
 
 
 class MockBundle(BaseModel):

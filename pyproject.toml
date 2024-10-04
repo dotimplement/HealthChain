@@ -25,6 +25,8 @@ include = ["healthchain/templates/*"]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 pydantic = "^2.7.1"
+pandas = ">=1.0.0,<2.1.0"
+spacy = "^3.7.6"
 requests = "^2.31.0"
 colorama = "^0.4.6"
 faker = "^25.1.0"
@@ -40,6 +42,7 @@ pytest = "^8.2.0"
 pre-commit = "^3.5.0"
 pytest-anyio = "^0.0.0"
 trio = "^0.25.0"
+ipykernel = "^6.29.5"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"

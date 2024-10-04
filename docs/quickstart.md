@@ -1,89 +1,159 @@
 # Quickstart
 
+After [installing HealthChain](installation.md), get up to speed quickly with the core components before diving further into the [full documentation](reference/index.md)!
+
 ## Core Components
 
-### Sandbox
-A sandbox is a HL7 standard-compliant client-to-service full pipeline test environment. For a given sandbox run:
+### Pipeline 🛠️
 
-1. Data is generated or loaded into a client (EHR)
+The `Pipeline` module in HealthChain provides a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily interface with
+parsers and connectors to integrate with electronic health record (EHR) systems.
 
-2. Data is wrapped and sent as standard-compliant API requests the designated service
+You can build pipelines with three different approaches:
 
-3. Data is processed by the service
+#### 1. Build Your Own Pipeline with Inline Functions
 
-4. Processed result is wrapped and sent back to the service as standard-compliant API Response
+This is the most flexible approach, ideal for quick experiments and prototyping. Initialize a pipeline type hinted with the container type you want to process, then add components to your pipeline with the `@add` decorator.
 
-5. Data is received by the client and rendered in a UI interface
+Compile the pipeline with `.build()` to use it.
 
-To declare a sandbox, create a class that inherits from a type of `UseCase` and decorate it with the `@hc.sandbox` decorator.
+```python
+from healthchain.pipeline import Pipeline
+from healthchain.io.containers import Document
 
-Note that both **must** be present for a valid sandbox declaration: `UseCase` loads in the blueprint of the service, client, and APIs used, and `@hc.sandbox` orchestrates these interactions.
+nlp_pipeline = Pipeline[Document]()
+
+@nlp_pipeline.add
+def tokenize(doc: Document) -> Document:
+    doc.tokens = doc.text.split()
+    return doc
+
+@nlp_pipeline.add
+def pos_tag(doc: Document) -> Document:
+    # Dummy POS tagging
+    doc.pos_tags = ["NOUN" if token[0].isupper() else "VERB" for token in doc.tokens]
+    return doc
+
+# Build and use the pipeline
+nlp = nlp_pipeline.build()
+doc = Document("Patient has a fracture of the left femur.")
+doc = nlp(doc)
+
+print(doc.tokens)
+print(doc.pos_tags)
+
+# ['Patient', 'has', 'fracture', 'of', 'left', 'femur.']
+# ['NOUN', 'VERB', 'VERB', 'VERB', 'VERB', 'VERB']
+```
+
+#### 2. Build Your Own Pipeline with Components and Models
+
+Components are stateful - they're classes instead of functions. They can be useful for grouping related processing steps together, or wrapping specific models.
+
+HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/component.md) and [Models](./reference/pipeline/models/models.md) documentation pages.
+
+Add components to your pipeline with the `.add()` method and compile with `.build()`.
+
+```python
+from healthchain.pipeline import Pipeline
+from healthchain.io.containers import Document
+from healthchain.pipeline.components import TextPreProcessor, Model, TextPostProcessor
+
+pipeline = Pipeline[Document]()
+
+pipeline.add(TextPreProcessor())
+pipeline.add(Model(model_path="path/to/model"))
+pipeline.add(TextPostProcessor())
+
+pipe = pipeline.build()
+doc = Document("Patient presents with hypertension.")
+doc = pipe(doc)
+```
+
+#### 3. Use Prebuilt Pipelines
+
+Prebuilt pipelines are pre-configured collections of `Components` and `Models`. They are configured for specific use cases, offering the highest level of abstraction. This is the easiest way to get started if you already know the use case you want to build for.
+
+For a full list of available prebuilt pipelines and details on how to configure and customize them, see the [Pipelines](./reference/pipeline/pipeline.md) documentation page.
+
+```python
+from healthchain.pipeline import MedicalCodingPipeline
+
+pipeline = MedicalCodingPipeline.load("./path/to/model")
+
+doc = Document("Patient diagnosed with myocardial infarction.")
+doc = pipeline(doc)
+```
+
+### Sandbox 🧪
+Once you've built your pipeline, you might want to experiment with how you want your pipeline to interact with different health systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
+
+Running a sandbox will start a `FastAPI` server with standardized API endpoints and create a sandboxed environment for you to interact with your application.
+
+To create a sandbox, initialize a class that inherits from a type of `UseCase` and decorate it with the `@hc.sandbox` decorator.
+
+Every sandbox also requires a **client** function marked by `@hc.ehr` and a **service** function marked by `@hc.api`. A **workflow** must be specified when creating an EHR client.
+
+[(Full Documentation on Sandbox and Use Cases)](./reference/sandbox/sandbox.md)
 
 ```python
 import healthchain as hc
 
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.use_cases import ClinicalDocumentation
+from healthchain.pipeline import MedicalCodingPipeline
 
 @hc.sandbox
-class MyCoolSandbox(ClinicalDecisionSupport):
+class MyCoolSandbox(ClinicalDocumentation):
     def __init__(self) -> None:
-        pass
+        # Load your pipeline
+        self.pipeline = MedicalCodingPipeline.load("./path/to/model")
+
+    @hc.ehr(workflow="sign-note-inpatient")
+    def load_data_in_client(self) -> CcdData:
+        # Load your data
+        with open('/path/to/data.xml', "r") as file:
+          xml_string = file.read()
+
+        return CcdData(cda_xml=xml_string)
+
+    @hc.api
+    def my_service(self, ccd_data: CcdData) -> CcdData:
+        # Run your pipeline
+        results = self.pipeline(ccd_data)
+        return results
+
+if __name__ == "__main__":
+    clindoc = MyCoolSandbox()
+    clindoc.start_sandbox()
 ```
 
-In this example, naming our class `MyCoolSandbox`, telling it to behave like a clinical decision support system (based on CDS Hooks), and declaring it should be run in a sandbox.
+## Deploy sandbox locally with FastAPI 🚀
 
-Every sandbox requires a client and a server.
+To run your sandbox:
 
-!!! success "Sandbox Essentials"
-
-    - `UseCase` from which the sandbox class inherits from
-    - service function
-    - client function
-
-### Client
-A client is a healthcare system object that requests information and processing from an external service.
-
-A client is typically an EHR system, but we may also support other health objects in the future such as a CPOE (Computerized Ohysician Order Entry).
-
-We can mark a client by using the decorator `@hc.ehr`. You must declare a particular **workflow** for the EHR client, which informs the sandbox how your data will be formatted (See [Use Cases](usecases.md)).
-
-Data returned from the client should be wrapped in a [Pydantic](https://docs.pydantic.dev/latest/) model depending on use case, e.g. `CdsFhirData`.
-
-You can optionally specify if you want more than 1 request generated with the `num` parameter.
-
-```python
-import healthchain as hc
-from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.models import CdsFhirData
-
-@hc.sandbox
-class MyCoolSandbox(ClinicalDecisionSupport):
-    def __init__(self) -> None:
-        pass
-
-    @hc.ehr(workflow="patient-view", num=10)
-    def load_data_in_client(self) -> CdsFhirData:
-        # Do things here to load in your data
-        pass
-
+```bash
+healthchain run my_sandbox.py
 ```
 
+This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
+Then run:
+
+```bash
+cd streamlist_demo
+streamlit run app.py
+```
+
+## Utilities ⚙️
 ### Data Generator
-Healthcare data is interoperable, but not composable - every deployment site will have different ways of configuring data and terminology. This matters when you develop applications that need to integrate into these systems, especially when you need to reliably extract data for your model to consume.
 
-The aim of the data generator is not to generate realistic data suitable for use cases such as patient population studies, but rather to generate data that is structurally compliant with what is expected of EHR configurations, and to be able to test and handle variations in this.
+You can use the data generator to generate synthetic data for your sandbox runs.
 
-For this reason the data generator is opiniated by use case and workflow. See [Use Cases](usecases.md) for more information.
+The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
 
-!!! note
-    We're aware we may not cover everyone's use cases, so if you have strong opinions about this, please [reach out](https://discord.gg/4v6XgGBZ)!
+We're currently working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
 
-On the synthetic data spectrum defined by [this UK ONS methodology working paper](https://www.ons.gov.uk/methodology/methodologicalpublications/generalmethodology/onsworkingpaperseries/onsmethodologyworkingpaperseriesnumber16syntheticdatapilot#:~:text=Synthetic%20data%20at%20ONS&text=Synthetic%20data%20is%20created%20by,that%20provided%20the%20original%20data.%E2%80%9D), HealthChain generates level 1: synthetic structural data.
-
-![Synthetic data](assets/images/synthetic_data_ons.png)
-
-You can use the data generator within a client function or on its own. The `.generate()` is dependent on workflow. For CDS use cases, it will return a `CdsFhirData` model with the `prefetch` field populated with a [Bundle](https://www.hl7.org/fhir/bundle.html) of generated structural synthetic FHIR data.
+[(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
 
 === "Within client"
     ```python
@@ -133,162 +203,5 @@ You can use the data generator within a client function or on its own. The `.gen
     #}
     ```
 
-<!-- You can pass in parameters in `contraint` argument to limit the general form of the FHIR resources you get back, but this feature is experimental. Arguments supported are:
-- `"has_medication_request"`
-- `"has_problem_list"`
-- `"has_procedures"`
-- `"long_encounter_period"`
-
-```python
-data_generator.generate(constrain=["has_medication_requests"])
-```
--->
-
-#### Other synthetic data sources
-
-If you are looking for realistic datasets, you are also free to load your own data in a sandbox run! Check out [MIMIC](https://mimic.mit.edu/) for comprehensive continuity of care records and free-text data, or [Synthea](https://synthetichealth.github.io/synthea/) for synthetically generated FHIR resources. Both are open-source, although you will need to complete [PhysioNet Credentialing](https://mimic.mit.edu/docs/gettingstarted/) to access MIMIC.
-
-#### Loading free-text
-
-You can specify the `free_text_csv` field of the `.generate()` method to load in free-text sources into the data generator, e.g. discharge summaries. This will wrap the text into a FHIR [DocumentReference](https://build.fhir.org/documentreference.html) resource (N.B. currently we place the text directly in the resource attachment, although it is technically supposed to be base64 encoded).
-
-A random text document from the `csv` file will be picked for each generation.
-
-```python
-# Load free text into a DocumentResource FHIR resource
-data = data_generator.generate(free_text_csv="./dir/to/csv/file")
-```
-
-
-### Service API
-A service is typically an API of an external AI/NLP system that returns data to the client. This is where you define your application logic - it can be anything from a simple regex to a highly sophisticated LLM agentic workflow.
-
-When you decorate a function with `@hc.api` in a sandbox, the function is mounted to a HL7-compliant service endpoint an EHR client can make requests to. This is usually a set of standardised API routes depending on the use case. HealthChain will start a [FastAPI](https://fastapi.tiangolo.com/) server with these APIs pre-defined for you.
-
-Your service function must accept and return models appropriate for your use case. Typically the service function should accept a `Request` model and return a use case specific model, such as a list of `Card` for CDS.
-
-If you are using a model that requires initialisation steps, we recommend you initialise this in your class `__init__`.
-
-=== "Transformers"
-    ```bash
-    pip install torch transformers
-    ```
-    ```python
-    import healthchain as hc
-
-    from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.data_generators import CdsDataGenerator
-    from healthchain.models import Card, CDSRequest, CdsFhirData
-    from transformers import pipeline
-
-    from typing import List
-
-    @hc.sandbox
-    class MyCoolSandbox(ClinicalDecisionSupport):
-        def __init__(self):
-            self.data_generator = CdsDataGenerator()
-            self.pipeline = pipeline('summarization')
-
-        @hc.ehr(workflow="patient-view") -> CdsFhirData
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
-
-        @hc.api
-        def my_service(self, request: CDSRequest) -> List[Card]:
-            results = self.pipeline(str(request.prefetch))
-            return [
-                Card(
-                    summary="Patient summary",
-                    indicator="info",
-                    source={"label": "transformers"},
-                    detail=results[0]['summary_text'],
-                )
-            ]
-
-    if __name__ == "__main__":
-        cds = MyCoolSandbox()
-        cds.start_sandbox()
-    ```
-=== "LLM (OpenAI)"
-    ```bash
-    pip install langchain langchain-openai
-    ```
-    ```python
-    import healthchain as hc
-
-    from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.data_generators import CdsDataGenerator
-    from healthchain.models import Card, CDSRequest, CdsFhirData
-
-    from langchain_openai import ChatOpenAI
-    from langchain_core.prompts import PromptTemplate
-    from langchain_core.output_parsers import StrOutputParser
-
-    from typing import List
-
-    @hc.sandbox
-    class MyCoolSandbox(ClinicalDecisionSupport):
-        def __init__(self):
-            self.chain = self._init_llm_chain()
-            self.data_generator = CdsDataGenerator()
-
-        def _init_llm_chain(self):
-            prompt = PromptTemplate.from_template(
-                "Summarize the text below {text}"
-            )
-            model = ChatOpenAI(model="gpt-4o")
-            parser = StrOutputParser()
-
-            chain = prompt | model | parser
-            return chain
-
-        @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
-
-        @hc.api
-        def my_service(self, request: CDSRequest) -> List[Card]:
-            result = self.chain.invoke(str(request.prefetch))
-            return [
-                Card(
-                    summary="Patient summary",
-                    indicator="info",
-                    source={"label": "openai"},
-                    detail=result,
-                )
-            ]
-
-    if __name__ == "__main__":
-        cds = MyCoolSandbox()
-        cds.start_sandbox()
-    ```
-
-
-## Deploy sandbox locally with FastAPI 🚀
-
-To run your sandbox:
-
-```bash
-healthchain run my_sandbox.py
-```
-
-This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
-
-## Inspect generated data in Streamlit 🎈
-The streamlit dashboard is run separately and is currently purely for visualisation purposes.
-
-You need to install streamlit separately first:
-```bash
-pip install streamlit
-```
-Then run:
-
-```bash
-cd streamlist_demo
-streamlit run app.py
-```
-
 ## Going further ✨
-Checkout our [Cookbook](cookbook/index.md) for more worked examples!
+Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/dotimplement/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).

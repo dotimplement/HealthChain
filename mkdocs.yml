@@ -11,14 +11,37 @@ nav:
   - Getting Started:
       - Installation: installation.md
       - Quickstart: quickstart.md
-      - Use Cases: usecases.md
       - Licence: distribution.md
   - Cookbook:
       - cookbook/index.md
+      - CDS Sandbox: cookbook/cds_sandbox.md
+      - NoteReader Sandbox: cookbook/notereader_sandbox.md
   - Docs:
-      - reference/index.md
+      - Welcome: reference/index.md
+      - Pipeline:
+        - Overview: reference/pipeline/pipeline.md
+        - Data Container: reference/pipeline/data_container.md
+        - Component: reference/pipeline/component.md
+        - Models:
+          - Overview: reference/pipeline/models/models.md
+        - Prebuilt:
+          - Medical Coding: reference/pipeline/prebuilt_pipelines/medicalcoding.md
+      - Sandbox:
+        - Overview: reference/sandbox/sandbox.md
+        - Client: reference/sandbox/client.md
+        - Service: reference/sandbox/service.md
+        - Use Cases:
+          - Overview: reference/sandbox/use_cases/use_cases.md
+          - Clinical Decision Support: reference/sandbox/use_cases/cds.md
+          - Clinical Documentation: reference/sandbox/use_cases/clindoc.md
+      - Utilities:
+        - Data Generator: reference/utilities/data_generator.md
+        - CDA Parser: reference/utilities/cda_parser.md
   - API Reference:
       - api/index.md
+      - api/pipeline.md
+      - api/component.md
+      - api/containers.md
       - api/use_cases.md
       - api/cds_hooks.md
       - api/service.md
@@ -29,6 +52,8 @@ nav:
 
   - Community:
       - community/index.md
+      - Contribution Guide: community/contribution_guide.md
+      - Resources: community/resources.md
 
 copyright: dotimplement
 theme:
