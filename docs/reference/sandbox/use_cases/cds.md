@@ -9,7 +9,7 @@ CDS workflows are based on [CDS Hooks](https://cds-hooks.org/). CDS Hooks is an 
 | Triggered at certain events during a clinician's workflow, e.g. when a patient record is opened. | EHR  | The context of the event and FHIR resources that are requested by your service. e.g. patient ID, `Encounter` and `Patient`.  | “Cards” displaying text, actionable suggestions, or links to launch a [SMART](https://smarthealthit.org/) app from within the workflow.      |
 
 
-CDS hooks communicate using [HL7 FHIR (Fast Healthcare Interoperability Resources)](https://hl7.org/fhir/R4/). FHIR data are represented internally as `CdsFhirData` in HealthChain, so a CDS client must return a `CdsFhirData` object.
+CDS hooks communicate using [HL7 FHIR (Fast Healthcare Interoperability Resources)](https://hl7.org/fhir/). FHIR data are represented internally as `CdsFhirData` in HealthChain, so a CDS client must return a `CdsFhirData` object.
 
 CDS service functions receive `CdsRequest` and return a list of `Card`. [Improved documentation coming soon]
 

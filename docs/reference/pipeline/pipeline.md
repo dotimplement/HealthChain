@@ -15,8 +15,6 @@ HealthChain comes with a set of prebuilt pipelines that are out-of-the-box imple
 | **QAPipeline** [TODO] | `Document` | N/A | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
 | **ClassificationPipeline** [TODO] | `Tabular` | `FhirConnector` | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
 
-To use a pipeline, compile it by running `.build()` on it. This will return a compiled pipeline that you can run on your data.
-
 Pipeline inputs and outputs are defined by the container type.
 
 ```python
@@ -24,9 +22,8 @@ from healthchain.pipeline import Pipeline
 from healthchain.io.containers import Document
 
 pipeline = MedicalCodingPipeline.load('/path/to/model')
-pipeline = pipeline.build()
 
-doc = Document(text="Patient is diagnosed with diabetes")
+doc = Document("Patient is diagnosed with diabetes")
 doc = pipeline(doc)
 ```
 
@@ -36,7 +33,7 @@ To customize a prebuilt pipeline, you can use the [pipeline management methods](
 
 If you need even more control and don't mind writing more code, you can subclass `BasePipeline` and implement your own pipeline logic.
 
-(BasePipeline API Reference)
+[(BasePipeline API Reference)](../../api/pipeline.md#healthchain.pipeline.basepipeline.BasePipeline)
 
 ## Freestyle 🕺
 
@@ -50,6 +47,16 @@ from healthchain.io.containers import Document
 
 pipeline = Pipeline[Document]()
 ```
+
+To use a built pipeline, compile it by running `.build()` on it. This will return a compiled pipeline that you can run on your data.
+
+```python
+pipe = pipeline.build()
+doc = pipe(Document("Patient is diagnosed with diabetes"))
+
+print(doc.entities)
+```
+
 There are three types of nodes you can add to your pipeline:
 
 - Inline Functions
@@ -100,7 +107,7 @@ stopwords = ["the", "a", "an", "in", "on", "at"]
 pipeline.add(RemoveStopwords(stopwords))
 ```
 
-(BaseComponent API Reference)
+[(BaseComponent API Reference)](../../api/component.md#healthchain.pipeline.components.basecomponent.BaseComponent)
 
 ## Pipeline Management 🔨
 

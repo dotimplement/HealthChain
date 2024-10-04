@@ -22,8 +22,7 @@ Here are minimal examples for each use case:
     class MyCoolSandbox(ClinicalDocumentation):
         def __init__(self) -> None:
             # Load your pipeline
-            pipeline = MedicalCodingPipeline.load("./path/to/model")
-            self.pipe = pipeline.build()
+            self.pipeline = MedicalCodingPipeline.load("./path/to/model")
 
         @hc.ehr(workflow="sign-note-inpatient")
         def load_data_in_client(self) -> CcdData:
@@ -36,7 +35,7 @@ Here are minimal examples for each use case:
         @hc.api
         def my_service(self, ccd_data: CcdData) -> CcdData:
             # Run your pipeline
-            results = self.pipe(ccd_data)
+            results = self.pipeline(ccd_data)
             return results
     ```
 
@@ -52,8 +51,7 @@ Here are minimal examples for each use case:
     @hc.sandbox
     class MyCoolSandbox(ClinicalDecisionSupport):
         def __init__(self):
-            pipeline = Pipeline.load("./path/to/pipeline")
-            self.pipe = pipeline.build()
+            self.pipeline = Pipeline.load("./path/to/pipeline")
 
         @hc.ehr(workflow="patient-view")
         def load_data_in_client(self) -> CdsFhirData:
@@ -64,7 +62,7 @@ Here are minimal examples for each use case:
 
         @hc.api
         def my_service(self, request: CDSRequest) -> List[Card]:
-            result = self.pipe(str(request.prefetch))
+            result = self.pipeline(str(request.prefetch))
             return [
                 Card(
                     summary="Patient summary",

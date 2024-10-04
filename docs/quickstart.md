@@ -52,7 +52,7 @@ Components are stateful - they're classes instead of functions. They can be usef
 
 HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/component.md) and [Models](./reference/pipeline/models/models.md) documentation pages.
 
-Add components to your pipeline with the `.add()` method.
+Add components to your pipeline with the `.add()` method and compile with `.build()`.
 
 ```python
 from healthchain.pipeline import Pipeline
@@ -80,10 +80,9 @@ For a full list of available prebuilt pipelines and details on how to configure 
 from healthchain.pipeline import MedicalCodingPipeline
 
 pipeline = MedicalCodingPipeline.load("./path/to/model")
-pipe = pipeline.build()
 
 doc = Document("Patient diagnosed with myocardial infarction.")
-doc = pipe(doc)
+doc = pipeline(doc)
 ```
 
 ### Sandbox 🧪
@@ -107,8 +106,7 @@ from healthchain.pipeline import MedicalCodingPipeline
 class MyCoolSandbox(ClinicalDocumentation):
     def __init__(self) -> None:
         # Load your pipeline
-        pipeline = MedicalCodingPipeline.load("./path/to/model")
-        self.pipe = self.pipeline.build()
+        self.pipeline = MedicalCodingPipeline.load("./path/to/model")
 
     @hc.ehr(workflow="sign-note-inpatient")
     def load_data_in_client(self) -> CcdData:
@@ -139,13 +137,6 @@ healthchain run my_sandbox.py
 
 This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
-## Inspect generated data in Streamlit 🎈
-The streamlit dashboard is run separately and is currently purely for visualisation purposes.
-
-You need to install streamlit separately first:
-```bash
-pip install streamlit
-```
 Then run:
 
 ```bash
@@ -158,7 +149,7 @@ streamlit run app.py
 
 You can use the data generator to generate synthetic data for your sandbox runs.
 
-The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://build.fhir.org/) data suitable for the workflow specified by the use case.
+The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
 
 We're currently working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
 
