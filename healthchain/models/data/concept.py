@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Union
 
 
@@ -20,6 +20,22 @@ class Quantity(DataType):
     # TODO: validate conversions str <-> float
     value: Optional[Union[str, float]] = None
     unit: Optional[str] = None
+    
+    @field_validator('value')
+    @classmethod
+    def validate_value(cls, value:Union[str,float]): 
+        if value is None:
+            raise TypeError(f"Value CANNOT be a {type(value)} object. Must be float or string in float format.")
+        
+        try : 
+            return float(value)
+        
+        except ValueError : 
+            raise ValueError(f"Invalid value '{value}' . Must be a float Number.")
+
+        except OverflowError:
+            raise OverflowError(f"Invalid value . Value is too large resulting in overflow.")
+
 
 
 class Range(DataType):
