@@ -147,7 +147,9 @@ class ConditionGenerator(BaseGenerator):
         subject_reference: Optional[str] = None,
         encounter_reference: Optional[str] = None,
         constraints: Optional[list] = None,
+        random_seed: Optional[int] = None,
     ):
+        Faker.seed(random_seed)
         subject_reference = subject_reference or "Patient/123"
         encounter_reference = encounter_reference or "Encounter/123"
         code = generator_registry.get("SnomedCodeGenerator").generate(

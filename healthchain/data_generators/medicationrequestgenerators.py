@@ -46,7 +46,9 @@ class MedicationRequestGenerator(BaseGenerator):
     @staticmethod
     def generate(
         constraints: Optional[list] = None,
+        random_seed: Optional[int] = None,
     ):
+        Faker.seed(random_seed)
         subject_reference = "Patient/123"
         encounter_reference = "Encounter/123"
         contained_medication = Medication(

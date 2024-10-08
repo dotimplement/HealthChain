@@ -116,7 +116,11 @@ class HumanNameGenerator(BaseGenerator):
 @register_generator
 class PatientGenerator(BaseGenerator):
     @staticmethod
-    def generate(constraints: Optional[list] = None):
+    def generate(
+        constraints: Optional[list] = None,
+        random_seed: Optional[int] = None,
+    ) -> Patient:
+        Faker.seed(random_seed)
         return Patient(
             resourceType="Patient",
             id=generator_registry.get("IdGenerator").generate(),

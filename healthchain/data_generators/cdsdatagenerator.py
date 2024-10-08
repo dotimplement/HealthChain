@@ -75,6 +75,7 @@ class CdsDataGenerator:
         constraints: Optional[list] = None,
         free_text_path: Optional[str] = None,
         column_name: Optional[str] = None,
+        random_seed: Optional[int] = None,
     ) -> BaseModel:
         """
         Generates CDS data based on the current workflow, constraints, and optional free text data.
@@ -83,6 +84,7 @@ class CdsDataGenerator:
             constraints (Optional[list]): A list of constraints to apply to the data generation.
             free_text_path (Optional[str]): The path to a CSV file containing free text data.
             column_name (Optional[str]): The column name in the CSV file to use for free text data.
+            random_seed (Optional[int]): The random seed to use for reproducible data generation.
 
         Returns:
             BaseModel: The generated CDS FHIR data.
@@ -95,7 +97,9 @@ class CdsDataGenerator:
         for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
             generator = self.fetch_generator(generator_name)
-            result = generator.generate(constraints=constraints)
+            result = generator.generate(
+                constraints=constraints, random_seed=random_seed
+            )
 
             results.append(BundleEntry(resource=result))
 
