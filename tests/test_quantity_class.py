@@ -33,7 +33,3 @@ def test_edge_cases():
     
         exception_info_str = str(exception_info.value)
         assert any(msg in exception_info_str for msg in ["CANNOT", "Invalid value"])
-
-# if __name__ == '__main__':
-#     q = Quantity("12","mg");
-#     print(q);

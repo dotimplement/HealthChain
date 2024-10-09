@@ -35,7 +35,6 @@ termcolor = "^2.4.0"
 spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
-pytest = "^8.3.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
