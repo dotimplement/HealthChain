@@ -17,7 +17,6 @@ from healthchain.workflows import (
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
-from healthchain.cda_parser import CdaAnnotator
 from healthchain.apimethod import APIMethod
 
 
@@ -160,41 +159,13 @@ class ClinicalDocumentation(BaseUseCase):
             len(signature.parameters) == 2
         ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; service functions currently only accept 'self' and a single input argument."
 
-        # Parse the CDA document
-        cda_doc = CdaAnnotator.from_xml(request.document)
-        ccd_data = CcdData(
-            problems=cda_doc.problem_list,
-            medications=cda_doc.medication_list,
-            allergies=cda_doc.allergy_list,
-            note=cda_doc.note,
-        )
-
         # Call the service function
-        result = self._service_api.func(self, ccd_data)
+        response = self._service_api.func(self, request)
 
         # Check return type
-        if not isinstance(result, CcdData):
+        if not isinstance(response, CdaResponse):
             raise TypeError(
-                f"Expected return type CcdData, got {type(result)} instead."
+                f"Expected return type CdaResponse, got {type(response)} instead."
             )
-
-        # Update the CDA document with the results
-        if result.problems:
-            log.debug(f"Updating CDA document with {len(result.problems)} problem(s).")
-            cda_doc.add_to_problem_list(result.problems, overwrite=self.overwrite)
-        if result.allergies:
-            log.debug(
-                f"Updating CDA document with {len(result.allergies)} allergy(ies)."
-            )
-            cda_doc.add_to_allergy_list(result.allergies, overwrite=self.overwrite)
-        if result.medications:
-            log.debug(
-                f"Updating CDA document with {len(result.medications)} medication(s)."
-            )
-            cda_doc.add_to_medication_list(result.medications, overwrite=self.overwrite)
-
-        # Export the updated CDA document
-        response_document = cda_doc.export()
-        response = CdaResponse(document=response_document)
 
         return response
