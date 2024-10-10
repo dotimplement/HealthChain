@@ -318,8 +318,18 @@ def test_cda_request():
 
 
 @pytest.fixture
-def mock_cda_response():
-    return CdaResponse(document="testing")
+def test_cda_response():
+    return CdaResponse(
+        document="<ClinicalDocument>Mock CDA Response Document</ClinicalDocument>",
+        error=None,
+    )
+
+
+@pytest.fixture
+def test_cda_response_with_error():
+    return CdaResponse(
+        document="", error="An error occurred while processing the CDA document"
+    )
 
 
 @pytest.fixture

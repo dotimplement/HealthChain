@@ -1,7 +1,8 @@
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from healthchain.pipeline.basepipeline import BasePipeline, Pipeline, BaseComponent
+from healthchain.pipeline.basepipeline import Pipeline, BaseComponent
 from healthchain.io.containers import DataContainer
+from healthchain.pipeline.genericpipeline import GenericPipeline
 
 
 # Mock classes and functions for testing
@@ -26,7 +27,7 @@ def mock_component(data: DataContainer) -> DataContainer:
 # Fixture for a basic pipeline
 @pytest.fixture
 def basic_pipeline():
-    class TestPipeline(BasePipeline):
+    class TestPipeline(Pipeline):
         def configure_pipeline(self, model_path: str) -> None:
             pass
 
@@ -200,7 +201,7 @@ def test_input_output_validation(basic_pipeline):
 
 # Test Pipeline class and representation
 def test_pipeline_class_and_representation(basic_pipeline):
-    pipeline = Pipeline()
+    pipeline = GenericPipeline()
     assert hasattr(pipeline, "configure_pipeline")
     pipeline.configure_pipeline("dummy_path")  # Should not raise any exception
 
@@ -211,5 +212,5 @@ def test_pipeline_class_and_representation(basic_pipeline):
     assert "comp1" in repr_string
     assert "comp2" in repr_string
 
-    loaded_pipeline = Pipeline.load("dummy_path")
-    assert isinstance(loaded_pipeline, Pipeline)
+    loaded_pipeline = GenericPipeline.load("dummy_path")
+    assert isinstance(loaded_pipeline, GenericPipeline)
