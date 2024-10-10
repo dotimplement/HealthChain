@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import threading
 import asyncio
 import json
@@ -151,6 +152,43 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
 
         return sandbox_decorator(service_config)
 
+def configure_logging(logging_config=None):
+    """
+    Configures logging based on the provided configuration. If no configuration is provided,
+    it defaults to a basic configuration with INFO level logging.
+
+    Parameters:
+        logging_config (dict, optional): A dictionary containing configurations for logging.
+            The dictionary should follow the structure defined in the Python logging configuration schema.
+
+    Returns:
+        None
+
+    Example:
+        configure_logging(logging_config={
+            "version": 1,
+            "formatters": {
+                "detailed": {
+                    "class": "logging.Formatter",
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                }
+            },
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "formatter": "detailed"
+                }
+            },
+            "root": {
+                "handlers": ["console"],
+                "level": "DEBUG",
+            },
+        })
+    """
+    if logging_config:
+        logging.config.dictConfig(logging_config)
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
     """
@@ -209,6 +247,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
         # Set the new init
         cls.__init__ = new_init
+
 
         def start_sandbox(
             self,
