@@ -20,6 +20,14 @@ class Quantity(DataType):
     # TODO: validate conversions str <-> float
     value: Optional[Union[str, float]] = None
     unit: Optional[str] = None
+    
+    @field_validator('value')
+    @classmethod
+    def validate_value(cls, value:Union[str,float]): 
+        try : 
+            return float(value)
+        except ValueError : 
+            raise ValueError(f"Invalid value {value} . Must be a float Number.")
 
 
 class Range(DataType):
