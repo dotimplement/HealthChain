@@ -1,9 +1,16 @@
 import json
 import pandas as pd
 
-from typing import Dict, TypeVar, Generic, List, Any, Iterator
+from typing import Dict, Optional, TypeVar, Generic, List, Any, Iterator
 from dataclasses import dataclass, field
 from spacy.tokens import Doc as SpacyDoc
+
+from healthchain.models.data.ccddata import CcdData
+from healthchain.models.data.concept import (
+    AllergyConcept,
+    MedicationConcept,
+    ProblemConcept,
+)
 
 
 T = TypeVar("T")
@@ -66,6 +73,7 @@ class Document(DataContainer[str]):
         preprocessed_text (str): The preprocessed version of the text.
         text (str): The current text content, which may be updated when setting a spaCy Doc.
         _doc (SpacyDoc): An internal reference to the spaCy Doc object, if set.
+        ccd_data (Optional[CcdData]): An optional CcdData object containing structured clinical data.
 
     Methods:
         __post_init__(): Initializes the text attribute and _doc reference.
@@ -77,6 +85,8 @@ class Document(DataContainer[str]):
         get_entities() -> List[Dict[str, Any]]: Returns a list of entities with their details.
         __iter__() -> Iterator[str]: Allows iteration over the document's tokens.
         __len__() -> int: Returns the word count of the document.
+        update_ccd(new_ccd_data: CcdData): Updates the existing CcdData object.
+        create_new_ccd(): Creates a new CcdData object if one doesn't exist.
 
     Raises:
         ValueError: When attempting to access the spaCy Doc before it's set.
@@ -87,10 +97,11 @@ class Document(DataContainer[str]):
     """
 
     # TODO: review this
+    preprocessed_text: str = field(default="")
     tokens: List[str] = field(default_factory=list)
     pos_tags: List[str] = field(default_factory=list)
     entities: List[str] = field(default_factory=list)
-    preprocessed_text: str = field(default="")
+    ccd_data: Optional[CcdData] = field(default=None)
 
     def __post_init__(self):
         self.text = self.data
@@ -132,6 +143,34 @@ class Document(DataContainer[str]):
             }
             for ent in self._doc.ents
         ]
+
+    def update_ccd(
+        self,
+        new_problems: List[ProblemConcept],
+        new_medications: List[MedicationConcept],
+        new_allergies: List[AllergyConcept],
+        overwrite: bool = False,
+    ) -> None:
+        """
+        Updates the existing CcdData object with new data.
+
+        Args:
+            new_ccd_data (CcdData): The new CcdData object to update with.
+
+        Raises:
+            ValueError: If there is no existing CcdData object to update.
+        """
+        if self.ccd_data is None:
+            self.ccd_data = CcdData()
+
+        if overwrite:
+            self.ccd_data.problems = new_problems
+            self.ccd_data.medications = new_medications
+            self.ccd_data.allergies = new_allergies
+        else:
+            self.ccd_data.problems.extend(new_problems)
+            self.ccd_data.medications.extend(new_medications)
+            self.ccd_data.allergies.extend(new_allergies)
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.tokens)
