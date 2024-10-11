@@ -25,6 +25,9 @@ class Quantity(DataType):
     @classmethod
     def validate_value(cls, value: Union[str, float]):
         if value is None:
+            return None
+
+        if not isinstance(value, (str, float)):
             raise TypeError(
                 f"Value CANNOT be a {type(value)} object. Must be float or string in float format."
             )

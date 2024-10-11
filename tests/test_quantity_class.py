@@ -4,8 +4,8 @@ from pydantic import ValidationError
 
 
 # Valid Cases
-def test_valid_float_and_integer():
-    valid_floats = [1.0, 0.1, 4.0, 5.99999, 12455.321, 33, 1234]
+def test_valid():
+    valid_floats = [1.0, 0.1, 4.0, 5.99999, 12455.321, 33, 1234, None]
     for num in valid_floats:
         q = Quantity(value=num, unit="mg")
         assert q.value == num
@@ -30,19 +30,11 @@ def test_invalid_strings():
         "12#.45",
         "12.12@3",
         "12@3",
+        "abc",
+        "None",
+        "",
     ]
     for string in invalid_strings:
         with pytest.raises(ValidationError) as exception_info:
             Quantity(value=string, unit="mg")
         assert "Invalid value" in str(exception_info.value)
-
-
-# Edge Cases
-def test_edge_cases():
-    edge_cases = ["", "None", None]
-    for val in edge_cases:
-        with pytest.raises((ValidationError, TypeError)) as exception_info:
-            Quantity(value=val, unit="mg")
-
-        exception_info_str = str(exception_info.value)
-        assert any(msg in exception_info_str for msg in ["CANNOT", "Invalid value"])
