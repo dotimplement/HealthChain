@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 # Valid Cases
 def test_valid():
-    valid_floats = [1.0, 0.1, 4.0, 5.99999, 12455.321, 33, 1234, None]
+    valid_floats = [1.0, 0.1, 4.5, 5.99999, 12455.321, 33, 1234, None]
     for num in valid_floats:
         q = Quantity(value=num, unit="mg")
         assert q.value == num
