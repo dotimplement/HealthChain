@@ -36,6 +36,10 @@ spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
 
+[tool.poetry.extras]
+spacy = ["spacy>=3.0.0"]
+huggingface = ["transformers>=4.0.0"]
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
 pytest = "^8.2.0"
