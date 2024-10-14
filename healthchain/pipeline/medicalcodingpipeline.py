@@ -2,7 +2,7 @@ from healthchain.io.cdaconnector import CdaConnector
 from healthchain.pipeline.basepipeline import Pipeline
 from healthchain.pipeline.components.preprocessors import TextPreProcessor
 from healthchain.pipeline.components.postprocessors import TextPostProcessor
-from healthchain.pipeline.components.models import Model
+from healthchain.pipeline.components.model import Model
 
 
 # TODO: Implement this pipeline in full
