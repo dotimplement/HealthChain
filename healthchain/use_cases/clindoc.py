@@ -140,13 +140,28 @@ class ClinicalDocumentation(BaseUseCase):
 
     def process_notereader_document(self, request: CdaRequest) -> CdaResponse:
         """
-        Process the NoteReader document.
+        Process the NoteReader document using the configured service API.
+
+        This method handles the execution of the NoteReader service. It validates the
+        service configuration, checks the input parameters, executes the service
+        function, and ensures the correct response type is returned.
 
         Args:
-            request (CdaRequest): The CdaRequest object containing the document.
+            request (CdaRequest): The request object containing the CDA document to be processed.
 
         Returns:
-            CdaResponse: The CdaResponse object containing the processed document.
+            CdaResponse: The response object containing the processed CDA document.
+
+        Raises:
+            AssertionError: If the service function is not properly configured.
+            TypeError: If the output type does not match the expected CdaResponse type.
+
+        Note:
+            This method performs several checks to ensure the integrity of the service:
+            1. Verifies that the service API is configured.
+            2. Validates the signature of the service function.
+            3. Ensures the service function accepts a CdaRequest as its argument.
+            4. Verifies that the service function returns a CdaResponse.
         """
         # Check service_api
         if self._service_api is None:
@@ -155,9 +170,20 @@ class ClinicalDocumentation(BaseUseCase):
 
         # Check service function signature
         signature = inspect.signature(self._service_api.func)
-        assert (
-            len(signature.parameters) == 2
-        ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; service functions currently only accept 'self' and a single input argument."
+        params = list(signature.parameters.values())
+        if len(params) < 2:  # Only 'self' parameter
+            raise AssertionError(
+                "Service function must have at least one parameter besides 'self'"
+            )
+        first_param = params[1]  # Skip 'self'
+        if first_param.annotation == inspect.Parameter.empty:
+            log.warning(
+                "Service function parameter has no type annotation. Expected CdaRequest."
+            )
+        elif first_param.annotation != CdaRequest:
+            raise TypeError(
+                f"Expected first argument of service function to be CdaRequest, but got {first_param.annotation}"
+            )
 
         # Call the service function
         response = self._service_api.func(self, request)

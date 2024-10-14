@@ -17,6 +17,7 @@ from healthchain.models.data.concept import (
 )
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.service.soap.epiccdsservice import CDSServices
 from healthchain.use_cases.cds import (
     ClinicalDecisionSupport,
@@ -26,6 +27,8 @@ from healthchain.clients.ehrclient import EHRClient
 from healthchain.decorators import sandbox
 from healthchain.use_cases.clindoc import ClinicalDocumentation
 from healthchain.workflows import UseCaseType
+
+# TODO: Tidy up fixtures
 
 
 @pytest.fixture(autouse=True)
@@ -139,6 +142,41 @@ def test_cds_request():
         "context": {"userId": "Practitioner/123", "patientId": "123"},
     }
     return CDSRequest(**cds_dict)
+
+
+@pytest.fixture
+def test_cds_response_single_card():
+    return CDSResponse(
+        cards=[
+            Card(
+                summary="Test Card",
+                indicator="info",
+                source={"label": "Test Source"},
+                detail="This is a test card for CDS response",
+            )
+        ]
+    )
+
+
+@pytest.fixture
+def test_cds_response_empty():
+    return CDSResponse(cards=[])
+
+
+@pytest.fixture
+def test_cds_response_multiple_cards():
+    return CDSResponse(
+        cards=[
+            Card(
+                summary="Test Card 1", indicator="info", source={"label": "Test Source"}
+            ),
+            Card(
+                summary="Test Card 2",
+                indicator="warning",
+                source={"label": "Test Source"},
+            ),
+        ]
+    )
 
 
 @pytest.fixture

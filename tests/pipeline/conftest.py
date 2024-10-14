@@ -20,12 +20,6 @@ def sample_lookup():
     }
 
 
-# @pytest.fixture
-# def mock_cda_annotator():
-#     with patch("healthchain.io.cdaconnector.CdaAnnotator") as mock:
-#         yield mock
-
-
 @pytest.fixture
 def mock_cda_connector():
     with patch("healthchain.io.cdaconnector.CdaConnector") as mock:
@@ -120,7 +114,7 @@ def mock_basic_pipeline():
 
 @pytest.fixture
 def mock_model():
-    with patch("healthchain.pipeline.components.models.Model") as mock:
+    with patch("healthchain.pipeline.components.model.Model") as mock:
         model_instance = mock.return_value
         model_instance.return_value = Document(
             data="Processed note",
