@@ -40,13 +40,34 @@ class CdsFhirConnector(Connector):
                 - data: A string representation of the prefetch data.
                 - fhir_resources: A CdsFhirData object containing the context and prefetch data.
 
+        Raises:
+            ValueError: If neither prefetch nor fhirServer is provided in the input data.
+            NotImplementedError: If fhirServer is provided, as this functionality is not yet implemented.
+            ValueError: If the provided prefetch data is invalid.
+
         Note:
-            Future implementations may involve more detailed processing, such as parsing
-            notes depending on the hook configuration. This is an area for potential
-            future research and development.
+            - The method currently only supports prefetch data and does not handle FHIR server interactions.
+            - Future implementations may involve more detailed processing, such as parsing
+              notes depending on the hook configuration.
         """
-        cds_fhir_data = CdsFhirData(context=in_data.context, prefetch=in_data.prefetch)
-        return Document(data=str(in_data.prefetch), fhir_resources=cds_fhir_data)
+        if in_data.prefetch is None and in_data.fhirServer is None:
+            raise ValueError(
+                "Either prefetch or fhirServer must be provided to extract FHIR data!"
+            )
+
+        if in_data.fhirServer is not None:
+            raise NotImplementedError("FHIR server is not implemented yet!")
+
+        try:
+            cds_fhir_data = CdsFhirData.create(
+                context=in_data.context.model_dump(), prefetch=in_data.prefetch
+            )
+        except Exception as e:
+            raise ValueError("Invalid prefetch data provided: {e}!") from e
+
+        return Document(
+            data=str(cds_fhir_data.model_dump_prefetch()), fhir_resources=cds_fhir_data
+        )
 
     def output(self, out_data: Document) -> CDSResponse:
         """
