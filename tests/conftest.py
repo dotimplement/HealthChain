@@ -140,6 +140,20 @@ def test_cds_request():
         "hook": "patient-view",
         "hookInstance": "29e93987-c345-4cb7-9a92-b5136289c2a4",
         "context": {"userId": "Practitioner/123", "patientId": "123"},
+        "prefetch": {
+            "resourceType": "Bundle",
+            "entry": [
+                {
+                    "resource": {
+                        "resourceType": "Patient",
+                        "id": "123",
+                        "name": [{"family": "Doe", "given": ["John"]}],
+                        "gender": "male",
+                        "birthDate": "1970-01-01",
+                    }
+                },
+            ],
+        },
     }
     return CDSRequest(**cds_dict)
 

@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch
 from healthchain.io.cdaconnector import CdaConnector
+from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.data.concept import (
@@ -10,6 +11,16 @@ from healthchain.models.data.concept import (
 )
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.pipeline.basepipeline import Pipeline
+
+
+@pytest.fixture
+def cda_connector():
+    return CdaConnector()
+
+
+@pytest.fixture
+def cds_fhir_connector():
+    return CdsFhirConnector(hook_name="patient-view")
 
 
 @pytest.fixture
@@ -96,11 +107,6 @@ def mock_cda_annotator():
         ]
         mock_instance.note = "Sample Note"
         yield mock
-
-
-@pytest.fixture
-def cda_connector():
-    return CdaConnector()
 
 
 @pytest.fixture
