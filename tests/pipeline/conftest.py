@@ -11,6 +11,8 @@ from healthchain.models.data.concept import (
 )
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.models.responses.cdsresponse import CDSResponse, Card
+from healthchain.models.data.cdsfhirdata import CdsFhirData
 
 
 @pytest.fixture
@@ -152,4 +154,64 @@ def mock_model():
                 note="Processed note",
             ),
         )
+        yield mock
+
+
+@pytest.fixture
+def mock_llm():
+    with patch("healthchain.pipeline.components.llm.LLM") as mock:
+        llm_instance = mock.return_value
+        llm_instance.return_value = Document(
+            data="Summarized discharge information",
+            cds_cards=[
+                Card(
+                    summary="Summarized discharge information",
+                    detail="Patient John Doe was discharged. Encounter details...",
+                    indicator="info",
+                    source={"label": "Summarization LLM"},
+                )
+            ],
+        )
+        yield mock
+
+
+@pytest.fixture
+def mock_cds_fhir_connector():
+    with patch("healthchain.io.cdsfhirconnector.CdsFhirConnector") as mock:
+        connector_instance = mock.return_value
+
+        # Mock the input method
+        connector_instance.input.return_value = Document(
+            data="Original FHIR data",
+            fhir_resources=CdsFhirData(
+                context={"patientId": "123", "encounterId": "456"},
+                prefetch={
+                    "resourceType": "Bundle",
+                    "entry": [
+                        {
+                            "resource": {
+                                "resourceType": "Patient",
+                                "id": "123",
+                                "name": [{"family": "Doe", "given": ["John"]}],
+                                "gender": "male",
+                                "birthDate": "1970-01-01",
+                            }
+                        },
+                    ],
+                },
+            ),
+        )
+
+        # Mock the output method
+        connector_instance.output.return_value = CDSResponse(
+            cards=[
+                Card(
+                    summary="Summarized discharge information",
+                    detail="Patient John Doe was discharged. Encounter details...",
+                    indicator="info",
+                    source={"label": "Summarization LLM"},
+                )
+            ]
+        )
+
         yield mock
