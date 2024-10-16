@@ -3,59 +3,45 @@ from basecomponent import BaseComponent
 
 
 class SpacyComponent(BaseComponent[str]):
-    @classmethod
-    def from_spacy(cls, path_to_pipeline: str) -> "SpacyComponent":
-        try:
-            import spacy
-        except ImportError:
-            raise ImportError(
-                "Spacy is not installed. Install it with 'pip install your_package_name[spacy]'"
-            )
+    def __init__(self, path_to_pipeline: str):
+        import spacy
 
         nlp = spacy.load(path_to_pipeline)
-        return cls(nlp)
-
-    def __init__(self, nlp):
         self.nlp = nlp
 
-    def __call__(self, data: Document) -> Document:
-        doc = self.nlp(data.data)
-
-        processed_data = {
-            "original_text": data.data,
-            "tokens": [token.text for token in doc],
-            "entities": [(ent.text, ent.label_) for ent in doc.ents],
-            "pos_tags": [(token.text, token.pos_) for token in doc],
-        }
-
-        # TODO: I'm returning a new document object instead of appending metadata to the input
-        return Document(processed_data)
+    def __call__(self, doc: Document) -> Document:
+        spacy_doc = self.nlp(doc.data)
+        doc.add_spacy_doc(spacy_doc)
+        return doc
 
 
 class HuggingFaceComponent(BaseComponent[str]):
-    @classmethod
-    def from_pretrained(cls, task: str, model: str) -> "HuggingFaceComponent":
+    def __init__(self, task, model):
         try:
             from transformers import pipeline
         except ImportError:
             raise ImportError(
-                "Transformers is not installed. Install it with 'pip install your_package_name[huggingface]'"
+                "Transformers is not installed. Install it with 'pip install healthchain[transformers]'"
             )
 
         nlp = pipeline(task=task, model=model)
-        return cls(nlp, task)
-
-    def __init__(self, pipeline, task):
-        self.pipeline = pipeline
+        self.nlp = nlp
         self.task = task
 
-    def __call__(self, data: Document) -> Document:
-        results = self.pipeline(data.data)
+    def __call__(self, doc: Document) -> Document:
+        output = self.pipeline(doc.data)
+        doc.add_huggingface_output(self.task, output)
+        return doc
 
-        processed_data = {
-            "original_text": data.data,
-            "task": self.task,
-            "results": results,
-        }
 
-        return Document(processed_data)
+class LangChainComponent(BaseComponent[str]):
+    def __init__(self, chain):
+        self.chain = chain
+
+    def __call__(self, doc: Document) -> Document:
+        # TODO: These components run on doc.data instead of doc.text (which will be present if spacy has been run)
+        # I can see data and text getting confused. Just have one?
+        output = self.chain.run(doc.data)
+        # TODO: Add an optional run_id or value to uniquely distinguish pipeline run (also logging)
+        doc.add_langchain_output("chain_output", output)
+        return doc
