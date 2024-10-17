@@ -1,5 +1,5 @@
 from healthchain.io.containers import Document
-from basecomponent import BaseComponent
+from healthchain.pipeline.components.basecomponent import BaseComponent
 
 
 class SpacyComponent(BaseComponent[str]):
@@ -29,7 +29,7 @@ class HuggingFaceComponent(BaseComponent[str]):
         self.task = task
 
     def __call__(self, doc: Document) -> Document:
-        output = self.pipeline(doc.data)
+        output = self.nlp(doc.data)
         doc.add_huggingface_output(self.task, output)
         return doc
 
