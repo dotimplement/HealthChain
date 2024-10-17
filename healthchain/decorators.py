@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import threading
 import asyncio
 import json
@@ -215,6 +216,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             service_id: str = "1",
             save_data: bool = True,
             save_dir: str = "./output/",
+            logging_config: Optional[Dict] = None,
         ) -> None:
             """
             Starts the sandbox: initialises service and sends a request through the client.
@@ -228,6 +230,17 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                 )
 
             self.sandbox_id = uuid.uuid4()
+
+            if logging_config:
+                logging.config.dictConfig(logging_config)
+            else:
+                # Set up default logging configuration
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                )
+
+            log = logging.getLogger(__name__)
 
             # Start service on thread
             log.info(

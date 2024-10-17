@@ -164,3 +164,4 @@ scrap/
 .DS_Store
 .vscode/
 .ruff_cache/
+.python-version

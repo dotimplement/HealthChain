@@ -68,12 +68,12 @@ def test_extract_medications(cda_annotator):
     assert medications[0].route.code_system_name == "NCI Thesaurus"
     assert medications[0].route.display_name == "Oral"
 
-    assert medications[0].frequency.period.value == ".5"
+    assert medications[0].frequency.period.value == 0.5
     assert medications[0].frequency.period.unit == "d"
     assert medications[0].frequency.institution_specified
 
     assert medications[0].duration.low is None
-    assert medications[0].duration.high.value == "20221020"
+    assert medications[0].duration.high.value == 20221020
 
     assert medications[0].precondition == {
         "@typeCode": "PRCN",
