@@ -177,8 +177,22 @@ class Card(BaseModel):
 
 class CDSResponse(BaseModel):
     """
-    Http response
+    Represents the response from a CDS service.
+
+    This class models the structure of a CDS Hooks response, which includes
+    cards for displaying information or suggestions to the user, and optional
+    system actions that can be executed automatically.
+
+    Attributes:
+        cards (List[Card]): A list of Card objects to be displayed to the end user.
+            Default is an empty list.
+        systemActions (Optional[List[Action]]): A list of Action objects representing
+            actions that the CDS Client should execute as part of performing
+            the decision support requested. This field is optional.
+
+    For more information, see:
+    https://cds-hooks.org/specification/current/#cds-service-response
     """
 
     cards: List[Card] = []
-    systemActions: Optional[Action] = None
+    systemActions: Optional[List[Action]] = None

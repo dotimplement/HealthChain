@@ -16,8 +16,9 @@ from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
 
+from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
-from healthchain.pipeline.components.basecomponent import BaseComponent
+from healthchain.pipeline.components.base import BaseComponent
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,8 @@ class BasePipeline(Generic[T], ABC):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
         self._built_pipeline: Optional[Callable] = None
+        self._input_connector: Optional[BaseConnector[T]] = None
+        self._output_connector: Optional[BaseConnector[T]] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -143,7 +146,45 @@ class BasePipeline(Generic[T], ABC):
         """
         self._stages = new_stages
 
-    def add(
+    def add_input(self, connector: BaseConnector[T]) -> None:
+        """
+        Adds an input connector to the pipeline.
+
+        This method sets the input connector for the pipeline, which is responsible
+        for processing the input data before it's passed to the pipeline components.
+
+        Args:
+            connector (Connector[T]): The input connector to be added to the pipeline.
+
+        Returns:
+            None
+
+        Note:
+            Only one input connector can be set for the pipeline. If this method is
+            called multiple times, the last connector will overwrite the previous ones.
+        """
+        self._input_connector = connector
+
+    def add_output(self, connector: BaseConnector[T]) -> None:
+        """
+        Adds an output connector to the pipeline.
+
+        This method sets the output connector for the pipeline, which is responsible
+        for processing the output data after it has passed through all pipeline components.
+
+        Args:
+            connector (Connector[T]): The output connector to be added to the pipeline.
+
+        Returns:
+            None
+
+        Note:
+            Only one output connector can be set for the pipeline. If this method is
+            called multiple times, the last connector will overwrite the previous ones.
+        """
+        self._output_connector = connector
+
+    def add_node(
         self,
         component: Union[
             BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]
@@ -158,7 +199,7 @@ class BasePipeline(Generic[T], ABC):
         dependencies: List[str] = [],
     ) -> None:
         """
-        Adds a component to the pipeline.
+        Adds a component node to the pipeline.
 
         Args:
             component (Union[BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]], optional):
@@ -457,11 +498,20 @@ class BasePipeline(Generic[T], ABC):
         ordered_components = resolve_dependencies()
 
         def pipeline(data: Union[T, DataContainer[T]]) -> DataContainer[T]:
+            if self._input_connector:
+                data = self._input_connector.input(data)
+
             if not isinstance(data, DataContainer):
                 data = DataContainer(data)
-            return reduce(lambda d, comp: comp(d), ordered_components, data)
 
-        self._built_pipeline = pipeline
+            data = reduce(lambda d, comp: comp(d), ordered_components, data)
+            if self._output_connector:
+                data = self._output_connector.output(data)
+
+            return data
+
+        if self._built_pipeline is not pipeline:
+            self._built_pipeline = pipeline
 
         return pipeline
 

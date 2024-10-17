@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 
 from healthchain.clients import ehr
 from healthchain.decorators import sandbox, api
+from healthchain.models.requests.cdsrequest import CDSRequest
+from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.models import Card
 
@@ -20,14 +22,17 @@ class myCDS(ClinicalDecisionSupport):
         return self.data_generator.data
 
     @api
-    def llm(self, text: str):
-        return [
-            Card(
-                summary="test",
-                indicator="info",
-                source={"label": "website"},
-            )
-        ]
+    def test_service(self, request: CDSRequest):
+        return CDSResponse(
+            cards=[
+                Card(
+                    summary="Test Card",
+                    indicator="info",
+                    source={"label": "Test Source"},
+                    detail="This is a test card for CDS response",
+                )
+            ]
+        )
 
 
 cds = myCDS()
@@ -54,7 +59,12 @@ def test_cds_service(test_cds_request):
     assert response.status_code == 200
     assert response.json() == {
         "cards": [
-            {"summary": "test", "indicator": "info", "source": {"label": "website"}}
+            {
+                "summary": "Test Card",
+                "indicator": "info",
+                "source": {"label": "Test Source"},
+                "detail": "This is a test card for CDS response",
+            }
         ]
     }
 

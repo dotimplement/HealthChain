@@ -17,7 +17,6 @@ from healthchain.workflows import (
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse, CcdData
-from healthchain.cda_parser import CdaAnnotator
 from healthchain.apimethod import APIMethod
 
 
@@ -141,13 +140,28 @@ class ClinicalDocumentation(BaseUseCase):
 
     def process_notereader_document(self, request: CdaRequest) -> CdaResponse:
         """
-        Process the NoteReader document.
+        Process the NoteReader document using the configured service API.
+
+        This method handles the execution of the NoteReader service. It validates the
+        service configuration, checks the input parameters, executes the service
+        function, and ensures the correct response type is returned.
 
         Args:
-            request (CdaRequest): The CdaRequest object containing the document.
+            request (CdaRequest): The request object containing the CDA document to be processed.
 
         Returns:
-            CdaResponse: The CdaResponse object containing the processed document.
+            CdaResponse: The response object containing the processed CDA document.
+
+        Raises:
+            AssertionError: If the service function is not properly configured.
+            TypeError: If the output type does not match the expected CdaResponse type.
+
+        Note:
+            This method performs several checks to ensure the integrity of the service:
+            1. Verifies that the service API is configured.
+            2. Validates the signature of the service function.
+            3. Ensures the service function accepts a CdaRequest as its argument.
+            4. Verifies that the service function returns a CdaResponse.
         """
         # Check service_api
         if self._service_api is None:
@@ -156,45 +170,28 @@ class ClinicalDocumentation(BaseUseCase):
 
         # Check service function signature
         signature = inspect.signature(self._service_api.func)
-        assert (
-            len(signature.parameters) == 2
-        ), f"Incorrect number of arguments: {len(signature.parameters)} {signature}; service functions currently only accept 'self' and a single input argument."
-
-        # Parse the CDA document
-        cda_doc = CdaAnnotator.from_xml(request.document)
-        ccd_data = CcdData(
-            problems=cda_doc.problem_list,
-            medications=cda_doc.medication_list,
-            allergies=cda_doc.allergy_list,
-            note=cda_doc.note,
-        )
+        params = list(signature.parameters.values())
+        if len(params) < 2:  # Only 'self' parameter
+            raise AssertionError(
+                "Service function must have at least one parameter besides 'self'"
+            )
+        first_param = params[1]  # Skip 'self'
+        if first_param.annotation == inspect.Parameter.empty:
+            log.warning(
+                "Service function parameter has no type annotation. Expected CdaRequest."
+            )
+        elif first_param.annotation != CdaRequest:
+            raise TypeError(
+                f"Expected first argument of service function to be CdaRequest, but got {first_param.annotation}"
+            )
 
         # Call the service function
-        result = self._service_api.func(self, ccd_data)
+        response = self._service_api.func(self, request)
 
         # Check return type
-        if not isinstance(result, CcdData):
+        if not isinstance(response, CdaResponse):
             raise TypeError(
-                f"Expected return type CcdData, got {type(result)} instead."
+                f"Expected return type CdaResponse, got {type(response)} instead."
             )
-
-        # Update the CDA document with the results
-        if result.problems:
-            log.debug(f"Updating CDA document with {len(result.problems)} problem(s).")
-            cda_doc.add_to_problem_list(result.problems, overwrite=self.overwrite)
-        if result.allergies:
-            log.debug(
-                f"Updating CDA document with {len(result.allergies)} allergy(ies)."
-            )
-            cda_doc.add_to_allergy_list(result.allergies, overwrite=self.overwrite)
-        if result.medications:
-            log.debug(
-                f"Updating CDA document with {len(result.medications)} medication(s)."
-            )
-            cda_doc.add_to_medication_list(result.medications, overwrite=self.overwrite)
-
-        # Export the updated CDA document
-        response_document = cda_doc.export()
-        response = CdaResponse(document=response_document)
 
         return response

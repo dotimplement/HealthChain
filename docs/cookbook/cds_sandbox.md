@@ -1,13 +1,13 @@
 # Build a CDS sandbox
 
-A CDS sandbox which uses `gpt-4o` to summarise patient information from synthetically generated FHIR resources received from the `patient-view` CDS hook.
+A CDS sandbox which uses `gpt-4o` to summarise patient information from synthetically generated FHIR resources received from the `patient-view` CDS hook. [NEEDS UPDATING]
 
 ```python
 import healthchain as hc
 
 from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.data_generators import CdsDataGenerator
-from healthchain.models import Card, CdsFhirData, CDSRequest
+from healthchain.models import CdsFhirData, CDSRequest, CDSResponse
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
@@ -37,12 +37,16 @@ class CdsSandbox(ClinicalDecisionSupport):
     return data
 
   @hc.api
-  def my_service(self, request: CDSRequest) -> List[Card]:
+  def my_service(self, request: CDSRequest) -> CDSResponse:
     result = self.chain.invoke(str(request.prefetch))
-    return Card(
-      summary="Patient summary",
-      indicator="info",
-      source={"label": "openai"},
-      detail=result,
+    return CDSResponse(
+      cards=[
+        Card(
+          summary="Patient summary",
+          indicator="info",
+          source={"label": "openai"},
+          detail=result,
+        )
+      ]
     )
 ```
