@@ -18,6 +18,7 @@ from healthchain.models import (
 class NotereaderSandbox(ClinicalDocumentation):
   def __init__(self):
       self.cda_path = "./resources/uclh_cda.xml"
+      self.pipeline = MedicalCodingPipeline.load("./resources/models/medcat_model.zip")
 
   @hc.ehr(workflow="sign-note-inpatient")
   def load_data_in_client(self) -> CcdData:
@@ -27,38 +28,7 @@ class NotereaderSandbox(ClinicalDocumentation):
       return CcdData(cda_xml=xml_string)
 
   @hc.api
-  def my_service(self, ccd_data: CcdData) -> CcdData:
-
-    # Apply extraction method from ccd_data.note
-
-    new_problem = ProblemConcept(
-      code="38341003",
-      code_system="2.16.840.1.113883.6.96",
-      code_system_name="SNOMED CT",
-      display_name="Hypertension",
-    )
-    new_allergy = AllergyConcept(
-      code="70618",
-      code_system="2.16.840.1.113883.6.96",
-      code_system_name="SNOMED CT",
-      display_name="Allergy to peanuts",
-    )
-    new_medication = MedicationConcept(
-      code="197361",
-      code_system="2.16.840.1.113883.6.88",
-      code_system_name="RxNorm",
-      display_name="Lisinopril 10 MG Oral Tablet",
-      dosage=Quantity(value=10, unit="mg"),
-      route=Concept(
-        code="26643006",
-        code_system="2.16.840.1.113883.6.96",
-        code_system_name="SNOMED CT",
-        display_name="Oral",
-      ),
-    )
-    ccd_data.problems = [new_problem]
-    ccd_data.allergies = [new_allergy]
-    ccd_data.medications = [new_medication]
-
-    return ccd_data
+  def my_service(self, request: CdaRequest) -> CdaResponse:
+    response = self.pipeline(request)
+    return response
 ```
