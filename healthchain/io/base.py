@@ -5,7 +5,7 @@ from healthchain.io.containers import DataContainer
 T = TypeVar("T")
 
 
-class Connector(Generic[T], ABC):
+class BaseConnector(Generic[T], ABC):
     """
     Abstract base class for all connectors in the pipeline.
 

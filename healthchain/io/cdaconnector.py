@@ -1,6 +1,6 @@
 import logging
 from healthchain.io.containers import Document
-from healthchain.io.baseconnector import Connector
+from healthchain.io.base import BaseConnector
 from healthchain.cda_parser import CdaAnnotator
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.requests.cdarequest import CdaRequest
@@ -9,7 +9,7 @@ from healthchain.models.responses.cdaresponse import CdaResponse
 log = logging.getLogger(__name__)
 
 
-class CdaConnector(Connector):
+class CdaConnector(BaseConnector):
     """
     CDAConnector class for handling CDA (Clinical Document Architecture) documents.
 

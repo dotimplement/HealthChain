@@ -10,7 +10,7 @@ from healthchain.models.data.concept import (
     ProblemConcept,
 )
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.pipeline.base import BasePipeline
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.data.cdsfhirdata import CdsFhirData
 
@@ -113,7 +113,7 @@ def mock_cda_annotator():
 
 @pytest.fixture
 def mock_basic_pipeline():
-    class TestPipeline(Pipeline):
+    class TestPipeline(BasePipeline):
         def configure_pipeline(self, model_path: str) -> None:
             pass
 

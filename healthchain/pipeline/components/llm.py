@@ -1,4 +1,4 @@
-from healthchain.pipeline.components.basecomponent import Component
+from healthchain.pipeline.components.base import Component
 from healthchain.io.containers import Document
 from typing import TypeVar, Generic
 

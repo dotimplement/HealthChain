@@ -1,7 +1,7 @@
 import logging
 
 from healthchain.io.containers import Document
-from healthchain.io.baseconnector import Connector
+from healthchain.io.base import BaseConnector
 from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
@@ -9,7 +9,7 @@ from healthchain.models.responses.cdsresponse import CDSResponse
 log = logging.getLogger(__name__)
 
 
-class CdsFhirConnector(Connector):
+class CdsFhirConnector(BaseConnector):
     """
     CdsFhirConnector class for handling FHIR (Fast Healthcare Interoperability Resources) documents
     for CDS Hooks.

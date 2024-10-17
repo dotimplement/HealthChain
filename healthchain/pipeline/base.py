@@ -16,9 +16,9 @@ from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
 
-from healthchain.io.baseconnector import Connector
+from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
-from healthchain.pipeline.components.basecomponent import BaseComponent
+from healthchain.pipeline.components.base import BaseComponent
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class PipelineNode(Generic[T]):
     dependencies: List[str] = field(default_factory=list)
 
 
-class Pipeline(Generic[T], ABC):
+class BasePipeline(Generic[T], ABC):
     """
     Abstract BasePipeline class for creating and managing a data processing pipeline.
     The BasePipeline class allows users to create a data processing pipeline by adding components and defining their dependencies and execution order. It provides methods for adding, removing, and replacing components, as well as building and executing the pipeline.
@@ -65,8 +65,8 @@ class Pipeline(Generic[T], ABC):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
         self._built_pipeline: Optional[Callable] = None
-        self._input_connector: Optional[Connector[T]] = None
-        self._output_connector: Optional[Connector[T]] = None
+        self._input_connector: Optional[BaseConnector[T]] = None
+        self._output_connector: Optional[BaseConnector[T]] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -75,7 +75,7 @@ class Pipeline(Generic[T], ABC):
         return f"[{components_repr}]"
 
     @classmethod
-    def load(cls, model_path: str) -> "Pipeline":
+    def load(cls, model_path: str) -> "BasePipeline":
         """
         Load and configure a pipeline from a given model path.
 
@@ -146,7 +146,7 @@ class Pipeline(Generic[T], ABC):
         """
         self._stages = new_stages
 
-    def add_input(self, connector: Connector[T]) -> None:
+    def add_input(self, connector: BaseConnector[T]) -> None:
         """
         Adds an input connector to the pipeline.
 
@@ -165,7 +165,7 @@ class Pipeline(Generic[T], ABC):
         """
         self._input_connector = connector
 
-    def add_output(self, connector: Connector[T]) -> None:
+    def add_output(self, connector: BaseConnector[T]) -> None:
         """
         Adds an output connector to the pipeline.
 
@@ -184,7 +184,7 @@ class Pipeline(Generic[T], ABC):
         """
         self._output_connector = connector
 
-    def add(
+    def add_node(
         self,
         component: Union[
             BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]
@@ -199,7 +199,7 @@ class Pipeline(Generic[T], ABC):
         dependencies: List[str] = [],
     ) -> None:
         """
-        Adds a component to the pipeline.
+        Adds a component node to the pipeline.
 
         Args:
             component (Union[BaseComponent[T], Callable[[DataContainer[T]], DataContainer[T]]], optional):
@@ -514,3 +514,22 @@ class Pipeline(Generic[T], ABC):
             self._built_pipeline = pipeline
 
         return pipeline
+
+
+class Pipeline(BasePipeline, Generic[T]):
+    """
+    Default Pipeline class for creating a basic data processing pipeline.
+    This class inherits from BasePipeline and provides a default implementation
+    of the configure_pipeline method, which does not add any specific components.
+    """
+
+    def configure_pipeline(self, model_path: str) -> None:
+        """
+        Configures the pipeline by adding components based on the provided model path.
+        This default implementation does not add any specific components.
+
+        Args:
+            model_path (str): The path to the model used for configuring the pipeline.
+        """
+        # Default implementation: No specific components added
+        pass

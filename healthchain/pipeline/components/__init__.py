@@ -1,7 +1,7 @@
 from .preprocessors import TextPreProcessor
 from .postprocessors import TextPostProcessor
 from .model import Model
-from .basecomponent import BaseComponent, Component
+from .base import BaseComponent, Component
 
 __all__ = [
     "TextPreProcessor",

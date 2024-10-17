@@ -1,12 +1,12 @@
 import re
-from healthchain.pipeline.components.basecomponent import BaseComponent
+from healthchain.pipeline.components.base import BaseComponent
 from healthchain.io.containers import Document
 from typing import Callable, List, TypeVar, Tuple
 
 T = TypeVar("T")
 
 
-class TextPreProcessor(BaseComponent):
+class TextPreProcessor(BaseComponent[Document]):
     """
     A component for preprocessing text documents.
 
