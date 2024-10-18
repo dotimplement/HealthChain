@@ -26,7 +26,7 @@ include = ["healthchain/templates/*"]
 python = ">=3.8,<3.12"
 pydantic = "^2.7.1"
 pandas = ">=1.0.0,<2.1.0"
-spacy = "^3.7.6"
+spacy = "3.7.6"
 requests = "^2.31.0"
 colorama = "^0.4.6"
 faker = "^25.1.0"
@@ -36,7 +36,7 @@ spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
 
-transformers = {version = "^4.45.2", optional = true}
+transformers = {version = "^4.45.2", optional = true, extras=["torch"]}
 
 [tool.poetry.extras]
 transformers = ["transformers"]

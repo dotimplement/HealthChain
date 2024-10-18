@@ -41,7 +41,7 @@ class LangChainComponent(BaseComponent[str]):
     def __call__(self, doc: Document) -> Document:
         # TODO: These components run on doc.data instead of doc.text (which will be present if spacy has been run)
         # I can see data and text getting confused. Just have one?
-        output = self.chain.run(doc.data)
+        output = self.chain.invoke(doc.data)
         # TODO: Add an optional run_id or value to uniquely distinguish pipeline run (also logging)
         doc.add_langchain_output("chain_output", output)
         return doc
