@@ -143,14 +143,16 @@ class EncounterGenerator(BaseGenerator):
     A generator class for creating FHIR Encounter resources.
 
     Methods:
-        generate(constraints: Optional[list] = None) -> Encounter:
-            Generates a FHIR Encounter resource with optional constraints.
+        generate(constraints: Optional[list] = None, random_seed: Optional[int] = None) -> Encounter:
+            Generates a FHIR Encounter resource with optional constraints and random_seed.
     """
 
     @staticmethod
     def generate(
         constraints: Optional[list] = None,
+        random_seed: Optional[int] = None,
     ) -> Encounter:
+        Faker.seed(random_seed)
         patient_reference = "Patient/123"
         return Encounter(
             resourceType="Encounter",
