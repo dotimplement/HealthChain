@@ -8,6 +8,23 @@ This document provides an overview of the integration components available in th
 2. [HuggingFaceComponent](#huggingfacecomponent)
 3. [LangChainComponent](#langchaincomponent)
 
+## Installation Requirements
+Before utilizing the integration components, it is important to note that the required third-party libraries are not included in HealthChain's default installation. This design decision was made to:
+
+- Maintain a lean and flexible core package
+- Allow users to selectively install only the necessary dependencies
+- Avoid potential version conflicts with other packages in your environment
+
+To use these integrations, you will need to manually install the corresponding libraries using pip.
+
+```python
+pip install spacy
+python -m spacy download en_core_web_sm  # or another desired model
+pip install transformers
+pip install langchain
+```
+
+
 ## SpacyComponent
 
 The `SpacyComponent` allows you to integrate spaCy models into your HealthChain pipeline. To initialize the component it only requires the path to the Spacy pipeline you wish to use. To run this example you may need to first run `python -m spacy download en_core_web_sm` to download the model.

@@ -36,11 +36,6 @@ spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
 
-transformers = {version = "^4.45.2", optional = true, extras=["torch"]}
-
-[tool.poetry.extras]
-transformers = ["transformers"]
-
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
 pytest = "^8.2.0"

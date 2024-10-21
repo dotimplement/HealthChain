@@ -17,12 +17,7 @@ class SpacyComponent(BaseComponent[str]):
 
 class HuggingFaceComponent(BaseComponent[str]):
     def __init__(self, task, model):
-        try:
-            from transformers import pipeline
-        except ImportError:
-            raise ImportError(
-                "Transformers is not installed. Install it with 'pip install healthchain[transformers]'"
-            )
+        from transformers import pipeline
 
         nlp = pipeline(task=task, model=model)
         self.nlp = nlp

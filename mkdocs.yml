@@ -22,6 +22,7 @@ nav:
         - Overview: reference/pipeline/pipeline.md
         - Data Container: reference/pipeline/data_container.md
         - Component: reference/pipeline/component.md
+        - Integrations: reference/pipeline/integrations.md
         - Models:
           - Overview: reference/pipeline/models/models.md
         - Prebuilt:
