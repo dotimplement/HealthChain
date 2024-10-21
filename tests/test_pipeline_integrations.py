@@ -21,7 +21,7 @@ def sample_document():
     ],
 )
 def test_component_initialization(component_class, mock_module, mock_method):
-    with patch(mock_module) as mock:
+    with patch(mock_module, create=True) as mock:
         mock_instance = Mock()
         mock.return_value = mock_instance
         if component_class == SpacyComponent:
@@ -40,7 +40,7 @@ def test_spacy_component(sample_document):
         assert result.spacy_doc
 
 
-def test_huggingface_component(sample_document):
+def test_huggingface_component(sample_document, create=True):
     with patch("transformers.pipeline"):
         component = HuggingFaceComponent(
             "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
