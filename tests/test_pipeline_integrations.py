@@ -52,10 +52,10 @@ def test_huggingface_component(sample_document):
 
 def test_langchain_component(sample_document):
     mock_chain = Mock()
-    mock_chain.run.return_value = "mocked chain output"
+    mock_chain.invoke.return_value = "mocked chain output"
 
     component = LangChainComponent(mock_chain)
     result = component(sample_document)
 
-    mock_chain.run.assert_called_once_with(sample_document.data)
+    mock_chain.invoke.assert_called_once_with(sample_document.data)
     assert result.get_langchain_output("chain_output") == "mocked chain output"
