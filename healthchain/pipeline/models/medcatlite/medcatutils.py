@@ -1,3 +1,9 @@
+# Based on/Adapted from MedCAT
+# Original repository: https://github.com/cogstack/medcat
+# Copyright 2024 CogStack
+# Licensed under the Elastic License 2.0
+
+
 import logging
 import os
 import random
@@ -246,43 +252,6 @@ class CDB:
             for snames in self.cui2snames.values():
                 self.snames.update(snames)
         return self.snames
-
-    # this is only needed for training, dont't think need it for inference
-    # def update_context_vector(
-    #     self, cui: str, vectors: Dict[str, np.ndarray], negative: bool = False
-    # ) -> None:
-    #     if cui not in self.cui2context_vectors:
-    #         self.cui2context_vectors[cui] = {}
-    #         self.cui2count_train[cui] = 0
-    #     for context_type, vector in vectors.items():
-    #         if context_type in self.cui2context_vectors[cui]:
-    #             cv = self.cui2context_vectors[cui][context_type]
-    #             similarity = np.dot(
-    #                 cv / np.linalg.norm(cv), vector / np.linalg.norm(vector)
-    #             )
-    #             lr = 0.1
-    #             if negative:
-    #                 b = max(0, similarity) * lr
-    #                 self.cui2context_vectors[cui][context_type] = (
-    #                     cv * (1 - b) - vector * b
-    #                 )
-    #             else:
-    #                 b = (1 - max(0, similarity)) * lr
-    #                 self.cui2context_vectors[cui][context_type] = (
-    #                     cv * (1 - b) + vector * b
-    #                 )
-    #         else:
-    #             self.cui2context_vectors[cui][context_type] = (
-    #                 vector if not negative else -vector
-    #             )
-    #     if not negative:
-    #         self.cui2count_train[cui] += 1
-
-    # def update_cui2average_confidence(self, cui: str, new_sim: float) -> None:
-    #     self.cui2average_confidence[cui] = (
-    #         self.cui2average_confidence.get(cui, 0) * self.cui2count_train.get(cui, 0)
-    #         + new_sim
-    #     ) / (self.cui2count_train.get(cui, 0) + 1)
 
 
 class Vocab:
