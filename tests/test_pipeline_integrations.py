@@ -1,6 +1,6 @@
 import pytest
 import importlib.util
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.integrations import (
     SpacyComponent,
@@ -44,7 +44,8 @@ def test_component_initialization(component_class, mock_module):
 
 def test_spacy_component(sample_document):
     with patch("spacy.load") as mock_load:
-        mock_instance = Mock()
+        mock_instance = MagicMock(items=[])
+        mock_instance.__iter__.return_value = []
         mock_load.return_value = mock_instance
         component = SpacyComponent("en_core_web_sm")
         result = component(sample_document)
