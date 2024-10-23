@@ -1,5 +1,6 @@
 from healthchain.cda_parser.cdaannotator import (
     SectionId,
+    SectionCode,
     ProblemConcept,
     AllergyConcept,
 )
@@ -19,10 +20,23 @@ def test_find_notes_section(cda_annotator):
     assert section.templateId.root == SectionId.NOTE.value
 
 
+def test_find_notes_section_using_code(cda_annotator_code):
+    # Test if the notes section is found correctly when no template_id is available in the document.
+    section = cda_annotator_code._find_notes_section()
+    assert section is not None
+    assert section.code.code == SectionCode.NOTE.value
+
+
 def test_find_problems_section(cda_annotator):
     section = cda_annotator._find_problems_section()
     assert section is not None
     assert section.templateId.root == SectionId.PROBLEM.value
+
+
+def test_find_problems_section_using_code(cda_annotator_code):
+    section = cda_annotator_code._find_problems_section()
+    assert section is not None
+    assert section.code.code == SectionCode.PROBLEM.value
 
 
 def test_find_medications_section(cda_annotator):
@@ -31,10 +45,22 @@ def test_find_medications_section(cda_annotator):
     assert section.templateId[0].root == SectionId.MEDICATION.value
 
 
+def test_find_medications_section_using_code(cda_annotator_code):
+    section = cda_annotator_code._find_medications_section()
+    assert section is not None
+    assert section.code.code == SectionCode.MEDICATION.value
+
+
 def test_find_allergies_section(cda_annotator):
     section = cda_annotator._find_allergies_section()
     assert section is not None
     assert section.templateId[0].root == SectionId.ALLERGY.value
+
+
+def test_find_allergies_section_using_code(cda_annotator_code):
+    section = cda_annotator_code._find_allergies_section()
+    assert section is not None
+    assert section.code.code == SectionCode.ALLERGY.value
 
 
 def test_extract_note(cda_annotator):
@@ -43,8 +69,23 @@ def test_extract_note(cda_annotator):
     assert note == {"paragraph": "test"}
 
 
+def test_extract_note_using_code(cda_annotator_code):
+    # Test if the note is extracted correctly
+    note = cda_annotator_code._extract_note()
+    assert note == {"paragraph": "test"}
+
+
 def test_extract_problems(cda_annotator):
     problems = cda_annotator._extract_problems()
+
+    assert len(problems) == 1
+    assert problems[0].code == "38341003"
+    assert problems[0].code_system == "2.16.840.1.113883.6.96"
+    assert problems[0].code_system_name == "SNOMED CT"
+
+
+def test_extract_problems_using_code(cda_annotator_code):
+    problems = cda_annotator_code._extract_problems()
 
     assert len(problems) == 1
     assert problems[0].code == "38341003"
@@ -95,8 +136,76 @@ def test_extract_medications(cda_annotator):
     }
 
 
+def test_extract_medications_using_code(cda_annotator_code):
+    medications = cda_annotator_code._extract_medications()
+
+    assert len(medications) == 1
+    assert medications[0].code == "314076"
+    assert medications[0].code_system == "2.16.840.1.113883.6.88"
+    assert medications[0].display_name == "lisinopril 10 MG Oral Tablet"
+
+    assert medications[0].dosage.value == 30.0
+    assert medications[0].dosage.unit == "mg"
+
+    assert medications[0].route.code == "C38288"
+    assert medications[0].route.code_system == "2.16.840.1.113883.3.26.1.1"
+    assert medications[0].route.code_system_name == "NCI Thesaurus"
+    assert medications[0].route.display_name == "Oral"
+
+    assert medications[0].frequency.period.value == 0.5
+    assert medications[0].frequency.period.unit == "d"
+    assert medications[0].frequency.institution_specified
+
+    assert medications[0].duration.low is None
+    assert medications[0].duration.high.value == 20221020
+
+    assert medications[0].precondition == {
+        "@typeCode": "PRCN",
+        "criterion": {
+            "templateId": [
+                {"@root": "2.16.840.1.113883.10.20.22.4.25"},
+                {
+                    "@extension": "2014-06-09",
+                    "@root": "2.16.840.1.113883.10.20.22.4.25",
+                },
+            ],
+            "code": {"@code": "ASSERTION", "@codeSystem": "2.16.840.1.113883.5.4"},
+            "value": {
+                "@nullFlavor": "NI",
+                "@xsi:type": "CD",
+                "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            },
+        },
+    }
+
+
 def test_extract_allergies(cda_annotator):
     allergies = cda_annotator._extract_allergies()
+
+    assert len(allergies) == 1
+    assert allergies[0].code == "102263004"
+    assert allergies[0].code_system == "2.16.840.1.113883.6.96"
+    assert allergies[0].code_system_name == "SNOMED-CT"
+    assert allergies[0].display_name == "EGGS"
+    assert allergies[0].allergy_type.code == "418471000"
+    assert allergies[0].allergy_type.code_system == "2.16.840.1.113883.6.96"
+    assert allergies[0].allergy_type.code_system_name == "SNOMED CT"
+    assert (
+        allergies[0].allergy_type.display_name
+        == "Propensity to adverse reactions to food"
+    )
+    assert allergies[0].reaction.code == "65124004"
+    assert allergies[0].reaction.code_system == "2.16.840.1.113883.6.96"
+    assert allergies[0].reaction.code_system_name == "SNOMED CT"
+    assert allergies[0].reaction.display_name == "Swelling"
+    assert allergies[0].severity.code == "H"
+    assert allergies[0].severity.code_system == "2.16.840.1.113883.5.1063"
+    assert allergies[0].severity.code_system_name == "SeverityObservation"
+    assert allergies[0].severity.display_name == "High"
+
+
+def test_extract_allergies_using_code(cda_annotator_code):
+    allergies = cda_annotator_code._extract_allergies()
 
     assert len(allergies) == 1
     assert allergies[0].code == "102263004"
