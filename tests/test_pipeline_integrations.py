@@ -1,4 +1,5 @@
 import pytest
+import importlib.util
 from unittest.mock import Mock, patch
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.integrations import (
@@ -6,6 +7,8 @@ from healthchain.pipeline.components.integrations import (
     HuggingFaceComponent,
     LangChainComponent,
 )
+
+transformers_installed = importlib.util.find_spec("transformers") is not None
 
 
 @pytest.fixture
@@ -17,11 +20,18 @@ def sample_document():
     "component_class,mock_module,mock_method",
     [
         (SpacyComponent, "spacy.load", "load"),
-        (HuggingFaceComponent, "transformers.pipeline", "pipeline"),
+        pytest.param(
+            HuggingFaceComponent,
+            "transformers.pipeline",
+            "pipeline",
+            marks=pytest.mark.skipif(
+                not transformers_installed, reason="transformers package not installed"
+            ),
+        ),
     ],
 )
-def test_component_initialization(component_class, mock_module, mock_method):
-    with patch(mock_module, create=True) as mock:
+def test_component_initialization(component_class, mock_module):
+    with patch(mock_module) as mock:
         mock_instance = Mock()
         mock.return_value = mock_instance
         if component_class == SpacyComponent:
@@ -34,19 +44,25 @@ def test_component_initialization(component_class, mock_module, mock_method):
 
 
 def test_spacy_component(sample_document):
-    with patch("spacy.load"):
+    with patch("spacy.load") as mock_load:
+        mock_instance = Mock()
+        mock_load.return_value = mock_instance
         component = SpacyComponent("en_core_web_sm")
         result = component(sample_document)
         assert result.spacy_doc
 
 
-def test_huggingface_component(sample_document, create=True):
-    with patch("transformers.pipeline"):
+@pytest.mark.skipif(
+    not transformers_installed, reason="transformers package not installed"
+)
+def test_huggingface_component(sample_document):
+    with patch("transformers.pipeline") as mock_pipeline:
+        mock_instance = Mock()
+        mock_pipeline.return_value = mock_instance
         component = HuggingFaceComponent(
             "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
         )
         result = component(sample_document)
-
         assert result.get_huggingface_output("sentiment-analysis")
 
 
