@@ -17,13 +17,12 @@ def sample_document():
 
 
 @pytest.mark.parametrize(
-    "component_class,mock_module,mock_method",
+    "component_class,mock_module",
     [
-        (SpacyComponent, "spacy.load", "load"),
+        (SpacyComponent, "spacy.load"),
         pytest.param(
             HuggingFaceComponent,
             "transformers.pipeline",
-            "pipeline",
             marks=pytest.mark.skipif(
                 not transformers_installed, reason="transformers package not installed"
             ),
