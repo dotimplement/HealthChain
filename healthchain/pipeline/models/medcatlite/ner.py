@@ -7,23 +7,19 @@
 import logging
 from spacy.language import Language
 from spacy.tokens import Doc, Span, Token
-from typing import List, Tuple, Optional
-from healthchain.pipeline.models.medcatlite.utils import (
-    CDB,
-    Config,
-)
+from typing import Any, Dict, List, Tuple, Optional
 
 
 logger = logging.getLogger(__name__)
 
 
-@Language.factory("medcat_ner")
-def create_ner(nlp: Language, name: str, cdb: CDB, config: Config):
-    return NER(nlp, name, cdb, config)
+@Language.factory("medcatlite_ner")
+def create_ner(nlp: Language, name: str, ner_resources: Dict[str, Any]):
+    return NER(nlp, name, ner_resources)
 
 
 class NER:
-    def __init__(self, nlp: Language, name: str, cdb: CDB, config: Config):
+    def __init__(self, nlp: Language, name: str, ner_resources: Dict[str, Any]):
         """
         Initialize the NER class.
 
@@ -35,8 +31,9 @@ class NER:
         """
         self.nlp = nlp
         self.name = name
-        self.cdb = cdb
-        self.config = config
+        self.name2cuis = ner_resources["name2cuis"]
+        self.snames = ner_resources["snames"]
+        self.config = ner_resources["config"]
         self._setup_extensions()
 
     def _setup_extensions(self):
@@ -79,7 +76,7 @@ class NER:
         name_versions = self._get_name_versions(tokens[start_index])
         name = self.get_initial_name(name_versions)
 
-        if name and name in self.cdb.name2cuis and not tokens[start_index].is_stop:
+        if name and name in self.name2cuis and not tokens[start_index].is_stop:
             self.annotate_name(name, current_tokens, doc)
 
         if name:
@@ -110,7 +107,7 @@ class NER:
             str: The initial name.
         """
         for name_version in name_versions:
-            if name_version in self.cdb.snames or name_version in self.cdb.name2cuis:
+            if name_version in self.snames or name_version in self.name2cuis:
                 return name_version
         return ""
 
@@ -141,10 +138,10 @@ class NER:
             name_changed, name_reverse = self.update_name(name, name_versions)
 
             if name_changed:
-                if name in self.cdb.name2cuis:
+                if name in self.name2cuis:
                     self.annotate_name(name, current_tokens, doc)
             elif name_reverse:
-                if name_reverse in self.cdb.name2cuis:
+                if name_reverse in self.name2cuis:
                     self.annotate_name(name_reverse, current_tokens, doc)
             else:
                 break
@@ -161,7 +158,8 @@ class NER:
             bool: True if the maximum number of tokens to skip is exceeded, False otherwise.
         """
         return (
-            tokens[index].i - tokens[index - 1].i - 1 > self.config.ner.max_skip_tokens
+            tokens[index].i - tokens[index - 1].i - 1
+            > self.config["ner"]["max_skip_tokens"]
         )
 
     def update_name(
@@ -178,12 +176,14 @@ class NER:
             Tuple[bool, Optional[str]]: A tuple indicating if the name was changed and the reverse name if applicable.
         """
         for name_version in name_versions:
-            new_name = f"{name}{self.config.general.separator}{name_version}"
-            if new_name in self.cdb.snames:
+            new_name = f"{name}{self.config['general']['separator']}{name_version}"
+            if new_name in self.snames:
                 return True, None
-            if self.config.ner.get("try_reverse_word_order", False):
-                reverse_name = f"{name_version}{self.config.general.separator}{name}"
-                if reverse_name in self.cdb.snames:
+            if self.config["ner"]["try_reverse_word_order"]:
+                reverse_name = (
+                    f"{name_version}{self.config['general']['separator']}{name}"
+                )
+                if reverse_name in self.snames:
                     return False, reverse_name
         return False, None
 
@@ -200,7 +200,7 @@ class NER:
         if self._can_create_entity(doc, start, end):
             ent = Span(doc, start, end, label="CUSTOM")
             doc.ents = list(doc.ents) + [ent]
-            ent._.set("link_candidates", self.cdb.name2cuis.get(name, []))
+            ent._.set("link_candidates", self.name2cuis.get(name, []))
 
     def _can_create_entity(self, doc: Doc, start: int, end: int) -> bool:
         """

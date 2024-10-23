@@ -19,6 +19,11 @@ from healthchain.pipeline.models.medcatlite.utils import (
     attempt_unpack,
 )
 
+# ruff: noqa
+from .tokenprocessor import TokenProcessor
+from .ner import NER
+from .registry import create_token_processor_resources, create_ner_resources
+
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +94,20 @@ class MedCATLite:
                 "token_processor_resources": {
                     "@misc": "medcatlite.token_processor_resources",
                     "cdb": {"@misc": "medcatlite_cdb"},
-                    "vocab": {"@misc": "medcatlite_vocab"},
                 }
             },
             first=True,
         )
 
-        # self.nlp.add_pipe('medcat_ner', last=True)
+        self.nlp.add_pipe(
+            "medcatlite_ner",
+            config={
+                "ner_resources": {
+                    "@misc": "medcatlite.ner_resources",
+                    "cdb": {"@misc": "medcatlite_cdb"},
+                }
+            },
+        )
 
         # self.nlp.add_pipe('medcat_linker', config={'cdb': self.cdb, 'vocab': self.vocab, 'config': self.config})
 

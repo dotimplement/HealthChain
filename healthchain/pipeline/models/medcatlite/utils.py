@@ -123,6 +123,7 @@ class GeneralConfig(BaseModel):
         "merge_subtokens",
     ]
     spell_check: bool = True
+    separator: str = "~"
     workers: int = 4
     diacritics: bool = False
     spell_check_deep: bool = False
@@ -132,6 +133,7 @@ class GeneralConfig(BaseModel):
 class NERConfig(BaseModel):
     min_name_len: int = 3
     max_skip_tokens: int = 2
+    try_reverse_word_order: bool = False
 
 
 class LinkingConfig(BaseModel):
