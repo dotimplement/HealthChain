@@ -109,6 +109,12 @@ pipeline.add(RemoveStopwords(stopwords))
 
 [(BaseComponent API Reference)](../../api/component.md#healthchain.pipeline.components.basecomponent.BaseComponent)
 
+### Integrations
+
+HealthChain offers powerful integrations with popular NLP libraries, enhancing its capabilities and allowing you to build more sophisticated pipelines. These integrations include components for spaCy, Hugging Face Transformers, and LangChain, enabling you to leverage state-of-the-art NLP models and techniques within your HealthChain workflows.
+
+Integrations are covered in detail on the [Integration](./integrations.md) homepage.
+
 ## Pipeline Management 🔨
 
 #### Adding
