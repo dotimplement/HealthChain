@@ -11,9 +11,7 @@ import shutil
 import pickle
 import numpy as np
 from typing import (
-    Callable,
     Dict,
-    Protocol,
     Set,
     Optional,
     List,
@@ -22,7 +20,6 @@ from typing import (
     Any,
 )
 from enum import Enum
-from functools import partial
 from gensim.matutils import unitvec as g_unitvec
 from pydantic import BaseModel, Field
 
@@ -103,21 +100,12 @@ def deserialize_cdb(file_path: str, cdb_cls: Type[Any]):
     return cdb
 
 
-class WAFCarrier(Protocol):
-    @property
-    def weighted_average_function(self) -> Callable[[float], int]:
-        return
-
-
 def weighted_average(step: int, factor: float) -> float:
     return max(0.1, 1 - step**2 * factor)
 
 
-def fix_waf_lambda(carrier: WAFCarrier) -> None:
-    weighted_average_function = carrier.weighted_average_function
-    if callable(weighted_average_function):
-        if getattr(weighted_average_function, "__name__", None) == "<lambda>":
-            carrier.weighted_average_function = partial(weighted_average, factor=0.0004)
+def default_weighted_average(step: int) -> float:
+    return weighted_average(step, factor=0.0004)
 
 
 class GeneralConfig(BaseModel):
@@ -136,6 +124,9 @@ class GeneralConfig(BaseModel):
     ]
     spell_check: bool = True
     workers: int = 4
+    diacritics: bool = False
+    spell_check_deep: bool = False
+    spell_check_len_limit: int = 7
 
 
 class NERConfig(BaseModel):
@@ -145,6 +136,7 @@ class NERConfig(BaseModel):
 
 class LinkingConfig(BaseModel):
     train_count_threshold: int = 1
+    similarity_threshold_type: str = "static"
     similarity_threshold: float = 0.25
     context_vector_sizes: Dict[str, int] = Field(
         default_factory=lambda: {"long": 18, "medium": 9, "short": 3}
@@ -155,12 +147,12 @@ class LinkingConfig(BaseModel):
 
 
 class PreprocessingConfig(BaseModel):
-    punct_checker: str = "[^\\w\\s]"
-    word_skipper: str = "^$"
-    keep_punct: List[str] = Field(default_factory=list)
-    skip_stopwords: bool = True
-    min_len_normalize: int = 2
-    do_not_normalize: List[str] = Field(default_factory=list)
+    words_to_skip: set = {"nos"}
+    keep_punct: set = {".", ":"}
+    do_not_normalize: set = {"VBD", "VBG", "VBN", "VBP", "JJS", "JJR"}
+    skip_stopwords: bool = False
+    min_len_normalize: int = 5
+    stopwords: Optional[set] = None
 
 
 class Config(BaseModel):
@@ -212,7 +204,8 @@ class CDB:
         self.cui2context_vectors = {}
         self.cui2count_train = {}
         self.name2count_train = {}
-        self.weighted_average_function = None
+        self.vocab = {}
+        self.weighted_average_function = default_weighted_average
 
     def __repr__(self):
         return (
@@ -223,8 +216,11 @@ class CDB:
             f"    addl_info:              {self._preview_dict(self.addl_info, value_preview='...')}\n"
             f"    snames:                 {self._preview_set(self.snames)}\n"
             f"    cui2snames:             {self._preview_dict(self.cui2snames, n=1)}\n"
-            f"    cui2context_vectors:    {self._preview_dict(self.cui2count_train)}\n"
+            f"    cui2names:              {self._preview_dict(self.cui2names, n=1)}\n"
+            f"    cui2context_vectors:    {self._preview_dict(self.cui2context_vectors, value_preview='...')}\n"
+            f"    cui2count_train:        {self._preview_dict(self.cui2count_train)}\n"
             f"    name2count_train:       {self._preview_dict(self.name2count_train)}\n"
+            f"    vocab:                  {self._preview_dict(self.vocab)}\n"
             f"    weighted_average_function: {self.weighted_average_function}\n"
             f")"
         )
@@ -240,8 +236,8 @@ class CDB:
 
     @classmethod
     def load(cls, path: str) -> "CDB":
+        # Removed weighted_average_function fix - only use default
         cdb = deserialize_cdb(path, cls)
-        fix_waf_lambda(cdb)
         return cdb
 
     def get_snames(self) -> Set[str]:

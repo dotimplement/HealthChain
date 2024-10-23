@@ -9,7 +9,7 @@ import numpy as np
 from spacy.language import Language
 from spacy.tokens import Doc, Span, Token
 from typing import Optional, List, Tuple, Dict, Any
-from healthchain.pipeline.models.medcatlite.medcatutils import (
+from healthchain.pipeline.models.medcatlite.utils import (
     CDB,
     Config,
     Vocab,

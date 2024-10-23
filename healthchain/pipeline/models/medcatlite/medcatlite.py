@@ -8,14 +8,13 @@ import json
 import os
 import logging
 import spacy
-from spacy.language import Language
+from spacy.language import Language, registry
 from spacy.tokens import Doc
 from functools import lru_cache
 from typing import Optional, List
-from healthchain.pipeline.models.medcatlite.medcatutils import (
+from healthchain.pipeline.models.medcatlite.utils import (
     CDB,
     Config,
-    BasicSpellChecker,
     Vocab,
     attempt_unpack,
 )
@@ -35,7 +34,6 @@ class MedCATLite:
         self.cdb = cdb
         self.vocab = vocab
         self.nlp = None
-        self.spell_checker = None
         self.create_pipeline()
 
     @classmethod
@@ -56,7 +54,7 @@ class MedCATLite:
         if config_path is not None:
             with open(config_path, "r") as f:
                 config = json.load(f)
-        else:  # inserted
+        else:
             config = cdb.config
 
         return cls(cdb, vocab, config)
@@ -81,13 +79,20 @@ class MedCATLite:
             ],
         )
 
-        if self.config.general.spell_check:
-            self.spell_checker = BasicSpellChecker(
-                cdb_vocab=self.cdb.vocab, config=self.config, data_vocab=self.vocab
-            )
+        registry.misc.register("medcatlite_vocab", func=lambda: self.vocab)
+        registry.misc.register("medcatlite_cdb", func=lambda: self.cdb)
 
+        # Add the pipe component
         self.nlp.add_pipe(
-            "medcat_token_processor", config={"config": self.config.model_dump()}
+            "medcatlite_token_processor",
+            config={
+                "token_processor_resources": {
+                    "@misc": "medcatlite.token_processor_resources",
+                    "cdb": {"@misc": "medcatlite_cdb"},
+                    "vocab": {"@misc": "medcatlite_vocab"},
+                }
+            },
+            first=True,
         )
 
         # self.nlp.add_pipe('medcat_ner', last=True)

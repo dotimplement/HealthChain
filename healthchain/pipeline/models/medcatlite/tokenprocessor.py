@@ -3,128 +3,103 @@
 # Copyright 2024 CogStack
 # Licensed under the Elastic License 2.0
 
-
+import logging
 import re
 from spacy.language import Language
 from spacy.tokens import Doc, Token
 from typing import Dict, Any, Iterable, Optional, Set
 
 
-class BasicSpellChecker(object):
-    def __init__(self, cdb_vocab, config, data_vocab=None):
-        self.vocab = cdb_vocab
+log = logging.getLogger(__name__)
+
+
+class NorvigSpellChecker:
+    def __init__(self, word_frequency: Dict[str, int], config: Dict[str, Any]):
+        self.word_frequency = word_frequency
         self.config = config
-        self.data_vocab = data_vocab
-
-    def P(self, word: str) -> float:
-        """Probability of `word`.
-
-        Args:
-            word (str): The word in question.
-
-        Returns:
-            float: The probability.
-        """
-        cnt = self.vocab.get(word, 0)
-        if cnt != 0:
-            return -1 / cnt
-        return 0
-
-    def __contains__(self, word):
-        if word in self.vocab:
-            return True
-        if self.data_vocab is not None and word in self.data_vocab:
-            return False
-        return False
 
     def fix(self, word: str) -> Optional[str]:
-        """Most probable spelling correction for word.
+        """Most probable spelling correction for word."""
+        candidates = self.candidates(word)
+        best_candidate = max(candidates, key=self._probability)
+        return best_candidate if best_candidate != word else None
 
-        Args:
-            word (str): The word.
+    def candidates(self, word: str) -> Set[str]:
+        """Generate possible spelling corrections for word."""
+        known_words = self.known([word])
+        if known_words:
+            return known_words
 
-        Returns:
-            Optional[str]: Fixed word, or None if no fixes were applied.
-        """
-        fix = max(self.candidates(word), key=self.P)
-        if fix != word:
-            return fix
-        return None
+        edit1_words = self.known(self.edits1(word))
+        if edit1_words:
+            return edit1_words
 
-    def candidates(self, word: str) -> Iterable[str]:
-        """Generate possible spelling corrections for word.
+        if self.config["general"]["spell_check_deep"]:
+            edit2_words = self.known(self.edits2(word))
+            if edit2_words:
+                return edit2_words
 
-        Args:
-            word (str): The word.
-
-        Returns:
-            Iterable[str]: The list of candidate words.
-        """
-        if self.config.general.spell_check_deep:
-            return (
-                self.known([word])
-                or self.known(self.edits1(word))
-                or self.known(self.edits2(word))
-                or [word]
-            )
-        return self.known([word]) or self.known(self.edits1(word)) or [word]
+        return {word}
 
     def known(self, words: Iterable[str]) -> Set[str]:
-        """The subset of `words` that appear in the dictionary of WORDS.
-
-        Args:
-            words (Iterable[str]): The words.
-
-        Returns:
-            Set[str]: The set of candidates.
-        """
-        return set((w for w in words if w in self.vocab))
+        """The subset of words that appear in the vocabulary."""
+        return {w for w in words if w in self.word_frequency}
 
     def edits1(self, word: str) -> Set[str]:
-        return self.get_edits1(word, self.config.general.diacritics)
+        """All edits that are one edit away from word."""
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        if self.config["general"]["diacritics"]:
+            letters += "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+
+        splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+        deletes = {L + R[1:] for L, R in splits if R}
+        transposes = {L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1}
+        replaces = {L + c + R[1:] for L, R in splits if R for c in letters}
+        inserts = {L + c + R for L, R in splits for c in letters}
+
+        return deletes | transposes | replaces | inserts
+
+    def edits2(self, word: str) -> Set[str]:
+        """All edits that are two edits away from word."""
+        return {e2 for e1 in self.edits1(word) for e2 in self.edits1(e1)}
+
+    def _probability(self, word: str) -> float:
+        """Probability of word."""
+        count = self.word_frequency.get(word, 0)
+        return -1 / count if count else 0
 
 
-@Language.factory("medcat_token_processor")
+@Language.factory("medcatlite_token_processor")
 def create_token_processor(
-    nlp: Language,
-    name: str,
-    config: Dict[str, Any],
-    spell_checker: Optional[object] = None,
+    nlp: Language, name: str, token_processor_resources: Dict[str, Any]
 ):
-    return TokenProcessor(nlp, name, config, spell_checker)
+    return TokenProcessor(nlp, name, token_processor_resources)
 
 
 class TokenProcessor:
     def __init__(
-        self,
-        nlp: Language,
-        name: str,
-        config: Dict[str, Any],
-        spell_checker: Optional[object] = None,
+        self, nlp: Language, name: str, token_processor_resources: Dict[str, Any]
     ):
-        """
-        Initialize the TokenProcessor class.
-
-        Args:
-            nlp (Language): The spaCy language object.
-            name (str): The name of the component.
-            config (Dict[str, Any]): The configuration dictionary.
-            spell_checker (Optional[object]): The spell checker object, if any.
-        """
         self.nlp = nlp
-        self.config = config
-        self.spell_checker = spell_checker
+        self.name = name
+        self.config = token_processor_resources["config"]
+        self.cdb_word_freq = token_processor_resources["cdb_word_freq"]
+        self.spell_checker = NorvigSpellChecker(
+            word_frequency=self.cdb_word_freq, config=self.config
+        )
         self._setup_regex_patterns()
         self._setup_token_extensions()
-        self._setup_lemmatizer()
+        self._setup_nlp_components()
 
     def _setup_regex_patterns(self):
         """
         Set up regular expression patterns for token processing.
         """
-        self.CONTAINS_NUMBER = re.compile(r"\d")
-        self.punct_checker = self.config["preprocessing"]["punct_checker"]
-        self.word_skipper = self.config["preprocessing"]["word_skipper"]
+        self.contains_number = re.compile(r"\d")
+        self.punct_checker = re.compile(r"[^a-z0-9]+")
+        self.word_skipper = re.compile(
+            "^({})$".format("|".join(self.config["preprocessing"]["words_to_skip"]))
+        )
 
     def _setup_token_extensions(self):
         """
@@ -134,14 +109,24 @@ class TokenProcessor:
             if not Token.has_extension(ext):
                 Token.set_extension(ext, default="" if ext == "norm" else False)
 
-    def _setup_lemmatizer(self):
+    def _setup_nlp_components(self):
         """
-        Set up the lemmatizer component.
+        Set up the lemmatizer, tagger, and attribute ruler components.
         """
         if not self.nlp.has_pipe("lemmatizer"):
-            self.lemmatizer = self.nlp.create_pipe("lemmatizer")
+            self.lemmatizer = self.nlp.add_pipe("lemmatizer")
         else:
             self.lemmatizer = self.nlp.get_pipe("lemmatizer")
+
+        if not self.nlp.has_pipe("tagger"):
+            self.tagger = self.nlp.add_pipe("tagger")
+        else:
+            self.tagger = self.nlp.get_pipe("tagger")
+
+        if not self.nlp.has_pipe("attribute_ruler"):
+            self.attribute_ruler = self.nlp.add_pipe("attribute_ruler")
+        else:
+            self.attribute_ruler = self.nlp.get_pipe("attribute_ruler")
 
     def __call__(self, doc: Doc) -> Doc:
         """
@@ -153,6 +138,9 @@ class TokenProcessor:
         Returns:
             Doc: The processed document.
         """
+        self.tagger(doc)
+        self.attribute_ruler(doc)
+        self.lemmatizer(doc)
         for token in doc:
             self.process_token(token)
         return doc
@@ -275,20 +263,11 @@ class TokenProcessor:
                 self._apply_spell_fix(token, fix)
 
     def _should_apply_spell_check(self, token: Token) -> bool:
-        """
-        Check if spell check should be applied to the token.
-
-        Args:
-            token (Token): The token to check.
-
-        Returns:
-            bool: True if spell check should be applied, False otherwise.
-        """
         return (
             len(token.text) >= self.config["general"]["spell_check_len_limit"]
             and not token._.is_punct
-            and token.lower_ not in self.spell_checker
-            and not self.CONTAINS_NUMBER.search(token.lower_)
+            and token.lower_ not in self.spell_checker.word_frequency
+            and not self.contains_number.search(token.lower_)
         )
 
     def _apply_spell_fix(self, token: Token, fix: str):
