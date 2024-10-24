@@ -128,12 +128,16 @@ class GeneralConfig(BaseModel):
     diacritics: bool = False
     spell_check_deep: bool = False
     spell_check_len_limit: int = 7
+    make_pretty_labels: Optional[str] = None  # None or "long" or "short"
+    map_cui_to_group: bool = False
 
 
 class NERConfig(BaseModel):
     min_name_len: int = 3
     max_skip_tokens: int = 2
     try_reverse_word_order: bool = False
+    check_upper_case_names: bool = False
+    upper_case_limit_len: int = 4
 
 
 class LinkingConfig(BaseModel):
@@ -146,6 +150,13 @@ class LinkingConfig(BaseModel):
     context_vector_weights: Dict[str, float] = Field(
         default_factory=lambda: {"long": 0.5, "medium": 0.3, "short": 0.2}
     )
+    context_ignore_center_tokens: bool = False
+    random_replacement_unsupervised: float = 0.80
+    filter_before_disamb: bool = False
+    prefer_primary_name: float = 0.35
+    prefer_frequent_concepts: float = 0.35
+    disamb_length_limit: int = 3
+    always_calculate_similarity: bool = False
 
 
 class PreprocessingConfig(BaseModel):
@@ -206,6 +217,7 @@ class CDB:
         self.cui2context_vectors = {}
         self.cui2count_train = {}
         self.name2count_train = {}
+        self.name_isupper: Dict = {}
         self.vocab = {}
         self.weighted_average_function = default_weighted_average
 
@@ -222,6 +234,7 @@ class CDB:
             f"    cui2context_vectors:    {self._preview_dict(self.cui2context_vectors, value_preview='...')}\n"
             f"    cui2count_train:        {self._preview_dict(self.cui2count_train)}\n"
             f"    name2count_train:       {self._preview_dict(self.name2count_train)}\n"
+            f"    name_isupper:           {self._preview_dict(self.name_isupper)}\n"
             f"    vocab:                  {self._preview_dict(self.vocab)}\n"
             f"    weighted_average_function: {self.weighted_average_function}\n"
             f")"

@@ -16,8 +16,11 @@ def create_ner_resources(cdb: CDB) -> Dict:
     """Get NER-specific resources"""
     return {
         "config": cdb.config.model_dump(),
-        "name2cuis": cdb.name2cuis,
-        "snames": cdb.snames,
+        "cdb": {
+            "name2cuis": cdb.name2cuis,
+            "snames": cdb.snames,
+            "name_isupper": cdb.name_isupper,
+        },
     }
 
 
@@ -25,9 +28,12 @@ def create_ner_resources(cdb: CDB) -> Dict:
 def create_linker_resources(cdb: CDB, vocab: Optional[Vocab] = None) -> Dict:
     """Get linker-specific resources"""
     return {
-        "name2cui2status": cdb.name2cuis2status,
-        "cui2average_confidence": cdb.cui2average_confidence,
-        "cui2names": cdb.cui2names,
-        "weighted_average_function": cdb.weighted_average_function,
-        "vocab": vocab,  # Pass the MedCAT vocab
+        "config": cdb.config.model_dump(),
+        "cdb": {
+            "name2cuis2status": cdb.name2cuis2status,
+            "cui2average_confidence": cdb.cui2average_confidence,
+            "cui2names": cdb.cui2names,
+            "weighted_average_function": cdb.weighted_average_function,
+        },
+        "vocab": dict(vocab.vocab),  # Pass the MedCAT vocab
     }

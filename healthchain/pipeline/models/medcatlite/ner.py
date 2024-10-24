@@ -31,8 +31,7 @@ class NER:
         """
         self.nlp = nlp
         self.name = name
-        self.name2cuis = ner_resources["name2cuis"]
-        self.snames = ner_resources["snames"]
+        self.cdb = ner_resources["cdb"]
         self.config = ner_resources["config"]
         self._setup_extensions()
 
@@ -40,12 +39,21 @@ class NER:
         """
         Set up custom extensions for Doc, Token, and Span objects.
         """
-        if not Doc.has_extension("to_skip"):
-            Doc.set_extension("to_skip", default=False)
-        if not Token.has_extension("norm"):
-            Token.set_extension("norm", default="")
-        if not Span.has_extension("link_candidates"):
-            Span.set_extension("link_candidates", default=[])
+        # Set up custom extensions for Doc objects
+        if not Doc.has_extension("ents"):
+            Doc.set_extension("ents", default=[])
+
+        # Set up custom extensions for Span objects
+        span_extensions = {
+            "confidence": -1,
+            "id": 0,
+            "link_candidates": None,
+            "detected_name": None,
+        }
+
+        for name, default_value in span_extensions.items():
+            if not Span.has_extension(name):
+                Span.set_extension(name, default=default_value)
 
     def __call__(self, doc: Doc) -> Doc:
         """
@@ -57,10 +65,9 @@ class NER:
         Returns:
             Doc: The processed document with identified entities.
         """
-        tokens = list(doc)
-        for i in range(len(tokens)):
-            if not doc._.to_skip:
-                self.process_token(doc, tokens, i)
+        tokens_to_process = [tkn for tkn in doc if not tkn._.to_skip]
+        for i in range(len(tokens_to_process)):
+            self.process_token(doc, tokens_to_process, i)
         return doc
 
     def process_token(self, doc: Doc, tokens: List[Token], start_index: int):
@@ -73,10 +80,9 @@ class NER:
             start_index (int): The index of the token to process.
         """
         current_tokens = [tokens[start_index]]
-        name_versions = self._get_name_versions(tokens[start_index])
-        name = self.get_initial_name(name_versions)
+        name = self.get_initial_name(tokens[start_index])
 
-        if name and name in self.name2cuis and not tokens[start_index].is_stop:
+        if name and name in self.cdb["name2cuis"] and not tokens[start_index].is_stop:
             self.annotate_name(name, current_tokens, doc)
 
         if name:
@@ -84,32 +90,25 @@ class NER:
                 doc, tokens, start_index, name, current_tokens
             )
 
-    def _get_name_versions(self, token: Token) -> List[str]:
+    def get_initial_name(self, token: Token) -> str:
         """
-        Get different versions of the token's name.
+        Get the initial name from the list of name versions.
 
         Args:
             token (Token): The token to get name versions for.
 
         Returns:
-            List[str]: The list of name versions.
-        """
-        return [token._.norm, token.lower_]
-
-    def get_initial_name(self, name_versions: List[str]) -> str:
-        """
-        Get the initial name from the list of name versions.
-
-        Args:
-            name_versions (List[str]): The list of name versions.
-
-        Returns:
             str: The initial name.
         """
-        for name_version in name_versions:
-            if name_version in self.snames or name_version in self.name2cuis:
-                return name_version
-        return ""
+        name_versions = [token._.norm, token.lower_]
+        return next(
+            (
+                name
+                for name in name_versions
+                if name in self.cdb["snames"] or name in self.cdb["name2cuis"]
+            ),
+            "",
+        )
 
     def _process_subsequent_tokens(
         self,
@@ -130,64 +129,51 @@ class NER:
             current_tokens (List[Token]): The list of current tokens.
         """
         for j in range(start_index + 1, len(tokens)):
-            if self._exceeds_max_skip(tokens, j):
+            if (
+                tokens[j].i - tokens[j - 1].i - 1
+                > self.config["ner"]["max_skip_tokens"]
+            ):
                 return
 
             current_tokens.append(tokens[j])
-            name_versions = self._get_name_versions(tokens[j])
-            name_changed, name_reverse = self.update_name(name, name_versions)
+            name_changed, name_reverse = self.update_name(name, tokens[j])
 
-            if name_changed:
-                if name in self.name2cuis:
-                    self.annotate_name(name, current_tokens, doc)
-            elif name_reverse:
-                if name_reverse in self.name2cuis:
-                    self.annotate_name(name_reverse, current_tokens, doc)
+            if name_changed and name in self.cdb["name2cuis"]:
+                self.annotate_name(name, current_tokens, doc)
+            elif name_reverse and name_reverse in self.cdb["name2cuis"]:
+                self.annotate_name(name_reverse, current_tokens, doc)
             else:
                 break
 
-    def _exceeds_max_skip(self, tokens: List[Token], index: int) -> bool:
-        """
-        Check if the maximum number of tokens to skip is exceeded.
-
-        Args:
-            tokens (List[Token]): The list of tokens in the document.
-            index (int): The current index.
-
-        Returns:
-            bool: True if the maximum number of tokens to skip is exceeded, False otherwise.
-        """
-        return (
-            tokens[index].i - tokens[index - 1].i - 1
-            > self.config["ner"]["max_skip_tokens"]
-        )
-
-    def update_name(
-        self, name: str, name_versions: List[str]
-    ) -> Tuple[bool, Optional[str]]:
+    def update_name(self, name: str, token: Token) -> Tuple[bool, Optional[str]]:
         """
         Update the name based on the list of name versions.
 
         Args:
             name (str): The current name.
-            name_versions (List[str]): The list of name versions.
+            token (Token): The token to get name versions for.
 
         Returns:
             Tuple[bool, Optional[str]]: A tuple indicating if the name was changed and the reverse name if applicable.
         """
+        separator = self.config["general"]["separator"]
+        name_versions = [token._.norm, token.lower_]
+
         for name_version in name_versions:
-            new_name = f"{name}{self.config['general']['separator']}{name_version}"
-            if new_name in self.snames:
+            new_name = f"{name}{separator}{name_version}"
+            if new_name in self.cdb["snames"]:
                 return True, None
+
             if self.config["ner"]["try_reverse_word_order"]:
-                reverse_name = (
-                    f"{name_version}{self.config['general']['separator']}{name}"
-                )
-                if reverse_name in self.snames:
+                reverse_name = f"{name_version}{separator}{name}"
+                if reverse_name in self.cdb["snames"]:
                     return False, reverse_name
+
         return False, None
 
-    def annotate_name(self, name: str, tokens: List[Token], doc: Doc):
+    def annotate_name(
+        self, name: str, tokens: List[Token], doc: Doc, label: str = "concept"
+    ) -> Optional[Span]:
         """
         Annotate the identified name in the document.
 
@@ -195,25 +181,44 @@ class NER:
             name (str): The identified name.
             tokens (List[Token]): The list of tokens representing the name.
             doc (Doc): The spaCy document object.
-        """
-        start, end = tokens[0].i, tokens[-1].i + 1
-        if self._can_create_entity(doc, start, end):
-            ent = Span(doc, start, end, label="CUSTOM")
-            doc.ents = list(doc.ents) + [ent]
-            ent._.set("link_candidates", self.name2cuis.get(name, []))
-
-    def _can_create_entity(self, doc: Doc, start: int, end: int) -> bool:
-        """
-        Check if an entity can be created in the document.
-
-        Args:
-            doc (Doc): The spaCy document object.
-            start (int): The start index of the entity.
-            end (int): The end index of the entity.
 
         Returns:
-            bool: True if an entity can be created, False otherwise.
+            Optional[Span]: The annotated entity if created, None otherwise.
         """
+        start, end = tokens[0].i, tokens[-1].i + 1
+
+        if (
+            self.config["ner"]["check_upper_case_names"]
+            and self.cdb["name_isupper"].get(name, False)
+            and not all(token.is_upper for token in tokens)
+        ):
+            return None
+
+        min_name_len = self.config["ner"]["min_name_len"]
+        upper_case_limit_len = self.config["ner"]["upper_case_limit_len"]
+
+        if len(name) >= min_name_len and (
+            len(name) >= upper_case_limit_len
+            or (len(tokens) == 1 and tokens[0].is_upper)
+        ):
+            if self._can_create_entity(doc, start, end):
+                ent = Span(doc, start, end, label=label)
+                ent._.detected_name = name
+                ent._.link_candidates = self.cdb["name2cuis"].get(name, [])
+                ent._.id = len(doc._.ents)
+                ent._.confidence = -1
+                doc._.ents.append(ent)
+
+                logger.debug(
+                    "NER detected an entity.\n\tDetected name: %s\n\tLink candidates: %s\n",
+                    ent._.detected_name,
+                    ent._.link_candidates,
+                )
+                return ent
+
+        return None
+
+    def _can_create_entity(self, doc: Doc, start: int, end: int) -> bool:
         return len(doc.ents) == 0 or not any(
             e.start <= start < e.end or start <= e.start < end for e in doc.ents
         )
