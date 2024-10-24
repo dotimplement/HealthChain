@@ -47,11 +47,11 @@ nlp_pipeline = Pipeline[Document]()
 
 # Add TextPreProcessor component
 preprocessor = TextPreProcessor(tokenizer="spacy")
-nlp_pipeline.add(preprocessor)
+nlp_pipeline.add_node(preprocessor)
 
 # Add Model component (assuming we have a pre-trained model)
 model = Model(model_path="path/to/pretrained/model")
-nlp_pipeline.add(model)
+nlp_pipeline.add_node(model)
 
 # Add TextPostProcessor component
 postprocessor = TextPostProcessor(
@@ -60,7 +60,7 @@ postprocessor = TextPostProcessor(
         "high blood pressure": "hypertension"
     }
 )
-nlp_pipeline.add(postprocessor)
+nlp_pipeline.add_node(postprocessor)
 
 # Build the pipeline
 nlp = nlp_pipeline.build()
