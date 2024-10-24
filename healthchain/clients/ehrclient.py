@@ -99,7 +99,11 @@ def ehr(
 
 class EHRClient(BaseClient):
     def __init__(
-        self, func: Callable[..., Any], workflow: Workflow, strategy: BaseStrategy
+        self,
+        func: Callable[..., Any],
+        workflow: Workflow,
+        strategy: BaseStrategy,
+        timeout: Optional[float] = 10.0,
     ):
         """
         Initializes the EHRClient with a data generator function and optional workflow and use case.
@@ -117,6 +121,7 @@ class EHRClient(BaseClient):
         self.strategy: BaseStrategy = strategy
         self.vendor = None
         self.request_data: List[CDSRequest] = []
+        self.timeout = timeout
 
     def set_vendor(self, name) -> None:
         self.vendor = name
@@ -150,7 +155,7 @@ class EHRClient(BaseClient):
         async with httpx.AsyncClient() as client:
             responses: List[Dict] = []
             # TODO: pass timeout as config
-            timeout = httpx.Timeout(10.0, read=None)
+            timeout = httpx.Timeout(self.timeout, read=None)
             for request in self.request_data:
                 try:
                     if self.strategy.api_protocol == ApiProtocol.soap:
