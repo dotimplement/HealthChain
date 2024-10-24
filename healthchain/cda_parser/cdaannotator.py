@@ -15,8 +15,8 @@ from healthchain.models import (
 )
 from healthchain.models.data.concept import Concept, Quantity, Range, TimeInterval
 
-from .model.cda import ClinicalDocument
-from .model.sections import (
+from healthchain.cda_parser.model.cda import ClinicalDocument
+from healthchain.cda_parser.model.sections import (
     Entry,
     Section,
     EntryRelationship,
@@ -136,6 +136,13 @@ class SectionId(Enum):
     MEDICATION = "2.16.840.1.113883.10.20.1.8"
     ALLERGY = "2.16.840.1.113883.10.20.1.2"
     NOTE = "1.2.840.114350.1.72.1.200001"
+
+
+class SectionCode(Enum):
+    PROBLEM = "11450-4"
+    MEDICATION = "10160-0"
+    ALLERGY = "48765-2"
+    NOTE = "51847-2"
 
 
 class ProblemCodes(Enum):
@@ -258,6 +265,31 @@ class CdaAnnotator:
         self.allergy_list: List[AllergyConcept] = self._extract_allergies()
         self.note: str = self._extract_note()
 
+    def _find_section_by_code(self, section_code: str) -> Optional[Section]:
+        """
+        Finds a section in the clinical document by its code value.
+
+        Args:
+            section_code (str): The code of the section to find.
+
+        Returns:
+            Optional[Section]: The section with the specified code, or None if not found.
+        """
+        components = self.clinical_document.component.structuredBody.component
+
+        if not isinstance(components, list):
+            components = [components]
+
+        for component in components:
+            code = component.section.code.code
+
+            if code is None:
+                continue
+            if code == section_code:
+                return component.section
+        log.warning(f"unable to find section with code {section_code}")
+        return None
+
     def _find_section_by_template_id(self, section_id: str) -> Optional[Section]:
         """
         Finds a section in the clinical document by its template ID.
@@ -292,16 +324,24 @@ class CdaAnnotator:
         return None
 
     def _find_problems_section(self) -> Optional[Section]:
-        return self._find_section_by_template_id(SectionId.PROBLEM.value)
+        return self._find_section_by_template_id(
+            SectionId.PROBLEM.value
+        ) or self._find_section_by_code(SectionCode.PROBLEM.value)
 
     def _find_medications_section(self) -> Optional[Section]:
-        return self._find_section_by_template_id(SectionId.MEDICATION.value)
+        return self._find_section_by_template_id(
+            SectionId.MEDICATION.value
+        ) or self._find_section_by_code(SectionCode.MEDICATION.value)
 
     def _find_allergies_section(self) -> Optional[Section]:
-        return self._find_section_by_template_id(SectionId.ALLERGY.value)
+        return self._find_section_by_template_id(
+            SectionId.ALLERGY.value
+        ) or self._find_section_by_code(SectionCode.ALLERGY.value)
 
     def _find_notes_section(self) -> Optional[Section]:
-        return self._find_section_by_template_id(SectionId.NOTE.value)
+        return self._find_section_by_template_id(
+            SectionId.NOTE.value
+        ) or self._find_section_by_code(SectionCode.NOTE.value)
 
     def _extract_problems(self) -> List[ProblemConcept]:
         """
