@@ -1,3 +1,3 @@
 # Pipeline
 
-::: healthchain.pipeline.basepipeline
+::: healthchain.pipeline.base

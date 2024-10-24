@@ -1,7 +1,8 @@
 import pytest
 from pydantic import BaseModel, Field, ValidationError
-from healthchain.pipeline.basepipeline import BasePipeline, Pipeline, BaseComponent
+from healthchain.pipeline.base import BasePipeline, BaseComponent
 from healthchain.io.containers import DataContainer
+from healthchain.pipeline.base import Pipeline
 
 
 # Mock classes and functions for testing
@@ -36,25 +37,25 @@ def basic_pipeline():
 # Test adding components
 def test_add_component(basic_pipeline):
     # Test basic component addition
-    basic_pipeline.add(mock_component, name="test_component")
+    basic_pipeline.add_node(mock_component, name="test_component")
     assert len(basic_pipeline._components) == 1
     assert basic_pipeline._components[0].name == "test_component"
 
     # Test adding components with positions and stages
-    basic_pipeline.add(
+    basic_pipeline.add_node(
         mock_component, name="first", position="first", stage="preprocessing"
     )
-    basic_pipeline.add(
+    basic_pipeline.add_node(
         mock_component, name="last", position="last", stage="other_processing"
     )
-    basic_pipeline.add(
+    basic_pipeline.add_node(
         mock_component,
         name="second",
         position="after",
         reference="first",
         stage="other_processing",
     )
-    basic_pipeline.add(
+    basic_pipeline.add_node(
         mock_component, name="third", position="before", reference="last"
     )
 
@@ -70,18 +71,18 @@ def test_add_component(basic_pipeline):
 
     # Test adding component with invalid position
     with pytest.raises(ValueError):
-        basic_pipeline.add(mock_component, name="invalid", position="middle")
+        basic_pipeline.add_node(mock_component, name="invalid", position="middle")
 
     # Test adding component with missing reference
     with pytest.raises(ValueError):
-        basic_pipeline.add(
+        basic_pipeline.add_node(
             mock_component, name="invalid", position="after", reference="nonexistent"
         )
 
     # Test adding component with dependencies
-    basic_pipeline.add(mock_component, name="dep1")
-    basic_pipeline.add(mock_component, name="dep2")
-    basic_pipeline.add(mock_component, name="main", dependencies=["dep1", "dep2"])
+    basic_pipeline.add_node(mock_component, name="dep1")
+    basic_pipeline.add_node(mock_component, name="dep2")
+    basic_pipeline.add_node(mock_component, name="main", dependencies=["dep1", "dep2"])
 
     assert basic_pipeline._components[-1].name == "main"
     assert basic_pipeline._components[-1].dependencies == ["dep1", "dep2"]
@@ -89,14 +90,14 @@ def test_add_component(basic_pipeline):
 
 # Test removing and replacing components
 def test_remove_and_replace_component(basic_pipeline, caplog):
-    basic_pipeline.add(mock_component, name="test_component")
+    basic_pipeline.add_node(mock_component, name="test_component")
     basic_pipeline.remove("test_component")
     assert len(basic_pipeline._components) == 0
 
     with pytest.raises(ValueError):
         basic_pipeline.remove("nonexistent_component")
 
-    basic_pipeline.add(mock_component, name="original")
+    basic_pipeline.add_node(mock_component, name="original")
 
     # Test replacing with a valid callable
     def new_component(data: DataContainer) -> DataContainer:
@@ -132,8 +133,8 @@ def test_remove_and_replace_component(basic_pipeline, caplog):
 
 # Test building and executing pipeline
 def test_build_and_execute_pipeline(basic_pipeline):
-    basic_pipeline.add(mock_component, name="comp1")
-    basic_pipeline.add(mock_component, name="comp2")
+    basic_pipeline.add_node(mock_component, name="comp1")
+    basic_pipeline.add_node(mock_component, name="comp2")
 
     # Test that the pipeline automatically builds on first use
     input_data = DataContainer(1)
@@ -158,8 +159,8 @@ def test_build_and_execute_pipeline(basic_pipeline):
     assert basic_pipeline._built_pipeline is explicit_pipeline
 
     # Test circular dependency detection
-    basic_pipeline.add(mock_component, name="comp3", dependencies=["comp4"])
-    basic_pipeline.add(mock_component, name="comp4", dependencies=["comp3"])
+    basic_pipeline.add_node(mock_component, name="comp3", dependencies=["comp4"])
+    basic_pipeline.add_node(mock_component, name="comp4", dependencies=["comp3"])
 
     # Reset the built pipeline to force a rebuild
     basic_pipeline._built_pipeline = None
@@ -180,7 +181,7 @@ def test_input_output_validation(basic_pipeline):
         data.data = data.data * 2
         return data
 
-    basic_pipeline.add(
+    basic_pipeline.add_node(
         validated_component,
         name="validated",
         input_model=MockInputModel,
@@ -204,8 +205,8 @@ def test_pipeline_class_and_representation(basic_pipeline):
     assert hasattr(pipeline, "configure_pipeline")
     pipeline.configure_pipeline("dummy_path")  # Should not raise any exception
 
-    basic_pipeline.add(mock_component, name="comp1")
-    basic_pipeline.add(mock_component, name="comp2")
+    basic_pipeline.add_node(mock_component, name="comp1")
+    basic_pipeline.add_node(mock_component, name="comp2")
 
     repr_string = repr(basic_pipeline)
     assert "comp1" in repr_string

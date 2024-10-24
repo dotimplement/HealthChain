@@ -1,4 +1,4 @@
-from healthchain.pipeline.components.basecomponent import BaseComponent
+from healthchain.pipeline.components.base import BaseComponent
 from healthchain.io.containers import Document
 from typing import TypeVar, Dict
 
@@ -6,7 +6,7 @@ from typing import TypeVar, Dict
 T = TypeVar("T")
 
 
-class TextPostProcessor(BaseComponent):
+class TextPostProcessor(BaseComponent[Document]):
     """
     A component for post-processing text documents, specifically for refining entities.
 
