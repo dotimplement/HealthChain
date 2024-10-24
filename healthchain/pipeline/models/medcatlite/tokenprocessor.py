@@ -7,66 +7,12 @@ import logging
 import re
 from spacy.language import Language
 from spacy.tokens import Doc, Token
-from typing import Dict, Any, Iterable, Optional, Set
+from typing import Dict, Any
+
+from healthchain.pipeline.models.medcatlite.spellchecker import NorvigSpellChecker
 
 
 log = logging.getLogger(__name__)
-
-
-class NorvigSpellChecker:
-    def __init__(self, word_frequency: Dict[str, int], config: Dict[str, Any]):
-        self.word_frequency = word_frequency
-        self.config = config
-
-    def fix(self, word: str) -> Optional[str]:
-        """Most probable spelling correction for word."""
-        candidates = self.candidates(word)
-        best_candidate = max(candidates, key=self._probability)
-        return best_candidate if best_candidate != word else None
-
-    def candidates(self, word: str) -> Set[str]:
-        """Generate possible spelling corrections for word."""
-        known_words = self.known([word])
-        if known_words:
-            return known_words
-
-        edit1_words = self.known(self.edits1(word))
-        if edit1_words:
-            return edit1_words
-
-        if self.config["general"]["spell_check_deep"]:
-            edit2_words = self.known(self.edits2(word))
-            if edit2_words:
-                return edit2_words
-
-        return {word}
-
-    def known(self, words: Iterable[str]) -> Set[str]:
-        """The subset of words that appear in the vocabulary."""
-        return {w for w in words if w in self.word_frequency}
-
-    def edits1(self, word: str) -> Set[str]:
-        """All edits that are one edit away from word."""
-        letters = "abcdefghijklmnopqrstuvwxyz"
-        if self.config["general"]["diacritics"]:
-            letters += "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
-
-        splits = [(word[:i], word[i:]) for i in range(len(word) + 1)]
-        deletes = {L + R[1:] for L, R in splits if R}
-        transposes = {L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1}
-        replaces = {L + c + R[1:] for L, R in splits if R for c in letters}
-        inserts = {L + c + R for L, R in splits for c in letters}
-
-        return deletes | transposes | replaces | inserts
-
-    def edits2(self, word: str) -> Set[str]:
-        """All edits that are two edits away from word."""
-        return {e2 for e1 in self.edits1(word) for e2 in self.edits1(e1)}
-
-    def _probability(self, word: str) -> float:
-        """Probability of word."""
-        count = self.word_frequency.get(word, 0)
-        return -1 / count if count else 0
 
 
 @Language.factory("medcatlite_token_processor")
@@ -83,7 +29,7 @@ class TokenProcessor:
         self.nlp = nlp
         self.name = name
         self.config = token_processor_resources["config"]
-        self.cdb_word_freq = token_processor_resources["cdb_word_freq"]
+        self.cdb_word_freq = token_processor_resources["cdb"].vocab
         self.spell_checker = NorvigSpellChecker(
             word_frequency=self.cdb_word_freq, config=self.config
         )
@@ -98,7 +44,7 @@ class TokenProcessor:
         self.contains_number = re.compile(r"\d")
         self.punct_checker = re.compile(r"[^a-z0-9]+")
         self.word_skipper = re.compile(
-            "^({})$".format("|".join(self.config["preprocessing"]["words_to_skip"]))
+            "^({})$".format("|".join(self.config.preprocessing.words_to_skip))
         )
 
     def _setup_token_extensions(self):
@@ -163,7 +109,7 @@ class TokenProcessor:
         Args:
             token (Token): The token to tag.
         """
-        cnf_p = self.config["preprocessing"]
+        cnf_p = self.config.preprocessing
         if self._is_punctuation(token, cnf_p):
             token._.is_punct = True
             token._.to_skip = True
@@ -183,7 +129,7 @@ class TokenProcessor:
         """
         return (
             self.punct_checker.match(token.lower_)
-            and token.text not in cnf_p["keep_punct"]
+            and token.text not in cnf_p.keep_punct
         )
 
     def _should_skip_token(self, token: Token, cnf_p: Dict) -> bool:
@@ -198,7 +144,7 @@ class TokenProcessor:
             bool: True if the token should be skipped, False otherwise.
         """
         return self.word_skipper.match(token.lower_) or (
-            cnf_p["skip_stopwords"] and token.is_stop
+            cnf_p.skip_stopwords and token.is_stop
         )
 
     def _normalize_token(self, token: Token):
@@ -208,12 +154,12 @@ class TokenProcessor:
         Args:
             token (Token): The token to normalize.
         """
-        if len(token.lower_) < self.config["preprocessing"]["min_len_normalize"]:
+        if len(token.lower_) < self.config.preprocessing.min_len_normalize:
             token._.norm = token.lower_
         else:
             token._.norm = self._get_normalized_form(token)
 
-        if self.config["general"]["spell_check"]:
+        if self.config.general.spell_check:
             self._apply_spell_check(token)
 
     def _get_normalized_form(self, token: Token) -> str:
@@ -245,9 +191,9 @@ class TokenProcessor:
             bool: True if the token should not be normalized, False otherwise.
         """
         return (
-            self.config["preprocessing"]["do_not_normalize"]
+            self.config.preprocessing.do_not_normalize
             and token.tag_ is not None
-            and (token.tag_ in self.config["preprocessing"]["do_not_normalize"])
+            and (token.tag_ in self.config.preprocessing.do_not_normalize)
         )
 
     def _apply_spell_check(self, token: Token):
@@ -264,7 +210,7 @@ class TokenProcessor:
 
     def _should_apply_spell_check(self, token: Token) -> bool:
         return (
-            len(token.text) >= self.config["general"]["spell_check_len_limit"]
+            len(token.text) >= self.config.general.spell_check_len_limit
             and not token._.is_punct
             and token.lower_ not in self.spell_checker.word_frequency
             and not self.contains_number.search(token.lower_)
@@ -279,7 +225,7 @@ class TokenProcessor:
             fix (str): The fixed token text.
         """
         tmp = self.nlp(fix)[0]
-        if len(token.lower_) < self.config["preprocessing"]["min_len_normalize"]:
+        if len(token.lower_) < self.config.preprocessing.min_len_normalize:
             token._.norm = tmp.lower_
         else:
             token._.norm = tmp.lemma_.lower()

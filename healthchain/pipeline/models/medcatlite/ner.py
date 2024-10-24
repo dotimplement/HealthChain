@@ -9,6 +9,7 @@ from spacy.language import Language
 from spacy.tokens import Doc, Span, Token
 from typing import Any, Dict, List, Tuple, Optional
 
+from healthchain.pipeline.models.medcatlite.utils import CDB, Config
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,8 @@ class NER:
         """
         self.nlp = nlp
         self.name = name
-        self.cdb = ner_resources["cdb"]
-        self.config = ner_resources["config"]
+        self.cdb: CDB = ner_resources["cdb"]
+        self.config: Config = ner_resources["config"]
         self._setup_extensions()
 
     def _setup_extensions(self):
@@ -82,7 +83,7 @@ class NER:
         current_tokens = [tokens[start_index]]
         name = self.get_initial_name(tokens[start_index])
 
-        if name and name in self.cdb["name2cuis"] and not tokens[start_index].is_stop:
+        if name and name in self.cdb.name2cuis and not tokens[start_index].is_stop:
             self.annotate_name(name, current_tokens, doc)
 
         if name:
@@ -105,7 +106,7 @@ class NER:
             (
                 name
                 for name in name_versions
-                if name in self.cdb["snames"] or name in self.cdb["name2cuis"]
+                if name in self.cdb.snames or name in self.cdb.name2cuis
             ),
             "",
         )
@@ -129,18 +130,15 @@ class NER:
             current_tokens (List[Token]): The list of current tokens.
         """
         for j in range(start_index + 1, len(tokens)):
-            if (
-                tokens[j].i - tokens[j - 1].i - 1
-                > self.config["ner"]["max_skip_tokens"]
-            ):
+            if tokens[j].i - tokens[j - 1].i - 1 > self.config.ner.max_skip_tokens:
                 return
 
             current_tokens.append(tokens[j])
             name_changed, name_reverse = self.update_name(name, tokens[j])
 
-            if name_changed and name in self.cdb["name2cuis"]:
+            if name_changed and name in self.cdb.name2cuis:
                 self.annotate_name(name, current_tokens, doc)
-            elif name_reverse and name_reverse in self.cdb["name2cuis"]:
+            elif name_reverse and name_reverse in self.cdb.name2cuis:
                 self.annotate_name(name_reverse, current_tokens, doc)
             else:
                 break
@@ -156,17 +154,17 @@ class NER:
         Returns:
             Tuple[bool, Optional[str]]: A tuple indicating if the name was changed and the reverse name if applicable.
         """
-        separator = self.config["general"]["separator"]
+        separator = self.config.general.separator
         name_versions = [token._.norm, token.lower_]
 
         for name_version in name_versions:
             new_name = f"{name}{separator}{name_version}"
-            if new_name in self.cdb["snames"]:
+            if new_name in self.cdb.snames:
                 return True, None
 
-            if self.config["ner"]["try_reverse_word_order"]:
+            if self.config.ner.try_reverse_word_order:
                 reverse_name = f"{name_version}{separator}{name}"
-                if reverse_name in self.cdb["snames"]:
+                if reverse_name in self.cdb.snames:
                     return False, reverse_name
 
         return False, None
@@ -188,14 +186,14 @@ class NER:
         start, end = tokens[0].i, tokens[-1].i + 1
 
         if (
-            self.config["ner"]["check_upper_case_names"]
-            and self.cdb["name_isupper"].get(name, False)
+            self.config.ner.check_upper_case_names
+            and self.cdb.name_isupper.get(name, False)
             and not all(token.is_upper for token in tokens)
         ):
             return None
 
-        min_name_len = self.config["ner"]["min_name_len"]
-        upper_case_limit_len = self.config["ner"]["upper_case_limit_len"]
+        min_name_len = self.config.ner.min_name_len
+        upper_case_limit_len = self.config.ner.upper_case_limit_len
 
         if len(name) >= min_name_len and (
             len(name) >= upper_case_limit_len
@@ -204,7 +202,7 @@ class NER:
             if self._can_create_entity(doc, start, end):
                 ent = Span(doc, start, end, label=label)
                 ent._.detected_name = name
-                ent._.link_candidates = self.cdb["name2cuis"].get(name, [])
+                ent._.link_candidates = self.cdb.name2cuis.get(name, [])
                 ent._.id = len(doc._.ents)
                 ent._.confidence = -1
                 doc._.ents.append(ent)

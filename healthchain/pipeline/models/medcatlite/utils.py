@@ -19,6 +19,7 @@ from typing import (
     Union,
     Any,
 )
+from dataclasses import dataclass, field
 from enum import Enum
 from gensim.matutils import unitvec as g_unitvec
 from pydantic import BaseModel, Field
@@ -188,15 +189,7 @@ class Config(BaseModel):
 
     def save(self, path: str) -> None:
         with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=2)
-
-    def merge_config(self, config_dict: Dict[str, Any]) -> None:
-        for section, values in config_dict.items():
-            if hasattr(self, section):
-                current_section = getattr(self, section)
-                current_section_dict = current_section.dict()
-                current_section_dict.update(values)
-                setattr(self, section, type(current_section)(**current_section_dict))
+            json.dump(self.model_dump(), f, indent=2)
 
 
 class CDB:
@@ -255,27 +248,22 @@ class CDB:
         cdb = deserialize_cdb(path, cls)
         return cdb
 
-    def get_snames(self) -> Set[str]:
-        if not self.snames and self.cui2snames:
-            for snames in self.cui2snames.values():
-                self.snames.update(snames)
-        return self.snames
-
 
 class Vocab:
     def __init__(self):
         self.vocab = {}
-        self.index2word = {}
-        self.vec_index2word = {}
-        self.unigram_table = np.array([])
+        # These are not used in inference
+        # self.index2word = {}
+        # self.vec_index2word = {}
+        # self.unigram_table = np.array([])
 
     def __repr__(self):
         return (
             f"Vocab(\n"
             f"    vocab:          {self._preview_dict(self.vocab, value_preview='...')}\n"
-            f"    index2word:     {self._preview_dict(self.index2word)}\n"
-            f"    vec_index2word: {self._preview_dict(self.vec_index2word)}\n"
-            f"    unigram_table:  shape: {self.unigram_table.shape}\n"
+            # f"    index2word:     {self._preview_dict(self.index2word)}\n"
+            # f"    vec_index2word: {self._preview_dict(self.vec_index2word)}\n"
+            # f"    unigram_table:  shape: {self.unigram_table.shape}\n"
             f")"
         )
 
@@ -289,9 +277,6 @@ class Vocab:
     def vec(self, word: str) -> Optional[np.ndarray]:
         return self.vocab.get(word, {}).get("vec")
 
-    def __contains__(self, word: str) -> bool:
-        return word in self.vocab
-
     @classmethod
     def load(cls, path: str) -> "Vocab":
         with open(path, "rb") as f:
@@ -299,14 +284,33 @@ class Vocab:
             vocab.__dict__ = pickle.load(f)
         return vocab
 
-    def save(self, path: str) -> None:
-        with open(path, "wb") as f:
-            pickle.dump(self.__dict__, f)
 
+@dataclass
+class CuiFilter:
+    excluded_cuis: Set[str] = field(default_factory=set)
 
-class LinkingFilters:
-    def __init__(self, config: dict):
-        self.config = config
+    @classmethod
+    def from_txt(cls, file_path: str) -> "CuiFilter":
+        """
+        Initialize LinkingFilters from a plain text file containing excluded CUIs.
 
-    def check_filters(self, cui: str) -> bool:
-        return
+        Each line in the text file should contain a single CUI.
+
+        Args:
+            file_path (str): Path to the text file.
+
+        Returns:
+            LinkingFilters: An instance of LinkingFilters.
+        """
+        excluded_cuis = set()
+
+        with open(file_path, "r") as txtfile:
+            for line in txtfile:
+                cui = line.strip()
+                if cui:
+                    excluded_cuis.add(cui)
+
+        return cls(excluded_cuis=excluded_cuis)
+
+    def check(self, cui: str) -> bool:
+        return cui not in self.excluded_cuis
