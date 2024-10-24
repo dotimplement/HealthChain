@@ -3,7 +3,7 @@ from healthchain.data_generators.value_sets.procedurecodes import ProcedureCodeS
 
 
 def test_ProcedureGenerator():
-    value_set = [x["code"] for x in ProcedureCodeSimple().value_set]
+    value_set = [x.code for x in ProcedureCodeSimple().value_set]
     procedure = ProcedureGenerator.generate(
         subject_reference="Patient/123", encounter_reference="Encounter/123"
     )

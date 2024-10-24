@@ -187,14 +187,20 @@ class CodeableConceptGenerator(BaseGenerator):
     @staticmethod
     def generate_from_valueset(ValueSet):
         value_set_instance = ValueSet()
+
+        try:
+            code = faker.random_element(value_set_instance.value_set).code
+            display = faker.random_element(value_set_instance.value_set).display
+        except AttributeError:
+            code = faker.random_element(value_set_instance.value_set)["code"]
+            display = faker.random_element(value_set_instance.value_set)["display"]
+
         return CodeableConcept(
             coding=[
                 Coding(
                     system=value_set_instance.system,
-                    code=faker.random_element(value_set_instance.value_set)["code"],
-                    display=faker.random_element(value_set_instance.value_set)[
-                        "display"
-                    ],
+                    code=code,
+                    display=display,
                     # extension=[ExtensionModel(value_set_instance.extension)],
                 )
             ]
