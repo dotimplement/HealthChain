@@ -113,7 +113,9 @@ class EHRClient(BaseClient):
             func (Callable[..., Any]): A function to generate data for requests.
             workflow ([Workflow]): The workflow context to apply to the data generator.
             strategy (BaseStrategy): The strategy object to construct requests based on the generated data.
-
+            timeout(float and default=10.0) : The maximum time in seconds to wait for a response from the server.
+            This parameter determines how long the client will wait before considering a request timed out.
+            A higher timeout value allows for longer-running operations, while a lower value prioritizes faster responses.
         """
         # TODO: Add option to pass in different provider options
         self.data_generator_func: Callable[..., Any] = func
