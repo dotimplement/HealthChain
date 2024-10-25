@@ -21,7 +21,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 
 ## Features
 - [x] 🛠️ Build custom pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
-- [x] 🏗️ Add built-in CDA and FHIR parsers to connect your pipeline to interoperability standards
+- [x] 🏗️ Add built-in [CDA and FHIR parsers](https://dotimplement.github.io/HealthChain/reference/utilities/cda_parser/) to connect your pipeline to interoperability standards
 - [x] 🧪 Test your pipelines in full healthcare-context aware [sandbox](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) environments
 - [x] 🗃️ Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) for testing and development
 - [x] 🚀 Deploy sandbox servers locally with [FastAPI](https://fastapi.tiangolo.com/)
@@ -33,7 +33,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 - **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
 
 ## Pipeline
-Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily interface with parsers and connectors to integrate with EHRs.
+Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with complex healthcare systems.
 
 ### Building a pipeline
 
@@ -70,20 +70,38 @@ result = nlp(Document("Patient has a history of heart attack and high blood pres
 
 print(f"Entities: {result.entities}")
 ```
-### Using pre-built pipelines
+
+#### Adding connectors
+Connectors give your pipelines the ability to interface with EHRs.
 
 ```python
-from healthchain.io.containers import Document
-from healthchain.pipeline import MedicalCodingPipeline
+from healthchain.io import CdaConnector
+from healthchain.models import CdaRequest
 
-# Load the pre-built MedicalCodingPipeline
+cda_connector = CdaConnector()
+
+pipeline.add_input(cda_connector)
+pipeline.add_output(cda_connector)
+
+pipe = pipeline.build()
+
+cda_data = CdaRequest(document="<CDA XML content>")
+output = pipe(cda_data)
+```
+
+### Using pre-built pipelines
+Pre-built pipelines are use case specific end-to-end workflows that already have connectors and models built-in.
+
+```python
+from healthchain.pipeline import MedicalCodingPipeline
+from healthchain.models import CdaRequest
+
 pipeline = MedicalCodingPipeline.load("./path/to/model")
 
-# Create a document to process
-result = pipeline(Document("Patient has a history of myocardial infarction and hypertension."))
-
-print(f"Entities: {result.entities}")
+cda_data = CdaRequest(document="<CDA XML content>")
+output = pipeline(cda_data)
 ```
+
 
 ## Sandbox
 
@@ -102,7 +120,7 @@ Sandboxes provide a staging environment for testing and validating your pipeline
 ```python
 import healthchain as hc
 
-from healthchain.pipeline import Pipeline
+from healthchain.pipeline import SummarizationPipeline
 from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.models import Card, CdsFhirData, CDSRequest
 from healthchain.data_generator import CdsDataGenerator
@@ -111,25 +129,19 @@ from typing import List
 @hc.sandbox
 class MyCDS(ClinicalDecisionSupport):
     def __init__(self) -> None:
-        self.pipeline = Pipeline.load("./path/to/model")
+        self.pipeline = SummarizationPipeline.load("./path/to/model")
         self.data_generator = CdsDataGenerator()
 
     # Sets up an instance of a mock EHR client of the specified workflow
-    @hc.ehr(workflow="patient-view")
+    @hc.ehr(workflow="encounter-discharge")
     def ehr_database_client(self) -> CdsFhirData:
         return self.data_generator.generate()
 
     # Define your application logic here
     @hc.api
-    def my_service(self, data: CDSRequest) -> List[Card]:
+    def my_service(self, data: CDSRequest) -> CDSRequest:
         result = self.pipeline(data)
-        return [
-            Card(
-                summary="Welcome to our Clinical Decision Support service.",
-                detail=result.summary,
-                indicator="info"
-            )
-        ]
+        return result
 ```
 
 ### Clinical Documentation
@@ -145,7 +157,7 @@ import healthchain as hc
 
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.use_cases import ClinicalDocumentation
-from healthchain.models import CcdData, ProblemConcept, Quantity,
+from healthchain.models import CcdData, CdaRequest, CdaResponse
 
 @hc.sandbox
 class NotereaderSandbox(ClinicalDocumentation):
@@ -161,8 +173,8 @@ class NotereaderSandbox(ClinicalDocumentation):
         return CcdData(cda_xml=xml_string)
 
     @hc.api
-    def my_service(self, ccd_data: CcdData) -> CcdData:
-        annotated_ccd = self.pipeline(ccd_data)
+    def my_service(self, data: CdaRequest) -> CdaResponse:
+        annotated_ccd = self.pipeline(data)
         return annotated_ccd
 ```
 ### Running a sandbox
