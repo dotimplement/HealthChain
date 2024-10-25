@@ -9,7 +9,8 @@ from spacy.language import Language
 from spacy.tokens import Doc, Span, Token
 from typing import Any, Dict, List, Tuple, Optional
 
-from healthchain.pipeline.models.medcatlite.utils import CDB, Config
+from healthchain.pipeline.models.medcatlite.configs import Config
+from healthchain.pipeline.models.medcatlite.utils import CDB
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,8 @@
 from spacy import registry
 from typing import Dict, Optional
 
-from healthchain.pipeline.models.medcatlite.utils import CDB, CuiFilter, Vocab, Config
+from healthchain.pipeline.models.medcatlite.configs import Config
+from healthchain.pipeline.models.medcatlite.utils import CDB, CuiFilter, Vocab
 
 
 @registry.misc("medcatlite.token_processor_resources")

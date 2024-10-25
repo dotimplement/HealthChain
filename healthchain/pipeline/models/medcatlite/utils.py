@@ -4,9 +4,8 @@
 # Licensed under the Elastic License 2.0
 
 
-from collections import defaultdict
+import mmap
 import logging
-import json
 import shutil
 import pickle
 import numpy as np
@@ -14,16 +13,17 @@ from typing import (
     Dict,
     Set,
     Optional,
-    List,
     Type,
     Union,
     Any,
 )
 from dataclasses import dataclass, field
+from collections import defaultdict
 from pathlib import Path
 from enum import Enum
 from gensim.matutils import unitvec as g_unitvec
-from pydantic import BaseModel, Field
+
+from healthchain.pipeline.models.medcatlite.configs import Config
 
 
 logger = logging.getLogger(__name__)
@@ -110,91 +110,19 @@ def default_weighted_average(step: int) -> float:
     return weighted_average(step, factor=0.0004)
 
 
-class GeneralConfig(BaseModel):
-    spacy_model: str = "en_core_web_md"
-    spacy_disabled_components: List[str] = [
-        "ner",
-        "parser",
-        "vectors",
-        "textcat",
-        "entity_linker",
-        "sentencizer",
-        "entity_ruler",
-        "merge_noun_chunks",
-        "merge_entities",
-        "merge_subtokens",
-    ]
-    spell_check: bool = True
-    separator: str = "~"
-    workers: int = 4
-    diacritics: bool = False
-    spell_check_deep: bool = False
-    spell_check_len_limit: int = 7
-    make_pretty_labels: Optional[str] = None  # None or "long" or "short"
-    map_cui_to_group: bool = False
-
-
-class NERConfig(BaseModel):
-    min_name_len: int = 3
-    max_skip_tokens: int = 2
-    try_reverse_word_order: bool = False
-    check_upper_case_names: bool = False
-    upper_case_limit_len: int = 4
-
-
-class LinkingConfig(BaseModel):
-    train_count_threshold: int = 1
-    similarity_threshold_type: str = "static"
-    similarity_threshold: float = 0.25
-    context_vector_sizes: Dict[str, int] = Field(
-        default_factory=lambda: {"long": 18, "medium": 9, "short": 3}
-    )
-    context_vector_weights: Dict[str, float] = Field(
-        default_factory=lambda: {"long": 0.5, "medium": 0.3, "short": 0.2}
-    )
-    context_ignore_center_tokens: bool = False
-    random_replacement_unsupervised: float = 0.80
-    filter_before_disamb: bool = False
-    prefer_primary_name: float = 0.35
-    prefer_frequent_concepts: float = 0.35
-    disamb_length_limit: int = 3
-    always_calculate_similarity: bool = False
-
-
-class PreprocessingConfig(BaseModel):
-    words_to_skip: set = {"nos"}
-    keep_punct: set = {".", ":"}
-    do_not_normalize: set = {"VBD", "VBG", "VBN", "VBP", "JJS", "JJR"}
-    skip_stopwords: bool = False
-    min_len_normalize: int = 5
-    stopwords: Optional[set] = None
-
-
-class Config(BaseModel):
-    general: GeneralConfig = Field(default_factory=GeneralConfig)
-    ner: NERConfig = Field(default_factory=NERConfig)
-    linking: LinkingConfig = Field(default_factory=LinkingConfig)
-    preprocessing: PreprocessingConfig = Field(default_factory=PreprocessingConfig)
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def get(self, key, default=None):
-        return getattr(self, key, default)
-
-    @classmethod
-    def load(cls, path: str) -> "Config":
-        with open(path, "r") as f:
-            data = json.load(f)
-        return cls(**data)
-
-    def save(self, path: str) -> None:
-        with open(path, "w") as f:
-            json.dump(self.model_dump(), f, indent=2)
-
-
+# TODO: can do lazy loading or mem maps for cdb too if bottleneck
 class CDB:
+    """
+    A class representing a Concept Database (CDB) for medical entity linking.
+    """
+
     def __init__(self, config: Union[Config, None] = None):
+        """
+        Initialize a CDB object.
+
+        Args:
+            config (Union[Config, None], optional): Configuration object for the CDB. Defaults to None.
+        """
         self.config = config or Config()
         self.name2cuis2status = {}
         self.cui2average_confidence = {}
@@ -210,6 +138,12 @@ class CDB:
         self.weighted_average_function = default_weighted_average
 
     def __repr__(self):
+        """
+        Return a string representation of the CDB object.
+
+        Returns:
+            str: A formatted string containing information about the CDB object.
+        """
         return (
             f"CDB(\n"
             f"    config:                 {self.config}\n"
@@ -247,11 +181,29 @@ class CDB:
         return f"{preview}, (total: {len(d)})"
 
     def _preview_set(self, s, n=3):
+        """
+        Generate a preview of a set.
+
+        Args:
+            s (set): The set to preview.
+            n (int): The number of items to include in the preview.
+
+        Returns:
+            str: A string representation of the set preview.
+        """
         return f"{set(list(s)[:n])}, (total: {len(s)})"
 
     @classmethod
     def load(cls, path: str) -> "CDB":
-        # Removed weighted_average_function fix - only use default
+        """
+        Load a CDB object from a file.
+
+        Args:
+            path (str): The path to the serialized CDB file.
+
+        Returns:
+            CDB: A CDB object loaded from the file.
+        """
         cdb = deserialize_cdb(path, cls)
         return cdb
 
@@ -286,6 +238,7 @@ class Vocab:
         self.vocab = {}
         self.use_memory_mapping = use_memory_mapping
         self._vector_file = None
+        self._mmap_file = None
         self._vector_shape = None
 
     def __repr__(self):
@@ -400,9 +353,12 @@ class Vocab:
             vocab._vector_shape = data.get("vector_shape", {})
 
         if use_memory_mapping:
-            # Load vector file in same directory as vocab.dat
             directory = Path(path).parent
-            vocab._vector_file = open(directory / "vocab.vectors", "rb")
+            vector_file_path = directory / "vocab.vectors"
+            vocab._vector_file = open(vector_file_path, "r+b")
+            vocab._mmapped_file = mmap.mmap(
+                vocab._vector_file.fileno(), 0, access=mmap.ACCESS_READ
+            )
 
         return vocab
 
@@ -422,8 +378,9 @@ class Vocab:
 
         if self.use_memory_mapping:
             offset = index * self._vector_shape[1] * 4  # 4 bytes per float32
-            self._vector_file.seek(offset)
-            vector_data = self._vector_file.read(self._vector_shape[1] * 4)
+            vector_data = self._mmapped_file[
+                offset : offset + self._vector_shape[1] * 4
+            ]
             return np.frombuffer(vector_data, dtype=np.float32)
         else:
             return self.vocab.get(word, {}).get("vec")
@@ -432,6 +389,8 @@ class Vocab:
         """
         Destructor method to ensure the vector file is closed when the object is deleted.
         """
+        if self._mmapped_file:
+            self._mmapped_file.close()
         if self._vector_file:
             self._vector_file.close()
 

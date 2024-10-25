@@ -8,9 +8,9 @@ import logging
 from spacy.language import Language
 from spacy.tokens import Doc, Span
 from typing import Optional, List, Tuple, Dict, Any
+from healthchain.pipeline.models.medcatlite.configs import Config
 from healthchain.pipeline.models.medcatlite.contextmodel import ContextModel
 from healthchain.pipeline.models.medcatlite.utils import (
-    Config,
     LabelStyle,
     CDB,
     Vocab,
@@ -276,7 +276,7 @@ class Linker:
             doc (Doc): The spaCy document object.
             style (LabelStyle): The label style.
         """
-        # Implement pretty label logic here
+        # TODO: Implement pretty label logic here
         pass
 
     def _map_entities_to_groups(self, doc: Doc):

@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, Optional, Set
 
-from healthchain.pipeline.models.medcatlite.utils import Config
+from healthchain.pipeline.models.medcatlite.configs import Config
 
 
 class NorvigSpellChecker:

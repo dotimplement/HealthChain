@@ -11,9 +11,9 @@ from spacy.language import Language, registry
 from spacy.tokens import Doc
 from pathlib import Path
 from typing import Optional, List
+from healthchain.pipeline.models.medcatlite.configs import Config
 from healthchain.pipeline.models.medcatlite.utils import (
     CDB,
-    Config,
     CuiFilter,
     Vocab,
     attempt_unpack,

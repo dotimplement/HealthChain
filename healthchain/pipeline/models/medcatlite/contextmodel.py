@@ -4,9 +4,9 @@ import logging
 from spacy.tokens import Doc, Span, Token
 from typing import Dict, List, Optional, Tuple
 
+from healthchain.pipeline.models.medcatlite.configs import Config
 from healthchain.pipeline.models.medcatlite.utils import (
     CDB,
-    Config,
     Vocab,
     CuiFilter,
     unitvec,
