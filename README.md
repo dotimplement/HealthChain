@@ -33,7 +33,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 - **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
 
 ## Pipeline
-Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily interface with parsers and connectors to integrate with EHRs.
+Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with complex healthcare systems.
 
 ### Building a pipeline
 
