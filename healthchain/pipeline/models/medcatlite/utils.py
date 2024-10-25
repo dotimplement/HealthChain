@@ -4,8 +4,8 @@
 # Licensed under the Elastic License 2.0
 
 
+from collections import defaultdict
 import logging
-import os
 import json
 import shutil
 import pickle
@@ -20,6 +20,7 @@ from typing import (
     Any,
 )
 from dataclasses import dataclass, field
+from pathlib import Path
 from enum import Enum
 from gensim.matutils import unitvec as g_unitvec
 from pydantic import BaseModel, Field
@@ -48,20 +49,20 @@ def attempt_unpack(zip_path: str) -> str:
     Returns:
         str: The model pack path
     """
-    base_dir = os.path.dirname(zip_path)
-    filename = os.path.basename(zip_path)
-    foldername = filename.replace(".zip", "")
-    model_pack_path = os.path.join(base_dir, foldername)
-    if os.path.exists(model_pack_path):
+    zip_path = Path(zip_path)
+    base_dir = zip_path.parent
+    foldername = zip_path.stem
+    model_pack_path = base_dir / foldername
+
+    if model_pack_path.exists():
         logger.info(
-            "Found an existing unzipped model pack at: {}, the provided zip will not be touched.".format(
-                model_pack_path
-            )
+            f"Found an existing unzipped model pack at: {model_pack_path}, the provided zip will not be touched."
         )
     else:
-        logger.info("Unziping the model pack and loading models.")
-        shutil.unpack_archive(zip_path, extract_dir=model_pack_path)
-    return model_pack_path
+        logger.info("Unzipping the model pack and loading models.")
+        shutil.unpack_archive(str(zip_path), extract_dir=str(model_pack_path))
+
+    return str(model_pack_path)
 
 
 class CustomUnpickler(pickle.Unpickler):
@@ -194,19 +195,13 @@ class Config(BaseModel):
 
 class CDB:
     def __init__(self, config: Union[Config, None] = None):
-        if config is None:
-            self.config = Config()
-            self._config_from_file = False
-        else:
-            self.config = config
-            self._config_from_file = True
-
+        self.config = config or Config()
         self.name2cuis2status = {}
         self.cui2average_confidence = {}
         self.addl_info = {}
         self.snames = set()
-        self.cui2snames = {}
-        self.cui2names = {}
+        self.cui2snames: Dict[str, Set[str]] = defaultdict(set)
+        self.cui2names: Dict[str, Set[str]] = defaultdict(set)
         self.cui2context_vectors = {}
         self.cui2count_train = {}
         self.name2count_train = {}
@@ -220,11 +215,11 @@ class CDB:
             f"    config:                 {self.config}\n"
             f"    name2cuis2status:       {self._preview_dict(self.name2cuis2status)}\n"
             f"    cui2average_confidence: {self._preview_dict(self.cui2average_confidence)}\n"
-            f"    addl_info:              {self._preview_dict(self.addl_info, value_preview='...')}\n"
+            f"    addl_info:              {self._preview_dict(self.addl_info, preview_type=True)}\n"
             f"    snames:                 {self._preview_set(self.snames)}\n"
             f"    cui2snames:             {self._preview_dict(self.cui2snames, n=1)}\n"
             f"    cui2names:              {self._preview_dict(self.cui2names, n=1)}\n"
-            f"    cui2context_vectors:    {self._preview_dict(self.cui2context_vectors, value_preview='...')}\n"
+            f"    cui2context_vectors:    {self._preview_dict(self.cui2context_vectors, preview_type=True)}\n"
             f"    cui2count_train:        {self._preview_dict(self.cui2count_train)}\n"
             f"    name2count_train:       {self._preview_dict(self.name2count_train)}\n"
             f"    name_isupper:           {self._preview_dict(self.name_isupper)}\n"
@@ -233,10 +228,22 @@ class CDB:
             f")"
         )
 
-    def _preview_dict(self, d, n=3, value_preview=None):
-        preview = dict(list(d.items())[:n])
-        if value_preview:
-            preview = {k: value_preview for k in preview}
+    def _preview_dict(self, d, n=3, preview_type=False):
+        """
+        Generate a preview of a dictionary.
+
+        Args:
+            d (dict): The dictionary to preview.
+            n (int): The number of items to include in the preview.
+            preview_type (bool): Whether to show the type of values instead of the values themselves.
+
+        Returns:
+            str: A string representation of the dictionary preview.
+        """
+        items = list(d.items())[:n]
+        if preview_type:
+            items = [(k, type(v)) for k, v in items]
+        preview = dict(items)
         return f"{preview}, (total: {len(d)})"
 
     def _preview_set(self, s, n=3):
@@ -250,39 +257,183 @@ class CDB:
 
 
 class Vocab:
-    def __init__(self):
+    """
+    A class to manage vocabulary and word vectors, with optional memory mapping support.
+
+    Attributes:
+        vocab (dict): A dictionary mapping words to their vector indices or full vectors.
+        use_memory_mapping (bool): Whether to use memory mapping for efficient vector loading.
+        _vector_file (file): The file object for memory-mapped vector data.
+        _vector_shape (tuple): The shape of the vector array.
+
+    Methods:
+        __init__(self, use_memory_mapping: bool = False)
+        __repr__(self)
+        _preview_dict(self, d, n=3, preview_type=False)
+        create_vector_files(cls, model_pack_path: str, force_recreate: bool = False)
+        load(cls, path: str, use_memory_mapping: bool = False) -> 'Vocab'
+        vec(self, word: str) -> Optional[np.ndarray]
+        __del__(self)
+    """
+
+    def __init__(self, use_memory_mapping: bool = False):
+        """
+        Initialize the Vocab object.
+
+        Args:
+            use_memory_mapping (bool): Whether to use memory mapping for efficient vector loading.
+        """
         self.vocab = {}
-        # These are not used in inference
-        # self.index2word = {}
-        # self.vec_index2word = {}
-        # self.unigram_table = np.array([])
+        self.use_memory_mapping = use_memory_mapping
+        self._vector_file = None
+        self._vector_shape = None
 
     def __repr__(self):
+        """
+        Return a string representation of the Vocab object.
+
+        Returns:
+            str: A formatted string containing information about the Vocab object.
+        """
+        if not self.use_memory_mapping:
+            preview_type = True
+        else:
+            preview_type = False
+
         return (
             f"Vocab(\n"
-            f"    vocab:          {self._preview_dict(self.vocab, value_preview='...')}\n"
-            # f"    index2word:     {self._preview_dict(self.index2word)}\n"
-            # f"    vec_index2word: {self._preview_dict(self.vec_index2word)}\n"
-            # f"    unigram_table:  shape: {self.unigram_table.shape}\n"
+            f"    vocab:              {self._preview_dict(self.vocab, preview_type=preview_type)}\n"
+            f"    use_memory_mapping: {self.use_memory_mapping}\n"
+            f"    vector_shape:       {self._vector_shape}\n"
             f")"
         )
 
-    def _preview_dict(self, d, n=3, value_preview=None):
+    def _preview_dict(self, d, n=3, preview_type=False):
+        """
+        Generate a preview of a dictionary.
+
+        Args:
+            d (dict): The dictionary to preview.
+            n (int): The number of items to include in the preview.
+            preview_type (bool): Whether to show the type of values instead of the values themselves.
+
+        Returns:
+            str: A string representation of the dictionary preview.
+        """
         items = list(d.items())[:n]
-        if value_preview:
-            items = [(k, value_preview) for k, _ in items]
+        if preview_type:
+            items = [(k, type(v)) for k, v in items]
         preview = dict(items)
         return f"{preview}, (total: {len(d)})"
 
-    def vec(self, word: str) -> Optional[np.ndarray]:
-        return self.vocab.get(word, {}).get("vec")
+    @classmethod
+    def create_vector_files(cls, model_pack_path: str, force_recreate: bool = False):
+        """
+        Create optimized vector files and save them to the model pack directory.
+
+        Args:
+            model_pack_path (str): Path to the model pack directory.
+            force_recreate (bool): Whether to force recreation of vector files even if they already exist.
+        """
+        model_path = Path(attempt_unpack(model_pack_path))
+        original_vocab_path = model_path / "vocab.dat"
+        output_path = model_path / "vocab"
+
+        # Check if optimized files already exist
+        mem_mapped_path = model_path / "vocab_mem_mapped.dat"
+        vectors_path = model_path / "vocab.vectors"
+
+        if not force_recreate:
+            if mem_mapped_path.exists() and vectors_path.exists():
+                logger.info("Optimized vector files already exist. Skipping creation.")
+                return
+
+        with open(original_vocab_path, "rb") as f:
+            original_data = pickle.load(f)
+
+        logger.debug(f"Total words in vocab: {len(original_data['vocab'])}")
+
+        vocab = {}
+        vectors = []
+        new_index = 0
+
+        for word, data in original_data["vocab"].items():
+            vec = data["vec"]
+            if vec is not None and isinstance(vec, np.ndarray) and vec.size > 0:
+                vocab[word] = new_index
+                vectors.append(vec)
+                new_index += 1
+
+        logger.debug(f"Total vectors after filtering: {len(vectors)}")
+
+        vectors = np.array(vectors, dtype=np.float32)
+
+        # Save vectors to a binary file
+        vectors.tofile(str(vectors_path))
+
+        # Save metadata
+        metadata = {"vocab": vocab, "vector_shape": vectors.shape}
+        with open(str(mem_mapped_path), "wb") as f:
+            pickle.dump(metadata, f)
+
+        logger.info(f"Vector files created in the model pack at {output_path}")
 
     @classmethod
-    def load(cls, path: str) -> "Vocab":
+    def load(cls, path: str, use_memory_mapping: bool = False) -> "Vocab":
+        """
+        Load a Vocab object from a file.
+
+        Args:
+            path (str): The path to the vocab file.
+            use_memory_mapping (bool): Whether to use memory mapping for efficient vector loading.
+
+        Returns:
+            Vocab: A new Vocab object loaded from the file.
+        """
+        vocab = cls(use_memory_mapping)
+
+        # If not memory mapped vocab will just load all the vectors for all the words
+        # If memory mapped, vocab loads only word2index mapping
         with open(path, "rb") as f:
-            vocab = cls()
-            vocab.__dict__ = pickle.load(f)
+            data = pickle.load(f)
+            vocab.vocab = data["vocab"]
+            vocab._vector_shape = data.get("vector_shape", {})
+
+        if use_memory_mapping:
+            # Load vector file in same directory as vocab.dat
+            directory = Path(path).parent
+            vocab._vector_file = open(directory / "vocab.vectors", "rb")
+
         return vocab
+
+    def vec(self, word: str) -> Optional[np.ndarray]:
+        """
+        Get the vector for a given word.
+
+        Args:
+            word (str): The word to get the vector for.
+
+        Returns:
+            Optional[np.ndarray]: The vector for the word, or None if the word is not in the vocabulary.
+        """
+        index = self.vocab.get(word)
+        if index is None:
+            return None
+
+        if self.use_memory_mapping:
+            offset = index * self._vector_shape[1] * 4  # 4 bytes per float32
+            self._vector_file.seek(offset)
+            vector_data = self._vector_file.read(self._vector_shape[1] * 4)
+            return np.frombuffer(vector_data, dtype=np.float32)
+        else:
+            return self.vocab.get(word, {}).get("vec")
+
+    def __del__(self):
+        """
+        Destructor method to ensure the vector file is closed when the object is deleted.
+        """
+        if self._vector_file:
+            self._vector_file.close()
 
 
 @dataclass

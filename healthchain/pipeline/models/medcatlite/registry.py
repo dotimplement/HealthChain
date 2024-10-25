@@ -4,7 +4,6 @@ from typing import Dict, Optional
 from healthchain.pipeline.models.medcatlite.utils import CDB, CuiFilter, Vocab, Config
 
 
-# TODO pass in config on its own (not using the cdb one)
 @registry.misc("medcatlite.token_processor_resources")
 def create_token_processor_resources(cdb: CDB, config: Config) -> Dict:
     """Get preprocessor-specific resources"""

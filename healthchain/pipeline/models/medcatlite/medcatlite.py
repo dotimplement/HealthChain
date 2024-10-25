@@ -3,14 +3,13 @@
 # Copyright 2024 CogStack
 # Licensed under the Elastic License 2.0
 
-import time
+
 import json
-import os
 import logging
 import spacy
 from spacy.language import Language, registry
 from spacy.tokens import Doc
-from functools import lru_cache
+from pathlib import Path
 from typing import Optional, List
 from healthchain.pipeline.models.medcatlite.utils import (
     CDB,
@@ -60,7 +59,7 @@ class MedCATLite:
         self._create_pipeline()
 
     @classmethod
-    def load_model_pack(cls, model_path: str):
+    def load_model_pack(cls, model_path: str, use_memory_mapping: bool = False):
         """
         Load the model pack from the specified path.
 
@@ -70,21 +69,24 @@ class MedCATLite:
         Returns:
             MedCATLite: An instance of the MedCATLite class.
         """
-        model_path = attempt_unpack(model_path)
+        model_path = Path(attempt_unpack(model_path))
 
-        cdb_path = os.path.join(model_path, "cdb.dat")
-        cdb = CDB.load(cdb_path)
+        cdb_path = model_path / "cdb.dat"
+        cdb = CDB.load(str(cdb_path))
 
-        vocab_path = os.path.join(model_path, "vocab.dat")
-        vocab = Vocab.load(vocab_path) if os.path.exists(vocab_path) else None
-        config_path = (
-            model_path
-            if os.path.exists(os.path.join(model_path, "config.json"))
+        if use_memory_mapping:
+            vocab_path = model_path / "vocab_mem_mapped.dat"
+        else:
+            vocab_path = model_path / "vocab.dat"
+        vocab = (
+            Vocab.load(str(vocab_path), use_memory_mapping)
+            if vocab_path.exists()
             else None
         )
 
+        config_path = model_path if (model_path / "config.json").exists() else None
         if config_path is not None:
-            with open(config_path, "r") as f:
+            with open(config_path / "config.json", "r") as f:
                 config = json.load(f)
         else:
             config = cdb.config
