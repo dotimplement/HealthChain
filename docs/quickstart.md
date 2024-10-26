@@ -6,36 +6,34 @@ After [installing HealthChain](installation.md), get up to speed quickly with th
 
 ### Pipeline 🛠️
 
-The `Pipeline` module in HealthChain provides a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily interface with
-parsers and connectors to integrate with electronic health record (EHR) systems.
+HealthChain Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with electronic health record (EHR) systems.
 
 You can build pipelines with three different approaches:
 
 #### 1. Build Your Own Pipeline with Inline Functions
 
-This is the most flexible approach, ideal for quick experiments and prototyping. Initialize a pipeline type hinted with the container type you want to process, then add components to your pipeline with the `@add` decorator.
+This is the most flexible approach, ideal for quick experiments and prototyping. Initialize a pipeline type hinted with the container type you want to process, then add components to your pipeline with the `@add_node` decorator.
 
 Compile the pipeline with `.build()` to use it.
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.io.containers import Document
+from healthchain.io import Document
 
 nlp_pipeline = Pipeline[Document]()
 
-@nlp_pipeline.add
+@nlp_pipeline.add_node
 def tokenize(doc: Document) -> Document:
     doc.tokens = doc.text.split()
     return doc
 
-@nlp_pipeline.add
+@nlp_pipeline.add_node
 def pos_tag(doc: Document) -> Document:
-    # Dummy POS tagging
     doc.pos_tags = ["NOUN" if token[0].isupper() else "VERB" for token in doc.tokens]
     return doc
 
-# Build and use the pipeline
 nlp = nlp_pipeline.build()
+
 doc = Document("Patient has a fracture of the left femur.")
 doc = nlp(doc)
 
@@ -46,51 +44,74 @@ print(doc.pos_tags)
 # ['NOUN', 'VERB', 'VERB', 'VERB', 'VERB', 'VERB']
 ```
 
-#### 2. Build Your Own Pipeline with Components and Models
+#### 2. Build Your Own Pipeline with Components, Models, and Connectors
 
-Components are stateful - they're classes instead of functions. They can be useful for grouping related processing steps together, or wrapping specific models.
+Components are stateful - they're classes instead of functions. They can be useful for grouping related processing steps together, setting configurations, or wrapping specific model loading steps.
 
 HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/component.md) and [Models](./reference/pipeline/models/models.md) documentation pages.
 
-Add components to your pipeline with the `.add()` method and compile with `.build()`.
+Add components to your pipeline with the `.add_node()` method and compile with `.build()`.
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.io.containers import Document
 from healthchain.pipeline.components import TextPreProcessor, Model, TextPostProcessor
+from healthchain.io import Document
 
 pipeline = Pipeline[Document]()
 
-pipeline.add(TextPreProcessor())
-pipeline.add(Model(model_path="path/to/model"))
-pipeline.add(TextPostProcessor())
+pipeline.add_node(TextPreProcessor())
+pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_node(TextPostProcessor())
 
 pipe = pipeline.build()
+
 doc = Document("Patient presents with hypertension.")
-doc = pipe(doc)
+output = pipe(doc)
+```
+
+Let's go one step further! You can use [Connectors](./reference/pipeline/connectors/connectors.md) to work directly with [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) and [FHIR](https://hl7.org/fhir/) data received from healthcare system APIs. Add Connectors to your pipeline with the `.add_input()` and `.add_output()` methods.
+
+```python
+from healthchain.pipeline import Pipeline
+from healthchain.pipeline.components import Model
+from healthchain.io import CdaConnector
+from healthchain.models import CdaRequest
+
+pipeline = Pipeline()
+cda_connector = CdaConnector()
+
+pipeline.add_input(cda_connector)
+pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_output(cda_connector)
+
+pipe = pipeline.build()
+
+cda_data = CdaRequest(document="<CDA XML content>")
+output = pipe(cda_data)
 ```
 
 #### 3. Use Prebuilt Pipelines
 
-Prebuilt pipelines are pre-configured collections of `Components` and `Models`. They are configured for specific use cases, offering the highest level of abstraction. This is the easiest way to get started if you already know the use case you want to build for.
+Prebuilt pipelines are pre-configured collections of Components, Models, and Connectors. They are built for specific use cases, offering the highest level of abstraction. This is the easiest way to get started if you already know the use case you want to build for.
 
 For a full list of available prebuilt pipelines and details on how to configure and customize them, see the [Pipelines](./reference/pipeline/pipeline.md) documentation page.
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
+from healthchain.models import CdaRequest
 
 pipeline = MedicalCodingPipeline.load("./path/to/model")
 
-doc = Document("Patient diagnosed with myocardial infarction.")
-doc = pipeline(doc)
+cda_data = CdaRequest(document="<CDA XML content>")
+output = pipeline(cda_data)
 ```
 
 ### Sandbox 🧪
-Once you've built your pipeline, you might want to experiment with how you want your pipeline to interact with different health systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
+Once you've built your pipeline, you might want to experiment with how it interacts with different healthcare systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
 
-Running a sandbox will start a `FastAPI` server with standardized API endpoints and create a sandboxed environment for you to interact with your application.
+Running a sandbox will start a [FastAPI](https://fastapi.tiangolo.com/) server with pre-defined standardized endpoints and create a sandboxed environment for you to interact with your application.
 
-To create a sandbox, initialize a class that inherits from a type of `UseCase` and decorate it with the `@hc.sandbox` decorator.
+To create a sandbox, initialize a class that inherits from a type of [UseCase](./reference/sandbox/use_cases/use_cases.md) and decorate it with the `@hc.sandbox` decorator.
 
 Every sandbox also requires a **client** function marked by `@hc.ehr` and a **service** function marked by `@hc.api`. A **workflow** must be specified when creating an EHR client.
 
@@ -101,6 +122,7 @@ import healthchain as hc
 
 from healthchain.use_cases import ClinicalDocumentation
 from healthchain.pipeline import MedicalCodingPipeline
+from healthchain.models import CdaRequest, CdaResponse, CcdData
 
 @hc.sandbox
 class MyCoolSandbox(ClinicalDocumentation):
@@ -117,9 +139,9 @@ class MyCoolSandbox(ClinicalDocumentation):
         return CcdData(cda_xml=xml_string)
 
     @hc.api
-    def my_service(self, ccd_data: CcdData) -> CcdData:
+    def my_service(self, request: CdaRequest) -> CdaResponse:
         # Run your pipeline
-        results = self.pipeline(ccd_data)
+        results = self.pipeline(request)
         return results
 
 if __name__ == "__main__":
@@ -137,13 +159,6 @@ healthchain run my_sandbox.py
 
 This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
-Then run:
-
-```bash
-cd streamlist_demo
-streamlit run app.py
-```
-
 ## Utilities ⚙️
 ### Data Generator
 
@@ -151,13 +166,14 @@ You can use the data generator to generate synthetic data for your sandbox runs.
 
 The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
 
-We're currently working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
+We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
 
 [(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
 
 === "Within client"
     ```python
     import healthchain as hc
+
     from healthchain.use_cases import ClinicalDecisionSupport
     from healthchain.models import CdsFhirData
     from healthchain.data_generators import CdsDataGenerator
