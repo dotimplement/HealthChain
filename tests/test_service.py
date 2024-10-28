@@ -32,8 +32,8 @@ def test_cds_service(test_cds_request):
 @patch(
     "healthchain.use_cases.clindoc.ClinicalDocumentation.process_notereader_document"
 )
-def test_clindoc_process_document(mock_process, mock_cda_response, test_soap_request):
-    mock_process.return_value = mock_cda_response
+def test_clindoc_process_document(mock_process, test_cda_response, test_soap_request):
+    mock_process.return_value = test_cda_response
 
     headers = {"Content-Type": "text/xml; charset=utf-8"}
     response = clindoc_client.post(

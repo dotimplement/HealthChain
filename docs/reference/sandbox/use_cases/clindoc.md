@@ -7,7 +7,18 @@ The `ClinicalDocumentation` use case implements a real-time Clinical Documentati
 | :-------- | :-----| :-------------------------- |----------------------------|
 | Triggered when a clinician opts in to a CDI functionality and signs or pends a note after writing it. | Specific modules in EHR where clinical documentation takes place, such as NoteReader in Epic.  | A CDA document which contains continuity of care data and free-text data, e.g. a patient's problem list and the progress note that the clinician has entered in the EHR.  | A CDA document which contains additional structured data extracted and returned by your CDI service. |
 
-A `ClinicalDocumentation` function receives and returns `CcdData`. Attributes of `CcdData` are:
+
+## Data Flow
+
+| Stage | Input | Internal Data Representation | Output |
+|-------|-------|------------------------------|--------|
+| Client | N/A | N/A | `CcdData` |
+| Service | `CdaRequest` | `CcdData` | `CdaResponse` |
+
+
+[CdaConnector](../../pipeline/connectors/cdaconnector.md) handles the conversion of `CdaRequests` :material-swap-horizontal: `CcdData` :material-swap-horizontal: `CdaResponse` in a HealthChain pipeline.
+
+Attributes of `CcdData` are:
 
 - `problems`
 - `allergies`

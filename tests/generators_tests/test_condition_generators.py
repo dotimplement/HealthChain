@@ -4,6 +4,7 @@ from healthchain.data_generators.conditiongenerators import (
     CategoryGenerator,
     ConditionGenerator,
 )
+from healthchain.data_generators.value_sets.conditioncodes import ConditionCodeSimple, ConditionCodeComplex
 
 
 def test_ClinicalStatusGenerator():
@@ -40,6 +41,8 @@ def test_CategoryGenerator():
 
 def test_ConditionGenerator():
     condition_model = ConditionGenerator.generate("Patient/456", "Encounter/789")
+    value_set = [x.code for x in ConditionCodeSimple().value_set]
+    value_set.extend([x.code for x in ConditionCodeComplex().value_set])
     assert condition_model.resourceType == "Condition"
     assert condition_model.subject_field.reference_field == "Patient/456"
     assert condition_model.encounter_field.reference_field == "Encounter/789"
@@ -47,3 +50,4 @@ def test_ConditionGenerator():
     assert condition_model.subject_field is not None
     assert condition_model.encounter_field is not None
     assert condition_model.code_field is not None
+    assert condition_model.code_field.coding_field[0].code_field in value_set
