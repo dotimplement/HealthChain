@@ -2,18 +2,28 @@
 
 ## Clinical Decision Support (CDS)
 
-CDS workflows are based on [CDS Hooks](https://cds-hooks.org/). CDS Hooks is an [HL7](https://cds-hooks.hl7.org) published specification for clinical decision support. For more information you can consult the [official documentation](https://cds-hooks.org/).
+CDS workflows are based on [CDS Hooks](https://cds-hooks.org/). CDS Hooks is an [HL7](https://cds-hooks.hl7.org) published specification for clinical decision support. CDS hooks communicate using [FHIR (Fast Healthcare Interoperability Resources)](https://hl7.org/fhir/). For more information you can consult the [official documentation](https://cds-hooks.org/).
 
 | When      | Where | What you receive            | What you send back         |
 | :-------- | :-----| :-------------------------- |----------------------------|
 | Triggered at certain events during a clinician's workflow, e.g. when a patient record is opened. | EHR  | The context of the event and FHIR resources that are requested by your service. e.g. patient ID, `Encounter` and `Patient`.  | “Cards” displaying text, actionable suggestions, or links to launch a [SMART](https://smarthealthit.org/) app from within the workflow.      |
 
+## Data Flow
 
-CDS hooks communicate using [HL7 FHIR (Fast Healthcare Interoperability Resources)](https://hl7.org/fhir/). FHIR data are represented internally as `CdsFhirData` in HealthChain, so a CDS client must return a `CdsFhirData` object.
+| Stage | Input | Internal Data Representation | Output |
+|-------|-------|------------------------------|--------|
+| Client | N/A | N/A | `CdsFhirData` |
+| Service | `CdsRequest` | `CdsFhirData` | `CdsResponse` |
 
-CDS service functions receive `CdsRequest` and return a list of `Card`. [Improved documentation coming soon]
 
-[(Card API Reference | ](../../../api/use_cases.md#healthchain.models.responses.cdsresponse.Card)[CdsFhirData API Reference)](../../../api/data_models.md#healthchain.models.data.cdsfhirdata)
+[CdsFhirConnector](../../pipeline/connectors/cdsfhirconnector.md) handles the conversion of `CDSRequests` :material-swap-horizontal: `CdsFhirData` :material-swap-horizontal: `CdsResponse` in a HealthChain pipeline.
+
+Attributes of `CdsFhirData` are:
+
+- `context`
+- `prefetch`
+
+[(CdsFhirData API Reference)](../../../api/data_models.md#healthchain.models.data.cdsfhirdata)
 
 ## Supported Workflows
 

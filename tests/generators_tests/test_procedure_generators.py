@@ -1,9 +1,10 @@
 from healthchain.data_generators.proceduregenerators import ProcedureGenerator
-from healthchain.data_generators.value_sets.procedurecodes import ProcedureCodeSimple
+from healthchain.data_generators.value_sets.procedurecodes import ProcedureCodeSimple, ProcedureCodeComplex
 
 
 def test_ProcedureGenerator():
-    value_set = [x["code"] for x in ProcedureCodeSimple().value_set]
+    value_set = [x.code for x in ProcedureCodeSimple().value_set]
+    value_set.extend([x.code for x in ProcedureCodeComplex().value_set])
     procedure = ProcedureGenerator.generate(
         subject_reference="Patient/123", encounter_reference="Encounter/123"
     )

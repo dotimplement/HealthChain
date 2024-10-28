@@ -35,7 +35,7 @@ class CdaResponse(BaseModel):
         xml_dict = xmltodict.parse(self.document)
         document = search_key(xml_dict, "tns:Document")
         if document is None:
-            log.warning("Coudln't find document under namespace 'tns:Document")
+            log.warning("Couldn't find document under namespace 'tns:Document")
             return ""
 
         cda = base64.b64decode(document).decode("UTF-8")

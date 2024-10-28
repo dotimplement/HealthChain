@@ -1,9 +1,18 @@
 import json
 import pandas as pd
 
-from typing import Dict, TypeVar, Generic, List, Any, Iterator
+from typing import Dict, Optional, TypeVar, Generic, List, Any, Iterator
 from dataclasses import dataclass, field
 from spacy.tokens import Doc as SpacyDoc
+
+from healthchain.models.data.ccddata import CcdData
+from healthchain.models.data.cdsfhirdata import CdsFhirData
+from healthchain.models.data.concept import (
+    AllergyConcept,
+    MedicationConcept,
+    ProblemConcept,
+)
+from healthchain.models.responses.cdsresponse import Action, Card
 
 
 T = TypeVar("T")
@@ -56,14 +65,19 @@ class Document(DataContainer[str]):
     A container for document data, optionally wrapping a spaCy Doc object.
 
     This class extends DataContainer to specifically handle textual document data.
-    It provides functionality to work with raw text, tokenized text, and spaCy Doc objects.
+    It provides functionality to work with raw text, tokenized text, spaCy Doc objects,
+    and structured clinical data.
 
     Attributes:
         data (str): The raw text content of the document.
+        preprocessed_text (str): The preprocessed version of the text.
         tokens (List[str]): A list of individual tokens extracted from the text.
         pos_tags (List[str]): A list of part-of-speech tags corresponding to the tokens.
         entities (List[str]): A list of named entities identified in the text.
-        preprocessed_text (str): The preprocessed version of the text.
+        ccd_data (Optional[CcdData]): An optional CcdData object containing structured clinical data.
+        fhir_resources (Optional[CdsFhirData]): Optional FHIR resources data.
+        cds_cards (Optional[List[Card]]): Optional list of CDS cards.
+        cds_actions (Optional[List[Action]]): Optional list of CDS actions.
         text (str): The current text content, which may be updated when setting a spaCy Doc.
         _doc (SpacyDoc): An internal reference to the spaCy Doc object, if set.
 
@@ -75,6 +89,7 @@ class Document(DataContainer[str]):
         word_count() -> int: Returns the number of tokens in the document.
         char_count() -> int: Returns the number of characters in the text.
         get_entities() -> List[Dict[str, Any]]: Returns a list of entities with their details.
+        update_ccd(new_problems: List[ProblemConcept], new_medications: List[MedicationConcept], new_allergies: List[AllergyConcept], overwrite: bool): Updates the existing CcdData object.
         __iter__() -> Iterator[str]: Allows iteration over the document's tokens.
         __len__() -> int: Returns the word count of the document.
 
@@ -86,11 +101,14 @@ class Document(DataContainer[str]):
         certain attributes and methods that depend on it.
     """
 
-    # TODO: review this
+    preprocessed_text: str = field(default="")
     tokens: List[str] = field(default_factory=list)
     pos_tags: List[str] = field(default_factory=list)
     entities: List[str] = field(default_factory=list)
-    preprocessed_text: str = field(default="")
+    ccd_data: Optional[CcdData] = field(default=None)
+    fhir_resources: Optional[CdsFhirData] = field(default=None)
+    cds_cards: Optional[List[Card]] = field(default=None)
+    cds_actions: Optional[List[Action]] = field(default=None)
 
     def __post_init__(self):
         self.text = self.data
@@ -132,6 +150,37 @@ class Document(DataContainer[str]):
             }
             for ent in self._doc.ents
         ]
+
+    def update_ccd(
+        self,
+        new_problems: List[ProblemConcept],
+        new_medications: List[MedicationConcept],
+        new_allergies: List[AllergyConcept],
+        overwrite: bool = False,
+    ) -> None:
+        """
+        Updates the existing CcdData object with new data.
+
+        Args:
+            new_problems (List[ProblemConcept]): List of new problem concepts to add or update.
+            new_medications (List[MedicationConcept]): List of new medication concepts to add or update.
+            new_allergies (List[AllergyConcept]): List of new allergy concepts to add or update.
+            overwrite (bool, optional): If True, replaces existing data; if False, appends new data. Defaults to False.
+
+        Raises:
+            ValueError: If there is no existing CcdData object to update.
+        """
+        if self.ccd_data is None:
+            self.ccd_data = CcdData()
+
+        if overwrite:
+            self.ccd_data.problems = new_problems
+            self.ccd_data.medications = new_medications
+            self.ccd_data.allergies = new_allergies
+        else:
+            self.ccd_data.problems.extend(new_problems)
+            self.ccd_data.medications.extend(new_medications)
+            self.ccd_data.allergies.extend(new_allergies)
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.tokens)
