@@ -16,7 +16,7 @@ Components are the building blocks of the healthchain pipeline. They are designe
 You can create your own custom components by extending the `BaseComponent` class and implementing the `__call__` method.
 
 ```python
-from healthchain.pipeline.basecomponent import BaseComponent
+from healthchain.pipeline.base import BaseComponent
 
 class MyCustomComponent(BaseComponent):
     def __init__(self, **kwargs):

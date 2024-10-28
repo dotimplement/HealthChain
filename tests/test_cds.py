@@ -1,8 +1,8 @@
 import pytest
 
 from unittest.mock import Mock
-from healthchain.use_cases.cds import ClinicalDecisionSupport
-from healthchain.models import Card
+from healthchain.models.requests.cdsrequest import CDSRequest
+from healthchain.models.responses.cdsresponse import CDSResponse
 
 
 def test_initialization(cds):
@@ -14,8 +14,8 @@ def test_initialization(cds):
     assert "service_mount" in cds.endpoints
 
 
-def test_cds_discovery_client_not_set():
-    cds = ClinicalDecisionSupport()
+def test_cds_discovery_client_not_set(cds):
+    cds._client = None
     info = cds.cds_discovery()
     assert info.services == []
 
@@ -27,73 +27,75 @@ def test_cds_discovery(cds):
     assert cds_info.services[0].hook == "hook1"
 
 
-def test_cds_service_no_api_set(test_cds_request):
-    cds = ClinicalDecisionSupport()
+def test_cds_service_valid_response(
+    cds,
+    test_cds_request,
+    test_cds_response_single_card,
+    test_cds_response_multiple_cards,
+):
+    # Test when everything is valid
+    def valid_service_func_single_card(self, request: CDSRequest):
+        return test_cds_response_single_card
+
+    cds._service_api = Mock(func=valid_service_func_single_card)
+
     response = cds.cds_service("1", test_cds_request)
+    assert response == test_cds_response_single_card
+
+    def valid_service_func_multiple_cards(self, request: CDSRequest):
+        return test_cds_response_multiple_cards
+
+    cds._service_api = Mock(func=valid_service_func_multiple_cards)
+
+    response = cds.cds_service("1", test_cds_request)
+    assert response == test_cds_response_multiple_cards
+
+
+def test_cds_service_no_service_api(cds, test_cds_request):
+    # Test when _service_api is None
+    cds._service_api = None
+    response = cds.cds_service("test_id", test_cds_request)
+    assert isinstance(response, CDSResponse)
     assert response.cards == []
 
 
-def test_cds_service(cds, test_cds_request):
-    # test returning list of cards
-    request = test_cds_request
-    cds._service_api.func.return_value = [
-        Card(
-            summary="example",
-            indicator="info",
-            source={"label": "test"},
-        )
-    ]
-    response = cds.cds_service("1", request)
-    assert len(response.cards) == 1
-    assert response.cards[0].summary == "example"
-    assert response.cards[0].indicator == "info"
+def test_cds_service_invalid(cds, test_cds_request, test_cds_response_empty):
+    # Test when service_api function has invalid signature
+    def invalid_service_signature(self, invalid_param: str):
+        return test_cds_response_empty
 
-    # test returning single card
-    cds._service_api.func.return_value = Card(
-        summary="example",
-        indicator="info",
-        source={"label": "test"},
-    )
-    response = cds.cds_service("1", request)
-    assert len(response.cards) == 1
-    assert response.cards[0].summary == "example"
-    assert response.cards[0].indicator == "info"
+    cds._service_api = Mock(func=invalid_service_signature)
 
+    with pytest.raises(
+        TypeError, match="Expected first argument of service function to be CDSRequest"
+    ):
+        cds.cds_service("test_id", test_cds_request)
 
-def test_cds_service_incorrect_return_type(cds, test_cds_request):
-    request = test_cds_request
-    cds._service_api.func.return_value = "this is not a valid return type"
-    with pytest.raises(TypeError):
-        cds.cds_service("1", request)
+    # Test when service_api function has invalid number of parameters
+    def invalid_service_num_params(self):
+        return test_cds_response_empty
 
+    cds._service_api = Mock(func=invalid_service_num_params)
 
-def func_zero_params():
-    pass
+    with pytest.raises(
+        AssertionError,
+        match="Service function must have at least one parameter besides 'self'",
+    ):
+        cds.cds_service("test_id", test_cds_request)
 
+    # Test when service_api function returns invalid type
+    def invalid_service_return_type(self, request: CDSRequest):
+        return "Not a CDSResponse"
 
-def func_two_params(self, param1, param2):
-    pass
+    cds._service_api = Mock(func=invalid_service_return_type)
 
+    with pytest.raises(TypeError, match="Expected CDSResponse, but got str"):
+        cds.cds_service("test_id", test_cds_request)
 
-def func_one_param(self, param):
-    pass
+    # test no annotation - should not raise error
+    def valid_service_func_no_annotation(self, request):
+        return test_cds_response_empty
 
+    cds._service_api = Mock(func=valid_service_func_no_annotation)
 
-def test_cds_service_correct_number_of_parameters(cds, test_cds_request):
-    # Function with one parameter apart from 'self'
-    cds._service_api = Mock(func=func_one_param)
-
-    # Should not raise an assertion error
-    cds.cds_service("1", test_cds_request)
-
-
-def test_cds_service_incorrect_number_of_parameters(cds, test_cds_request):
-    # Test with zero parameters apart from 'self'
-    cds._service_api = Mock(func=func_zero_params)
-    with pytest.raises(AssertionError):
-        cds.cds_service("1", test_cds_request)
-
-    # Test with more than one parameter apart from 'self'
-    cds._service_api = Mock(func=func_two_params)
-    with pytest.raises(AssertionError):
-        cds.cds_service("1", test_cds_request)
+    assert cds.cds_service("test_id", test_cds_request) == test_cds_response_empty
