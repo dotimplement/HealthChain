@@ -1,5 +1,5 @@
 from healthchain.io.containers import Document
-from healthchain.pipeline.components.basecomponent import BaseComponent
+from healthchain.pipeline.components.base import BaseComponent
 
 
 class SpacyComponent(BaseComponent[str]):
@@ -17,7 +17,13 @@ class SpacyComponent(BaseComponent[str]):
 
 class HuggingFaceComponent(BaseComponent[str]):
     def __init__(self, task, model):
-        from transformers import pipeline
+        try:
+            from transformers import pipeline
+        except ImportError:
+            raise ImportError(
+                "Could not import transformers. Please install it with: "
+                "`pip install transformers`"
+            )
 
         nlp = pipeline(task=task, model=model)
         self.nlp = nlp

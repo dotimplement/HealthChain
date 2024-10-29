@@ -113,8 +113,8 @@ class Document(DataContainer[str]):
 
     # Third-party specific attributes
     spacy_doc: Optional[SpacyDoc] = None
-    huggingface_outputs: Dict[str, Any] = field(default_factory=dict)
-    langchain_outputs: Dict[str, Any] = field(default_factory=dict)
+    huggingface_results: Dict[str, Any] = field(default_factory=dict)
+    langchain_results: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.text = self.data
@@ -136,10 +136,10 @@ class Document(DataContainer[str]):
         ]
 
     def add_huggingface_output(self, task: str, output: Any):
-        self.huggingface_outputs[task] = output
+        self.huggingface_results[task] = output
 
     def add_langchain_output(self, task: str, output: Any):
-        self.langchain_outputs[task] = output
+        self.langchain_results[task] = output
 
     def get_tokens(self) -> List[str]:
         return self.tokens
@@ -157,10 +157,10 @@ class Document(DataContainer[str]):
         return self.spacy_doc
 
     def get_huggingface_output(self, task: str) -> Any:
-        return self.huggingface_outputs.get(task)
+        return self.huggingface_results.get(task)
 
     def get_langchain_output(self, task: str) -> Any:
-        return self.langchain_outputs.get(task)
+        return self.langchain_results.get(task)
 
     def _update_attributes(self):
         self.tokens = [token.text for token in self._doc]

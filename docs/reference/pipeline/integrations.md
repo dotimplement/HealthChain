@@ -27,10 +27,31 @@ pip install langchain
 
 ## SpacyComponent
 
-The `SpacyComponent` allows you to integrate spaCy models into your HealthChain pipeline. To initialize the component it only requires the path to the Spacy pipeline you wish to use. To run this example you may need to first run `python -m spacy download en_core_web_sm` to download the model.
+The `SpacyComponent` allows you to integrate spaCy models into your HealthChain pipeline. There are several ways to initialize this component with different types of spaCy models:
+
+1. Using standard spaCy models:
+   ```python
+   # Using a standard spaCy model (requires: python -m spacy download en_core_web_sm)
+   spacy_component = SpacyComponent("en_core_web_sm")
+   ```
+
+2. Loading custom trained pipelines from a directory:
+   ```python
+   # Using a custom pipeline saved to disk
+   spacy_component = SpacyComponent("/path/to/your/custom/model")
+   ```
+
+3. Using specialized domain models like [scispaCy](https://allenai.github.io/scispacy/) which can be used for classifying clinical or biomedical text:
+   ```python
+   # Using scispaCy models for biomedical text (requires: pip install scispacy)
+   spacy_component = SpacyComponent("en_core_sci_sm")
+   ```
+
+Choose the appropriate model based on your specific needs - standard models for general text, custom-trained models for domain-specific tasks, or specialized models like scispaCy for biomedical text analysis.
 
 ```python
-from healthchain.integrations import SpacyComponent
+from healthchain.pipeline.components.integrations import SpacyComponent
+
 
 spacy_component = SpacyComponent(path_to_pipeline="en_core_web_sm")
 ```
@@ -41,11 +62,11 @@ When called on a document, this component processes the input document using the
 
 ```python
 from healthchain.io.containers import Document
-from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.pipeline.base import Pipeline
 from healthchain.pipeline.components.integrations import SpacyComponent
 
 pipeline = Pipeline()
-pipeline.add(SpacyComponent(path_to_pipeline="en_core_web_sm"))
+pipeline.add_node(SpacyComponent(path_to_pipeline="en_core_web_sm"))
 
 doc = Document("This is a test sentence.")
 processed_doc = pipeline(doc)
@@ -76,11 +97,11 @@ This component applies the specified Hugging Face model to the input document an
 
 ```python
 from healthchain.io.containers import Document
-from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.pipeline.base import Pipeline
 from healthchain.pipeline.components.integrations import HuggingFaceComponent
 
 pipeline = Pipeline()
-pipeline.add(HuggingFaceComponent(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english"))
+pipeline.add_node(HuggingFaceComponent(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english"))
 
 doc = Document("I love using HealthChain for my NLP projects!")
 processed_doc = pipeline(doc)
@@ -96,15 +117,19 @@ The `LangChainComponent` allows you to integrate LangChain chains into your Heal
 
 ```python
 from langchain import PromptTemplate, LLMChain
+from langchain_core
 from langchain.llms import FakeListLLM
+from langchain_core.output_parsers import StrOutputParser
 from healthchain.pipeline.components.integrations import LangChainComponent
 
 # Let's create a simple FakeListLLM for demonstration
 fake_llm = FakeListLLM(responses=["This is a great summary!"])
 
-template = "Summarize the following text: {text}"
-prompt = PromptTemplate(template=template, input_variables=["text"])
-llm_chain = LLMChain(prompt=prompt, llm=fake_llm)
+# Define the prompt template
+prompt = PromptTemplate.from_template("Summarize the following text: {text}")
+
+# Create the LCEL chain
+chain = prompt | fake_llm | StrOutputParser()
 
 langchain_component = LangChainComponent(chain=llm_chain)
 ```
@@ -117,20 +142,23 @@ This component runs the specified LangChain chain on the input document's text a
 
 ```python
 from healthchain.io.containers import Document
-from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.pipeline.base import Pipeline
 from healthchain.pipeline.components.integrations import LangChainComponent
 from langchain import PromptTemplate, LLMChain
+from langchain_core.output_parsers import StrOutputParser
 from langchain.llms import FakeListLLM
 
 # Set up LangChain with a FakeListLLM
 fake_llm = FakeListLLM(responses=["HealthChain integrates NLP libraries for easy pipeline creation."])
-template = "Summarize the following text: {text}"
-prompt = PromptTemplate(template=template, input_variables=["text"])
-llm_chain = LLMChain(prompt=prompt, llm=fake_llm)
+# Define the prompt template
+prompt = PromptTemplate.from_template("Summarize the following text: {text}")
+
+# Create the LCEL chain
+chain = prompt | fake_llm | StrOutputParser()
 
 # Set up your HealthChain pipeline
 pipeline = Pipeline()
-pipeline.add(LangChainComponent(chain=llm_chain))
+pipeline.add_node(LangChainComponent(chain=llm_chain))
 
 # Let's summarize something
 doc = Document("HealthChain is a powerful package for building NLP pipelines. It integrates seamlessly with popular libraries like spaCy, Hugging Face Transformers, and LangChain, allowing users to create complex NLP workflows with ease.")
@@ -147,7 +175,7 @@ You can easily combine multiple integration components in a single HealthChain p
 
 ```python
 from healthchain.io.containers import Document
-from healthchain.pipeline.basepipeline import Pipeline
+from healthchain.pipeline.base import Pipeline
 from healthchain.pipeline.components.integrations import SpacyComponent, HuggingFaceComponent, LangChainComponent
 from langchain import PromptTemplate, LLMChain
 from langchain.llms import FakeListLLM
@@ -158,16 +186,18 @@ huggingface_component = HuggingFaceComponent(task="sentiment-analysis", model="d
 
 # Set up LangChain with a FakeListLLM
 fake_llm = FakeListLLM(responses=["HealthChain: Powerful NLP pipeline builder."])
-template = "Summarize the following text: {text}"
-prompt = PromptTemplate(template=template, input_variables=["text"])
-llm_chain = LLMChain(prompt=prompt, llm=fake_llm)
+# Define the prompt template
+prompt = PromptTemplate.from_template("Summarize the following text: {text}")
+# Create the LCEL chain
+chain = prompt | fake_llm | StrOutputParser()
 langchain_component = LangChainComponent(chain=llm_chain)
 
 # Build our pipeline
 pipeline = Pipeline()
-pipeline.add(spacy_component)
-pipeline.add(huggingface_component)
-pipeline.add(langchain_component)
+pipeline.add_node(spacy_component)
+pipeline.add_node(huggingface_component)
+pipeline.add_node(langchain_component)
+pipeline.build()
 
 # Process a document
 doc = Document("HealthChain makes it easy to build powerful NLP pipelines!")
