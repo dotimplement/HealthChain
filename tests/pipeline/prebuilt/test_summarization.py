@@ -31,11 +31,11 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
 
         # Verify the pipeline used the mocked input and output
         input_data = mock_cds_fhir_connector.return_value.input.return_value
-        assert input_data.clinical_docs.fhir_data.context == {
+        assert input_data.structured_docs.fhir_data.context == {
             "patientId": "123",
             "encounterId": "456",
         }
-        assert input_data.clinical_docs.fhir_data.model_dump_prefetch() == {
+        assert input_data.structured_docs.fhir_data.model_dump_prefetch() == {
             "resourceType": "Bundle",
             "entry": [
                 {
