@@ -232,22 +232,22 @@ def test_extract_allergies_using_code(cda_annotator_code):
 def test_add_to_empty_sections(cda_annotator, test_ccd_data):
     cda_annotator._problem_section = None
     cda_annotator.problem_list = []
-    cda_annotator.add_to_problem_list(test_ccd_data.problems)
+    cda_annotator.add_to_problem_list(test_ccd_data.concepts.problems)
     assert cda_annotator.problem_list == []
 
     cda_annotator._medication_section = None
     cda_annotator.medication_list = []
-    cda_annotator.add_to_medication_list(test_ccd_data.medications)
+    cda_annotator.add_to_medication_list(test_ccd_data.concepts.medications)
     assert cda_annotator.medication_list == []
 
     cda_annotator._allergy_section = None
     cda_annotator.allergy_list = []
-    cda_annotator.add_to_allergy_list(test_ccd_data.allergies)
+    cda_annotator.add_to_allergy_list(test_ccd_data.concepts.allergies)
     assert cda_annotator.allergy_list == []
 
 
 def test_add_to_problem_list(cda_annotator, test_ccd_data):
-    problems = test_ccd_data.problems
+    problems = test_ccd_data.concepts.problems
     cda_annotator.add_to_problem_list(problems)
     assert len(cda_annotator.problem_list) == 2
     assert len(cda_annotator._problem_section.entry) == 2
@@ -255,14 +255,14 @@ def test_add_to_problem_list(cda_annotator, test_ccd_data):
 
 def test_add_to_problem_list_overwrite(cda_annotator, test_ccd_data):
     # Test if problems are added to the problem list correctly with overwrite=True
-    problems = test_ccd_data.problems
+    problems = test_ccd_data.concepts.problems
     cda_annotator.add_to_problem_list(problems, overwrite=True)
     assert len(cda_annotator.problem_list) == 1
     assert len(cda_annotator._problem_section.entry) == 1
 
 
 def test_add_multiple_to_problem_list(cda_annotator, test_multiple_ccd_data):
-    problems = test_multiple_ccd_data.problems
+    problems = test_multiple_ccd_data.concepts.problems
     cda_annotator.add_to_problem_list(problems)
     assert len(cda_annotator.problem_list) == 3
     assert len(cda_annotator._problem_section.entry) == 3
@@ -274,14 +274,14 @@ def test_add_multiple_to_problem_list(cda_annotator, test_multiple_ccd_data):
 
 
 def test_add_multiple_to_problem_list_overwrite(cda_annotator, test_multiple_ccd_data):
-    problems = test_multiple_ccd_data.problems
+    problems = test_multiple_ccd_data.concepts.problems
     cda_annotator.add_to_problem_list(problems, overwrite=True)
     assert len(cda_annotator.problem_list) == 2
     assert len(cda_annotator._problem_section.entry) == 2
 
 
 def test_add_to_medication_list(cda_annotator, test_ccd_data):
-    medications = test_ccd_data.medications
+    medications = test_ccd_data.concepts.medications
     cda_annotator.add_to_medication_list(medications)
     assert len(cda_annotator.medication_list) == 2
     assert len(cda_annotator._medication_section.entry) == 2
@@ -289,14 +289,14 @@ def test_add_to_medication_list(cda_annotator, test_ccd_data):
 
 def test_add_to_medication_list_overwrite(cda_annotator, test_ccd_data):
     # Test if medications are added to the medication list correctly with overwrite=True
-    medications = test_ccd_data.medications
+    medications = test_ccd_data.concepts.medications
     cda_annotator.add_to_medication_list(medications, overwrite=True)
     assert len(cda_annotator.medication_list) == 1
     assert len(cda_annotator._medication_section.entry) == 1
 
 
 def test_add_multiple_to_medication_list(cda_annotator, test_multiple_ccd_data):
-    medications = test_multiple_ccd_data.medications
+    medications = test_multiple_ccd_data.concepts.medications
     cda_annotator.add_to_medication_list(medications)
     assert len(cda_annotator.medication_list) == 3
     assert len(cda_annotator._medication_section.entry) == 3
@@ -310,7 +310,7 @@ def test_add_multiple_to_medication_list(cda_annotator, test_multiple_ccd_data):
 def test_add_multiple_to_medication_list_overwrite(
     cda_annotator, test_multiple_ccd_data
 ):
-    medications = test_multiple_ccd_data.medications
+    medications = test_multiple_ccd_data.concepts.medications
     cda_annotator.add_to_medication_list(medications, overwrite=True)
     assert len(cda_annotator.medication_list) == 2
     assert len(cda_annotator._medication_section.entry) == 2
@@ -318,14 +318,14 @@ def test_add_multiple_to_medication_list_overwrite(
 
 def test_add_to_allergy_list(cda_annotator, test_ccd_data):
     # Test if allergies are added to the allergy list correctly with overwrite=True
-    allergies = test_ccd_data.allergies
+    allergies = test_ccd_data.concepts.allergies
     cda_annotator.add_to_allergy_list(allergies)
     assert len(cda_annotator.allergy_list) == 2
     assert len(cda_annotator._allergy_section.entry) == 2
 
 
 def test_add_to_allergy_list_overwrite(cda_annotator, test_ccd_data):
-    allergies = test_ccd_data.allergies
+    allergies = test_ccd_data.concepts.allergies
     cda_annotator.add_to_allergy_list(allergies, overwrite=True)
     assert len(cda_annotator.allergy_list) == 1
     assert len(cda_annotator._allergy_section.entry) == 1
@@ -333,7 +333,7 @@ def test_add_to_allergy_list_overwrite(cda_annotator, test_ccd_data):
 
 def test_add_multiple_to_allergy_list(cda_annotator, test_multiple_ccd_data):
     # Test if allergies are added to the allergy list correctly with overwrite=True
-    allergies = test_multiple_ccd_data.allergies
+    allergies = test_multiple_ccd_data.concepts.allergies
     cda_annotator.add_to_allergy_list(allergies)
     assert len(cda_annotator.allergy_list) == 3
     assert len(cda_annotator._allergy_section.entry) == 3
@@ -344,7 +344,7 @@ def test_add_multiple_to_allergy_list(cda_annotator, test_multiple_ccd_data):
 
 
 def test_add_multiple_to_allergy_list_overwrite(cda_annotator, test_multiple_ccd_data):
-    allergies = test_multiple_ccd_data.allergies
+    allergies = test_multiple_ccd_data.concepts.allergies
     cda_annotator.add_to_allergy_list(allergies, overwrite=True)
     assert len(cda_annotator.allergy_list) == 2
     assert len(cda_annotator._allergy_section.entry) == 2

@@ -49,7 +49,7 @@ def test_spacy_component(sample_document):
         mock_load.return_value = mock_instance
         component = SpacyComponent("en_core_web_sm")
         result = component(sample_document)
-        assert result.spacy_doc
+        assert result.nlp.spacy_doc
 
 
 @pytest.mark.skipif(

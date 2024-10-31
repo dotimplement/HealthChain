@@ -3,9 +3,14 @@ from unittest.mock import patch
 from healthchain.io.cdaconnector import CdaConnector
 from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
+from healthchain.io.containers.document import (
+    CdsAnnotations,
+    StructuredData,
+)
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.data.concept import (
     AllergyConcept,
+    ConceptLists,
     MedicationConcept,
     ProblemConcept,
 )
@@ -26,14 +31,6 @@ def cds_fhir_connector():
 
 
 @pytest.fixture
-def sample_lookup():
-    return {
-        "high blood pressure": "hypertension",
-        "heart attack": "myocardial infarction",
-    }
-
-
-@pytest.fixture
 def mock_cda_connector():
     with patch("healthchain.io.cdaconnector.CdaConnector") as mock:
         connector_instance = mock.return_value
@@ -41,32 +38,35 @@ def mock_cda_connector():
         # Mock the input method
         connector_instance.input.return_value = Document(
             data="Original note",
-            ccd_data=CcdData(
-                problems=[
-                    ProblemConcept(
-                        code="38341003",
-                        code_system="2.16.840.1.113883.6.96",
-                        code_system_name="SNOMED CT",
-                        display_name="Hypertension",
-                    )
-                ],
-                medications=[
-                    MedicationConcept(
-                        code="123454",
-                        code_system="2.16.840.1.113883.6.96",
-                        code_system_name="SNOMED CT",
-                        display_name="Aspirin",
-                    )
-                ],
-                allergies=[
-                    AllergyConcept(
-                        code="70618",
-                        code_system="2.16.840.1.113883.6.96",
-                        code_system_name="SNOMED CT",
-                        display_name="Allergy to peanuts",
-                    )
-                ],
-                note="Original note",
+            structured_docs=StructuredData(
+                ccd_data=CcdData(
+                    concepts=ConceptLists(
+                        problems=[
+                            ProblemConcept(
+                                code="38341003",
+                                code_system="2.16.840.1.113883.6.96",
+                                code_system_name="SNOMED CT",
+                                display_name="Hypertension",
+                            )
+                        ],
+                        medications=[
+                            MedicationConcept(
+                                code="123454",
+                                code_system="2.16.840.1.113883.6.96",
+                                code_system_name="SNOMED CT",
+                                display_name="Aspirin",
+                            )
+                        ],
+                        allergies=[
+                            AllergyConcept(
+                                code="70618",
+                                code_system="2.16.840.1.113883.6.96",
+                                code_system_name="SNOMED CT",
+                                display_name="Allergy to peanuts",
+                            )
+                        ],
+                    ),
+                ),
             ),
         )
 
@@ -126,7 +126,7 @@ def mock_model():
         model_instance = mock.return_value
         model_instance.return_value = Document(
             data="Processed note",
-            ccd_data=CcdData(
+            concepts=ConceptLists(
                 problems=[
                     ProblemConcept(
                         code="38341003",
@@ -151,7 +151,6 @@ def mock_model():
                         display_name="Allergy to peanuts",
                     )
                 ],
-                note="Processed note",
             ),
         )
         yield mock
@@ -163,14 +162,16 @@ def mock_llm():
         llm_instance = mock.return_value
         llm_instance.return_value = Document(
             data="Summarized discharge information",
-            cds_cards=[
-                Card(
-                    summary="Summarized discharge information",
-                    detail="Patient John Doe was discharged. Encounter details...",
-                    indicator="info",
-                    source={"label": "Summarization LLM"},
-                )
-            ],
+            cds=CdsAnnotations(
+                cards=[
+                    Card(
+                        summary="Summarized discharge information",
+                        detail="Patient John Doe was discharged. Encounter details...",
+                        indicator="info",
+                        source={"label": "Summarization LLM"},
+                    )
+                ],
+            ),
         )
         yield mock
 
@@ -183,22 +184,24 @@ def mock_cds_fhir_connector():
         # Mock the input method
         connector_instance.input.return_value = Document(
             data="Original FHIR data",
-            fhir_resources=CdsFhirData(
-                context={"patientId": "123", "encounterId": "456"},
-                prefetch={
-                    "resourceType": "Bundle",
-                    "entry": [
-                        {
-                            "resource": {
-                                "resourceType": "Patient",
-                                "id": "123",
-                                "name": [{"family": "Doe", "given": ["John"]}],
-                                "gender": "male",
-                                "birthDate": "1970-01-01",
-                            }
-                        },
-                    ],
-                },
+            structured_docs=StructuredData(
+                fhir_data=CdsFhirData(
+                    context={"patientId": "123", "encounterId": "456"},
+                    prefetch={
+                        "resourceType": "Bundle",
+                        "entry": [
+                            {
+                                "resource": {
+                                    "resourceType": "Patient",
+                                    "id": "123",
+                                    "name": [{"family": "Doe", "given": ["John"]}],
+                                    "gender": "male",
+                                    "birthDate": "1970-01-01",
+                                }
+                            },
+                        ],
+                    },
+                ),
             ),
         )
 

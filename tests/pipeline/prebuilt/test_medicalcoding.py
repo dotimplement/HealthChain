@@ -31,9 +31,18 @@ def test_coding_pipeline(mock_cda_connector, mock_model):
         # Verify the pipeline used the mocked input and output
         input_doc = mock_cda_connector.return_value.input.return_value
         assert input_doc.data == "Original note"
-        assert input_doc.ccd_data.problems[0].display_name == "Hypertension"
-        assert input_doc.ccd_data.medications[0].display_name == "Aspirin"
-        assert input_doc.ccd_data.allergies[0].display_name == "Allergy to peanuts"
+        assert (
+            input_doc.clinical_docs.ccd_data.concepts.problems[0].display_name
+            == "Hypertension"
+        )
+        assert (
+            input_doc.clinical_docs.ccd_data.concepts.medications[0].display_name
+            == "Aspirin"
+        )
+        assert (
+            input_doc.clinical_docs.ccd_data.concepts.allergies[0].display_name
+            == "Allergy to peanuts"
+        )
 
 
 def test_full_coding_pipeline_integration(mock_model, test_cda_request):

@@ -13,7 +13,7 @@ def test_text_postprocessor_initialization_and_processing():
 
     # Test processing with empty lookup
     doc = Document(data="")
-    doc.entities = [
+    doc.nlp.entities = [
         {"text": "high blood pressure"},
         {"text": "fever"},
         {"text": "heart attack"},
@@ -31,7 +31,7 @@ def test_text_postprocessor_with_entities(sample_lookup):
 
     # Test with matching entities
     doc = Document(data="")
-    doc.entities = [
+    doc.nlp.entities = [
         {"text": "high blood pressure"},
         {"text": "fever"},
         {"text": "heart attack"},
@@ -45,7 +45,7 @@ def test_text_postprocessor_with_entities(sample_lookup):
 
     # Test with mixed entities
     doc = Document(data="")
-    doc.entities = [
+    doc.nlp.entities = [
         {"text": "high blood pressure"},
         {"text": "cough"},
         {"text": "heart attack"},

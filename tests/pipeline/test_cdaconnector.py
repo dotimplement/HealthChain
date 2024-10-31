@@ -1,6 +1,8 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from healthchain.io.containers.document import StructuredData
 from healthchain.models.data.concept import (
     AllergyConcept,
+    ConceptLists,
     MedicationConcept,
     ProblemConcept,
 )
@@ -10,13 +12,17 @@ from healthchain.models.data.ccddata import CcdData
 from healthchain.io.containers import Document
 
 
-def test_input(cda_connector, mock_cda_annotator):
+@patch("healthchain.io.cdaconnector.CdaAnnotator")
+def test_input(mock_annotator_class, cda_connector):
+    # Create mock CDA document
     mock_cda_doc = Mock()
     mock_cda_doc.problem_list = [ProblemConcept(code="test")]
     mock_cda_doc.medication_list = [MedicationConcept(code="test")]
     mock_cda_doc.allergy_list = [AllergyConcept(code="test")]
     mock_cda_doc.note = "Test note"
-    mock_cda_annotator.from_xml.return_value = mock_cda_doc
+
+    # Set up the mock annotator
+    mock_annotator_class.from_xml.return_value = mock_cda_doc
 
     input_data = CdaRequest(document="<xml>Test CDA</xml>")
     result = cda_connector.input(input_data)
@@ -24,11 +30,17 @@ def test_input(cda_connector, mock_cda_annotator):
     assert isinstance(result, Document)
     assert result.data == "Test note"
 
-    assert isinstance(result.ccd_data, CcdData)
-    assert result.ccd_data.problems == [ProblemConcept(code="test")]
-    assert result.ccd_data.medications == [MedicationConcept(code="test")]
-    assert result.ccd_data.allergies == [AllergyConcept(code="test")]
-    assert result.ccd_data.note == "Test note"
+    assert isinstance(result.structured_docs.ccd_data, CcdData)
+    assert result.structured_docs.ccd_data.concepts.problems == [
+        ProblemConcept(code="test")
+    ]
+    assert result.structured_docs.ccd_data.concepts.medications == [
+        MedicationConcept(code="test")
+    ]
+    assert result.structured_docs.ccd_data.concepts.allergies == [
+        AllergyConcept(code="test")
+    ]
+    assert result.structured_docs.ccd_data.note == "Test note"
 
 
 def test_output(cda_connector):
@@ -37,11 +49,15 @@ def test_output(cda_connector):
 
     out_data = Document(
         data="Updated note",
-        ccd_data=CcdData(
-            problems=[ProblemConcept(code="New Problem")],
-            medications=[MedicationConcept(code="New Medication")],
-            allergies=[AllergyConcept(code="New Allergy")],
-            note="Updated note",
+        structured_docs=StructuredData(
+            ccd_data=CcdData(
+                concepts=ConceptLists(
+                    problems=[ProblemConcept(code="New Problem")],
+                    medications=[MedicationConcept(code="New Medication")],
+                    allergies=[AllergyConcept(code="New Allergy")],
+                ),
+                note="Updated note",
+            ),
         ),
     )
 
