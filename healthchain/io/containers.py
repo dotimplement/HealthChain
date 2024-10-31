@@ -109,10 +109,58 @@ class Document(DataContainer[str]):
     fhir_resources: Optional[CdsFhirData] = field(default=None)
     cds_cards: Optional[List[Card]] = field(default=None)
     cds_actions: Optional[List[Action]] = field(default=None)
+    entities: List[str] = field(default_factory=list)
+
+    # Third-party specific attributes
+    spacy_doc: Optional[SpacyDoc] = None
+    huggingface_results: Dict[str, Any] = field(default_factory=dict)
+    langchain_results: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.text = self.data
-        self._doc = None
+        if not self.tokens:
+            self.tokens = self.text.split()  # Basic tokenization if not provided
+
+    def add_spacy_doc(self, doc: SpacyDoc):
+        self.spacy_doc = doc
+        self.text = doc.text
+        self.tokens = [token.text for token in doc]
+        self.entities = [
+            {
+                "text": ent.text,
+                "label": ent.label_,
+                "start": ent.start_char,
+                "end": ent.end_char,
+            }
+            for ent in doc.ents
+        ]
+
+    def add_huggingface_output(self, task: str, output: Any):
+        self.huggingface_results[task] = output
+
+    def add_langchain_output(self, task: str, output: Any):
+        self.langchain_results[task] = output
+
+    def get_tokens(self) -> List[str]:
+        return self.tokens
+
+    def get_entities(self) -> List[Dict[str, Any]]:
+        return self.entities
+
+    def get_embeddings(self) -> Optional[List[float]]:
+        return self.embeddings
+
+    def set_embeddings(self, embeddings: List[float]):
+        self.embeddings = embeddings
+
+    def get_spacy_doc(self) -> Optional[SpacyDoc]:
+        return self.spacy_doc
+
+    def get_huggingface_output(self, task: str) -> Any:
+        return self.huggingface_results.get(task)
+
+    def get_langchain_output(self, task: str) -> Any:
+        return self.langchain_results.get(task)
 
     def _update_attributes(self):
         self.tokens = [token.text for token in self._doc]
@@ -127,29 +175,11 @@ class Document(DataContainer[str]):
             )
         return self._doc
 
-    def set_spacy_doc(self, doc: SpacyDoc) -> None:
-        self._doc = doc
-        self.text = self._doc.text
-        self._update_attributes()
-
     def word_count(self) -> int:
         return len(self.tokens)
 
     def char_count(self) -> int:
         return len(self.text)
-
-    def get_entities(self) -> List[Dict[str, Any]]:
-        if self._doc is None:
-            return self.entities
-        return [
-            {
-                "text": ent.text,
-                "label": ent.label_,
-                "start": ent.start_char,
-                "end": ent.end_char,
-            }
-            for ent in self._doc.ents
-        ]
 
     def update_ccd(
         self,

@@ -419,5 +419,12 @@ def cda_annotator():
 
 
 @pytest.fixture
+def cda_annotator_code():
+    with open("./tests/data/test_cda_without_template_id.xml", "r") as file:
+        test_cda_without_template_id = file.read()
+    return CdaAnnotator.from_xml(test_cda_without_template_id)
+
+
+@pytest.fixture
 def cdsservices():
     return CDSServices()
