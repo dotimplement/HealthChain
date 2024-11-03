@@ -1,7 +1,8 @@
+from healthchain.apimethod import APIMethod
 import pytest
 
 from healthchain.clients import ehr
-from healthchain.decorators import find_attributes_of_type, assign_to_attribute
+from healthchain.decorators import api, find_attributes_of_type, assign_to_attribute
 
 from .conftest import MockDataGenerator
 
@@ -64,3 +65,18 @@ class TestEHRDecorator:
 
 
 # TODO: add test for api decorator
+def test_api_decorator():
+    @api
+    def test_function():
+        return "test"
+
+    # test if the function is correctly wrapped in the APImethod instance.
+    result = test_function()
+    assert isinstance(result, APIMethod)
+    assert result.func() == "test"
+
+    # test if function has "is_service_route"
+    assert hasattr(test_function, "is_service_route")
+
+    # test if the "is_service_route" member is set to True.
+    assert test_function.is_service_route is True
