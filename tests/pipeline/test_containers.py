@@ -10,7 +10,7 @@ def sample_document():
 def test_document_initialization(sample_document):
     assert sample_document.data == "This is a sample text for testing."
     assert sample_document.text == "This is a sample text for testing."
-    assert sample_document.tokens == [
+    assert sample_document.get_tokens() == [
         "This",
         "is",
         "a",
@@ -19,8 +19,8 @@ def test_document_initialization(sample_document):
         "for",
         "testing.",
     ]
-    assert sample_document.entities == []
-    assert sample_document.embeddings is None
+    assert sample_document.get_entities() == []
+    assert sample_document.get_embeddings() is None
 
 
 def test_document_word_count(sample_document):
@@ -28,8 +28,7 @@ def test_document_word_count(sample_document):
 
 
 def test_document_char_count(sample_document):
-    with pytest.raises(AttributeError):
-        sample_document.char_count()  # Should raise error as spacy_doc is not set
+    assert sample_document.char_count() == 28
 
 
 def test_document_add_huggingface_output(sample_document):
