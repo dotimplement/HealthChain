@@ -62,94 +62,121 @@ class DataContainer(Generic[T]):
 @dataclass
 class Document(DataContainer[str]):
     """
-    A container for document data, optionally wrapping a spaCy Doc object.
+    A container for document data with support for various NLP processing outputs.
 
     This class extends DataContainer to specifically handle textual document data.
-    It provides functionality to work with raw text, tokenized text, spaCy Doc objects,
-    and structured clinical data.
+    It provides functionality to work with raw text, tokenized text, and outputs from
+    various NLP libraries like spaCy, Hugging Face, and LangChain.
 
     Attributes:
         data (str): The raw text content of the document.
         preprocessed_text (str): The preprocessed version of the text.
-        tokens (List[str]): A list of individual tokens extracted from the text.
-        pos_tags (List[str]): A list of part-of-speech tags corresponding to the tokens.
-        entities (List[str]): A list of named entities identified in the text.
         ccd_data (Optional[CcdData]): An optional CcdData object containing structured clinical data.
         fhir_resources (Optional[CdsFhirData]): Optional FHIR resources data.
         cds_cards (Optional[List[Card]]): Optional list of CDS cards.
         cds_actions (Optional[List[Action]]): Optional list of CDS actions.
-        text (str): The current text content, which may be updated when setting a spaCy Doc.
-        _doc (SpacyDoc): An internal reference to the spaCy Doc object, if set.
 
     Methods:
-        __post_init__(): Initializes the text attribute and _doc reference.
-        _update_attributes(): Updates tokens, pos_tags, and entities from the spaCy Doc.
-        doc (property): Returns the spaCy Doc object if set, or raises an error.
-        set_spacy_doc(doc: SpacyDoc): Sets the spaCy Doc and updates related attributes.
+        add_spacy_doc(doc: SpacyDoc): Sets the spaCy Doc and updates related attributes.
+        add_huggingface_output(task: str, output: Any): Adds output from a Hugging Face model.
+        add_langchain_output(task: str, output: Any): Adds output from a LangChain process.
+        get_tokens() -> List[str]: Returns the document's tokens.
+        get_entities() -> List[Dict[str, Any]]: Returns the named entities with their details.
+        get_embeddings() -> Optional[List[float]]: Returns the document embeddings.
+        set_embeddings(embeddings: List[float]): Sets the document embeddings.
+        get_spacy_doc() -> Optional[SpacyDoc]: Returns the spaCy Doc if available.
+        get_huggingface_output(task: str) -> Any: Retrieves output for a specific Hugging Face task.
+        get_langchain_output(task: str) -> Any: Retrieves output for a specific LangChain task.
         word_count() -> int: Returns the number of tokens in the document.
-        char_count() -> int: Returns the number of characters in the text.
-        get_entities() -> List[Dict[str, Any]]: Returns a list of entities with their details.
-        update_ccd(new_problems: List[ProblemConcept], new_medications: List[MedicationConcept], new_allergies: List[AllergyConcept], overwrite: bool): Updates the existing CcdData object.
+        char_count() -> int: Returns the number of characters across all tokens.
+        update_ccd(...): Updates the CCD data with new clinical information.
         __iter__() -> Iterator[str]: Allows iteration over the document's tokens.
         __len__() -> int: Returns the word count of the document.
 
-    Raises:
-        ValueError: When attempting to access the spaCy Doc before it's set.
-
-    Note:
-        The spaCy Doc object needs to be set using a preprocessor before accessing
-        certain attributes and methods that depend on it.
+    Notes:
+        - The class supports multiple NLP processing pipelines and maintains their outputs separately.
+        - Basic tokenization is performed if tokens are not provided during initialization.
+        - Clinical data can be updated incrementally or overwritten completely.
     """
 
     preprocessed_text: str = field(default="")
-    tokens: List[str] = field(default_factory=list)
-    pos_tags: List[str] = field(default_factory=list)
-    entities: List[str] = field(default_factory=list)
     ccd_data: Optional[CcdData] = field(default=None)
     fhir_resources: Optional[CdsFhirData] = field(default=None)
     cds_cards: Optional[List[Card]] = field(default=None)
     cds_actions: Optional[List[Action]] = field(default=None)
 
+    # Internal attributes
+    _tokens: List[str] = field(default_factory=list)
+    _pos_tags: List[str] = field(default_factory=list)
+    _entities: List[Dict[str, Any]] = field(default_factory=list)
+    _embeddings: Optional[List[float]] = field(default=None)
+    _spacy_doc: Optional[SpacyDoc] = field(default=None)
+    _huggingface_results: Dict[str, Any] = field(default_factory=dict)
+    _langchain_results: Dict[str, Any] = field(default_factory=dict)
+
     def __post_init__(self):
+        """Initialize the document with basic tokenization if needed."""
         self.text = self.data
-        self._doc = None
+        if not self._tokens:
+            self._tokens = self.text.split()  # Basic tokenization if not provided
 
-    def _update_attributes(self):
-        self.tokens = [token.text for token in self._doc]
-        self.pos_tags = [token.pos_ for token in self._doc]
-        self.entities = [ent.text for ent in self._doc.ents]
+    def add_spacy_doc(self, doc: SpacyDoc) -> None:
+        """Add a spaCy Doc and update related attributes."""
+        self._spacy_doc = doc
+        self.text = doc.text
+        self._update_from_spacy()
 
-    @property
-    def doc(self) -> SpacyDoc:
-        if self._doc is None:
-            raise ValueError(
-                "spaCy Doc is not set. Use a preprocessor to set the spaCy Doc."
-            )
-        return self._doc
+    def _update_from_spacy(self) -> None:
+        """Update internal attributes from spaCy Doc."""
+        if self._spacy_doc:
+            self._tokens = [token.text for token in self._spacy_doc]
+            self._pos_tags = [token.pos_ for token in self._spacy_doc]
+            self._entities = [
+                {
+                    "text": ent.text,
+                    "label": ent.label_,
+                    "start": ent.start_char,
+                    "end": ent.end_char,
+                }
+                for ent in self._spacy_doc.ents
+            ]
 
-    def set_spacy_doc(self, doc: SpacyDoc) -> None:
-        self._doc = doc
-        self.text = self._doc.text
-        self._update_attributes()
+    def add_huggingface_output(self, task: str, output: Any) -> None:
+        self._huggingface_results[task] = output
 
-    def word_count(self) -> int:
-        return len(self.tokens)
+    def add_langchain_output(self, task: str, output: Any) -> None:
+        self._langchain_results[task] = output
 
-    def char_count(self) -> int:
-        return len(self.text)
+    def get_tokens(self) -> List[str]:
+        return self._tokens
+
+    def set_entities(self, entities: List[Dict[str, Any]]) -> None:
+        self._entities = entities
 
     def get_entities(self) -> List[Dict[str, Any]]:
-        if self._doc is None:
-            return self.entities
-        return [
-            {
-                "text": ent.text,
-                "label": ent.label_,
-                "start": ent.start_char,
-                "end": ent.end_char,
-            }
-            for ent in self._doc.ents
-        ]
+        return self._entities
+
+    def get_embeddings(self) -> Optional[List[float]]:
+        return self._embeddings
+
+    def set_embeddings(self, embeddings: List[float]) -> None:
+        self._embeddings = embeddings
+
+    def get_spacy_doc(self) -> Optional[SpacyDoc]:
+        return self._spacy_doc
+
+    def get_huggingface_output(self, task: str) -> Any:
+        return self._huggingface_results.get(task)
+
+    def get_langchain_output(self, task: str) -> Any:
+        return self._langchain_results.get(task)
+
+    def word_count(self) -> int:
+        return len(self._tokens)
+
+    def char_count(self) -> int:
+        """Get the total number of characters across all tokens."""
+        return sum(len(token) for token in self._tokens)
 
     def update_ccd(
         self,
@@ -159,13 +186,13 @@ class Document(DataContainer[str]):
         overwrite: bool = False,
     ) -> None:
         """
-        Updates the existing CcdData object with new data.
+        Update the CCD data with new clinical information.
 
         Args:
-            new_problems (List[ProblemConcept]): List of new problem concepts to add or update.
-            new_medications (List[MedicationConcept]): List of new medication concepts to add or update.
-            new_allergies (List[AllergyConcept]): List of new allergy concepts to add or update.
-            overwrite (bool, optional): If True, replaces existing data; if False, appends new data. Defaults to False.
+            new_problems: List of new problem concepts to add or update.
+            new_medications: List of new medication concepts to add or update.
+            new_allergies: List of new allergy concepts to add or update.
+            overwrite: If True, replaces existing data; if False, appends new data.
 
         Raises:
             ValueError: If there is no existing CcdData object to update.
@@ -183,9 +210,11 @@ class Document(DataContainer[str]):
             self.ccd_data.allergies.extend(new_allergies)
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.tokens)
+        """Allow iteration over the document's tokens."""
+        return iter(self._tokens)
 
     def __len__(self) -> int:
+        """Return the word count of the document."""
         return self.word_count()
 
 
