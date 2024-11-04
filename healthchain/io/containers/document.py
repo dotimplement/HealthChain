@@ -196,7 +196,27 @@ class Document(BaseDocument):
         medications: List[MedicationConcept] = None,
         allergies: List[AllergyConcept] = None,
     ):
-        """Add extracted medical concepts."""
+        """
+        Add extracted medical concepts to the document.
+
+        This method adds medical concepts (problems, medications, allergies) to their
+        respective lists in the document's concepts container. Each concept type is
+        optional and will only be added if provided.
+
+        Args:
+            problems (List[ProblemConcept], optional): List of medical problems/conditions
+                to add to the document. Defaults to None.
+            medications (List[MedicationConcept], optional): List of medications
+                to add to the document. Defaults to None.
+            allergies (List[AllergyConcept], optional): List of allergies
+                to add to the document. Defaults to None.
+
+        Example:
+            >>> doc.add_concepts(
+            ...     problems=[ProblemConcept(display_name="Hypertension")],
+            ...     medications=[MedicationConcept(display_name="Aspirin")]
+            ... )
+        """
         if problems:
             self.concepts.problems.extend(problems)
         if medications:
@@ -204,9 +224,28 @@ class Document(BaseDocument):
         if allergies:
             self.concepts.allergies.extend(allergies)
 
-    def generate_ccd(self, overwrite: bool = False):
-        """Generate CCD from current concepts."""
+    def generate_ccd(self, overwrite: bool = False) -> CcdData:
+        """
+        Generate a CCD (Continuity of Care Document) from the current medical concepts.
+
+        This method creates or updates a CCD in the structured_docs container using the
+        medical concepts (problems, medications, allergies) currently stored in the document.
+        The CCD is a standard format for exchanging clinical information.
+
+        Args:
+            overwrite (bool, optional): If True, overwrites any existing CCD data.
+                If False, merges with existing CCD data. Defaults to False.
+
+        Returns:
+            CcdData: The generated CCD data.
+
+        Example:
+            >>> doc.add_concepts(problems=[ProblemConcept(display_name="Hypertension")])
+            >>> doc.generate_ccd()  # Creates CCD with the hypertension problem
+        """
         self.structured_docs.update_ccd_from_concepts(self.concepts, overwrite)
+
+        return self.structured_docs.ccd_data
 
     def __post_init__(self):
         super().__post_init__()
@@ -215,46 +254,94 @@ class Document(BaseDocument):
 
     # Convenience methods to delegate to the appropriate container
     def add_spacy_doc(self, doc: SpacyDoc):
+        """
+        Add a spaCy Doc object to the document and update the base text.
+
+        This method adds a spaCy Doc object to the document's NLP container and updates
+        the document's base text to match the spaCy Doc text.
+
+        Args:
+            doc (SpacyDoc): The spaCy Doc object to add to the document.
+
+        Example:
+            >>> import spacy
+            >>> nlp = spacy.load("en_core_web_sm")
+            >>> spacy_doc = nlp("Patient has hypertension")
+            >>> doc.add_spacy_doc(spacy_doc)
+        """
         self.nlp.add_spacy_doc(doc)
         self.text = doc.text  # Update base text if needed
 
     def get_spacy_doc(self) -> Optional[SpacyDoc]:
+        """
+        Get the spaCy Doc object from the document's NLP container.
+        """
         return self.nlp.spacy_doc
 
     def add_huggingface_output(self, task: str, output: Any):
+        """
+        Add a Hugging Face model output to the document's model outputs container.
+        """
         self.model_outputs.add_huggingface_output(task, output)
 
     def get_huggingface_output(self, task: str) -> Any:
+        """
+        Get a Hugging Face model output from the document's model outputs container.
+        """
         return self.model_outputs.huggingface_results.get(task)
 
     def add_langchain_output(self, task: str, output: Any):
+        """
+        Add a LangChain model output to the document's model outputs container.
+        """
         self.model_outputs.add_langchain_output(task, output)
 
     def get_langchain_output(self, task: str) -> Any:
+        """
+        Get a LangChain model output from the document's model outputs container.
+        """
         return self.model_outputs.langchain_results.get(task)
 
     def get_tokens(self) -> List[str]:
+        """
+        Get the list of tokens from the document's text. Defaults to .split() if tokenizer not provided.
+        """
         return self.nlp.tokens
 
     def get_entities(self) -> List[Dict[str, Any]]:
+        """
+        Get the list of entities from the document's text.
+        """
         return self.nlp.entities
 
     def set_entities(self, entities: List[Dict[str, Any]]):
+        """
+        Set the list of entities in the document's text.
+        """
         self.nlp.entities = entities
 
     def get_embeddings(self) -> Optional[List[float]]:
+        """
+        Get the list of embeddings from the document's text.
+        """
         return self.nlp.embeddings
 
     def set_embeddings(self, embeddings: List[float]):
+        """
+        Set the list of embeddings in the document's text.
+        """
         self.nlp.embeddings = embeddings
 
-    def get_ccd_data(self) -> Optional[CcdData]:
-        return self.structured_docs.ccd_data
-
     def get_fhir_data(self) -> Optional[CdsFhirData]:
+        """
+        Get the FHIR data from the document's structured_docs container.
+        """
         return self.structured_docs.fhir_data
 
     def word_count(self) -> int:
+        """
+        Get the word count from the document's text.
+        """
         return len(self.nlp.tokens)
 
     def __iter__(self) -> Iterator[str]:
