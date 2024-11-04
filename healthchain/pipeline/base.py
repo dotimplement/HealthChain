@@ -2,6 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import (
+    Any,
     Callable,
     Optional,
     Type,
@@ -75,7 +76,7 @@ class BasePipeline(Generic[T], ABC):
         return f"[{components_repr}]"
 
     @classmethod
-    def load(cls, model_path: str) -> "BasePipeline":
+    def load(cls, model_name: str, **model_kwargs: Any) -> "BasePipeline":
         """
         Load and configure a pipeline from a given model path.
 
@@ -84,12 +85,13 @@ class BasePipeline(Generic[T], ABC):
 
         Args:
             model_path (str): The path to the model used for configuring the pipeline.
+            **model_kwargs: Additional keyword arguments for the model.
 
         Returns:
             BasePipeline: A new instance of the pipeline, configured with the given model.
         """
         pipeline = cls()
-        pipeline.configure_pipeline(model_path)
+        pipeline.configure_pipeline(model_name, **model_kwargs)
 
         return pipeline
 

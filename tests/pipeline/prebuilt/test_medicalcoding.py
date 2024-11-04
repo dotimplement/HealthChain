@@ -7,7 +7,10 @@ from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 def test_coding_pipeline(mock_cda_connector, mock_model):
     with patch(
         "healthchain.pipeline.medicalcodingpipeline.CdaConnector", mock_cda_connector
-    ), patch("healthchain.pipeline.medicalcodingpipeline.Model", mock_model):
+    ), patch(
+        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_integration",
+        mock_model,
+    ):
         pipeline = MedicalCodingPipeline.load("./path/to/model")
 
         # Create a sample CdaRequest
@@ -47,7 +50,10 @@ def test_coding_pipeline(mock_cda_connector, mock_model):
 
 def test_full_coding_pipeline_integration(mock_model, test_cda_request):
     # Use mock model object for now
-    with patch("healthchain.pipeline.medicalcodingpipeline.Model", mock_model):
+    with patch(
+        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_integration",
+        mock_model,
+    ):
         # this load method doesn't do anything yet
         pipeline = MedicalCodingPipeline.load("./path/to/production/model")
 

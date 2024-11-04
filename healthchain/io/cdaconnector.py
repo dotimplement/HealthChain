@@ -96,8 +96,7 @@ class CdaConnector(BaseConnector):
             `overwrite` attribute of the CdaConnector instance.
         """
 
-        out_data.generate_ccd(overwrite=self.overwrite)
-        updated_ccd_data = out_data.get_ccd_data()
+        updated_ccd_data = out_data.generate_ccd(overwrite=self.overwrite)
 
         # Update the CDA document with the results
 
