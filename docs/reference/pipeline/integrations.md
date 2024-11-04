@@ -73,13 +73,13 @@ processed_doc = pipeline(doc)
 
 # Access spaCy annotations
 spacy_doc = processed_doc.get_spacy_doc()
-for token in spacy_doc:
+for token in spacy_doc:https://github.com/dotimplement/HealthChain
     print(f"Token: {token.text}, POS: {token.pos_}, Lemma: {token.lemma_}")
 ```
 
 ## HuggingFaceComponent
 
-The `HuggingFaceComponent` integrates Hugging Face Transformers models into your HealthChain pipeline.
+The `HuggingFaceComponent` integrates HuggingFace Transformers models into your HealthChain pipeline. Models can be browsed on the [HuggingFace website](https://huggingface.co/models). HuggingFace offers models for a wide range of different tasks, and while not all of these have been throughly tested for HealthChain compatability, we expect that all NLP models and tasks should be compatible. If you have an issues integrating any models please raise an issue on our [Github homepage](https://github.com/dotimplement/HealthChain)!
 
 ```python
 from healthchain.pipeline.components.integrations import HuggingFaceComponent

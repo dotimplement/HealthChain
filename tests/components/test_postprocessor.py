@@ -70,7 +70,7 @@ def test_text_postprocessor_edge_cases(sample_lookup):
 
     # Test with empty entities list
     doc = Document(data="")
-    doc.entities = []
+    doc.set_entities([])
     processed_doc = processor(doc)
     assert processed_doc.get_entities() == []
 

@@ -163,6 +163,10 @@ class Document(BaseDocument):
     """
     A document container that extends BaseDocument with rich annotation capabilities.
 
+    This class extends DataContainer to specifically handle textual document data.
+    It provides functionality to work with raw text, tokenized text, and outputs from
+    various NLP libraries like spaCy, Hugging Face, and LangChain.
+
     This class provides a comprehensive document representation that can include:
     - NLP annotations (tokens, entities, embeddings, spaCy docs)
     - Clinical concepts (problems, medications, allergies)
@@ -248,7 +252,9 @@ class Document(BaseDocument):
         return self.structured_docs.ccd_data
 
     def __post_init__(self):
+        """Initialize the document with basic tokenization if needed."""
         super().__post_init__()
+        self.text = self.data
         if not self.nlp.tokens:
             self.nlp.tokens = self.text.split()  # Basic tokenization if not provided
 
