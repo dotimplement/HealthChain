@@ -1,5 +1,7 @@
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
+from healthchain.models.data import ProblemConcept
+from spacy.tokens import Doc
 
 
 class SpacyComponent(BaseComponent[str]):
@@ -23,6 +25,7 @@ class SpacyComponent(BaseComponent[str]):
     """
 
     def __init__(self, path_to_pipeline: str):
+        # TODO: might need to store model specific info
         import spacy
 
         try:
@@ -35,9 +38,36 @@ class SpacyComponent(BaseComponent[str]):
             ) from e
         self.nlp = nlp
 
+    def _add_concepts_to_hc_doc(self, spacy_doc: Doc, hc_doc: Document):
+        """
+        Extract entities from spaCy Doc and add them to the HealthChain Document concepts.
+
+        Args:
+            spacy_doc (Doc): The processed spaCy Doc object containing entities
+            hc_doc (Document): The HealthChain Document to store concepts in
+
+        Note: Defaults to ProblemConcepts and SNOMED CT concepts
+        # TODO: make configurable
+        """
+        concepts = []
+        for ent in spacy_doc.ents:
+            # Check for CUI attribute from extensions like medcat
+            concept = ProblemConcept(
+                code=ent._.cui if hasattr(ent, "_cui") else None,
+                code_system="2.16.840.1.113883.6.96",
+                code_system_name="SNOMED CT",
+                display_name=ent.text,
+            )
+            concepts.append(concept)
+
+        # Add to document concepts
+        hc_doc.add_concepts(problems=concepts)
+
     def __call__(self, doc: Document) -> Document:
         spacy_doc = self.nlp(doc.data)
+        self._add_concepts_to_hc_doc(spacy_doc, doc)
         doc.add_spacy_doc(spacy_doc)
+
         return doc
 
 
