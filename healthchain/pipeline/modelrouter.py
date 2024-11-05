@@ -1,61 +1,118 @@
+from healthchain.pipeline.base import ModelConfig, ModelSource
 from healthchain.pipeline.components.base import BaseComponent
-from healthchain.pipeline.components.integrations import (
-    SpacyComponent,
-    HuggingFaceComponent,
-)
-import re
-from typing import Any
+
+from typing import Generic, TypeVar
 
 
-class ModelRouter:
+T = TypeVar("T", bound=BaseComponent)
+
+
+class ModelRouter(Generic[T]):
     """
-    A router that selects the appropriate integration component based on the model name.
-    This is an internal utility class used by pipelines to determine which integration
-    to use for a given model.
+    A utility class that creates appropriate components based on model source.
+    Maps model sources to initialization functions.
+
+    The ModelRouter handles initialization of different model types (e.g. SpaCy, Hugging Face)
+    based on a provided ModelConfig. It abstracts away the specific initialization details
+    for each model source and provides a unified interface through get_component().
+
+    Attributes:
+        _init_functions (Dict[ModelSource, Callable]): Mapping of model sources to their
+            initialization functions
+
+    Examples:
+        >>> config = ModelConfig(source=ModelSource.SPACY, model_id="en_core_sci_md")
+        >>> router = ModelRouter()
+        >>> component = router.get_component(config)
+
+        >>> # With local model path
+        >>> config = ModelConfig(
+        ...     source=ModelSource.HUGGINGFACE,
+        ...     model_id="bert-base",
+        ...     path="./models/bert",
+        ...     config={"task": "ner"}
+        ... )
+        >>> component = router.get_component(config)
     """
 
-    @staticmethod
-    def get_integration(model_name: str, **kwargs: Any) -> BaseComponent:
+    def __init__(self):
+        """Initialize the ModelRouter with model initialization mapping."""
+        self._init_functions = {
+            ModelSource.SPACY: self._init_spacy_model,
+            ModelSource.HUGGINGFACE: self._init_huggingface_model,
+        }
+
+    def get_component(self, config: ModelConfig) -> T:
         """
-        Determine and return the appropriate integration component for the given model.
+        Create and return the appropriate component based on model configuration.
+
+        This method takes a ModelConfig object and initializes the corresponding model component
+        based on the specified source (e.g. SpaCy, Hugging Face). The config is stored as an
+        instance variable to be used by the specific initialization functions.
 
         Args:
-            model_name: Name or path of the model to load
-            **kwargs: Additional arguments for the integration component
+            config (ModelConfig): Configuration object containing:
+                - source: The model source (e.g. ModelSource.SPACY)
+                - model_id: ID or name of the model
+                - path: Optional local path to model files
+                - config: Optional dict with additional configuration
 
         Returns:
-            An initialized integration component (SpacyComponent, HuggingFaceComponent, etc.)
+            T: An initialized component of the appropriate type (e.g. SpacyComponent,
+               HuggingFaceComponent)
+
+        Raises:
+            ValueError: If the model source specified in config is not supported
+            ImportError: If required dependencies for the model source are not installed
         """
-        # SpaCy models typically follow these patterns
-        spacy_patterns = [
-            r"^en_core_.*$",  # standard spacy models
-            r"^en_core_sci_.*$",  # scispacy models
-            r"^.*/spacy/.*$",  # local spacy model paths
-            r"^medcatlite$",  # medcat model
-        ]
+        init_func = self._init_functions.get(config.source)
 
-        # Hugging Face models typically include these patterns
-        hf_patterns = [
-            r"^bert-.*$",
-            r"^gpt-.*$",
-            r"^t5-.*$",
-            r"^distilbert-.*$",
-            r".*/huggingface/.*$",
-        ]
+        if not init_func:
+            raise ValueError(f"Unsupported model source: {config.source}")
 
-        # Check for SpaCy models
-        for pattern in spacy_patterns:
-            if re.match(pattern, model_name):
-                return SpacyComponent(model_name)
+        self.model_config = config  # Store config for use in init functions
+        return init_func()
 
-        # Check for Hugging Face models
-        for pattern in hf_patterns:
-            if re.match(pattern, model_name):
-                return HuggingFaceComponent(
-                    model=model_name,
-                    task=kwargs.get("task", "text-classification"),
-                )
+    def _init_spacy_model(self) -> T:
+        """Initialize SpaCy model component.
 
-        raise ValueError(
-            f"Could not determine appropriate integration for model: {model_name}"
+        Uses the stored model_config to initialize a SpacyComponent with either:
+        - A local model from model_config.path if specified
+        - A remote/installed model using model_config.model_id
+
+        Returns:
+            SpacyComponent: Initialized SpaCy model component
+
+        Raises:
+            ImportError: If spacy or required model is not installed
+        """
+        from healthchain.pipeline.components.integrations import SpacyComponent
+
+        if self.model_config.path is not None:
+            return SpacyComponent(model=self.model_config.path)
+        return SpacyComponent(model=self.model_config.model_id)
+
+    def _init_huggingface_model(self) -> T:
+        """Initialize Hugging Face model component.
+
+        Uses the stored model_config to initialize a HuggingFaceComponent with either:
+        - A local model from model_config.path if specified
+        - A remote/installed model using model_config.model_id
+
+        The task parameter is extracted from model_config.config if provided.
+
+        Returns:
+            HuggingFaceComponent: Initialized Hugging Face model component
+
+        Raises:
+            ImportError: If transformers or required model is not installed
+        """
+        from healthchain.pipeline.components.integrations import HuggingFaceComponent
+
+        if self.model_config.path is not None:
+            return HuggingFaceComponent(
+                task=self.model_config.config.get("task"), model=self.model_config.path
+            )
+        return HuggingFaceComponent(
+            task=self.model_config.config.get("task"), model=self.model_config.model_id
         )

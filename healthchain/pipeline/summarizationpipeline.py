@@ -1,19 +1,45 @@
 from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.pipeline.base import BasePipeline
-from healthchain.pipeline.components.llm import LLM
+from healthchain.pipeline.modelrouter import ModelRouter, ModelConfig
 
 
-# TODO: Implement this pipeline in full
 class SummarizationPipeline(BasePipeline):
-    def configure_pipeline(self, model_name: str) -> None:
+    """
+    A pipeline for text summarization tasks using NLP models.
+
+    This pipeline is configured to process clinical documents using a summarization model
+    to generate concise summaries. It uses CDS FHIR format for input and output handling.
+
+    Examples:
+        >>> # Using with GPT model
+        >>> pipeline = SummarizationPipeline.load("openai/gpt-4")
+        >>>
+        >>> # Using with Hugging Face
+        >>> pipeline = SummarizationPipeline.load(
+        ...     "facebook/bart-large-cnn",
+        ...     task="summarization"
+        ... )
+        >>> summaries = pipeline(documents)
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.router = ModelRouter()
+
+    def configure_pipeline(self, config: ModelConfig) -> None:
+        """Configure pipeline with FHIR connector and summarization model.
+
+        Args:
+            config: Model configuration for the summarization model
+        """
         cds_fhir_connector = CdsFhirConnector(hook_name="encounter-discharge")
+        config.config["task"] = "summarization"
+        model = self.router.get_component(config)
+
         self.add_input(cds_fhir_connector)
+        self.add_node(model, stage="summarization")
 
-        # Add summarization component
-        llm = LLM(model_name)
-        self.add_node(llm, stage="summarization")
-
-        # Maybe you can have components that create cards
+        # TODO: need a component that creates cards from the summary
         # self.add_node(CardCreator(), stage="card-creation")
 
         self.add_output(cds_fhir_connector)

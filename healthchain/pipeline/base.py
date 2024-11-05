@@ -1,6 +1,8 @@
+import re
 import logging
 from abc import ABC, abstractmethod
 from inspect import signature
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -16,6 +18,7 @@ from typing import (
 from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
+from enum import Enum
 
 from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
@@ -28,6 +31,23 @@ T = TypeVar("T")
 
 # TODO: dynamic resolution, maybe
 PositionType = Literal["first", "last", "default", "after", "before"]
+
+
+class ModelSource(Enum):
+    """Enumeration of supported model sources"""
+
+    SPACY = "spacy"
+    HUGGINGFACE = "huggingface"
+
+
+@dataclass
+class ModelConfig:
+    """Configuration for model initialization"""
+
+    source: ModelSource
+    model_id: str
+    path: Optional[Path] = None
+    config: Dict[str, Any] = None
 
 
 @dataclass
@@ -76,35 +96,126 @@ class BasePipeline(Generic[T], ABC):
         return f"[{components_repr}]"
 
     @classmethod
-    def load(cls, model_name: str, **model_kwargs: Any) -> "BasePipeline":
+    def load(cls, model_path: str, **model_kwargs: Any) -> "BasePipeline":
         """
         Load and configure a pipeline from a given model path.
 
-        This class method creates a new instance of the pipeline, configures it
-        using the provided model path, and returns the configured pipeline.
-
         Args:
-            model_path (str): The path to the model used for configuring the pipeline.
-            **model_kwargs: Additional keyword arguments for the model.
+            model_path: Path or identifier for the model in the format "source/model_id" or a local path.
+                       Sources can be "spacy" or "huggingface". For example:
+                       - "spacy/en_core_sci_md" (remote/installed model)
+                       - "huggingface/bert-base" (remote model)
+                       - "./models/spacy/my_model" (local model)
+            **model_kwargs: Additional configuration options passed to the model. Common options:
+                          - task: Task name for Hugging Face models (e.g. "ner", "summarization")
+                          - device: Device to load model on ("cpu", "cuda")
+                          - batch_size: Batch size for inference
+                          - max_length: Maximum sequence length
 
         Returns:
-            BasePipeline: A new instance of the pipeline, configured with the given model.
+            BasePipeline: A configured pipeline instance with the specified model loaded
+
+        Raises:
+            ValueError: If model_path format is invalid or source is not supported
+            ImportError: If required model dependencies are not installed
+
+        Examples:
+            >>> # Load a summarization pipeline with GPT model
+            >>> pipeline = SummarizationPipeline.load("openai/gpt-4")
+
+            >>> # Load NER pipeline with SpaCy model
+            >>> pipeline = NERPipeline.load("spacy/en_core_sci_md")
+
+            >>> # Load classification pipeline with BERT, specifying task
+            >>> pipeline = ClassificationPipeline.load(
+            ...     "huggingface/bert-base",
+            ...     task="sequence-classification"
+            ... )
+
+            >>> # Load custom pipeline from local SpaCy model
+            >>> pipeline = CustomPipeline.load("./models/spacy/my_model")
         """
         pipeline = cls()
-        pipeline.configure_pipeline(model_name, **model_kwargs)
-
+        config = cls._parse_model_path(model_path)
+        config.config = model_kwargs
+        pipeline._model_config = config
+        pipeline.configure_pipeline(config)
         return pipeline
 
-    @abstractmethod
-    def configure_pipeline(self, model_path: str) -> None:
+    @staticmethod
+    def _parse_model_path(model_path: str) -> ModelConfig:
         """
-        Configure the pipeline based on the provided model path.
+        Parse model path to determine source and model ID.
 
-        This method should be implemented by subclasses to add specific components
-        and configure the pipeline according to the given model.
+        This method parses a model path string to extract the model source and ID.
+        It handles both local paths and remote model identifiers.
 
         Args:
-            model_path (str): The path to the model used for configuring the pipeline.
+            model_path (str): Path or identifier for the model. Can be:
+                - Local path starting with "./" or "/" (e.g. "./models/spacy/my_model")
+                - Remote identifier in format "source/model_id" (e.g. "spacy/en_core_sci_md")
+
+        Returns:
+            ModelConfig: Configuration object containing:
+                - source: ModelSource enum value (e.g. ModelSource.SPACY)
+                - model_id: Name/ID of the model
+                - path: Optional Path object for local models
+
+        Raises:
+            ValueError: If model_path format is invalid or source is not supported
+                       For local paths, if source cannot be determined from path
+                       For remote paths, if format is not "source/model_id"
+        """
+        # Handle local paths
+        if model_path.startswith("./") or model_path.startswith("/"):
+            path = Path(model_path)
+            # Match spacy or huggingface (case insensitive) anywhere in the path
+            source_match = re.search(r"(spacy|huggingface)", str(path), re.IGNORECASE)
+
+            if not source_match:
+                raise ValueError(
+                    "Local models are only supported for Spacy and Huggingface and must be in folder containing the name of the model library. "
+                    f"No valid source found in path: {path}"
+                )
+
+            source_name = source_match.group(1).lower()
+            source = ModelSource(source_name)
+            return ModelConfig(source=source, model_id=path.name, path=path)
+
+        # Handle remote sources
+        pattern = r"^(?P<source>[a-zA-Z]+)/(?P<model_id>.+)$"
+        match = re.match(pattern, model_path)
+
+        if not match:
+            raise ValueError(
+                f"Invalid model path format: {model_path}. "
+                "Expected format: 'source/model_id' (e.g., 'spacy/en_core_sci_md')"
+            )
+
+        source_name = match.group("source").lower()
+        model_id = match.group("model_id")
+
+        try:
+            source = ModelSource(source_name)
+        except ValueError:
+            raise ValueError(
+                f"Unsupported model source: {source_name}. "
+                f"Supported sources: {', '.join(s.value for s in ModelSource)}"
+            )
+
+        return ModelConfig(source=source, model_id=model_id)
+
+    @abstractmethod
+    def configure_pipeline(self, model_config: ModelConfig) -> None:
+        """
+        Configure the pipeline based on the provided model configuration.
+
+        This method should be implemented by subclasses to add specific components
+        and configure the pipeline according to the given model configuration.
+
+        Args:
+            model_config (ModelConfig): Configuration object containing model source,
+                                      ID and optional path information.
 
         Returns:
             None

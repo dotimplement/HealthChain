@@ -53,7 +53,7 @@ class SpacyComponent(BaseComponent[str]):
         for ent in spacy_doc.ents:
             # Check for CUI attribute from extensions like medcat
             concept = ProblemConcept(
-                code=ent._.cui if hasattr(ent, "_cui") else None,
+                code=ent._.cui if hasattr(ent, "_.cui") else None,
                 code_system="2.16.840.1.113883.6.96",
                 code_system_name="SNOMED CT",
                 display_name=ent.text,

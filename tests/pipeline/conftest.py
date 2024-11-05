@@ -122,7 +122,7 @@ def mock_basic_pipeline():
 
 @pytest.fixture
 def mock_model():
-    with patch("healthchain.pipeline.modelrouter.ModelRouter.get_integration") as mock:
+    with patch("healthchain.pipeline.modelrouter.ModelRouter.get_component") as mock:
         model_instance = mock.return_value
         model_instance.return_value = Document(
             data="Processed note",
@@ -158,7 +158,7 @@ def mock_model():
 
 @pytest.fixture
 def mock_llm():
-    with patch("healthchain.pipeline.components.llm.LLM") as mock:
+    with patch("healthchain.pipeline.modelrouter.ModelRouter.get_component") as mock:
         llm_instance = mock.return_value
         llm_instance.return_value = Document(
             data="Summarized discharge information",

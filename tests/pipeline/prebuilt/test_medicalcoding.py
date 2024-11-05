@@ -8,10 +8,10 @@ def test_coding_pipeline(mock_cda_connector, mock_model):
     with patch(
         "healthchain.pipeline.medicalcodingpipeline.CdaConnector", mock_cda_connector
     ), patch(
-        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_integration",
+        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_component",
         mock_model,
     ):
-        pipeline = MedicalCodingPipeline.load("./path/to/model")
+        pipeline = MedicalCodingPipeline.load("./spacy/path/to/model")
 
         # Create a sample CdaRequest
         cda_request = CdaRequest(document="<xml>Sample CDA</xml>")
@@ -49,11 +49,11 @@ def test_coding_pipeline(mock_cda_connector, mock_model):
 def test_full_coding_pipeline_integration(mock_model, test_cda_request):
     # Use mock model object for now
     with patch(
-        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_integration",
+        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_component",
         mock_model,
     ):
         # this load method doesn't do anything yet
-        pipeline = MedicalCodingPipeline.load("./path/to/production/model")
+        pipeline = MedicalCodingPipeline.load("./spacy/path/to/production/model")
 
         cda_response = pipeline(test_cda_request)
 

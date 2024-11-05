@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from spacy.tokens import Doc as SpacyDoc
 
@@ -335,6 +335,22 @@ class Document(BaseDocument):
             self._concepts.medications.extend(medications)
         if allergies:
             self._concepts.allergies.extend(allergies)
+
+    def generate_cds_cards(
+        self, cards: Union[List[Dict], List[Dict[str, Any]]]
+    ) -> List[Card]:
+        if isinstance(cards, dict):
+            cards = [Card(**card) for card in cards]
+
+        return self._cds.set_cards(cards)
+
+    def generate_cds_actions(
+        self, actions: Union[List[Dict], List[Dict[str, Any]]]
+    ) -> List[Action]:
+        if isinstance(actions, dict):
+            actions = [Action(**action) for action in actions]
+
+        return self._cds.set_actions(actions)
 
     def generate_ccd(self, overwrite: bool = False) -> CcdData:
         """

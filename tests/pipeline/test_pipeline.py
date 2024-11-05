@@ -248,7 +248,7 @@ def test_input_output_validation(mock_basic_pipeline):
 def test_pipeline_class_and_representation(mock_basic_pipeline):
     pipeline = Pipeline()
     assert hasattr(pipeline, "configure_pipeline")
-    pipeline.configure_pipeline("dummy_path")  # Should not raise any exception
+    pipeline.configure_pipeline("spacy/dummy_path")  # Should not raise any exception
 
     mock_basic_pipeline.add_node(mock_component, name="comp1")
     mock_basic_pipeline.add_node(mock_component, name="comp2")
@@ -257,7 +257,7 @@ def test_pipeline_class_and_representation(mock_basic_pipeline):
     assert "comp1" in repr_string
     assert "comp2" in repr_string
 
-    loaded_pipeline = Pipeline.load("dummy_path")
+    loaded_pipeline = Pipeline.load("spacy/dummy_path")
     assert isinstance(loaded_pipeline, Pipeline)
 
 
