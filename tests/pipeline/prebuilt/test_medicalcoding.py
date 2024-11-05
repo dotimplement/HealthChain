@@ -35,15 +35,13 @@ def test_coding_pipeline(mock_cda_connector, mock_model):
         input_doc = mock_cda_connector.return_value.input.return_value
         assert input_doc.data == "Original note"
         assert (
-            input_doc.structured_docs.ccd_data.concepts.problems[0].display_name
-            == "Hypertension"
+            input_doc._hl7._ccd_data.concepts.problems[0].display_name == "Hypertension"
         )
         assert (
-            input_doc.structured_docs.ccd_data.concepts.medications[0].display_name
-            == "Aspirin"
+            input_doc._hl7._ccd_data.concepts.medications[0].display_name == "Aspirin"
         )
         assert (
-            input_doc.structured_docs.ccd_data.concepts.allergies[0].display_name
+            input_doc._hl7._ccd_data.concepts.allergies[0].display_name
             == "Allergy to peanuts"
         )
 

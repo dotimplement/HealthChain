@@ -49,7 +49,7 @@ def test_spacy_component(sample_document):
         mock_load.return_value = mock_instance
         component = SpacyComponent("en_core_web_sm")
         result = component(sample_document)
-        assert result.get_spacy_doc()
+        assert result.nlp.get_spacy_doc()
 
 
 @pytest.mark.skipif(
@@ -63,7 +63,7 @@ def test_huggingface_component(sample_document):
             "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
         )
         result = component(sample_document)
-        assert result.get_huggingface_output("sentiment-analysis")
+        assert result.models.get_output("huggingface", "sentiment-analysis")
 
 
 def test_langchain_component(sample_document):
@@ -74,4 +74,6 @@ def test_langchain_component(sample_document):
     result = component(sample_document)
 
     mock_chain.invoke.assert_called_once_with(sample_document.data)
-    assert result.get_langchain_output("chain_output") == "mocked chain output"
+    assert (
+        result.models.get_output("langchain", "chain_output") == "mocked chain output"
+    )

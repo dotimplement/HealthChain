@@ -31,12 +31,12 @@ from healthchain.io.containers import Document
 doc = Document("OpenAI released GPT-4 in 2023.")
 
 # Basic text operations
-print(f"Char count: {doc.char_count()}")
-print(f"Word count: {doc.word_count()}")
+print(f"Char count: {doc.nlp.char_count()}")
+print(f"Word count: {doc.nlp.word_count()}")
 
 # Access tokens and entities (requires spaCy preprocessing)
-print(f"Tokens: {doc.tokens}")
-print(f"Entities: {doc.get_entities()}")
+print(f"Tokens: {doc.nlp.get_tokens()}")
+print(f"Entities: {doc.nlp.get_entities()}")
 
 # Iterate over tokens
 for token in doc:

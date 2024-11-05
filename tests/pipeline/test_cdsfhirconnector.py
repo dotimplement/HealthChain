@@ -16,9 +16,9 @@ def test_input_with_valid_prefetch(cds_fhir_connector, test_cds_request):
     # Assert the result
     assert isinstance(result, Document)
     assert result.data == str(input_data.prefetch)
-    assert isinstance(result.structured_docs.fhir_data, CdsFhirData)
-    assert result.structured_docs.fhir_data.context == input_data.context.model_dump()
-    assert result.structured_docs.fhir_data.model_dump_prefetch() == input_data.prefetch
+    assert isinstance(result._hl7._fhir_data, CdsFhirData)
+    assert result._hl7._fhir_data.context == input_data.context.model_dump()
+    assert result._hl7._fhir_data.model_dump_prefetch() == input_data.prefetch
 
 
 def test_output_with_cards(cds_fhir_connector):
@@ -45,7 +45,7 @@ def test_output_with_cards(cds_fhir_connector):
             resourceId="123",
         )
     ]
-    out_data = Document(data="", cds=CdsAnnotations(cards=cards, actions=actions))
+    out_data = Document(data="", _cds=CdsAnnotations(_cards=cards, _actions=actions))
 
     # Call the output method
     result = cds_fhir_connector.output(out_data)
@@ -58,7 +58,7 @@ def test_output_with_cards(cds_fhir_connector):
 
 def test_output_without_cards(cds_fhir_connector, caplog):
     # Prepare test data
-    out_data = Document(data="", cds=CdsAnnotations(cards=None, actions=None))
+    out_data = Document(data="", _cds=CdsAnnotations(_cards=None, _actions=None))
 
     # Call the output method
     result = cds_fhir_connector.output(out_data)

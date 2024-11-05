@@ -2,7 +2,6 @@ import logging
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseConnector
-from healthchain.io.containers.document import StructuredData
 from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
@@ -67,10 +66,10 @@ class CdsFhirConnector(BaseConnector):
         except Exception as e:
             raise ValueError("Invalid prefetch data provided: {e}!") from e
 
-        return Document(
-            data=str(cds_fhir_data.model_dump_prefetch()),
-            structured_docs=StructuredData(fhir_data=cds_fhir_data),
-        )
+        doc = Document(data=str(cds_fhir_data.model_dump_prefetch()))
+        doc.hl7.set_fhir_data(cds_fhir_data)
+
+        return doc
 
     def output(self, out_data: Document) -> CDSResponse:
         """
@@ -92,8 +91,10 @@ class CdsFhirConnector(BaseConnector):
             - If out_data.cds_cards is None, a warning is logged and an empty list of cards is returned.
             - System actions (out_data.cds_actions) are included in the response if present.
         """
-        if out_data.cds.cards is None:
+        if out_data._cds._cards is None:
             log.warning("No CDS cards found in Document, returning empty list of cards")
             return CDSResponse(cards=[])
 
-        return CDSResponse(cards=out_data.cds.cards, systemActions=out_data.cds.actions)
+        return CDSResponse(
+            cards=out_data.cds.get_cards(), systemActions=out_data.cds.get_actions()
+        )

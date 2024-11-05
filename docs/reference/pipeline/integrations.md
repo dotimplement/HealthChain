@@ -72,7 +72,7 @@ doc = Document("This is a test sentence.")
 processed_doc = pipeline(doc)
 
 # Access spaCy annotations
-spacy_doc = processed_doc.get_spacy_doc()
+spacy_doc = processed_doc.nlp.get_spacy_doc()
 for token in spacy_doc:https://github.com/dotimplement/HealthChain
     print(f"Token: {token.text}, POS: {token.pos_}, Lemma: {token.lemma_}")
 ```
@@ -107,7 +107,7 @@ doc = Document("I love using HealthChain for my NLP projects!")
 processed_doc = pipeline(doc)
 
 # Access Hugging Face output
-sentiment_result = processed_doc.get_huggingface_output("sentiment-analysis")
+sentiment_result = processed_doc.models.get_output("huggingface", "sentiment-analysis")
 print(f"Sentiment: {sentiment_result}")
 ```
 
@@ -165,7 +165,7 @@ doc = Document("HealthChain is a powerful package for building NLP pipelines. It
 processed_doc = pipeline(doc)
 
 # What summary did we get?
-summary = processed_doc.get_langchain_output("chain_output")
+summary = processed_doc.models.get_output("langchain", "chain_output")
 print(f"Summary: {summary}")
 ```
 
@@ -204,9 +204,9 @@ doc = Document("HealthChain makes it easy to build powerful NLP pipelines!")
 processed_doc = pipeline(doc)
 
 # Let's see what we got!
-spacy_doc = processed_doc.get_spacy_doc()
-sentiment = processed_doc.get_huggingface_output("sentiment-analysis")
-summary = processed_doc.get_langchain_output("chain_output")
+spacy_doc = processed_doc.nlp.get_spacy_doc()
+sentiment = processed_doc.models.get_output("huggingface", "sentiment-analysis")
+summary = processed_doc.models.get_output("langchain", "chain_output")
 
 print(f"Tokens: {[token.text for token in spacy_doc]}")
 print(f"Sentiment: {sentiment}")

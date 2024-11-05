@@ -1,7 +1,6 @@
 import logging
 
 from healthchain.io.containers import Document
-from healthchain.io.containers.document import StructuredData
 from healthchain.io.base import BaseConnector
 from healthchain.cda_parser import CdaAnnotator
 from healthchain.models.data import CcdData, ConceptLists
@@ -70,9 +69,10 @@ class CdaConnector(BaseConnector):
             note=note_text,
         )
 
-        return Document(
-            data=ccd_data.note, structured_docs=StructuredData(ccd_data=ccd_data)
-        )
+        doc = Document(data=ccd_data.note)
+        doc.hl7.set_ccd_data(ccd_data)
+
+        return doc
 
     def output(self, out_data: Document) -> CdaResponse:
         """

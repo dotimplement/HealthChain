@@ -22,27 +22,33 @@ class NlpAnnotations:
     including preprocessed text, tokens, named entities, embeddings and spaCy documents.
 
     Attributes:
-        preprocessed_text (str): The preprocessed version of the input text.
-        tokens (List[str]): List of tokenized words/subwords from the text.
-        entities (List[Dict[str, Any]]): Named entities extracted from the text,
-            containing text spans, labels and character offsets.
-        embeddings (Optional[List[float]]): Vector embeddings generated from the text.
-        spacy_doc (Optional[SpacyDoc]): The processed spaCy Doc object.
+        _preprocessed_text (str): The preprocessed version of the input text.
+        _tokens (List[str]): List of tokenized words from the text.
+        _entities (List[Dict[str, Any]]): Named entities extracted from the text, with their labels and positions.
+        _embeddings (Optional[List[float]]): Vector embeddings generated from the text.
+        _spacy_doc (Optional[SpacyDoc]): The processed spaCy Doc object.
 
     Methods:
         add_spacy_doc(doc: SpacyDoc): Processes a spaCy Doc to extract tokens and entities.
+        get_spacy_doc() -> Optional[SpacyDoc]: Returns the stored spaCy Doc object.
+        get_tokens() -> List[str]: Returns the list of tokens.
+        set_tokens(tokens: List[str]): Sets the token list.
+        set_entities(entities: List[Dict[str, Any]]): Sets the named entities list.
+        get_entities() -> List[Dict[str, Any]]: Returns the list of named entities.
+        get_embeddings() -> Optional[List[float]]: Returns the vector embeddings.
+        set_embeddings(embeddings: List[float]): Sets the vector embeddings.
     """
 
-    preprocessed_text: str = ""
-    tokens: List[str] = field(default_factory=list)
-    entities: List[Dict[str, Any]] = field(default_factory=list)
-    embeddings: Optional[List[float]] = None
-    spacy_doc: Optional[SpacyDoc] = None
+    _preprocessed_text: str = ""
+    _tokens: List[str] = field(default_factory=list)
+    _entities: List[Dict[str, Any]] = field(default_factory=list)
+    _embeddings: Optional[List[float]] = None
+    _spacy_doc: Optional[SpacyDoc] = None
 
     def add_spacy_doc(self, doc: SpacyDoc):
-        self.spacy_doc = doc
-        self.tokens = [token.text for token in doc]
-        self.entities = [
+        self._spacy_doc = doc
+        self._tokens = [token.text for token in doc]
+        self._entities = [
             {
                 "text": ent.text,
                 "label": ent.label_,
@@ -51,6 +57,27 @@ class NlpAnnotations:
             }
             for ent in doc.ents
         ]
+
+    def get_spacy_doc(self) -> Optional[SpacyDoc]:
+        return self._spacy_doc
+
+    def get_tokens(self) -> List[str]:
+        return self._tokens
+
+    def set_tokens(self, tokens: List[str]):
+        self._tokens = tokens
+
+    def set_entities(self, entities: List[Dict[str, Any]]):
+        self._entities = entities
+
+    def get_entities(self) -> List[Dict[str, Any]]:
+        return self._entities
+
+    def get_embeddings(self) -> Optional[List[float]]:
+        return self._embeddings
+
+    def set_embeddings(self, embeddings: List[float]):
+        self._embeddings = embeddings
 
 
 @dataclass
@@ -62,30 +89,39 @@ class ModelOutputs:
     and LangChain, organizing them by task type.
 
     Attributes:
-        huggingface_results (Dict[str, Any]): Dictionary storing Hugging Face model
+        _huggingface_results (Dict[str, Any]): Dictionary storing Hugging Face model
             outputs, keyed by task name.
-        langchain_results (Dict[str, Any]): Dictionary storing LangChain outputs,
+        _langchain_results (Dict[str, Any]): Dictionary storing LangChain outputs,
             keyed by task name.
 
     Methods:
-        add_huggingface_output(task: str, output: Any): Adds a Hugging Face model
-            output for a specific task.
-        add_langchain_output(task: str, output: Any): Adds a LangChain output
-            for a specific task.
+        add_output(framework: str, task: str, output: Any): Adds a model output for a
+            specific framework and task.
+        get_output(framework: str, task: str, default: Any = None) -> Any: Gets the model
+            output for a specific framework and task. Returns default if not found.
     """
 
-    huggingface_results: Dict[str, Any] = field(default_factory=dict)
-    langchain_results: Dict[str, Any] = field(default_factory=dict)
+    _huggingface_results: Dict[str, Any] = field(default_factory=dict)
+    _langchain_results: Dict[str, Any] = field(default_factory=dict)
 
-    def add_huggingface_output(self, task: str, output: Any):
-        self.huggingface_results[task] = output
+    def add_output(self, framework: str, task: str, output: Any):
+        if framework == "huggingface":
+            self._huggingface_results[task] = output
+        elif framework == "langchain":
+            self._langchain_results[task] = output
+        else:
+            raise ValueError(f"Unknown framework: {framework}")
 
-    def add_langchain_output(self, task: str, output: Any):
-        self.langchain_results[task] = output
+    def get_output(self, framework: str, task: str, default: Any = None) -> Any:
+        if framework == "huggingface":
+            return self._huggingface_results.get(task, default)
+        elif framework == "langchain":
+            return self._langchain_results.get(task, default)
+        raise ValueError(f"Unknown framework: {framework}")
 
 
 @dataclass
-class StructuredData:
+class HL7Data:
     """
     Container for structured clinical document formats.
 
@@ -94,22 +130,27 @@ class StructuredData:
     Interoperability Resources).
 
     Attributes:
-        ccd_data (Optional[CcdData]): Clinical data in CCD format, containing
+        _ccd_data (Optional[CcdData]): Clinical data in CCD format, containing
             problems, medications, allergies and other clinical information.
-        fhir_data (Optional[CdsFhirData]): Clinical data in FHIR format for
+        _fhir_data (Optional[CdsFhirData]): Clinical data in FHIR format for
             clinical decision support.
 
     Methods:
-        update_ccd_from_concepts: Updates the CCD data with new clinical concepts,
-            either by overwriting or extending existing data.
+        update_ccd_from_concepts(concepts: ConceptLists, overwrite: bool = False) -> CcdData:
+            Updates the CCD data with new clinical concepts, either by overwriting or extending
+            existing data.
+        get_fhir_data() -> Optional[CdsFhirData]:
+            Returns the FHIR format clinical data if it exists, otherwise None.
+        get_ccd_data() -> Optional[CcdData]:
+            Returns the CCD format clinical data if it exists, otherwise None.
     """
 
-    ccd_data: Optional[CcdData] = None
-    fhir_data: Optional[CdsFhirData] = None
+    _ccd_data: Optional[CcdData] = None
+    _fhir_data: Optional[CdsFhirData] = None
 
     def update_ccd_from_concepts(
         self, concepts: ConceptLists, overwrite: bool = False
-    ) -> None:
+    ) -> CcdData:
         """
         Updates the CCD data with new clinical concepts.
 
@@ -124,19 +165,33 @@ class StructuredData:
                 If False, extends the existing lists. Defaults to False.
 
         Returns:
-            None
+            CcdData: The updated CCD data.
         """
-        if self.ccd_data is None:
-            self.ccd_data = CcdData()
+        if self._ccd_data is None:
+            self._ccd_data = CcdData()
 
         if overwrite:
-            self.ccd_data.concepts.problems = concepts.problems
-            self.ccd_data.concepts.medications = concepts.medications
-            self.ccd_data.concepts.allergies = concepts.allergies
+            self._ccd_data.concepts.problems = concepts.problems
+            self._ccd_data.concepts.medications = concepts.medications
+            self._ccd_data.concepts.allergies = concepts.allergies
         else:
-            self.ccd_data.concepts.problems.extend(concepts.problems)
-            self.ccd_data.concepts.medications.extend(concepts.medications)
-            self.ccd_data.concepts.allergies.extend(concepts.allergies)
+            self._ccd_data.concepts.problems.extend(concepts.problems)
+            self._ccd_data.concepts.medications.extend(concepts.medications)
+            self._ccd_data.concepts.allergies.extend(concepts.allergies)
+
+        return self._ccd_data
+
+    def get_fhir_data(self) -> Optional[CdsFhirData]:
+        return self._fhir_data
+
+    def set_fhir_data(self, fhir_data: CdsFhirData):
+        self._fhir_data = fhir_data
+
+    def get_ccd_data(self) -> Optional[CcdData]:
+        return self._ccd_data
+
+    def set_ccd_data(self, ccd_data: CcdData):
+        self._ccd_data = ccd_data
 
 
 @dataclass
@@ -145,17 +200,38 @@ class CdsAnnotations:
     Container for Clinical Decision Support (CDS) results.
 
     This class stores the outputs from clinical decision support systems,
-    including CDS Hooks cards and suggested clinical actions.
+    including CDS Hooks cards and suggested clinical actions. The cards contain
+    recommendations, warnings, and other decision support content that can be
+    displayed to clinicians. Actions represent specific clinical tasks or
+    interventions that are suggested based on the analysis.
 
     Attributes:
-        cards (Optional[List[Card]]): A list of CDS Hooks cards containing
+        _cards (Optional[List[Card]]): Internal storage for CDS Hooks cards containing
             clinical recommendations, warnings, or other decision support content.
-        actions (Optional[List[Action]]): A list of suggested clinical actions
+        _actions (Optional[List[Action]]): Internal storage for suggested clinical actions
             that could be taken based on the CDS analysis.
+
+    Methods:
+        set_cards(cards: List[Card]): Sets the list of CDS Hooks cards
+        get_cards() -> Optional[List[Card]]: Returns the current list of cards if any exist
+        set_actions(actions: List[Action]): Sets the list of suggested clinical actions
+        get_actions() -> Optional[List[Action]]: Returns the current list of actions if any exist
     """
 
-    cards: Optional[List[Card]] = None
-    actions: Optional[List[Action]] = None
+    _cards: Optional[List[Card]] = None
+    _actions: Optional[List[Action]] = None
+
+    def set_cards(self, cards: List[Card]):
+        self._cards = cards
+
+    def get_cards(self) -> Optional[List[Card]]:
+        return self._cards
+
+    def set_actions(self, actions: List[Action]):
+        self._actions = actions
+
+    def get_actions(self) -> Optional[List[Action]]:
+        return self._actions
 
 
 @dataclass
@@ -163,36 +239,68 @@ class Document(BaseDocument):
     """
     A document container that extends BaseDocument with rich annotation capabilities.
 
-    This class extends DataContainer to specifically handle textual document data.
-    It provides functionality to work with raw text, tokenized text, and outputs from
-    various NLP libraries like spaCy, Hugging Face, and LangChain.
+    This class extends BaseDocument to handle textual document data and annotations from
+    various sources. It serves as the main data structure passed through processing pipelines,
+    accumulating annotations and analysis results at each step.
 
-    This class provides a comprehensive document representation that can include:
+    The Document class provides a comprehensive representation that can include:
+    - Raw text and basic tokenization
     - NLP annotations (tokens, entities, embeddings, spaCy docs)
     - Clinical concepts (problems, medications, allergies)
     - Structured clinical documents (CCD, FHIR)
     - Clinical decision support results (cards, actions)
     - ML model outputs (Hugging Face, LangChain)
 
-    The Document class serves as the main data structure passed through the pipeline,
-    accumulating annotations and analysis results at each step.
-
     Attributes:
-        nlp (NlpAnnotations): Container for NLP-related annotations
+        nlp (NlpAnnotations): Container for NLP-related annotations like tokens and entities
         concepts (ConceptLists): Container for extracted medical concepts
-        structured_docs (StructuredData): Container for structured clinical documents
+        hl7 (StructuredData): Container for structured clinical documents (CCD, FHIR)
         cds (CdsAnnotations): Container for clinical decision support results
-        model_outputs (ModelOutputs): Container for ML model outputs
+        models (ModelOutputs): Container for ML model outputs
+
+    The class provides methods to:
+    - Add and access medical concepts
+    - Generate structured clinical documents
+    - Get basic text statistics
+    - Iterate over tokens
+    - Access raw text
 
     Inherits from:
         BaseDocument: Provides base document functionality and raw text storage
     """
 
-    nlp: NlpAnnotations = field(default_factory=NlpAnnotations)
-    concepts: ConceptLists = field(default_factory=ConceptLists)
-    structured_docs: StructuredData = field(default_factory=StructuredData)
-    cds: CdsAnnotations = field(default_factory=CdsAnnotations)
-    model_outputs: ModelOutputs = field(default_factory=ModelOutputs)
+    _nlp: NlpAnnotations = field(default_factory=NlpAnnotations)
+    _concepts: ConceptLists = field(default_factory=ConceptLists)
+    _hl7: HL7Data = field(default_factory=HL7Data)
+    _cds: CdsAnnotations = field(default_factory=CdsAnnotations)
+    _models: ModelOutputs = field(default_factory=ModelOutputs)
+
+    @property
+    def nlp(self) -> NlpAnnotations:
+        return self._nlp
+
+    @property
+    def concepts(self) -> ConceptLists:
+        return self._concepts
+
+    @property
+    def hl7(self) -> HL7Data:
+        return self._hl7
+
+    @property
+    def cds(self) -> CdsAnnotations:
+        return self._cds
+
+    @property
+    def models(self) -> ModelOutputs:
+        return self._models
+
+    def __post_init__(self):
+        """Initialize the document with basic tokenization if needed."""
+        super().__post_init__()
+        self.text = self.data
+        if not self._nlp._tokens:
+            self._nlp._tokens = self.text.split()  # Basic tokenization if not provided
 
     def add_concepts(
         self,
@@ -222,17 +330,17 @@ class Document(BaseDocument):
             ... )
         """
         if problems:
-            self.concepts.problems.extend(problems)
+            self._concepts.problems.extend(problems)
         if medications:
-            self.concepts.medications.extend(medications)
+            self._concepts.medications.extend(medications)
         if allergies:
-            self.concepts.allergies.extend(allergies)
+            self._concepts.allergies.extend(allergies)
 
     def generate_ccd(self, overwrite: bool = False) -> CcdData:
         """
         Generate a CCD (Continuity of Care Document) from the current medical concepts.
 
-        This method creates or updates a CCD in the structured_docs container using the
+        This method creates or updates a CCD in the hl7 container using the
         medical concepts (problems, medications, allergies) currently stored in the document.
         The CCD is a standard format for exchanging clinical information.
 
@@ -247,111 +355,16 @@ class Document(BaseDocument):
             >>> doc.add_concepts(problems=[ProblemConcept(display_name="Hypertension")])
             >>> doc.generate_ccd()  # Creates CCD with the hypertension problem
         """
-        self.structured_docs.update_ccd_from_concepts(self.concepts, overwrite)
-
-        return self.structured_docs.ccd_data
-
-    def __post_init__(self):
-        """Initialize the document with basic tokenization if needed."""
-        super().__post_init__()
-        self.text = self.data
-        if not self.nlp.tokens:
-            self.nlp.tokens = self.text.split()  # Basic tokenization if not provided
-
-    # Convenience methods to delegate to the appropriate container
-    def add_spacy_doc(self, doc: SpacyDoc):
-        """
-        Add a spaCy Doc object to the document and update the base text.
-
-        This method adds a spaCy Doc object to the document's NLP container and updates
-        the document's base text to match the spaCy Doc text.
-
-        Args:
-            doc (SpacyDoc): The spaCy Doc object to add to the document.
-
-        Example:
-            >>> import spacy
-            >>> nlp = spacy.load("en_core_web_sm")
-            >>> spacy_doc = nlp("Patient has hypertension")
-            >>> doc.add_spacy_doc(spacy_doc)
-        """
-        self.nlp.add_spacy_doc(doc)
-        self.text = doc.text  # Update base text if needed
-
-    def get_spacy_doc(self) -> Optional[SpacyDoc]:
-        """
-        Get the spaCy Doc object from the document's NLP container.
-        """
-        return self.nlp.spacy_doc
-
-    def add_huggingface_output(self, task: str, output: Any):
-        """
-        Add a Hugging Face model output to the document's model outputs container.
-        """
-        self.model_outputs.add_huggingface_output(task, output)
-
-    def get_huggingface_output(self, task: str) -> Any:
-        """
-        Get a Hugging Face model output from the document's model outputs container.
-        """
-        return self.model_outputs.huggingface_results.get(task)
-
-    def add_langchain_output(self, task: str, output: Any):
-        """
-        Add a LangChain model output to the document's model outputs container.
-        """
-        self.model_outputs.add_langchain_output(task, output)
-
-    def get_langchain_output(self, task: str) -> Any:
-        """
-        Get a LangChain model output from the document's model outputs container.
-        """
-        return self.model_outputs.langchain_results.get(task)
-
-    def get_tokens(self) -> List[str]:
-        """
-        Get the list of tokens from the document's text. Defaults to .split() if tokenizer not provided.
-        """
-        return self.nlp.tokens
-
-    def get_entities(self) -> List[Dict[str, Any]]:
-        """
-        Get the list of entities from the document's text.
-        """
-        return self.nlp.entities
-
-    def set_entities(self, entities: List[Dict[str, Any]]):
-        """
-        Set the list of entities in the document's text.
-        """
-        self.nlp.entities = entities
-
-    def get_embeddings(self) -> Optional[List[float]]:
-        """
-        Get the list of embeddings from the document's text.
-        """
-        return self.nlp.embeddings
-
-    def set_embeddings(self, embeddings: List[float]):
-        """
-        Set the list of embeddings in the document's text.
-        """
-        self.nlp.embeddings = embeddings
-
-    def get_fhir_data(self) -> Optional[CdsFhirData]:
-        """
-        Get the FHIR data from the document's structured_docs container.
-        """
-        return self.structured_docs.fhir_data
+        return self._hl7.update_ccd_from_concepts(self._concepts, overwrite)
 
     def word_count(self) -> int:
         """
         Get the word count from the document's text.
         """
-        return len(self.nlp.tokens)
+        return len(self._nlp._tokens)
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.nlp.tokens)
+        return iter(self._nlp._tokens)
 
     def __len__(self) -> int:
         return len(self.text)

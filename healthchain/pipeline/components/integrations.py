@@ -66,7 +66,7 @@ class SpacyComponent(BaseComponent[str]):
     def __call__(self, doc: Document) -> Document:
         spacy_doc = self.nlp(doc.data)
         self._add_concepts_to_hc_doc(spacy_doc, doc)
-        doc.add_spacy_doc(spacy_doc)
+        doc.nlp.add_spacy_doc(spacy_doc)
 
         return doc
 
@@ -111,7 +111,7 @@ class HuggingFaceComponent(BaseComponent[str]):
 
     def __call__(self, doc: Document) -> Document:
         output = self.nlp(doc.data)
-        doc.add_huggingface_output(self.task, output)
+        doc.add_output("huggingface", self.task, output)
         return doc
 
 
@@ -139,5 +139,5 @@ class LangChainComponent(BaseComponent[str]):
 
     def __call__(self, doc: Document) -> Document:
         output = self.chain.invoke(doc.data)
-        doc.add_langchain_output("chain_output", output)
+        doc.models.add_output("langchain", "chain_output", output)
         return doc

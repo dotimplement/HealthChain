@@ -13,13 +13,13 @@ def test_text_postprocessor_initialization_and_processing():
 
     # Test processing with empty lookup
     doc = Document(data="")
-    doc.nlp.entities = [
+    doc._nlp._entities = [
         {"text": "high blood pressure"},
         {"text": "fever"},
         {"text": "heart attack"},
     ]
     processed_doc = processor(doc)
-    assert [entity["text"] for entity in processed_doc.get_entities()] == [
+    assert [entity["text"] for entity in processed_doc.nlp.get_entities()] == [
         "high blood pressure",
         "fever",
         "heart attack",
@@ -31,13 +31,13 @@ def test_text_postprocessor_with_entities(sample_lookup):
 
     # Test with matching entities
     doc = Document(data="")
-    doc.nlp.entities = [
+    doc._nlp._entities = [
         {"text": "high blood pressure"},
         {"text": "fever"},
         {"text": "heart attack"},
     ]
     processed_doc = processor(doc)
-    assert [entity["text"] for entity in processed_doc.get_entities()] == [
+    assert [entity["text"] for entity in processed_doc.nlp.get_entities()] == [
         "hypertension",
         "fever",
         "myocardial infarction",
@@ -45,14 +45,14 @@ def test_text_postprocessor_with_entities(sample_lookup):
 
     # Test with mixed entities
     doc = Document(data="")
-    doc.nlp.entities = [
+    doc._nlp._entities = [
         {"text": "high blood pressure"},
         {"text": "cough"},
         {"text": "heart attack"},
         {"text": "fever"},
     ]
     processed_doc = processor(doc)
-    assert [entity["text"] for entity in processed_doc.get_entities()] == [
+    assert [entity["text"] for entity in processed_doc.nlp.get_entities()] == [
         "hypertension",
         "cough",
         "myocardial infarction",
@@ -70,9 +70,9 @@ def test_text_postprocessor_edge_cases(sample_lookup):
 
     # Test with empty entities list
     doc = Document(data="")
-    doc.set_entities([])
+    doc.nlp.set_entities([])
     processed_doc = processor(doc)
-    assert processed_doc.get_entities() == []
+    assert processed_doc.nlp.get_entities() == []
 
     # Test with document having no 'entities' attribute
     doc = Document(data="Document without entities attribute")

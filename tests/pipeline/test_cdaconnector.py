@@ -1,5 +1,5 @@
 from unittest.mock import Mock, patch
-from healthchain.io.containers.document import StructuredData
+from healthchain.io.containers.document import HL7Data
 from healthchain.models.data.concept import (
     AllergyConcept,
     ConceptLists,
@@ -30,17 +30,13 @@ def test_input(mock_annotator_class, cda_connector):
     assert isinstance(result, Document)
     assert result.data == "Test note"
 
-    assert isinstance(result.structured_docs.ccd_data, CcdData)
-    assert result.structured_docs.ccd_data.concepts.problems == [
-        ProblemConcept(code="test")
-    ]
-    assert result.structured_docs.ccd_data.concepts.medications == [
+    assert isinstance(result._hl7._ccd_data, CcdData)
+    assert result._hl7._ccd_data.concepts.problems == [ProblemConcept(code="test")]
+    assert result._hl7._ccd_data.concepts.medications == [
         MedicationConcept(code="test")
     ]
-    assert result.structured_docs.ccd_data.concepts.allergies == [
-        AllergyConcept(code="test")
-    ]
-    assert result.structured_docs.ccd_data.note == "Test note"
+    assert result._hl7._ccd_data.concepts.allergies == [AllergyConcept(code="test")]
+    assert result._hl7._ccd_data.note == "Test note"
 
 
 def test_output(cda_connector):
@@ -49,8 +45,8 @@ def test_output(cda_connector):
 
     out_data = Document(
         data="Updated note",
-        structured_docs=StructuredData(
-            ccd_data=CcdData(
+        _hl7=HL7Data(
+            _ccd_data=CcdData(
                 concepts=ConceptLists(
                     problems=[ProblemConcept(code="New Problem")],
                     medications=[MedicationConcept(code="New Medication")],

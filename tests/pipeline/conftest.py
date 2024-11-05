@@ -5,7 +5,7 @@ from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import (
     CdsAnnotations,
-    StructuredData,
+    HL7Data,
 )
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.data.concept import (
@@ -38,8 +38,8 @@ def mock_cda_connector():
         # Mock the input method
         connector_instance.input.return_value = Document(
             data="Original note",
-            structured_docs=StructuredData(
-                ccd_data=CcdData(
+            _hl7=HL7Data(
+                _ccd_data=CcdData(
                     concepts=ConceptLists(
                         problems=[
                             ProblemConcept(
@@ -126,7 +126,7 @@ def mock_model():
         model_instance = mock.return_value
         model_instance.return_value = Document(
             data="Processed note",
-            concepts=ConceptLists(
+            _concepts=ConceptLists(
                 problems=[
                     ProblemConcept(
                         code="38341003",
@@ -162,8 +162,8 @@ def mock_llm():
         llm_instance = mock.return_value
         llm_instance.return_value = Document(
             data="Summarized discharge information",
-            cds=CdsAnnotations(
-                cards=[
+            _cds=CdsAnnotations(
+                _cards=[
                     Card(
                         summary="Summarized discharge information",
                         detail="Patient John Doe was discharged. Encounter details...",
@@ -184,8 +184,8 @@ def mock_cds_fhir_connector():
         # Mock the input method
         connector_instance.input.return_value = Document(
             data="Original FHIR data",
-            structured_docs=StructuredData(
-                fhir_data=CdsFhirData(
+            _hl7=HL7Data(
+                _fhir_data=CdsFhirData(
                     context={"patientId": "123", "encounterId": "456"},
                     prefetch={
                         "resourceType": "Bundle",
