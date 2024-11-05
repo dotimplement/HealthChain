@@ -31,7 +31,10 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
         # Verify that the LLM was called
         mock_llm.assert_called_once_with(
             ModelConfig(
-                source=ModelSource.HUGGINGFACE, model_id="llama3", path=None, config={}
+                source=ModelSource.HUGGINGFACE,
+                model_id="llama3",
+                path=None,
+                config={"task": "summarization"},
             )
         )
         mock_llm.return_value.assert_called_once()
