@@ -4,9 +4,9 @@ This document provides an overview of the integration components available in th
 
 ## Table of Contents
 
-1. [SpacyComponent](#spacycomponent)
-2. [HuggingFaceComponent](#huggingfacecomponent)
-3. [LangChainComponent](#langchaincomponent)
+1. [SpacyNLP](#SpacyNLP)
+2. [HFTransformer](#HFTransformer)
+3. [LangChainLLM](#LangChainLLM)
 
 ## Installation Requirements
 Before utilizing the integration components, it is important to note that the required third-party libraries are not included in HealthChain's default installation. This design decision was made to:
@@ -25,35 +25,35 @@ pip install langchain
 ```
 
 
-## SpacyComponent
+## SpacyNLP
 
-The `SpacyComponent` allows you to integrate spaCy models into your HealthChain pipeline. There are several ways to initialize this component with different types of spaCy models:
+The `SpacyNLP` component allows you to integrate spaCy models into your HealthChain pipeline. There are several ways to initialize this component with different types of spaCy models:
 
 1. Using standard spaCy models:
    ```python
    # Using a standard spaCy model (requires: python -m spacy download en_core_web_sm)
-   spacy_component = SpacyComponent("en_core_web_sm")
+   spacy_component = SpacyNLP("en_core_web_sm")
    ```
 
 2. Loading custom trained pipelines from a directory:
    ```python
    # Using a custom pipeline saved to disk
-   spacy_component = SpacyComponent("/path/to/your/custom/model")
+   spacy_component = SpacyNLP("/path/to/your/custom/model")
    ```
 
 3. Using specialized domain models like [scispaCy](https://allenai.github.io/scispacy/) which can be used for classifying clinical or biomedical text:
    ```python
    # Using scispaCy models for biomedical text (requires: pip install scispacy)
-   spacy_component = SpacyComponent("en_core_sci_sm")
+   spacy_component = SpacyNLP("en_core_sci_sm")
    ```
 
 Choose the appropriate model based on your specific needs - standard models for general text, custom-trained models for domain-specific tasks, or specialized models like scispaCy for biomedical text analysis.
 
 ```python
-from healthchain.pipeline.components.integrations import SpacyComponent
+from healthchain.pipeline.components.integrations import SpacyNLP
 
 
-spacy_component = SpacyComponent(path_to_pipeline="en_core_web_sm")
+spacy_component = SpacyNLP(path_to_pipeline="en_core_web_sm")
 ```
 
 When called on a document, this component processes the input document using the specified spaCy model and adds the resulting spaCy Doc object to the HealthChain Document.
@@ -63,10 +63,10 @@ When called on a document, this component processes the input document using the
 ```python
 from healthchain.io.containers import Document
 from healthchain.pipeline.base import Pipeline
-from healthchain.pipeline.components.integrations import SpacyComponent
+from healthchain.pipeline.components.integrations import SpacyNLP
 
 pipeline = Pipeline()
-pipeline.add_node(SpacyComponent(path_to_pipeline="en_core_web_sm"))
+pipeline.add_node(SpacyNLP(path_to_pipeline="en_core_web_sm"))
 
 doc = Document("This is a test sentence.")
 processed_doc = pipeline(doc)
@@ -77,14 +77,14 @@ for token in spacy_doc:https://github.com/dotimplement/HealthChain
     print(f"Token: {token.text}, POS: {token.pos_}, Lemma: {token.lemma_}")
 ```
 
-## HuggingFaceComponent
+## HFTransformer
 
-The `HuggingFaceComponent` integrates HuggingFace Transformers models into your HealthChain pipeline. Models can be browsed on the [HuggingFace website](https://huggingface.co/models). HuggingFace offers models for a wide range of different tasks, and while not all of these have been throughly tested for HealthChain compatability, we expect that all NLP models and tasks should be compatible. If you have an issues integrating any models please raise an issue on our [Github homepage](https://github.com/dotimplement/HealthChain)!
+The `HFTransformer` integrates HuggingFace Transformers models into your HealthChain pipeline. Models can be browsed on the [HuggingFace website](https://huggingface.co/models). HuggingFace offers models for a wide range of different tasks, and while not all of these have been thoroughly tested for HealthChain compatibility, we expect that all NLP models and tasks should be compatible. If you have an issues integrating any models please raise an issue on our [Github homepage](https://github.com/dotimplement/HealthChain)!
 
 ```python
-from healthchain.pipeline.components.integrations import HuggingFaceComponent
+from healthchain.pipeline.components.integrations import HFTransformer
 
-huggingface_component = HuggingFaceComponent(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+huggingface_component = HFTransformer(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
 ```
 
 
@@ -98,10 +98,10 @@ This component applies the specified Hugging Face model to the input document an
 ```python
 from healthchain.io.containers import Document
 from healthchain.pipeline.base import Pipeline
-from healthchain.pipeline.components.integrations import HuggingFaceComponent
+from healthchain.pipeline.components.integrations import HFTransformer
 
 pipeline = Pipeline()
-pipeline.add_node(HuggingFaceComponent(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english"))
+pipeline.add_node(HFTransformer(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english"))
 
 doc = Document("I love using HealthChain for my NLP projects!")
 processed_doc = pipeline(doc)
@@ -111,16 +111,16 @@ sentiment_result = processed_doc.models.get_output("huggingface", "sentiment-ana
 print(f"Sentiment: {sentiment_result}")
 ```
 
-## LangChainComponent
+## LangChainLLM
 
-The `LangChainComponent` allows you to integrate LangChain chains into your HealthChain pipeline.
+The `LangChainLLM` allows you to integrate LangChain chains into your HealthChain pipeline.
 
 ```python
-from langchain import PromptTemplate, LLMChain
-from langchain_core
-from langchain.llms import FakeListLLM
 from langchain_core.output_parsers import StrOutputParser
-from healthchain.pipeline.components.integrations import LangChainComponent
+from healthchain.pipeline.components.integrations import LangChainLLM
+
+from langchain import PromptTemplate
+from langchain.llms import FakeListLLM
 
 # Let's create a simple FakeListLLM for demonstration
 fake_llm = FakeListLLM(responses=["This is a great summary!"])
@@ -131,7 +131,7 @@ prompt = PromptTemplate.from_template("Summarize the following text: {text}")
 # Create the LCEL chain
 chain = prompt | fake_llm | StrOutputParser()
 
-langchain_component = LangChainComponent(chain=llm_chain)
+langchain_component = LangChainLLM(chain=llm_chain)
 ```
 
 - `chain`: A LangChain chain object to be executed within the pipeline.
@@ -141,12 +141,13 @@ This component runs the specified LangChain chain on the input document's text a
 ### Example
 
 ```python
-from healthchain.io.containers import Document
-from healthchain.pipeline.base import Pipeline
-from healthchain.pipeline.components.integrations import LangChainComponent
-from langchain import PromptTemplate, LLMChain
+from langchain import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.llms import FakeListLLM
+
+from healthchain.io.containers import Document
+from healthchain.pipeline.base import Pipeline
+from healthchain.pipeline.components.integrations import LangChainLLM
 
 # Set up LangChain with a FakeListLLM
 fake_llm = FakeListLLM(responses=["HealthChain integrates NLP libraries for easy pipeline creation."])
@@ -158,7 +159,7 @@ chain = prompt | fake_llm | StrOutputParser()
 
 # Set up your HealthChain pipeline
 pipeline = Pipeline()
-pipeline.add_node(LangChainComponent(chain=llm_chain))
+pipeline.add_node(LangChainLLM(chain=llm_chain))
 
 # Let's summarize something
 doc = Document("HealthChain is a powerful package for building NLP pipelines. It integrates seamlessly with popular libraries like spaCy, Hugging Face Transformers, and LangChain, allowing users to create complex NLP workflows with ease.")
@@ -176,13 +177,13 @@ You can easily combine multiple integration components in a single HealthChain p
 ```python
 from healthchain.io.containers import Document
 from healthchain.pipeline.base import Pipeline
-from healthchain.pipeline.components.integrations import SpacyComponent, HuggingFaceComponent, LangChainComponent
+from healthchain.pipeline.components.integrations import SpacyNLP, HFTransformer, LangChainLLM
 from langchain import PromptTemplate, LLMChain
 from langchain.llms import FakeListLLM
 
 # Set up our components
-spacy_component = SpacyComponent(path_to_pipeline="en_core_web_sm")
-huggingface_component = HuggingFaceComponent(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+spacy_component = SpacyNLP(path_to_pipeline="en_core_web_sm")
+huggingface_component = HFTransformer(task="sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
 
 # Set up LangChain with a FakeListLLM
 fake_llm = FakeListLLM(responses=["HealthChain: Powerful NLP pipeline builder."])
@@ -190,7 +191,7 @@ fake_llm = FakeListLLM(responses=["HealthChain: Powerful NLP pipeline builder."]
 prompt = PromptTemplate.from_template("Summarize the following text: {text}")
 # Create the LCEL chain
 chain = prompt | fake_llm | StrOutputParser()
-langchain_component = LangChainComponent(chain=llm_chain)
+langchain_component = LangChainLLM(chain=llm_chain)
 
 # Build our pipeline
 pipeline = Pipeline()

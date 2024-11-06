@@ -4,7 +4,7 @@ from healthchain.models.data import ProblemConcept
 from spacy.tokens import Doc
 
 
-class SpacyComponent(BaseComponent[str]):
+class SpacyNLP(BaseComponent[str]):
     """
     A component that integrates spaCy models into the pipeline.
 
@@ -20,7 +20,7 @@ class SpacyComponent(BaseComponent[str]):
         ImportError: If spaCy or the specified model is not installed.
 
     Example:
-        >>> component = SpacyComponent("en_core_web_sm")
+        >>> component = SpacyNLP("en_core_web_sm")
         >>> doc = component(doc)  # Processes doc.data with spaCy
     """
 
@@ -71,7 +71,7 @@ class SpacyComponent(BaseComponent[str]):
         return doc
 
 
-class HuggingFaceComponent(BaseComponent[str]):
+class HFTransformer(BaseComponent[str]):
     """
     A component that integrates Hugging Face transformers models into the pipeline.
 
@@ -89,7 +89,7 @@ class HuggingFaceComponent(BaseComponent[str]):
         ImportError: If the transformers package is not installed.
 
     Example:
-        >>> component = HuggingFaceComponent(
+        >>> component = HFTransformer(
         ...     task="sentiment-analysis",
         ...     model="distilbert-base-uncased-finetuned-sst-2-english"
         ... )
@@ -115,7 +115,7 @@ class HuggingFaceComponent(BaseComponent[str]):
         return doc
 
 
-class LangChainComponent(BaseComponent[str]):
+class LangChainLLM(BaseComponent[str]):
     """
     A component that integrates LangChain chains into the pipeline.
 
@@ -130,7 +130,7 @@ class LangChainComponent(BaseComponent[str]):
     Example:
         >>> from langchain.chains import LLMChain
         >>> chain = LLMChain(llm=llm, prompt=prompt)
-        >>> component = LangChainComponent(chain=chain)
+        >>> component = LangChainLLM(chain=chain)
         >>> doc = component(doc)  # Runs the chain on doc.data
     """
 

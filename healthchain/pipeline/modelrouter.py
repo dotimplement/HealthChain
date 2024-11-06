@@ -58,8 +58,8 @@ class ModelRouter(Generic[T]):
                 - config: Optional dict with additional configuration
 
         Returns:
-            T: An initialized component of the appropriate type (e.g. SpacyComponent,
-               HuggingFaceComponent)
+            T: An initialized component of the appropriate type (e.g. SpacyNLP,
+               SpacyNLP)
 
         Raises:
             ValueError: If the model source specified in config is not supported
@@ -76,43 +76,43 @@ class ModelRouter(Generic[T]):
     def _init_spacy_model(self) -> T:
         """Initialize SpaCy model component.
 
-        Uses the stored model_config to initialize a SpacyComponent with either:
+        Uses the stored model_config to initialize a SpacyNLP with either:
         - A local model from model_config.path if specified
         - A remote/installed model using model_config.model_id
 
         Returns:
-            SpacyComponent: Initialized SpaCy model component
+            SpacyNLP: Initialized SpaCy model component
 
         Raises:
             ImportError: If spacy or required model is not installed
         """
-        from healthchain.pipeline.components.integrations import SpacyComponent
+        from healthchain.pipeline.components.integrations import SpacyNLP
 
         if self.model_config.path is not None:
-            return SpacyComponent(model=self.model_config.path)
-        return SpacyComponent(model=self.model_config.model_id)
+            return SpacyNLP(model=self.model_config.path)
+        return SpacyNLP(model=self.model_config.model_id)
 
     def _init_huggingface_model(self) -> T:
         """Initialize Hugging Face model component.
 
-        Uses the stored model_config to initialize a HuggingFaceComponent with either:
+        Uses the stored model_config to initialize a HFTransformer with either:
         - A local model from model_config.path if specified
         - A remote/installed model using model_config.model_id
 
         The task parameter is extracted from model_config.config if provided.
 
         Returns:
-            HuggingFaceComponent: Initialized Hugging Face model component
+            HFTransformer: Initialized Hugging Face model component
 
         Raises:
             ImportError: If transformers or required model is not installed
         """
-        from healthchain.pipeline.components.integrations import HuggingFaceComponent
+        from healthchain.pipeline.components.integrations import HFTransformer
 
         if self.model_config.path is not None:
-            return HuggingFaceComponent(
+            return HFTransformer(
                 task=self.model_config.config.get("task"), model=self.model_config.path
             )
-        return HuggingFaceComponent(
+        return HFTransformer(
             task=self.model_config.config.get("task"), model=self.model_config.model_id
         )
