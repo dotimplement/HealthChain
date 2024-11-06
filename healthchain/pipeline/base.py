@@ -1,4 +1,3 @@
-import re
 import logging
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -96,39 +95,34 @@ class BasePipeline(Generic[T], ABC):
         return f"[{components_repr}]"
 
     @classmethod
-    def load(cls, model_path: str, **model_kwargs: Any) -> "BasePipeline":
+    def load(
+        cls,
+        model_id: str,
+        source: Union[str, ModelSource] = "huggingface",
+        **model_kwargs: Any,
+    ) -> "BasePipeline":
         """
-        Load and configure a pipeline from a given model path.
+        Load and configure a pipeline from a given model.
 
         Args:
-            model_path: Path or identifier for the model in the format "source/model_id" or a local path.
-                       Sources can be "spacy" or "huggingface". For example:
-                       - "spacy/en_core_sci_md" (remote/installed model)
-                       - "huggingface/bert-base" (remote model)
-                       - "./models/spacy/my_model" (local model)
+            model_id: Identifier for the model (e.g. "microsoft/omniparser", "en_core_sci_md")
+            source: Model source - either "spacy" or "huggingface". Defaults to "huggingface"
             **model_kwargs: Additional configuration options passed to the model. Common options:
                           - task: Task name for Hugging Face models (e.g. "ner", "summarization")
                           - device: Device to load model on ("cpu", "cuda")
                           - batch_size: Batch size for inference
                           - max_length: Maximum sequence length
 
-        Returns:
-            BasePipeline: A configured pipeline instance with the specified model loaded
-
-        Raises:
-            ValueError: If model_path format is invalid or source is not supported
-            ImportError: If required model dependencies are not installed
-
         Examples:
             >>> # Load a summarization pipeline with GPT model
-            >>> pipeline = SummarizationPipeline.load("openai/gpt-4")
+            >>> pipeline = SummarizationPipeline.load("gpt-4", source="openai")
 
             >>> # Load NER pipeline with SpaCy model
-            >>> pipeline = NERPipeline.load("spacy/en_core_sci_md")
+            >>> pipeline = NERPipeline.load("en_core_sci_md", source="spacy")
 
             >>> # Load classification pipeline with BERT, specifying task
             >>> pipeline = ClassificationPipeline.load(
-            ...     "huggingface/bert-base",
+            ...     "microsoft/omniparser",  # HuggingFace is default source
             ...     task="sequence-classification"
             ... )
 
@@ -136,74 +130,28 @@ class BasePipeline(Generic[T], ABC):
             >>> pipeline = CustomPipeline.load("./models/spacy/my_model")
         """
         pipeline = cls()
-        config = cls._parse_model_path(model_path)
+
+        # Convert string source to enum if needed
+        if isinstance(source, str):
+            try:
+                source = ModelSource(source.lower())
+            except ValueError:
+                raise ValueError(
+                    f"Unsupported model source: {source}. "
+                    f"Supported sources: {', '.join(s.value for s in ModelSource)}"
+                )
+
+        # Handle local paths
+        if model_id.startswith("./") or model_id.startswith("/"):
+            path = Path(model_id)
+            config = ModelConfig(source=source, model_id=path.name, path=path)
+        else:
+            config = ModelConfig(source=source, model_id=model_id)
+
         config.config = model_kwargs
         pipeline._model_config = config
         pipeline.configure_pipeline(config)
         return pipeline
-
-    @staticmethod
-    def _parse_model_path(model_path: str) -> ModelConfig:
-        """
-        Parse model path to determine source and model ID.
-
-        This method parses a model path string to extract the model source and ID.
-        It handles both local paths and remote model identifiers.
-
-        Args:
-            model_path (str): Path or identifier for the model. Can be:
-                - Local path starting with "./" or "/" (e.g. "./models/spacy/my_model")
-                - Remote identifier in format "source/model_id" (e.g. "spacy/en_core_sci_md")
-
-        Returns:
-            ModelConfig: Configuration object containing:
-                - source: ModelSource enum value (e.g. ModelSource.SPACY)
-                - model_id: Name/ID of the model
-                - path: Optional Path object for local models
-
-        Raises:
-            ValueError: If model_path format is invalid or source is not supported
-                       For local paths, if source cannot be determined from path
-                       For remote paths, if format is not "source/model_id"
-        """
-        # Handle local paths
-        if model_path.startswith("./") or model_path.startswith("/"):
-            path = Path(model_path)
-            # Match spacy or huggingface (case insensitive) anywhere in the path
-            source_match = re.search(r"(spacy|huggingface)", str(path), re.IGNORECASE)
-
-            if not source_match:
-                raise ValueError(
-                    "Local models are only supported for Spacy and Huggingface and must be in folder containing the name of the model library. "
-                    f"No valid source found in path: {path}"
-                )
-
-            source_name = source_match.group(1).lower()
-            source = ModelSource(source_name)
-            return ModelConfig(source=source, model_id=path.name, path=path)
-
-        # Handle remote sources
-        pattern = r"^(?P<source>[a-zA-Z]+)/(?P<model_id>.+)$"
-        match = re.match(pattern, model_path)
-
-        if not match:
-            raise ValueError(
-                f"Invalid model path format: {model_path}. "
-                "Expected format: 'source/model_id' (e.g., 'spacy/en_core_sci_md')"
-            )
-
-        source_name = match.group("source").lower()
-        model_id = match.group("model_id")
-
-        try:
-            source = ModelSource(source_name)
-        except ValueError:
-            raise ValueError(
-                f"Unsupported model source: {source_name}. "
-                f"Supported sources: {', '.join(s.value for s in ModelSource)}"
-            )
-
-        return ModelConfig(source=source, model_id=model_id)
 
     @abstractmethod
     def configure_pipeline(self, model_config: ModelConfig) -> None:

@@ -13,7 +13,7 @@ class MedicalCodingPipeline(BasePipeline):
 
     Examples:
         >>> # Using with SpaCy/MedCAT
-        >>> pipeline = MedicalCodingPipeline.load("medcatlite")
+        >>> pipeline = MedicalCodingPipeline.load("medcatlite", source="spacy")
         >>>
         >>> # Using with Hugging Face
         >>> pipeline = MedicalCodingPipeline.load(

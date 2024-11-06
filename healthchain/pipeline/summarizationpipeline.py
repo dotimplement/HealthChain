@@ -12,7 +12,7 @@ class SummarizationPipeline(BasePipeline):
 
     Examples:
         >>> # Using with GPT model
-        >>> pipeline = SummarizationPipeline.load("openai/gpt-4")
+        >>> pipeline = SummarizationPipeline.load("gpt-4o", source="openai")
         >>>
         >>> # Using with Hugging Face
         >>> pipeline = SummarizationPipeline.load(

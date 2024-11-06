@@ -12,7 +12,7 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
         "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component", mock_llm
     ):
         # This also doesn't do anything yet
-        pipeline = SummarizationPipeline.load("huggingface/llama3")
+        pipeline = SummarizationPipeline.load("llama3")
 
         # Process the request through the pipeline
         cds_response = pipeline(test_cds_request)
@@ -66,7 +66,7 @@ def test_full_summarization_pipeline_integration(mock_llm, test_cds_request):
     with patch(
         "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component", mock_llm
     ):
-        pipeline = SummarizationPipeline.load("huggingface/llama3")
+        pipeline = SummarizationPipeline.load("llama3")
 
         cds_response = pipeline(test_cds_request)
         print(cds_response)
