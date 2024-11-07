@@ -1,3 +1,4 @@
+from typing import Any
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
 from healthchain.models.data import ProblemConcept
@@ -15,6 +16,7 @@ class SpacyNLP(BaseComponent[str]):
     Args:
         path_to_pipeline (str): The path or name of the spaCy model to load.
             Can be a model name like 'en_core_web_sm' or path to saved model.
+        **kwargs: Additional configuration options passed to spacy.load
 
     Raises:
         ImportError: If spaCy or the specified model is not installed.
@@ -24,12 +26,13 @@ class SpacyNLP(BaseComponent[str]):
         >>> doc = component(doc)  # Processes doc.data with spaCy
     """
 
-    def __init__(self, path_to_pipeline: str):
-        # TODO: might need to store model specific info
+    def __init__(self, path_to_pipeline: str, **kwargs: Any):
         import spacy
 
         try:
-            nlp = spacy.load(path_to_pipeline)
+            nlp = spacy.load(path_to_pipeline, **kwargs)
+        except TypeError as e:
+            raise TypeError(f"Invalid kwargs for spacy.load: {str(e)}")
         except Exception as e:
             raise ImportError(
                 f"Could not load spaCy model {path_to_pipeline}! "
@@ -84,6 +87,7 @@ class HFTransformer(BaseComponent[str]):
             Must be a valid task supported by the Hugging Face pipeline API.
         model (str): The model identifier or path to use for the task.
             Can be a model ID from the Hugging Face Hub or a local path.
+        **kwargs: Additional configuration options passed to the transformers.pipeline API
 
     Raises:
         ImportError: If the transformers package is not installed.
@@ -96,7 +100,7 @@ class HFTransformer(BaseComponent[str]):
         >>> doc = component(doc)  # Runs sentiment analysis on doc.data
     """
 
-    def __init__(self, task, model):
+    def __init__(self, task: str, model: str, **kwargs: Any):
         try:
             from transformers import pipeline
         except ImportError:
@@ -105,7 +109,13 @@ class HFTransformer(BaseComponent[str]):
                 "`pip install transformers`"
             )
 
-        nlp = pipeline(task=task, model=model)
+        try:
+            nlp = pipeline(task=task, model=model, **kwargs)
+        except TypeError as e:
+            raise TypeError(f"Invalid kwargs for transformers.pipeline: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error initializing transformer pipeline: {str(e)}")
+
         self.nlp = nlp
         self.task = task
 
@@ -126,6 +136,7 @@ class LangChainLLM(BaseComponent[str]):
     Args:
         chain: The LangChain chain to run on the document text.
             Can be any chain object from the LangChain library.
+        **kwargs: Additional parameters to pass to the chain's invoke method
 
     Example:
         >>> from langchain.chains import LLMChain
@@ -134,10 +145,17 @@ class LangChainLLM(BaseComponent[str]):
         >>> doc = component(doc)  # Runs the chain on doc.data
     """
 
-    def __init__(self, chain):
+    def __init__(self, chain: Any, **kwargs: Any):
         self.chain = chain
+        self.kwargs = kwargs
 
     def __call__(self, doc: Document) -> Document:
-        output = self.chain.invoke(doc.data)
+        try:
+            output = self.chain.invoke(doc.data, **self.kwargs)
+        except TypeError as e:
+            raise TypeError(f"Invalid kwargs for chain.invoke: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error during chain invocation: {str(e)}")
+
         doc.models.add_output("langchain", "chain_output", output)
         return doc
