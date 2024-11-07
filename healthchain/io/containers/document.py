@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
 
@@ -11,6 +12,8 @@ from healthchain.models.data.concept import (
     MedicationConcept,
     ProblemConcept,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -86,7 +89,8 @@ class ModelOutputs:
     Container for storing and managing third-party integration model outputs.
 
     This class stores outputs from different NLP/ML frameworks like Hugging Face
-    and LangChain, organizing them by task type.
+    and LangChain, organizing them by task type. It also maintains a list of
+    generated text outputs across frameworks.
 
     Attributes:
         _huggingface_results (Dict[str, Any]): Dictionary storing Hugging Face model
@@ -95,29 +99,96 @@ class ModelOutputs:
             keyed by task name.
 
     Methods:
-        add_output(framework: str, task: str, output: Any): Adds a model output for a
-            specific framework and task.
-        get_output(framework: str, task: str, default: Any = None) -> Any: Gets the model
-            output for a specific framework and task. Returns default if not found.
+        add_output(source: str, task: str, output: Any): Adds a model output for a
+            specific source and task. For text generation tasks, also extracts and
+            stores the generated text.
+        get_output(source: str, task: str, default: Any = None) -> Any: Gets the model
+            output for a specific source and task. Returns default if not found.
+        get_generated_text() -> List[str]: Returns the list of generated text outputs
     """
 
     _huggingface_results: Dict[str, Any] = field(default_factory=dict)
     _langchain_results: Dict[str, Any] = field(default_factory=dict)
 
-    def add_output(self, framework: str, task: str, output: Any):
-        if framework == "huggingface":
+    def add_output(self, source: str, task: str, output: Any):
+        if source == "huggingface":
             self._huggingface_results[task] = output
-        elif framework == "langchain":
+        elif source == "langchain":
             self._langchain_results[task] = output
         else:
-            raise ValueError(f"Unknown framework: {framework}")
+            raise ValueError(f"Unknown source: {source}")
 
-    def get_output(self, framework: str, task: str, default: Any = None) -> Any:
-        if framework == "huggingface":
-            return self._huggingface_results.get(task, default)
-        elif framework == "langchain":
-            return self._langchain_results.get(task, default)
-        raise ValueError(f"Unknown framework: {framework}")
+    def get_output(self, source: str, task: str) -> Any:
+        if source == "huggingface":
+            return self._huggingface_results.get(task, {})
+        elif source == "langchain":
+            return self._langchain_results.get(task, {})
+        raise ValueError(f"Unknown source: {source}")
+
+    def get_generated_text(self, source: str, task: str) -> List[str]:
+        """
+        Returns generated text outputs for a given source and task.
+
+        Handles different output formats for Hugging Face and LangChain. For
+        Hugging Face, it extracts the last message content from chat-style
+        outputs and common keys like "generated_text", "summary_text", and
+        "translation". For LangChain, it converts JSON outputs to strings, and returns
+        the output as is if it is already a string.
+
+        Args:
+            source (str): Framework name (e.g., "huggingface", "langchain").
+            task (str): Task name for retrieving generated text.
+
+        Returns:
+            List[str]: List of generated text outputs, or an empty list if none.
+        """
+        generated_text = []
+
+        if source == "huggingface":
+            # Handle chat-style output format
+            output = self._huggingface_results.get(task)
+            if isinstance(output, list):
+                for entry in output:
+                    text = entry.get("generated_text")
+                    if isinstance(text, list):
+                        last_msg = text[-1]
+                        if isinstance(last_msg, dict) and "content" in last_msg:
+                            generated_text.append(last_msg["content"])
+                    # Otherwise get common huggingface output keys
+                    elif any(
+                        key in entry
+                        for key in ["generated_text", "summary_text", "translation"]
+                    ):
+                        generated_text.append(
+                            text
+                            or entry.get("summary_text")
+                            or entry.get("translation")
+                        )
+            else:
+                logger.warning("HuggingFace output is not a list of dictionaries. ")
+        elif source == "langchain":
+            output = self._langchain_results.get(task)
+            # Check if output is a string
+            if isinstance(output, str):
+                generated_text.append(output)
+            # Try to convert JSON to string
+            elif isinstance(output, dict):
+                try:
+                    import json
+
+                    output_str = json.dumps(output)
+                    generated_text.append(output_str)
+                except Exception:
+                    logger.warning(
+                        "LangChain output is not a string and could not be converted to JSON string. "
+                        "Chains should output either a string or a JSON object."
+                    )
+            else:
+                logger.warning(
+                    "LangChain output is not a string. Chains should output either a string or a JSON object."
+                )
+
+        return generated_text
 
 
 @dataclass
@@ -336,19 +407,35 @@ class Document(BaseDocument):
         if allergies:
             self._concepts.allergies.extend(allergies)
 
-    def generate_cds_cards(
-        self, cards: Union[List[Dict], List[Dict[str, Any]]]
+    def add_cds_cards(
+        self, cards: Union[List[Card], List[Dict[str, Any]]]
     ) -> List[Card]:
-        if isinstance(cards, dict):
-            cards = [Card(**card) for card in cards]
+        if not cards:
+            raise ValueError("Cards must be provided as a list!")
+
+        try:
+            if isinstance(cards[0], dict):
+                cards = [Card(**card) for card in cards]
+            elif not isinstance(cards[0], Card):
+                raise TypeError("Cards must be either Card objects or dictionaries")
+        except (IndexError, KeyError) as e:
+            raise ValueError("Invalid card format") from e
 
         return self._cds.set_cards(cards)
 
-    def generate_cds_actions(
-        self, actions: Union[List[Dict], List[Dict[str, Any]]]
+    def add_cds_actions(
+        self, actions: Union[List[Action], List[Dict[str, Any]]]
     ) -> List[Action]:
-        if isinstance(actions, dict):
-            actions = [Action(**action) for action in actions]
+        if not actions:
+            raise ValueError("Actions must be provided as a list!")
+
+        try:
+            if isinstance(actions[0], dict):
+                actions = [Action(**action) for action in actions]
+            elif not isinstance(actions[0], Action):
+                raise TypeError("Actions must be either Action objects or dictionaries")
+        except (IndexError, KeyError) as e:
+            raise ValueError("Invalid action format") from e
 
         return self._cds.set_actions(actions)
 

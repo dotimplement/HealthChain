@@ -1,5 +1,6 @@
-from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.pipeline.base import BasePipeline
+from healthchain.io.cdsfhirconnector import CdsFhirConnector
+from healthchain.pipeline.components.cdscardcreator import CdsCardCreator
 from healthchain.pipeline.modelrouter import ModelRouter, ModelConfig
 
 
@@ -38,8 +39,12 @@ class SummarizationPipeline(BasePipeline):
 
         self.add_input(cds_fhir_connector)
         self.add_node(model, stage="summarization")
-
-        # TODO: need a component that creates cards from the summary
-        # self.add_node(CardCreator(), stage="card-creation")
-
+        self.add_node(
+            CdsCardCreator(
+                source=config.source.value,
+                task="summarization",
+                template=self._output_template,
+            ),
+            stage="card-creation",
+        )
         self.add_output(cds_fhir_connector)

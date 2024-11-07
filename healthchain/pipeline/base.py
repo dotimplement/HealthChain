@@ -73,12 +73,34 @@ class PipelineNode(Generic[T]):
 
 class BasePipeline(Generic[T], ABC):
     """
-    Abstract BasePipeline class for creating and managing a data processing pipeline.
-    The BasePipeline class allows users to create a data processing pipeline by adding components and defining their dependencies and execution order. It provides methods for adding, removing, and replacing components, as well as building and executing the pipeline.
-    This is an abstract base class and should be subclassed to create specific pipeline implementations.
+    Abstract base class for creating and managing data processing pipelines.
+
+    The BasePipeline class provides a framework for building modular data processing pipelines
+    by allowing users to add, remove, and configure components with defined dependencies and
+    execution order. Components can be added at specific positions, grouped into stages, and
+    connected via input/output connectors.
+
+    This is an abstract base class that should be subclassed to create specific pipeline
+    implementations.
+
     Attributes:
-        components (List[PipelineNode]): A list of PipelineNode objects representing the components in the pipeline.
-        stages (Dict[str, List[Callable]]): A dictionary mapping stage names to lists of component functions.
+        _components (List[PipelineNode[T]]): Ordered list of pipeline components
+        _stages (Dict[str, List[Callable]]): Components grouped by processing stage
+        _built_pipeline (Optional[Callable]): Compiled pipeline function
+        _input_connector (Optional[BaseConnector[T]]): Connector for processing input data
+        _output_connector (Optional[BaseConnector[T]]): Connector for processing output data
+        _output_template (Optional[str]): Template string for formatting pipeline outputs
+        _model_config (Optional[ModelConfig]): Configuration for the pipeline model
+
+    Example:
+        >>> class MyPipeline(BasePipeline[str]):
+        ...     def configure_pipeline(self, config: ModelConfig) -> None:
+        ...         self.add_node(preprocess, stage="preprocessing")
+        ...         self.add_node(process, stage="processing")
+        ...         self.add_node(postprocess, stage="postprocessing")
+        ...
+        >>> pipeline = MyPipeline()
+        >>> result = pipeline("input text")
     """
 
     def __init__(self):
@@ -87,6 +109,7 @@ class BasePipeline(Generic[T], ABC):
         self._built_pipeline: Optional[Callable] = None
         self._input_connector: Optional[BaseConnector[T]] = None
         self._output_connector: Optional[BaseConnector[T]] = None
+        self._output_template: Optional[str] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -99,19 +122,30 @@ class BasePipeline(Generic[T], ABC):
         cls,
         model_id: str,
         source: Union[str, ModelSource] = "huggingface",
+        template: Optional[str] = None,
         **model_kwargs: Any,
     ) -> "BasePipeline":
         """
         Load and configure a pipeline from a given model.
 
         Args:
-            model_id: Identifier for the model (e.g. "microsoft/omniparser", "en_core_sci_md")
-            source: Model source - either "spacy" or "huggingface". Defaults to "huggingface"
-            **model_kwargs: Additional configuration options passed to the model. Common options:
-                          - task: Task name for Hugging Face models (e.g. "ner", "summarization")
-                          - device: Device to load model on ("cpu", "cuda")
-                          - batch_size: Batch size for inference
-                          - max_length: Maximum sequence length
+            model_id (str): Identifier for the model. Can be a model name from a supported source
+                (e.g. "gpt-4", "microsoft/omniparser") or a local path to a model.
+            source (Union[str, ModelSource], optional): Model source - can be "huggingface", "spacy",
+                "openai" or other supported sources. Defaults to "huggingface".
+            template (Optional[str], optional): Template string for formatting pipeline outputs.
+                Defaults to None.
+            **model_kwargs (Any): Additional configuration options passed to the model. Common options:
+                - task: Task name for models (e.g. "ner", "summarization")
+                - device: Device to load model on ("cpu", "cuda")
+                - batch_size: Batch size for inference
+                - max_length: Maximum sequence length
+
+        Returns:
+            BasePipeline: Configured pipeline instance with the specified model.
+
+        Raises:
+            ValueError: If an unsupported model source is provided.
 
         Examples:
             >>> # Load a summarization pipeline with GPT model
@@ -120,7 +154,7 @@ class BasePipeline(Generic[T], ABC):
             >>> # Load NER pipeline with SpaCy model
             >>> pipeline = NERPipeline.load("en_core_sci_md", source="spacy")
 
-            >>> # Load classification pipeline with BERT, specifying task
+            >>> # Load classification pipeline with BERT
             >>> pipeline = ClassificationPipeline.load(
             ...     "microsoft/omniparser",  # HuggingFace is default source
             ...     task="sequence-classification"
@@ -150,7 +184,9 @@ class BasePipeline(Generic[T], ABC):
 
         config.config = model_kwargs
         pipeline._model_config = config
+        pipeline._output_template = template
         pipeline.configure_pipeline(config)
+
         return pipeline
 
     @abstractmethod
