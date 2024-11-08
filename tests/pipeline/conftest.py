@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock
 from healthchain.io.cdaconnector import CdaConnector
 from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
@@ -17,9 +17,10 @@ from healthchain.models.data.concept import (
     ProblemConcept,
 )
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.pipeline.base import BasePipeline
+from healthchain.pipeline.base import BasePipeline, ModelConfig, ModelSource
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.data.cdsfhirdata import CdsFhirData
+from healthchain.pipeline.modelrouter import ModelRouter
 
 
 @pytest.fixture
@@ -33,12 +34,45 @@ def cds_fhir_connector():
 
 
 @pytest.fixture
+def router():
+    return ModelRouter()
+
+
+@pytest.fixture
 def mock_basic_pipeline():
     class TestPipeline(BasePipeline):
-        def configure_pipeline(self, model_path: str) -> None:
-            pass
+        def configure_pipeline(self, model_config):
+            self._model_config = model_config
 
     return TestPipeline()
+
+
+@pytest.fixture
+def mock_chain():
+    chain = Mock()
+    chain.invoke = Mock(return_value="Test response")
+    chain.__call__ = Mock(return_value="Test response")
+    return chain
+
+
+@pytest.fixture
+def spacy_config():
+    return ModelConfig(
+        source=ModelSource.SPACY,
+        model_id="en_core_sci_md",
+        path=None,
+        config={"disable": ["parser"]},
+    )
+
+
+@pytest.fixture
+def hf_config():
+    return ModelConfig(
+        source=ModelSource.HUGGINGFACE,
+        model_id="bert-base",
+        path=None,
+        config={"task": "ner"},
+    )
 
 
 @pytest.fixture
