@@ -11,11 +11,6 @@ from healthchain.pipeline.components.integrations import (
 transformers_installed = importlib.util.find_spec("transformers") is not None
 
 
-@pytest.fixture
-def sample_document():
-    return Document(data="This is a sample text for testing.")
-
-
 @pytest.mark.parametrize(
     "component_class,mock_module,kwargs,expected_kwargs",
     [
