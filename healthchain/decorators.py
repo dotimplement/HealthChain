@@ -168,7 +168,7 @@ def sandbox_decorator(
     if service_config is None:
         service_config = {}
 
-    def wrap(cls: Type) -> Type:
+    def wrapper(cls: Type) -> Type:
         if not issubclass(cls, BaseUseCase):
             raise TypeError(
                 f"The 'sandbox' decorator can only be applied to subclasses of BaseUseCase, got {cls.__name__}"
@@ -222,8 +222,6 @@ def sandbox_decorator(
 
         cls.__init__ = new_init
 
-        # original_start_sandbox = getattr(cls, "start_sandbox", None)
-
         def start_sandbox(
             self,
             service_id: str = "1",
@@ -255,101 +253,94 @@ def sandbox_decorator(
                 },
             )
 
-            try:
-                # Configure logging
-                if logging_config:
-                    logging.config.dictConfig(logging_config)
-                else:
-                    logging.basicConfig(
-                        level=logging.INFO,
-                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    )
-
-                log = logging.getLogger(__name__)
-
-                # Start service thread
-                log.info(
-                    f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
-                )
-                server_thread = threading.Thread(
-                    target=lambda: self._service.run(config=self.service_config)
-                )
-                server_thread.start()
-                sleep(5)
-
-                self.url = UrlBuilder.build_from_config(
-                    config=self.service_config,
-                    endpoints=self.endpoints,
-                    service_id=service_id,
+            # Configure logging
+            if logging_config:
+                logging.config.dictConfig(logging_config)
+            else:
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                 )
 
-                # Log client request data
-                self.experiment_tracker.log_input(self._client.request_data)
+            log = logging.getLogger(__name__)
 
-                # Send request and get response
-                log.info(
-                    f"Sending {len(self._client.request_data)} requests to {self.url.route}"
-                )
-                self.responses = asyncio.run(
-                    self._client.send_request(url=self.url.service)
-                )
+            # Start service thread
+            log.info(
+                f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
+            )
+            server_thread = threading.Thread(
+                target=lambda: self._service.run(config=self.service_config)
+            )
+            server_thread.start()
+            sleep(5)
 
-                # Log response data
-                self.experiment_tracker.log_output(self.responses)
+            self.url = UrlBuilder.build_from_config(
+                config=self.service_config,
+                endpoints=self.endpoints,
+                service_id=service_id,
+            )
 
-                if save_data:
-                    # Save request/response data as before
-                    save_dir = Path(save_dir)
-                    request_path = ensure_directory_exists(save_dir / "requests")
-                    if self.type == UseCaseType.clindoc:
-                        extension = "xml"
-                        save_data_to_directory(
-                            [
-                                request.model_dump_xml()
-                                for request in self._client.request_data
-                            ],
-                            "request",
-                            self.sandbox_id,
-                            request_path,
-                            extension,
-                        )
-                    else:
-                        extension = "json"
-                        save_data_to_directory(
-                            [
-                                request.model_dump(exclude_none=True)
-                                for request in self._client.request_data
-                            ],
-                            "request",
-                            self.sandbox_id,
-                            request_path,
-                            extension,
-                        )
-                    log.info(f"Saved request data at {request_path}/")
+            # Log client request data
+            self.experiment_tracker.log_input(self._client.request_data)
 
-                    response_path = ensure_directory_exists(save_dir / "responses")
+            # Send request and get response
+            log.info(
+                f"Sending {len(self._client.request_data)} requests to {self.url.route}"
+            )
+            self.responses = asyncio.run(
+                self._client.send_request(url=self.url.service)
+            )
+
+            # Log response data
+            self.experiment_tracker.log_output(self.responses)
+
+            if save_data:
+                # Save request/response data as before
+                save_dir = Path(save_dir)
+                request_path = ensure_directory_exists(save_dir / "requests")
+                if self.type == UseCaseType.clindoc:
+                    extension = "xml"
                     save_data_to_directory(
-                        self.responses,
-                        "response",
+                        [
+                            request.model_dump_xml()
+                            for request in self._client.request_data
+                        ],
+                        "request",
                         self.sandbox_id,
-                        response_path,
+                        request_path,
                         extension,
                     )
-                    log.info(f"Saved response data at {response_path}/")
+                else:
+                    extension = "json"
+                    save_data_to_directory(
+                        [
+                            request.model_dump(exclude_none=True)
+                            for request in self._client.request_data
+                        ],
+                        "request",
+                        self.sandbox_id,
+                        request_path,
+                        extension,
+                    )
+                log.info(f"Saved request data at {request_path}/")
 
-                # End experiment successfully
-                self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
+                response_path = ensure_directory_exists(save_dir / "responses")
+                save_data_to_directory(
+                    self.responses,
+                    "response",
+                    self.sandbox_id,
+                    response_path,
+                    extension,
+                )
+                log.info(f"Saved response data at {response_path}/")
 
-            except Exception as e:
-                # End experiment with failure
-                self.experiment_tracker.end_experiment(ExperimentStatus.FAILED)
-                log.error(f"Sandbox failed: {e}")
-                raise
+            # End experiment successfully
+            self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
 
         cls.start_sandbox = start_sandbox
         return cls
 
-    return wrap
+    return wrapper
 
 
 # Update the sandbox alias
