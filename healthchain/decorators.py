@@ -4,7 +4,7 @@ import threading
 import asyncio
 import json
 import uuid
-
+import requests
 from time import sleep
 from pathlib import Path
 from datetime import datetime
@@ -204,6 +204,7 @@ def sandbox_decorator(
             for name in dir(self):
                 attr = getattr(self, name)
                 if callable(attr):
+                    # Get the function decorated with @api and register it to inject in service
                     if is_service_route(attr):
                         service_route_count += 1
                         validate_single_registration(
@@ -218,8 +219,10 @@ def sandbox_decorator(
                         validate_single_registration(client_count, "_client")
                         self._client = register_method(self, attr, cls, name, "_client")
 
+            # Create a Service instance and register routes from strategy
             self._service = Service(endpoints=self.endpoints)
 
+        # Set the new init
         cls.__init__ = new_init
 
         def start_sandbox(
@@ -257,6 +260,7 @@ def sandbox_decorator(
             if logging_config:
                 logging.config.dictConfig(logging_config)
             else:
+                # Set up default logging configuration
                 logging.basicConfig(
                     level=logging.INFO,
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -264,7 +268,7 @@ def sandbox_decorator(
 
             log = logging.getLogger(__name__)
 
-            # Start service thread
+            # Start service on thread
             log.info(
                 f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
             )
@@ -272,6 +276,8 @@ def sandbox_decorator(
                 target=lambda: self._service.run(config=self.service_config)
             )
             server_thread.start()
+
+            # Wait for service to start
             sleep(5)
 
             self.url = UrlBuilder.build_from_config(
@@ -334,10 +340,18 @@ def sandbox_decorator(
                 )
                 log.info(f"Saved response data at {response_path}/")
 
+        def stop_sandbox(self) -> None:
+            """
+            Shuts down sandbox instance
+            """
+            log.info("Shutting down server...")
+            requests.get(self.url.base + "/shutdown")
+
             # End experiment successfully
             self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
 
         cls.start_sandbox = start_sandbox
+        cls.stop_sandbox = stop_sandbox
         return cls
 
     return wrapper
