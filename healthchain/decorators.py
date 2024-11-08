@@ -4,7 +4,6 @@ import threading
 import asyncio
 import json
 import uuid
-import requests
 
 from time import sleep
 from pathlib import Path
@@ -14,6 +13,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
 from healthchain.workflows import UseCaseType
 from healthchain.apimethod import APIMethod
+from healthchain.tracking.experiment import ExperimentTracker, ExperimentStatus
 
 from .base import BaseUseCase
 from .service import Service
@@ -152,25 +152,23 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
         return sandbox_decorator(service_config)
 
 
-def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
+def sandbox_decorator(
+    service_config: Optional[Dict] = None, experiment_config: Optional[Dict] = None
+) -> Callable:
     """
-    A decorator function that sets up a sandbox environment. It modifies the class initialization
-    to incorporate service and client management based on provided configurations. It will:
+    Decorator that configures a sandbox class with service and experiment tracking.
 
-    - Initialise the use case strategy class
-    - Set up a service instance
-    - Trigger .send_request() function from the configured client
-
-    Parameters:
-        service_config: A dictionary containing configurations for the service.
-
-    Returns:
-        A wrapper function that modifies the class to which it is applied.
+    Args:
+        service_config: Optional configuration for the service
+        experiment_config: Optional configuration for experiment tracking
+            storage_uri: Where to store experiment data
+            project_name: Name of the project for grouping experiments
     """
+
     if service_config is None:
         service_config = {}
 
-    def wrapper(cls: Type) -> Type:
+    def wrap(cls: Type) -> Type:
         if not issubclass(cls, BaseUseCase):
             raise TypeError(
                 f"The 'sandbox' decorator can only be applied to subclasses of BaseUseCase, got {cls.__name__}"
@@ -179,9 +177,26 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
         original_init = cls.__init__
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
-            # initialse parent class, which should be a strategy use case
+            # Initialize parent class
             super(cls, self).__init__(*args, **kwargs, service_config=service_config)
-            original_init(self, *args, **kwargs)  # Call the original __init__
+
+            # Initialize experiment tracker
+            storage_uri = (
+                experiment_config.get("storage_uri", "./output/experiments")
+                if experiment_config
+                else "./output/experiments"
+            )
+            project_name = (
+                experiment_config.get("project_name", "healthchain")
+                if experiment_config
+                else "healthchain"
+            )
+            self.experiment_tracker = ExperimentTracker(
+                storage_uri=storage_uri, project_name=project_name
+            )
+
+            # Call original init
+            original_init(self, *args, **kwargs)
 
             service_route_count = 0
             client_count = 0
@@ -189,7 +204,6 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             for name in dir(self):
                 attr = getattr(self, name)
                 if callable(attr):
-                    # Get the function decorated with @api and register it to inject in service
                     if is_service_route(attr):
                         service_route_count += 1
                         validate_single_registration(
@@ -204,11 +218,11 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                         validate_single_registration(client_count, "_client")
                         self._client = register_method(self, attr, cls, name, "_client")
 
-            # Create a Service instance and register routes from strategy
             self._service = Service(endpoints=self.endpoints)
 
-        # Set the new init
         cls.__init__ = new_init
+
+        # original_start_sandbox = getattr(cls, "start_sandbox", None)
 
         def start_sandbox(
             self,
@@ -230,96 +244,113 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
             self.sandbox_id = uuid.uuid4()
 
-            if logging_config:
-                logging.config.dictConfig(logging_config)
-            else:
-                # Set up default logging configuration
-                logging.basicConfig(
-                    level=logging.INFO,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                )
-
-            log = logging.getLogger(__name__)
-
-            # Start service on thread
-            log.info(
-                f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
-            )
-            server_thread = threading.Thread(
-                target=lambda: self._service.run(config=self.service_config)
-            )
-            server_thread.start()
-
-            # Wait for service to start
-            sleep(5)
-
-            self.url = UrlBuilder.build_from_config(
-                config=self.service_config,
-                endpoints=self.endpoints,
-                service_id=service_id,
-            )
-
-            # Send async request from client
-            log.info(
-                f"Sending {len(self._client.request_data)} requests generated by {self._client.__class__.__name__} to {self.url.route}"
+            # Start experiment tracking
+            pipeline = getattr(self, "pipeline", None)
+            self.experiment_tracker.start_experiment(
+                name=f"{self.__class__.__name__}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                pipeline=pipeline,
+                tags={
+                    "sandbox_class": self.__class__.__name__,
+                    "workflow": self._client.workflow.value if self._client else None,
+                },
             )
 
             try:
+                # Configure logging
+                if logging_config:
+                    logging.config.dictConfig(logging_config)
+                else:
+                    logging.basicConfig(
+                        level=logging.INFO,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    )
+
+                log = logging.getLogger(__name__)
+
+                # Start service thread
+                log.info(
+                    f"Starting sandbox {self.sandbox_id} with {self.__class__.__name__} of type {self.type.value}..."
+                )
+                server_thread = threading.Thread(
+                    target=lambda: self._service.run(config=self.service_config)
+                )
+                server_thread.start()
+                sleep(5)
+
+                self.url = UrlBuilder.build_from_config(
+                    config=self.service_config,
+                    endpoints=self.endpoints,
+                    service_id=service_id,
+                )
+
+                # Log client request data
+                self.experiment_tracker.log_input(self._client.request_data)
+
+                # Send request and get response
+                log.info(
+                    f"Sending {len(self._client.request_data)} requests to {self.url.route}"
+                )
                 self.responses = asyncio.run(
                     self._client.send_request(url=self.url.service)
                 )
+
+                # Log response data
+                self.experiment_tracker.log_output(self.responses)
+
+                if save_data:
+                    # Save request/response data as before
+                    save_dir = Path(save_dir)
+                    request_path = ensure_directory_exists(save_dir / "requests")
+                    if self.type == UseCaseType.clindoc:
+                        extension = "xml"
+                        save_data_to_directory(
+                            [
+                                request.model_dump_xml()
+                                for request in self._client.request_data
+                            ],
+                            "request",
+                            self.sandbox_id,
+                            request_path,
+                            extension,
+                        )
+                    else:
+                        extension = "json"
+                        save_data_to_directory(
+                            [
+                                request.model_dump(exclude_none=True)
+                                for request in self._client.request_data
+                            ],
+                            "request",
+                            self.sandbox_id,
+                            request_path,
+                            extension,
+                        )
+                    log.info(f"Saved request data at {request_path}/")
+
+                    response_path = ensure_directory_exists(save_dir / "responses")
+                    save_data_to_directory(
+                        self.responses,
+                        "response",
+                        self.sandbox_id,
+                        response_path,
+                        extension,
+                    )
+                    log.info(f"Saved response data at {response_path}/")
+
+                # End experiment successfully
+                self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
+
             except Exception as e:
-                log.error(f"Couldn't start client: {e}")
-
-            if save_data:
-                save_dir = Path(save_dir)
-                request_path = ensure_directory_exists(save_dir / "requests")
-                if self.type == UseCaseType.clindoc:
-                    extension = "xml"
-                    save_data_to_directory(
-                        [
-                            request.model_dump_xml()
-                            for request in self._client.request_data
-                        ],
-                        "request",
-                        self.sandbox_id,
-                        request_path,
-                        extension,
-                    )
-                else:
-                    extension = "json"
-                    save_data_to_directory(
-                        [
-                            request.model_dump(exclude_none=True)
-                            for request in self._client.request_data
-                        ],
-                        "request",
-                        self.sandbox_id,
-                        request_path,
-                        extension,
-                    )
-                log.info(f"Saved request data at {request_path}/")
-
-                response_path = ensure_directory_exists(save_dir / "responses")
-                save_data_to_directory(
-                    self.responses,
-                    "response",
-                    self.sandbox_id,
-                    response_path,
-                    extension,
-                )
-                log.info(f"Saved response data at {response_path}/")
-
-        def stop_sandbox(self) -> None:
-            """
-            Shuts down sandbox instance
-            """
-            log.info("Shutting down server...")
-            requests.get(self.url.base + "/shutdown")
+                # End experiment with failure
+                self.experiment_tracker.end_experiment(ExperimentStatus.FAILED)
+                log.error(f"Sandbox failed: {e}")
+                raise
 
         cls.start_sandbox = start_sandbox
-        cls.stop_sandbox = stop_sandbox
-
         return cls
 
-    return wrapper
+    return wrap
+
+
+# Update the sandbox alias
+# sandbox = sandbox_decorator
