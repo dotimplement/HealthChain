@@ -34,6 +34,7 @@ class MedicalCodingPipeline(BasePipeline):
             config (ModelConfig): Configuration for the NER+L model
         """
         cda_connector = CdaConnector()
+        config.config["task"] = "ner"  # set task if hf
         model = self.router.get_component(config)
 
         self.add_input(cda_connector)
