@@ -1,5 +1,5 @@
-from healthchain.io.containers.document import Document
-from healthchain.io.containers.tabular import Tabular
-from healthchain.io.containers.base import DataContainer
+from .base import DataContainer, BaseDocument
+from .document import Document
+from .tabular import Tabular
 
-__all__ = ["Document", "Tabular", "DataContainer"]
+__all__ = ["DataContainer", "BaseDocument", "Document", "Tabular"]

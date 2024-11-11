@@ -95,7 +95,7 @@ class CdaConnector(BaseConnector):
             The update behavior (overwrite or append) is determined by the
             `overwrite` attribute of the CdaConnector instance.
         """
-
+        # TODO: check what to do with overwrite
         updated_ccd_data = out_data.generate_ccd(overwrite=self.overwrite)
 
         # Update the CDA document with the results

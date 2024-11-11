@@ -1,12 +1,14 @@
-from healthchain.io.containers import DataContainer, Document, Tabular
-from healthchain.io.base import BaseConnector
-from healthchain.io.cdaconnector import CdaConnector
-from healthchain.io.cdsfhirconnector import CdsFhirConnector
+from .containers import DataContainer, Document, Tabular
+from .base import BaseConnector
+from .cdaconnector import CdaConnector
+from .cdsfhirconnector import CdsFhirConnector
 
 __all__ = [
-    "Document",
+    # Containers
     "DataContainer",
+    "Document",
     "Tabular",
+    # Connectors
     "BaseConnector",
     "CdaConnector",
     "CdsFhirConnector",
