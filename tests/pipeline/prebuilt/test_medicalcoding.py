@@ -9,7 +9,7 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
     with patch(
         "healthchain.pipeline.medicalcodingpipeline.CdaConnector", mock_cda_connector
     ), patch(
-        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_component",
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_spacy_nlp,
     ):
         pipeline = MedicalCodingPipeline()
@@ -64,7 +64,7 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
 
 def test_full_coding_pipeline_integration(mock_spacy_nlp, test_cda_request):
     with patch(
-        "healthchain.pipeline.medicalcodingpipeline.ModelRouter.get_component",
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_spacy_nlp,
     ):
         pipeline = MedicalCodingPipeline.load(

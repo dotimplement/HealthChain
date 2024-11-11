@@ -14,7 +14,7 @@ def test_summarization_pipeline(
         "healthchain.pipeline.summarizationpipeline.CdsFhirConnector",
         mock_cds_fhir_connector,
     ), patch(
-        "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component",
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_hf_transformer,
     ), patch(
         "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
@@ -87,7 +87,7 @@ def test_summarization_pipeline(
 def test_full_summarization_pipeline_integration(mock_hf_transformer, test_cds_request):
     # Use mock LLM object for now
     with patch(
-        "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component",
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_hf_transformer,
     ):
         template = """
