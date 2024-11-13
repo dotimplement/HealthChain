@@ -30,7 +30,8 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
     """
 
     def __init__(self):
-        super().__init__()
+        BasePipeline.__init__(self)
+        ModelRoutingMixin.__init__(self)
 
     def configure_pipeline(self, config: ModelConfig) -> None:
         """Configure pipeline with CDA connector and NER+L model.
@@ -39,7 +40,7 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
             config (ModelConfig): Configuration for the NER+L model
         """
         cda_connector = CdaConnector()
-        config.config["task"] = "ner"  # set task if hf
+        config.task = "ner"  # set task if hf
         model = self.get_model_component(config)
 
         self.add_input(cda_connector)
