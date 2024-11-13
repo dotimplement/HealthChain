@@ -10,10 +10,10 @@ def test_load_huggingface_model(mock_basic_pipeline):
     )
 
     assert pipeline._model_config.source == ModelSource.HUGGINGFACE
-    assert pipeline._model_config.model_id == "meta-llama/Llama-2-7b"
+    assert pipeline._model_config.model == "meta-llama/Llama-2-7b"
+    assert pipeline._model_config.task == "text-generation"
     assert pipeline._model_config.path is None
-    assert pipeline._model_config.config == {
-        "task": "text-generation",
+    assert pipeline._model_config.kwargs == {
         "device": "cuda",
         "batch_size": 32,
     }
@@ -25,16 +25,16 @@ def test_load_spacy_model(mock_basic_pipeline):
     )
 
     assert pipeline._model_config.source == ModelSource.SPACY
-    assert pipeline._model_config.model_id == "en_core_sci_md"
+    assert pipeline._model_config.model == "en_core_sci_md"
     assert pipeline._model_config.path is None
-    assert pipeline._model_config.config == {"disable": ["parser", "ner"]}
+    assert pipeline._model_config.kwargs == {"disable": ["parser", "ner"]}
 
 
 def test_load_local_model(mock_basic_pipeline):
     pipeline = mock_basic_pipeline.load("./models/custom_spacy_model", source="spacy")
 
     assert pipeline._model_config.source == ModelSource.SPACY
-    assert pipeline._model_config.model_id == "custom_spacy_model"
+    assert pipeline._model_config.model == "custom_spacy_model"
     assert isinstance(pipeline._model_config.path, Path)
     assert str(pipeline._model_config.path) == "models/custom_spacy_model"
 
@@ -53,15 +53,15 @@ def test_load_with_template(mock_basic_pipeline):
 
     assert pipeline._output_template == template
     assert pipeline._model_config.source == ModelSource.HUGGINGFACE
-    assert pipeline._model_config.model_id == "gpt-3.5-turbo"
+    assert pipeline._model_config.model == "gpt-3.5-turbo"
 
 
 def test_load_callable_chain(mock_basic_pipeline, mock_chain):
     pipeline = mock_basic_pipeline.load(mock_chain, temperature=0.7, max_tokens=100)
 
     assert pipeline._model_config.source == ModelSource.LANGCHAIN
-    assert pipeline._model_config.model_id == "langchain_chain"
-    assert pipeline._model_config.config == {"temperature": 0.7, "max_tokens": 100}
+    assert pipeline._model_config.model == mock_chain
+    assert pipeline._model_config.kwargs == {"temperature": 0.7, "max_tokens": 100}
 
     with pytest.raises(
         ValueError, match="LangChain models must be passed directly as chain objects"
@@ -82,8 +82,8 @@ def test_load_with_simple_callable(mock_basic_pipeline):
     pipeline = mock_basic_pipeline.load(simple_chain, temperature=0.7)
 
     assert pipeline._model_config.source == ModelSource.LANGCHAIN
-    assert pipeline._model_config.model_id == "langchain_chain"
-    assert pipeline._model_config.config == {"temperature": 0.7}
+    assert pipeline._model_config.model == simple_chain
+    assert pipeline._model_config.kwargs == {"temperature": 0.7}
 
 
 def test_load_preserves_pipeline_functionality(mock_basic_pipeline):

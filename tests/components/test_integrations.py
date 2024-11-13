@@ -23,11 +23,11 @@ transformers_installed = importlib.util.find_spec("transformers") is not None
         pytest.param(
             HFTransformer,
             "transformers.pipeline",
-            {"device": "cuda", "batch_size": 32},
+            {"device": "mps", "batch_size": 32},
             {
-                "task": "dummy_task",
-                "model": "dummy_model",
-                "device": "cuda",
+                "task": "sentiment-analysis",
+                "model": "distilbert-base-uncased-finetuned-sst-2-english",
+                "device": "mps",
                 "batch_size": 32,
             },
             marks=pytest.mark.skipif(
@@ -44,12 +44,22 @@ def test_component_initialization(
         mock.return_value = mock_instance
         if component_class == SpacyNLP:
             component = component_class("dummy_path", **kwargs)
+            mock.assert_called_once_with("dummy_path", **expected_kwargs)
+            assert hasattr(component, "_nlp")
+            assert component._nlp == mock_instance
         else:
-            component = component_class("dummy_task", "dummy_model", **kwargs)
-
-        mock.assert_called_once_with("dummy_path", **expected_kwargs)
-        assert hasattr(component, "nlp")
-        assert component.nlp == mock_instance
+            component = component_class(
+                "distilbert-base-uncased-finetuned-sst-2-english",
+                "sentiment-analysis",
+                **kwargs,
+            )
+            mock.assert_called_once_with(
+                "distilbert-base-uncased-finetuned-sst-2-english",
+                "sentiment-analysis",
+                **expected_kwargs,
+            )
+            assert hasattr(component, "_pipe")
+            assert component._pipe == mock_instance
 
 
 def test_spacy_component(sample_document):
@@ -88,7 +98,7 @@ def test_huggingface_component(sample_document):
         test_cases = [
             (
                 {
-                    "device": "cuda",
+                    "device": "mps",
                     "batch_size": 32,
                     "max_length": 512,
                     "truncation": True,
@@ -100,8 +110,8 @@ def test_huggingface_component(sample_document):
 
         for kwargs, case in test_cases:
             component = HFTransformer(
-                "sentiment-analysis",
-                "distilbert-base-uncased-finetuned-sst-2-english",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                task="sentiment-analysis",
                 **kwargs,
             )
             result = component(sample_document)
@@ -134,14 +144,13 @@ def test_langchain_component(sample_document):
     ]
 
     for kwargs, case in test_cases:
-        component = LangChainLLM(mock_chain, **kwargs)
+        component = LangChainLLM(mock_chain, task="dummy_task", **kwargs)
         result = component(sample_document)
 
         # Verify kwargs were passed correctly
         mock_chain.invoke.assert_called_once_with(sample_document.data, **kwargs)
         assert (
-            result.models.get_output("langchain", "chain_output")
-            == "mocked chain output"
+            result.models.get_output("langchain", "dummy_task") == "mocked chain output"
         ), f"LangChainLLM failed {case}"
         mock_chain.invoke.reset_mock()
 
@@ -159,7 +168,7 @@ def test_langchain_component(sample_document):
         ),
         pytest.param(
             HFTransformer,
-            ["sentiment-analysis", "model"],
+            ["distilbert-base-uncased-finetuned-sst-2-english", "sentiment-analysis"],
             {"invalid_kwarg": "value"},
             TypeError,
             "Invalid kwargs for transformers.pipeline",
@@ -169,7 +178,7 @@ def test_langchain_component(sample_document):
         ),
         (
             LangChainLLM,
-            [Mock()],  # Mock chain
+            [Mock(), "dummy_task"],  # Mock chain
             {"invalid_kwarg": "value"},
             TypeError,
             "Invalid kwargs for chain.invoke",
@@ -218,7 +227,7 @@ def test_spacy_add_concepts(mock_spacy_nlp, sample_document):
         mock_nlp = Mock()
         mock_load.return_value = mock_nlp
         component = SpacyNLP("en_core_web_sm")
-        component.nlp = mock_nlp
+        component._nlp = mock_nlp
 
         # Process document using the mock entities
         component._add_concepts_to_hc_doc(mock_doc, sample_document)

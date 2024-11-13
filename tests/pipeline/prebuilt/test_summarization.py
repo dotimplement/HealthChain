@@ -22,7 +22,11 @@ def test_summarization_pipeline(
     ):
         pipeline = SummarizationPipeline()
         config = ModelConfig(
-            source=ModelSource.HUGGINGFACE, model_id="llama3", path=None, config={}
+            source=ModelSource.HUGGINGFACE,
+            model="llama3",
+            task="summarization",
+            path=None,
+            kwargs={},
         )
         pipeline.configure_pipeline(config)
 
@@ -44,9 +48,10 @@ def test_summarization_pipeline(
         mock_hf_transformer.assert_called_once_with(
             ModelConfig(
                 source=ModelSource.HUGGINGFACE,
-                model_id="llama3",
+                task="summarization",
+                model="llama3",
                 path=None,
-                config={"task": "summarization"},
+                kwargs={},
             )
         )
         mock_hf_transformer.return_value.assert_called_once()
@@ -55,6 +60,7 @@ def test_summarization_pipeline(
             source=ModelSource.HUGGINGFACE.value,
             task="summarization",
             template=pipeline._output_template,
+            delimiter="\n",
         )
 
         # Verify the pipeline used the mocked input and output

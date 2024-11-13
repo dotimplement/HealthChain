@@ -14,7 +14,7 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
     ):
         pipeline = MedicalCodingPipeline()
         config = ModelConfig(
-            source=ModelSource.SPACY, model_id="en_core_sci_sm", path=None, config={}
+            source=ModelSource.SPACY, model="en_core_sci_sm", path=None, kwargs={}
         )
         pipeline.configure_pipeline(config)
 
@@ -36,9 +36,9 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
         mock_spacy_nlp.assert_called_once_with(
             ModelConfig(
                 source=ModelSource.SPACY,
-                model_id="en_core_sci_sm",
+                model="en_core_sci_sm",
                 path=None,
-                config={"task": "ner"},
+                kwargs={"task": "ner"},
             )
         )
         mock_spacy_nlp.return_value.assert_called_once()

@@ -78,7 +78,7 @@ def test_document_processing_with_model_output():
 
 
 def test_document_processing_with_static_content():
-    creator = CdsCardCreator(content="Static content")
+    creator = CdsCardCreator(static_content="Static content")
     doc = Document(data="test")
 
     processed_doc = creator(doc)
