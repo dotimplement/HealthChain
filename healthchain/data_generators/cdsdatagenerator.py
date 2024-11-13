@@ -111,7 +111,7 @@ class CdsDataGenerator:
         if parsed_free_text:
             results.append(BundleEntry(resource=random.choice(parsed_free_text)))
 
-        output = CdsFhirData(prefetch=Bundle(entry=results))
+        output = CdsFhirData(prefetch=Bundle(resourceType="Bundle", entry=results))
         self.data = output
         return output
 
@@ -156,7 +156,7 @@ class CdsDataGenerator:
                 status="generated",
                 div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
             )
-            doc = DocumentReference(text=text)
+            doc = DocumentReference(resourceType="DocumentReference", text=text)
             document_list.append(doc)
 
         return document_list

@@ -116,6 +116,7 @@ class PractitionerGenerator(BaseGenerator):
     @staticmethod
     def generate(constraints: Optional[list] = None):
         return Practitioner(
+            resourceType="Practitioner",
             id=stringModel(faker.uuid4()),
             active=booleanModel("true"),
             name=[generator_registry.get("HumanNameGenerator").generate()],
