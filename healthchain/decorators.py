@@ -124,15 +124,19 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
 
     Parameters:
         arg: Optional argument which can be either a callable (class) directly or a configuration dict.
-        **kwargs: Arbitrary keyword arguments, mainly used to pass in 'service_config'.
-        'service_config' must be a dictionary of valid kwargs to pass into uvivorn.run()
+        **kwargs: Arbitrary keyword arguments for configuring the service and experiment tracking.
+            service_config: Dictionary of valid kwargs to pass into uvivorn.run()
+            experiment_config: Dictionary with storage_uri and project_name for experiment tracking
 
     Returns:
         If `arg` is callable, it applies the default decorator with no extra configuration.
         Otherwise, it uses the provided arguments to configure the service environment.
 
     Example:
-    @sandbox(service_config={"port": 9000})
+    @sandbox(
+        service_config={"port": 9000},
+        experiment_config={"storage_uri": "./experiments", "project_name": "my_project"}
+    )
     class myCDS(ClinicalDecisionSupport):
         def __init__(self) -> None:
             self.data_generator = None
@@ -143,13 +147,18 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
         return sandbox_decorator()(cls)  # Apply default decorator with default settings
     else:
         # Arguments were provided, or no arguments but with parentheses
-        if "service_config" not in kwargs:
+        valid_configs = {"service_config", "experiment_config"}
+        invalid_args = set(kwargs.keys()) - valid_configs
+        if invalid_args:
             log.warning(
-                f"{list(kwargs.keys())} is not a valid argument and will not be used; use 'service_config'."
+                f"{list(invalid_args)} are not valid arguments and will not be used; "
+                f"use {list(valid_configs)}."
             )
-        service_config = arg if arg is not None else kwargs.get("service_config", {})
 
-        return sandbox_decorator(service_config)
+        service_config = arg if arg is not None else kwargs.get("service_config", {})
+        experiment_config = kwargs.get("experiment_config", {})
+
+        return sandbox_decorator(service_config, experiment_config)
 
 
 def sandbox_decorator(
@@ -177,12 +186,13 @@ def sandbox_decorator(
         original_init = cls.__init__
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
+            print(experiment_config)
             # Initialize parent class
             super(cls, self).__init__(*args, **kwargs, service_config=service_config)
 
             # Initialize experiment tracker
             storage_uri = (
-                experiment_config.get("storage_uri", "./output/experiments")
+                experiment_config.get("storage_uri", "sqlite:///experiments.db")
                 if experiment_config
                 else "./output/experiments"
             )
@@ -191,9 +201,13 @@ def sandbox_decorator(
                 if experiment_config
                 else "healthchain"
             )
-            self.experiment_tracker = ExperimentTracker(
-                storage_uri=storage_uri, project_name=project_name
-            )
+
+            if experiment_config:
+                self.experiment_tracker = ExperimentTracker(
+                    storage_uri=storage_uri, project_name=project_name
+                )
+            else:
+                self.experiment_tracker = None
 
             # Call original init
             original_init(self, *args, **kwargs)
@@ -247,14 +261,17 @@ def sandbox_decorator(
 
             # Start experiment tracking
             pipeline = getattr(self, "pipeline", None)
-            self.experiment_tracker.start_experiment(
-                name=f"{self.__class__.__name__}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                pipeline=pipeline,
-                tags={
-                    "sandbox_class": self.__class__.__name__,
-                    "workflow": self._client.workflow.value if self._client else None,
-                },
-            )
+            if self.experiment_tracker:
+                self.experiment_tracker.start_experiment(
+                    name=f"{self.__class__.__name__}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    pipeline=pipeline,
+                    tags={
+                        "sandbox_class": self.__class__.__name__,
+                        "workflow": self._client.workflow.value
+                        if self._client
+                        else None,
+                    },
+                )
 
             # Configure logging
             if logging_config:
@@ -286,9 +303,6 @@ def sandbox_decorator(
                 service_id=service_id,
             )
 
-            # Log client request data
-            self.experiment_tracker.log_input(self._client.request_data)
-
             # Send request and get response
             log.info(
                 f"Sending {len(self._client.request_data)} requests to {self.url.route}"
@@ -296,9 +310,6 @@ def sandbox_decorator(
             self.responses = asyncio.run(
                 self._client.send_request(url=self.url.service)
             )
-
-            # Log response data
-            self.experiment_tracker.log_output(self.responses)
 
             if save_data:
                 # Save request/response data as before
@@ -348,7 +359,8 @@ def sandbox_decorator(
             requests.get(self.url.base + "/shutdown")
 
             # End experiment successfully
-            self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
+            if self.experiment_tracker:
+                self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
 
         cls.start_sandbox = start_sandbox
         cls.stop_sandbox = stop_sandbox

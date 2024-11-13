@@ -18,6 +18,9 @@ from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
 from enum import Enum
+import pickle
+import json
+from packaging import version
 
 from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
@@ -103,6 +106,9 @@ class BasePipeline(Generic[T], ABC):
         >>> result = pipeline("input text")
     """
 
+    # Add version as a class variable
+    __version__ = "1.0.0"
+
     def __init__(self):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
@@ -110,6 +116,7 @@ class BasePipeline(Generic[T], ABC):
         self._input_connector: Optional[BaseConnector[T]] = None
         self._output_connector: Optional[BaseConnector[T]] = None
         self._output_template: Optional[str] = None
+        self._model_config: Optional[ModelConfig] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -611,6 +618,153 @@ class BasePipeline(Generic[T], ABC):
             self._built_pipeline = pipeline
 
         return pipeline
+
+    def save(self, path: Union[str, Path]) -> None:
+        """
+        Serialize and save the pipeline to a file.
+
+        Args:
+            path (Union[str, Path]): Path where the pipeline should be saved
+
+        The saved file includes:
+        - Pipeline version
+        - Components and their configurations
+        - Stages
+        - Model configuration
+        - Templates and connectors
+        """
+        path = Path(path)
+
+        # Create metadata for validation
+        metadata = {
+            "version": self.__version__,
+            "pipeline_class": self.__class__.__name__,
+            "component_count": len(self._components),
+            "stage_count": len(self._stages),
+        }
+
+        state = {
+            "metadata": metadata,
+            "components": self._components,
+            "stages": self._stages,
+            "model_config": self._model_config,
+            "output_template": self._output_template,
+            "input_connector": self._input_connector,
+            "output_connector": self._output_connector,
+        }
+
+        # Save metadata separately in JSON format for easy inspection
+        with open(path.with_suffix(".meta.json"), "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        # Save full state with pickle
+        with open(path, "wb") as f:
+            pickle.dump(state, f)
+
+        logger.debug(f"Pipeline saved to {path} with metadata")
+
+    @classmethod
+    def from_file(cls, path: Union[str, Path], strict: bool = True) -> "BasePipeline":
+        """
+        Load a pipeline from a serialized file.
+
+        Args:
+            path (Union[str, Path]): Path to the serialized pipeline file
+            strict (bool): If True, raises error on version mismatch. If False, warns only.
+
+        Returns:
+            BasePipeline: Loaded pipeline instance
+
+        Raises:
+            ValueError: If validation fails or versions are incompatible (in strict mode)
+            FileNotFoundError: If the pipeline file doesn't exist
+        """
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Pipeline file not found: {path}")
+
+        # Load and validate state
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+
+        metadata = state.get("metadata", {})
+        saved_version = metadata.get("version", "0.0.0")
+
+        # Version compatibility check
+        if version.parse(saved_version) > version.parse(cls.__version__):
+            msg = (
+                f"Pipeline version mismatch. File version: {saved_version}, "
+                f"Current version: {cls.__version__}"
+            )
+            if strict:
+                raise ValueError(msg)
+            logger.warning(msg)
+
+        # Validate pipeline class
+        if metadata.get("pipeline_class") != cls.__name__:
+            msg = (
+                f"Pipeline class mismatch. Expected: {cls.__name__}, "
+                f"Found: {metadata.get('pipeline_class')}"
+            )
+            if strict:
+                raise ValueError(msg)
+            logger.warning(msg)
+
+        # Create and restore pipeline
+        pipeline = cls()
+
+        # Validate component count before loading
+        if len(state["components"]) != metadata.get("component_count", 0):
+            raise ValueError("Component count mismatch in loaded pipeline")
+
+        # Restore state
+        pipeline._components = state["components"]
+        pipeline._stages = state["stages"]
+        pipeline._model_config = state.get("model_config")
+        pipeline._output_template = state["output_template"]
+        pipeline._input_connector = state["input_connector"]
+        pipeline._output_connector = state["output_connector"]
+        pipeline._built_pipeline = None  # Will be rebuilt on first use
+
+        # Validate loaded pipeline
+        pipeline._validate_loaded_state()
+
+        logger.debug(f"Pipeline loaded from {path} (version {saved_version})")
+        return pipeline
+
+    def _validate_loaded_state(self) -> None:
+        """
+        Validate the loaded pipeline state.
+
+        Raises:
+            ValueError: If validation fails
+        """
+        # Validate components
+        for component in self._components:
+            if not callable(component.func):
+                raise ValueError(f"Component {component.name} is not callable")
+
+            # Validate component dependencies
+            for dep in component.dependencies:
+                if not any(c.name == dep for c in self._components):
+                    raise ValueError(
+                        f"Missing dependency {dep} for component {component.name}"
+                    )
+
+        # Validate stages
+        for stage_name, stage_components in self._stages.items():
+            if not all(callable(c) for c in stage_components):
+                raise ValueError(f"Invalid components in stage {stage_name}")
+
+        # Validate connectors
+        if self._input_connector and not isinstance(
+            self._input_connector, BaseConnector
+        ):
+            raise ValueError("Invalid input connector type")
+        if self._output_connector and not isinstance(
+            self._output_connector, BaseConnector
+        ):
+            raise ValueError("Invalid output connector type")
 
 
 class Pipeline(BasePipeline, Generic[T]):
