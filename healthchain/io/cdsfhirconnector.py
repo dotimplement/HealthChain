@@ -30,26 +30,27 @@ class CdsFhirConnector(BaseConnector):
         Converts a CDSRequest object into a Document object containing FHIR resources.
 
         This method takes a CDSRequest object as input, extracts the context and prefetch data,
-        and creates a CdsFhirData object. It then returns a Document object with the stringified
-        prefetch data as the main data content and the CdsFhirData object in the fhir_resources field.
+        and creates a CdsFhirData object. It then returns a Document object containing the FHIR data
+        and any extracted text content from DocumentReference resources.
 
         Args:
             in_data (CDSRequest): The input CDSRequest object containing context and prefetch data.
 
         Returns:
             Document: A Document object with the following attributes:
-                - data: A string representation of the prefetch data.
-                - fhir_resources: A CdsFhirData object containing the context and prefetch data.
+                - data: Either a string representation of the prefetch data, or if a DocumentReference
+                  is present, the text content from that resource
+                - hl7: Contains the CdsFhirData object with context and prefetch data
 
         Raises:
-            ValueError: If neither prefetch nor fhirServer is provided in the input data.
-            NotImplementedError: If fhirServer is provided, as this functionality is not yet implemented.
-            ValueError: If the provided prefetch data is invalid.
+            ValueError: If neither prefetch nor fhirServer is provided in the input data
+            NotImplementedError: If fhirServer is provided (not yet implemented)
+            ValueError: If the provided prefetch data is invalid
 
         Note:
-            - The method currently only supports prefetch data and does not handle FHIR server interactions.
-            - Future implementations may involve more detailed processing, such as parsing
-              notes depending on the hook configuration.
+            The method currently only supports prefetch data and does not handle FHIR server interactions.
+            When a DocumentReference resource is present in the prefetch data, its text content will be
+            extracted and stored as the Document's data field.
         """
         if in_data.prefetch is None and in_data.fhirServer is None:
             raise ValueError(
@@ -67,6 +68,12 @@ class CdsFhirConnector(BaseConnector):
             raise ValueError("Invalid prefetch data provided: {e}!") from e
 
         doc = Document(data=str(cds_fhir_data.model_dump_prefetch()))
+
+        # Extract text from DocumentReference resources if present
+        for entry in cds_fhir_data.prefetch.entry_field:
+            if entry.resource_field.resourceType == "DocumentReference":
+                doc.data = entry.resource_field.text_field.div_field
+
         doc.hl7.set_fhir_data(cds_fhir_data)
 
         return doc
