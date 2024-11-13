@@ -45,9 +45,10 @@ class ModelConfig:
     """Configuration for model initialization"""
 
     source: ModelSource
-    model_id: str
+    model: str
+    task: Optional[str] = None
     path: Optional[Path] = None
-    config: Dict[str, Any] = None
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -123,6 +124,7 @@ class BasePipeline(Generic[T], ABC):
         cls,
         model: Union[str, Callable],
         source: Union[str, ModelSource] = "huggingface",
+        task: Optional[str] = "text-generation",
         template: Optional[str] = None,
         **model_kwargs: Any,
     ) -> "BasePipeline":
@@ -137,10 +139,11 @@ class BasePipeline(Generic[T], ABC):
                 - a LangChain Chain instance
             source (Union[str, ModelSource], optional): Model source - can be "huggingface", "spacy",
                 "openai" or other supported sources. Defaults to "huggingface".
+            task (Optional[str], optional): Task name for models. used as keys to retrieve model outputs
+                (e.g. "ner", "summarization"). Defaults to "text-generation".
             template (Optional[str], optional): Template string for formatting pipeline outputs.
                 Defaults to None.
             **model_kwargs (Any): Additional configuration options passed to the model. Common options:
-                - task: Task name for models (e.g. "ner", "summarization")
                 - device: Device to load model on ("cpu", "cuda")
                 - batch_size: Batch size for inference
                 - max_length: Maximum sequence length
@@ -179,8 +182,8 @@ class BasePipeline(Generic[T], ABC):
             # Handle LangChain Chain
             config = ModelConfig(
                 source=ModelSource.LANGCHAIN,
-                model_id="langchain_chain",
-                config=model_kwargs,
+                model=model,
+                task=task,
             )
         else:
             # Convert string source to enum if needed
@@ -207,12 +210,14 @@ class BasePipeline(Generic[T], ABC):
                 model.startswith("./") or model.startswith("/")
             ):
                 path = Path(model)
-                config = ModelConfig(source=source, model_id=path.name, path=path)
+                config = ModelConfig(
+                    source=source, model=path.name, path=path, task=task
+                )
             else:
-                config = ModelConfig(source=source, model_id=model)
+                config = ModelConfig(source=source, model=model, task=task)
 
         # Configure and return pipeline
-        config.config = model_kwargs
+        config.kwargs = model_kwargs
         pipeline._model_config = config
         pipeline.configure_pipeline(config)
 

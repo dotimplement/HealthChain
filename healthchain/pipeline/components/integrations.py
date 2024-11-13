@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, Callable
+from spacy.tokens import Doc as SpacyDoc
+
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
 from healthchain.models.data import ProblemConcept
-from spacy.tokens import Doc
 
 
 class SpacyNLP(BaseComponent[str]):
@@ -11,7 +12,7 @@ class SpacyNLP(BaseComponent[str]):
 
     This component allows using any spaCy model within the pipeline by loading
     and applying it to process text documents. The spaCy doc outputs are stored
-    in the document's nlp annotations container.
+    in the document's nlp annotations container under .spacy_docs.
 
     Args:
         path_to_pipeline (str): The path or name of the spaCy model to load.
@@ -39,9 +40,9 @@ class SpacyNLP(BaseComponent[str]):
                 "Make sure you have installed it with: "
                 "`pip install spacy` or `python -m spacy download {model_name}`"
             ) from e
-        self.nlp = nlp
+        self._nlp = nlp
 
-    def _add_concepts_to_hc_doc(self, spacy_doc: Doc, hc_doc: Document):
+    def _add_concepts_to_hc_doc(self, spacy_doc: SpacyDoc, hc_doc: Document):
         """
         Extract entities from spaCy Doc and add them to the HealthChain Document concepts.
 
@@ -67,7 +68,7 @@ class SpacyNLP(BaseComponent[str]):
         hc_doc.add_concepts(problems=concepts)
 
     def __call__(self, doc: Document) -> Document:
-        spacy_doc = self.nlp(doc.data)
+        spacy_doc = self._nlp(doc.data)
         self._add_concepts_to_hc_doc(spacy_doc, doc)
         doc.nlp.add_spacy_doc(spacy_doc)
 
@@ -80,27 +81,47 @@ class HFTransformer(BaseComponent[str]):
 
     This component allows using any Hugging Face model and task within the pipeline
     by wrapping the transformers.pipeline API. The model outputs are stored in the
-    document's model_outputs container.
+    document's model_outputs container under the "huggingface" source key.
+
+    Note that this component is only recommended for non-conversational language tasks.
+    For chat-based tasks, consider using LangChainLLM instead.
 
     Args:
-        task (str): The task to run, e.g. "sentiment-analysis", "ner", etc.
-            Must be a valid task supported by the Hugging Face pipeline API.
         model (str): The model identifier or path to use for the task.
-            Can be a model ID from the Hugging Face Hub or a local path.
-        **kwargs: Additional configuration options passed to the transformers.pipeline API
+            Can be a model ID from the Hugging Face Hub (e.g. "bert-base-uncased")
+            or a local path to a saved model.
+        task (str): The task to run, e.g. "sentiment-analysis", "ner", "summarization".
+            Must be a valid task supported by the Hugging Face pipeline API.
+            See https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline.task
+        **kwargs: Additional configuration options passed to transformers.pipeline.
+            Common options include device, batch_size, max_length etc.
+            See https://huggingface.co/docs/transformers/main_classes/pipelines
 
     Raises:
-        ImportError: If the transformers package is not installed.
+        ImportError: If the transformers package is not installed
+        TypeError: If invalid kwargs are passed to pipeline initialization
+        ValueError: If there is an error initializing the pipeline
 
     Example:
+        >>> # Initialize for sentiment analysis
         >>> component = HFTransformer(
-        ...     task="sentiment-analysis",
-        ...     model="distilbert-base-uncased-finetuned-sst-2-english"
+        ...     model="distilbert-base-uncased-finetuned-sst-2-english",
+        ...     task="sentiment-analysis"
         ... )
-        >>> doc = component(doc)  # Runs sentiment analysis on doc.data
+        >>> doc = component(doc)  # Analyzes sentiment of doc.data
+        >>>
+        >>> # Initialize for summarization with custom options
+        >>> component = HFTransformer(
+        ...     model="facebook/bart-large-cnn",
+        ...     task="summarization",
+        ...     max_length=130,
+        ...     min_length=30,
+        ...     do_sample=False
+        ... )
+        >>> doc = component(doc)  # Generates summary of doc.data
     """
 
-    def __init__(self, task: str, model: str, **kwargs: Any):
+    def __init__(self, model: str, task: str, **kwargs: Any):
         try:
             from transformers import pipeline
         except ImportError:
@@ -110,18 +131,19 @@ class HFTransformer(BaseComponent[str]):
             )
 
         try:
-            nlp = pipeline(task=task, model=model, **kwargs)
+            pipe = pipeline(task=task, model=model, **kwargs)
         except TypeError as e:
             raise TypeError(f"Invalid kwargs for transformers.pipeline: {str(e)}")
         except Exception as e:
             raise ValueError(f"Error initializing transformer pipeline: {str(e)}")
 
-        self.nlp = nlp
+        self._pipe = pipe
         self.task = task
 
     def __call__(self, doc: Document) -> Document:
-        output = self.nlp(doc.data)
-        doc.add_output("huggingface", self.task, output)
+        output = self._pipe(doc.data)
+        doc.models.add_output("huggingface", self.task, output)
+
         return doc
 
 
@@ -131,24 +153,32 @@ class LangChainLLM(BaseComponent[str]):
 
     This component allows using any LangChain chain within the pipeline by wrapping
     the chain's invoke method. The chain outputs are stored in the document's
-    model_outputs container.
+    model_outputs container under the "langchain" source key.
 
     Args:
-        chain: The LangChain chain to run on the document text.
+        chain (callable): The LangChain chain to run on the document text.
             Can be any chain object from the LangChain library.
-        **kwargs: Additional parameters to pass to the chain's invoke method
+        task (str): The task name to use when storing outputs, e.g. "summarization", "chat".
+            Used as key to organize model outputs in the document's model container.
+        **kwargs: Additional parameters to pass to the chain's invoke method.
+            These are forwarded directly to the chain's invoke() call.
+
+    Raises:
+        TypeError: If invalid kwargs are passed to chain.invoke()
+        ValueError: If there is an error during chain invocation
 
     Example:
         >>> from langchain_core.prompts import ChatPromptTemplate
         >>> from langchain_openai import ChatOpenAI
 
         >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
-        >>> component = LangChainLLM(chain=chain)
-        >>> doc = component(doc)  # Runs the chain on doc.data
+        >>> component = LangChainLLM(chain=chain, task="chat")
+        >>> doc = component(doc)  # Runs the chain on doc.data and stores output
     """
 
-    def __init__(self, chain: Any, **kwargs: Any):
+    def __init__(self, chain: Callable, task: str, **kwargs: Any):
         self.chain = chain
+        self.task = task
         self.kwargs = kwargs
 
     def __call__(self, doc: Document) -> Document:
@@ -159,5 +189,6 @@ class LangChainLLM(BaseComponent[str]):
         except Exception as e:
             raise ValueError(f"Error during chain invocation: {str(e)}")
 
-        doc.models.add_output("langchain", "chain_output", output)
+        doc.models.add_output("langchain", self.task, output)
+
         return doc
