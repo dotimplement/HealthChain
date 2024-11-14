@@ -22,7 +22,11 @@ def test_summarization_pipeline(
     ):
         pipeline = SummarizationPipeline()
         config = ModelConfig(
-            source=ModelSource.HUGGINGFACE, model_id="llama3", path=None, config={}
+            source=ModelSource.HUGGINGFACE,
+            model="llama3",
+            task="summarization",
+            path=None,
+            kwargs={},
         )
         pipeline.configure_pipeline(config)
 
@@ -44,9 +48,10 @@ def test_summarization_pipeline(
         mock_hf_transformer.assert_called_once_with(
             ModelConfig(
                 source=ModelSource.HUGGINGFACE,
-                model_id="llama3",
+                task="summarization",
+                model="llama3",
                 path=None,
-                config={"task": "summarization"},
+                kwargs={},
             )
         )
         mock_hf_transformer.return_value.assert_called_once()
@@ -55,6 +60,8 @@ def test_summarization_pipeline(
             source=ModelSource.HUGGINGFACE.value,
             task="summarization",
             template=pipeline._output_template,
+            template_path=pipeline._output_template_path,
+            delimiter="\n",
         )
 
         # Verify the pipeline used the mocked input and output
@@ -84,22 +91,28 @@ def test_summarization_pipeline(
         assert "card-creation" in pipeline._stages
 
 
-def test_full_summarization_pipeline_integration(mock_hf_transformer, test_cds_request):
+def test_full_summarization_pipeline_integration(
+    mock_hf_transformer, test_cds_request, tmp_path
+):
     # Use mock LLM object for now
     with patch(
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_hf_transformer,
     ):
-        template = """
-    {
-        "summary": "This is a test summary",
-        "indicator": "warning",
-        "source": {{ default_source | tojson }},
-        "detail": "{{ model_output }}"
-    }
-    """
-        pipeline = SummarizationPipeline.load(
-            "llama3", source="huggingface", template=template
+        # Create a temporary template file
+        template_file = tmp_path / "card_template.json"
+        template_content = """
+        {
+            "summary": "This is a test summary",
+            "indicator": "warning",
+            "source": {{ default_source | tojson }},
+            "detail": "{{ model_output }}"
+        }
+        """
+        template_file.write_text(template_content)
+
+        pipeline = SummarizationPipeline.from_model_id(
+            "llama3", source="huggingface", template_path=template_file
         )
 
         cds_response = pipeline(test_cds_request)

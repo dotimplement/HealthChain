@@ -73,11 +73,10 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             )
 
         # i feel like theres a better way to do this
-        request_data = data.model_dump()
         request = CDSRequest(
             hook=workflow.value,
-            context=context_model(**request_data.get("context", {})),
-            prefetch=request_data.get("prefetch"),
+            context=context_model(**data.context),
+            prefetch=data.model_dump_prefetch(),
         )
 
         return request

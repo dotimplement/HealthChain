@@ -96,7 +96,11 @@ Pre-built pipelines are use case specific end-to-end workflows that already have
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
 
-pipeline = MedicalCodingPipeline.load("./path/to/model")
+# Load from model ID
+pipeline = MedicalCodingPipeline.from_model_id("en_core_sci_md", source="spacy")
+
+# Or load from local model
+pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
 
 cda_data = CdaRequest(document="<CDA XML content>")
 output = pipeline(cda_data)
@@ -129,7 +133,9 @@ from typing import List
 @hc.sandbox
 class MyCDS(ClinicalDecisionSupport):
     def __init__(self) -> None:
-        self.pipeline = SummarizationPipeline.load("./path/to/model")
+        self.pipeline = SummarizationPipeline.from_model_id(
+            "DISLab/SummLlama3.2-3B", source="huggingface"
+        )
         self.data_generator = CdsDataGenerator()
 
     # Sets up an instance of a mock EHR client of the specified workflow
@@ -162,7 +168,9 @@ from healthchain.models import CcdData, CdaRequest, CdaResponse
 @hc.sandbox
 class NotereaderSandbox(ClinicalDocumentation):
     def __init__(self):
-        self.pipeline = MedicalCodingPipeline.load("./path/to/model")
+        self.pipeline = MedicalCodingPipeline.from_model_id(
+            "en_core_sci_md", source="spacy"
+        )
 
     # Load an existing CDA file
     @hc.ehr(workflow="sign-note-inpatient")

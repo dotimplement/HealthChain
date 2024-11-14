@@ -59,9 +59,9 @@ def mock_chain():
 def spacy_config():
     return ModelConfig(
         source=ModelSource.SPACY,
-        model_id="en_core_sci_md",
+        model="en_core_sci_md",
         path=None,
-        config={"disable": ["parser"]},
+        kwargs={"disable": ["parser"]},
     )
 
 
@@ -69,9 +69,10 @@ def spacy_config():
 def hf_config():
     return ModelConfig(
         source=ModelSource.HUGGINGFACE,
-        model_id="bert-base",
+        model="bert-base",
+        task="ner",
         path=None,
-        config={"task": "ner"},
+        kwargs={},
     )
 
 

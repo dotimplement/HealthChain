@@ -21,11 +21,11 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
 
     Examples:
         >>> # Using with GPT model
-        >>> pipeline = SummarizationPipeline.load("gpt-4o", source="openai")
+        >>> pipeline = SummarizationPipeline.from_model_id("gpt-4o", source="openai")
         >>> cds_response = pipeline(documents)
         >>>
         >>> # Using with Hugging Face
-        >>> pipeline = SummarizationPipeline.load(
+        >>> pipeline = SummarizationPipeline.from_model_id(
         ...     "facebook/bart-large-cnn",
         ...     task="summarization"
         ... )
@@ -33,7 +33,8 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
     """
 
     def __init__(self):
-        super().__init__()
+        BasePipeline.__init__(self)
+        ModelRoutingMixin.__init__(self)
 
     def configure_pipeline(self, config: ModelConfig) -> None:
         """Configure pipeline with FHIR connector and summarization model.
@@ -42,7 +43,7 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
             config: Model configuration for the summarization model
         """
         cds_fhir_connector = CdsFhirConnector(hook_name="encounter-discharge")
-        config.config["task"] = "summarization"
+        config.task = "summarization"
         model = self.get_model_component(config)
 
         self.add_input(cds_fhir_connector)
@@ -52,6 +53,8 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
                 source=config.source.value,
                 task="summarization",
                 template=self._output_template,
+                template_path=self._output_template_path,
+                delimiter="\n",
             ),
             stage="card-creation",
         )

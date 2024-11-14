@@ -57,6 +57,7 @@ class MedicationRequestGenerator(BaseGenerator):
             ).generate()
         )
         return MedicationRequest(
+            resourceType="MedicationRequest",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             contained=[contained_medication],

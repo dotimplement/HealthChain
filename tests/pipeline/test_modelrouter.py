@@ -16,7 +16,7 @@ def test_router_initialization(router):
 
 def test_get_component_invalid_source(router):
     """Test that router raises error for invalid model source"""
-    invalid_config = ModelConfig(source="invalid", model_id="test")
+    invalid_config = ModelConfig(source="invalid", model="test")
     with pytest.raises(ValueError, match="Unsupported model source"):
         router.get_component(invalid_config)
 
@@ -29,7 +29,7 @@ def test_get_component_spacy(mock_spacy, router, spacy_config):
 
     component = router.get_component(spacy_config)
 
-    mock_spacy.assert_called_once_with(model="en_core_sci_md")
+    mock_spacy.assert_called_once_with(model="en_core_sci_md", disable=["parser"])
     assert component == mock_instance
 
 
@@ -41,9 +41,9 @@ def test_get_component_spacy_local(mock_spacy, router):
 
     local_spacy_config = ModelConfig(
         source=ModelSource.SPACY,
-        model_id="custom_model",
+        model="custom_model",
         path="./models/spacy/custom",
-        config=None,
+        kwargs={},
     )
 
     component = router.get_component(local_spacy_config)
@@ -69,9 +69,10 @@ def test_get_component_huggingface_local(mock_hf, router):
     """Test initialization of Hugging Face component with local model path"""
     config = ModelConfig(
         source=ModelSource.HUGGINGFACE,
-        model_id="local-bert",
+        model="local-bert",
+        task="ner",
         path="./models/hf/bert",
-        config={"task": "ner"},
+        kwargs={},
     )
     mock_instance = Mock()
     mock_hf.return_value = mock_instance
@@ -111,6 +112,6 @@ def test_router_type_safety():
         "healthchain.pipeline.components.integrations.SpacyNLP",
         return_value=CustomComponent(),
     ):
-        config = ModelConfig(source=ModelSource.SPACY, model_id="test")
+        config = ModelConfig(source=ModelSource.SPACY, model="test")
         component = router.get_component(config)
         assert isinstance(component, CustomComponent)

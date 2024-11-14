@@ -18,7 +18,9 @@ from healthchain.models import (
 class NotereaderSandbox(ClinicalDocumentation):
   def __init__(self):
       self.cda_path = "./resources/uclh_cda.xml"
-      self.pipeline = MedicalCodingPipeline.load("./resources/models/medcat_model.zip")
+      self.pipeline = MedicalCodingPipeline.from_local_model(
+          "./resources/models/medcat_model.zip", source="spacy"
+      )
 
   @hc.ehr(workflow="sign-note-inpatient")
   def load_data_in_client(self) -> CcdData:

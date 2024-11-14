@@ -48,6 +48,7 @@ class MedicationAdministrationGenerator(BaseGenerator):
             ).generate()
         )
         return MedicationAdministration(
+            resourceType="MedicationAdministration",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             contained=[contained_medication],
