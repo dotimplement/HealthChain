@@ -18,14 +18,18 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
 
     Examples:
         >>> # Using with SpaCy/MedCAT
-        >>> pipeline = MedicalCodingPipeline.load("medcatlite", source="spacy")
+        >>> pipeline = MedicalCodingPipeline.from_model_id("medcatlite", source="spacy")
         >>> cda_response = pipeline(documents)
         >>>
         >>> # Using with Hugging Face
-        >>> pipeline = MedicalCodingPipeline.load(
+        >>> pipeline = MedicalCodingPipeline.from_model_id(
         ...     "bert-base-uncased",
         ...     task="ner"
         ... )
+        >>> # Using with LangChain
+        >>> chain = ChatPromptTemplate.from_template("Extract medical codes: {text}") | ChatOpenAI()
+        >>> pipeline = MedicalCodingPipeline.load(chain)
+        >>>
         >>> cda_response = pipeline(documents)
     """
 

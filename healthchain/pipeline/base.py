@@ -112,6 +112,7 @@ class BasePipeline(Generic[T], ABC):
         self._input_connector: Optional[BaseConnector[T]] = None
         self._output_connector: Optional[BaseConnector[T]] = None
         self._output_template: Optional[str] = None
+        self._output_template_path: Optional[Path] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -119,105 +120,165 @@ class BasePipeline(Generic[T], ABC):
         )
         return f"[{components_repr}]"
 
+    def _configure_output_templates(
+        self,
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+    ) -> None:
+        """
+        Configure template settings for the pipeline.
+
+        Args:
+            template (Optional[str]): Template string for formatting outputs.
+                Defaults to None.
+            template_path (Optional[Union[str, Path]]): Path to template file.
+                Defaults to None.
+        """
+        self._output_template = template
+        self._output_template_path = Path(template_path) if template_path else None
+
     @classmethod
     def load(
         cls,
-        model: Union[str, Callable],
-        source: Union[str, ModelSource] = "huggingface",
+        pipeline: Callable,
         task: Optional[str] = "text-generation",
+        source: str = "langchain",
         template: Optional[str] = None,
-        **model_kwargs: Any,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
     ) -> "BasePipeline":
         """
-        Load and configure a pipeline from a given model or LangChain chain.
+        Load a pipeline from a pre-built pipeline object (e.g. LangChain chain).
 
         Args:
-            model (Union[str, Callable]): Identifier for the model or LangChain chain. Can be:
-                - a model name from a supported source
-                (e.g. "en_core_sci_md", "meta-llama/Llama-3.2-1B")
-                - a local path to a model
-                - a LangChain Chain instance
-            source (Union[str, ModelSource], optional): Model source - can be "huggingface", "spacy",
-                "openai" or other supported sources. Defaults to "huggingface".
-            task (Optional[str], optional): Task name for models. used as keys to retrieve model outputs
-                (e.g. "ner", "summarization"). Defaults to "text-generation".
-            template (Optional[str], optional): Template string for formatting pipeline outputs.
+            pipeline (Callable): A callable pipeline object (e.g. LangChain chain)
+            task (Optional[str]): Task identifier used to retrieve model outputs.
+                Defaults to "text-generation".
+            template (Optional[str]): Template string for formatting outputs.
                 Defaults to None.
-            **model_kwargs (Any): Additional configuration options passed to the model. Common options:
-                - device: Device to load model on ("cpu", "cuda")
-                - batch_size: Batch size for inference
-                - max_length: Maximum sequence length
+            **kwargs: Additional configuration options passed to the pipeline.
 
         Returns:
-            BasePipeline: Configured pipeline instance with the specified model.
-
-        Raises:
-            ValueError: If an unsupported model source is provided.
+            BasePipeline: Configured pipeline instance.
 
         Examples:
-            >>> # Load NER pipeline with SpaCy model
-            >>> pipeline = MedicalCodingPipeline.load("en_core_sci_md", source="spacy")
-
-            >>> # Load summarization pipeline with Hugging Face model
-            >>> pipeline = SummarizationPipeline.load(
-            ...     "meta-llama/Llama-3.2-1B",  # HuggingFace is default source
-            ...     task="text-generation"
-            ... )
-
-            >>> # Load pipeline with LangChain
             >>> from langchain_core.prompts import ChatPromptTemplate
             >>> from langchain_openai import ChatOpenAI
             >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
-            >>> pipeline = Pipeline.load(chain, temperature=0.7, max_tokens=100)
-
-            >>> # Load custom pipeline from local SpaCy model
-            >>> pipeline = CustomPipeline.load("./models/spacy/my_model")
+            >>> pipeline = Pipeline.load(chain, temperature=0.7)
         """
-        # Initialize pipeline instance
+        if not hasattr(pipeline, "__call__") and not hasattr(pipeline, "invoke"):
+            raise ValueError("Pipeline must be a callable object")
+
+        instance = cls()
+        instance._configure_output_templates(template, template_path)
+
+        config = ModelConfig(
+            source=ModelSource(source.lower()), model=pipeline, task=task, kwargs=kwargs
+        )
+
+        instance._model_config = config
+        instance.configure_pipeline(config)
+
+        return instance
+
+    @classmethod
+    def from_model_id(
+        cls,
+        model_id: str,
+        source: Union[str, ModelSource] = "huggingface",
+        task: Optional[str] = "text-generation",
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
+    ) -> "BasePipeline":
+        """
+        Load pipeline from a model identifier.
+
+        Args:
+            model_id (str): Model identifier (e.g. HuggingFace model ID, SpaCy model name)
+            source (Union[str, ModelSource]): Model source. Defaults to "huggingface".
+                Can be "huggingface", "spacy".
+            task (Optional[str]): Task identifier for the model. Defaults to "text-generation".
+            **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
+
+        Returns:
+            BasePipeline: Configured pipeline instance.
+
+        Examples:
+            >>> # Load HuggingFace model
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "facebook/bart-large-cnn",
+            ...     task="summarization",
+            ...     temperature=0.7
+            ... )
+            >>>
+            >>> # Load SpaCy model
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "en_core_sci_md",
+            ...     source="spacy",
+            ...     disable=["parser"]
+            ... )
+        """
         pipeline = cls()
-        pipeline._output_template = template
+        pipeline._configure_output_templates(template, template_path)
 
-        # Create model config based on input type
-        if hasattr(model, "invoke") or hasattr(model, "__call__"):
-            # Handle LangChain Chain
-            config = ModelConfig(
-                source=ModelSource.LANGCHAIN,
-                model=model,
-                task=task,
-            )
-        else:
-            # Convert string source to enum if needed
-            if isinstance(source, str):
-                source_lower = source.lower()
+        config = ModelConfig(
+            source=ModelSource(source.lower()), model=model_id, task=task, kwargs=kwargs
+        )
+        pipeline._model_config = config
+        pipeline.configure_pipeline(config)
 
-                if source_lower == "langchain":
-                    raise ValueError(
-                        "LangChain models must be passed directly as chain objects, "
-                        "not as string source identifiers."
-                    )
+        return pipeline
 
-                try:
-                    source = ModelSource(source_lower)
-                except ValueError:
-                    supported = ", ".join(s.value for s in ModelSource)
-                    raise ValueError(
-                        f"Unsupported model source: {source}. "
-                        f"Supported sources: {supported}"
-                    )
+    @classmethod
+    def from_local_model(
+        cls,
+        path: Union[str, Path],
+        source: Union[str, ModelSource],
+        task: Optional[str] = None,
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
+    ) -> "BasePipeline":
+        """Load pipeline from a local model path.
 
-            # Handle local paths vs model IDs
-            if isinstance(model, str) and (
-                model.startswith("./") or model.startswith("/")
-            ):
-                path = Path(model)
-                config = ModelConfig(
-                    source=source, model=path.name, path=path, task=task
-                )
-            else:
-                config = ModelConfig(source=source, model=model, task=task)
+        Args:
+            path (Union[str, Path]): Path to local model files/directory
+            source (Union[str, ModelSource]): Model source (e.g. "huggingface", "spacy")
+            task (Optional[str]): Task identifier for the model. Defaults to None.
+            **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
 
-        # Configure and return pipeline
-        config.kwargs = model_kwargs
+        Returns:
+            BasePipeline: Configured pipeline instance.
+
+        Examples:
+            >>> # Load local HuggingFace model
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/my_summarizer",
+            ...     source="huggingface",
+            ...     task="summarization",
+            ...     temperature=0.7
+            ... )
+            >>>
+            >>> # Load local SpaCy model
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/en_core_sci_md",
+            ...     source="spacy",
+            ...     disable=["parser"]
+            ... )
+        """
+        pipeline = cls()
+        pipeline._configure_output_templates(template, template_path)
+
+        path = Path(path)
+        config = ModelConfig(
+            source=ModelSource(source.lower()),
+            model=path.name,
+            path=path,
+            task=task,
+            kwargs=kwargs,
+        )
         pipeline._model_config = config
         pipeline.configure_pipeline(config)
 
@@ -230,16 +291,39 @@ class BasePipeline(Generic[T], ABC):
 
         This method should be implemented by subclasses to add specific components
         and configure the pipeline according to the given model configuration.
+        The configuration typically involves:
+        1. Setting up input/output connectors
+        2. Adding model components based on the model source
+        3. Adding any additional processing nodes
+        4. Configuring the pipeline stages and execution order
 
         Args:
-            model_config (ModelConfig): Configuration object containing model source,
-                                      ID and optional path information.
+            model_config (ModelConfig): Configuration object containing:
+                - source: Model source (e.g. huggingface, spacy, langchain)
+                - model: Model identifier or path
+                - task: Optional task name (e.g. summarization, ner)
+                - path: Optional local path to model files
+                - kwargs: Additional model configuration parameters
 
         Returns:
             None
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
+
+        Example:
+            >>> def configure_pipeline(self, config: ModelConfig):
+            ...     # Add FHIR connector for input/output
+            ...     connector = FhirConnector()
+            ...     self.add_input(connector)
+            ...
+            ...     # Add model component
+            ...     model = self.get_model_component(config)
+            ...     self.add_node(model, stage="processing")
+            ...
+            ...     # Add output formatting
+            ...     self.add_node(OutputFormatter(), stage="formatting")
+            ...     self.add_output(connector)
         """
         raise NotImplementedError("This method must be implemented by subclasses.")
 

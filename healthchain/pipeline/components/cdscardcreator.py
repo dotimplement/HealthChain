@@ -1,7 +1,8 @@
 import logging
 import json
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from jinja2 import Template
+from pathlib import Path
 
 from healthchain.pipeline.components.base import BaseComponent
 from healthchain.io.containers import Document
@@ -22,6 +23,8 @@ class CdsCardCreator(BaseComponent[str]):
 
     Args:
         template (str, optional): Template string for card creation. If not provided,
+            uses a default template that creates an info card with the model output.
+        template_path (str, optional): Path to a template file. If not provided,
             uses a default template that creates an info card with the model output.
         static_content (str, optional): Static content to use instead of model output.
         source (str, optional): Source framework to get model output from (e.g. "huggingface", "langchain").
@@ -76,12 +79,25 @@ class CdsCardCreator(BaseComponent[str]):
     def __init__(
         self,
         template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
         static_content: Optional[str] = None,
         source: Optional[str] = None,
         task: Optional[str] = None,
         delimiter: Optional[str] = None,
         default_source: Optional[Dict[str, Any]] = None,
     ):
+        # Load template from file or use string template
+        if template_path:
+            try:
+                template_path = Path(template_path)
+                if not template_path.exists():
+                    raise FileNotFoundError(f"Template file not found: {template_path}")
+                with open(template_path) as f:
+                    template = f.read()
+            except Exception as e:
+                logger.error(f"Error loading template from {template_path}: {str(e)}")
+                template = self.DEFAULT_TEMPLATE
+
         self.template = Template(
             template if template is not None else self.DEFAULT_TEMPLATE
         )
@@ -122,7 +138,9 @@ class CdsCardCreator(BaseComponent[str]):
                 links=card_fields.get("links"),
             )
         except Exception as e:
-            raise ValueError(f"Error creating card: {str(e)}")
+            raise ValueError(
+                f"Error creating CDS card: Failed to render template or parse card fields: {str(e)}"
+            )
 
     def __call__(self, doc: Document) -> Document:
         """

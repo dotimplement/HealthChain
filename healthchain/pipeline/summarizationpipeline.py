@@ -21,11 +21,11 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
 
     Examples:
         >>> # Using with GPT model
-        >>> pipeline = SummarizationPipeline.load("gpt-4o", source="openai")
+        >>> pipeline = SummarizationPipeline.from_model_id("gpt-4o", source="openai")
         >>> cds_response = pipeline(documents)
         >>>
         >>> # Using with Hugging Face
-        >>> pipeline = SummarizationPipeline.load(
+        >>> pipeline = SummarizationPipeline.from_model_id(
         ...     "facebook/bart-large-cnn",
         ...     task="summarization"
         ... )
@@ -53,6 +53,7 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
                 source=config.source.value,
                 task="summarization",
                 template=self._output_template,
+                template_path=self._output_template_path,
                 delimiter="\n",
             ),
             stage="card-creation",
