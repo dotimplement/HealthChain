@@ -257,7 +257,7 @@ def test_pipeline_class_and_representation(mock_basic_pipeline):
     assert "comp1" in repr_string
     assert "comp2" in repr_string
 
-    loaded_pipeline = Pipeline.load("dummy_path")
+    loaded_pipeline = Pipeline.from_local_model("dummy_path", source="spacy")
     assert isinstance(loaded_pipeline, Pipeline)
 
 

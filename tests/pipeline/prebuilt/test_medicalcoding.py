@@ -37,8 +37,9 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
             ModelConfig(
                 source=ModelSource.SPACY,
                 model="en_core_sci_sm",
+                task="ner",
                 path=None,
-                kwargs={"task": "ner"},
+                kwargs={},
             )
         )
         mock_spacy_nlp.return_value.assert_called_once()
@@ -67,7 +68,7 @@ def test_full_coding_pipeline_integration(mock_spacy_nlp, test_cda_request):
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_spacy_nlp,
     ):
-        pipeline = MedicalCodingPipeline.load(
+        pipeline = MedicalCodingPipeline.from_local_model(
             "./spacy/path/to/production/model", source="spacy"
         )
 
