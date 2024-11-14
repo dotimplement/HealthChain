@@ -186,7 +186,6 @@ def sandbox_decorator(
         original_init = cls.__init__
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
-            print(experiment_config)
             # Initialize parent class
             super(cls, self).__init__(*args, **kwargs, service_config=service_config)
 

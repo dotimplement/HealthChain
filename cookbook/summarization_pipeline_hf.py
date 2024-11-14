@@ -19,7 +19,12 @@ if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")
 
 
-@hc.sandbox
+@hc.sandbox(
+    experiment_config={
+        "storage_uri": "sqlite:///experiments.db",  # Where to store experiment data
+        "project_name": "patient_summary",  # Name for grouping experiments
+    }
+)
 class DischargeNoteSummarizer(ClinicalDecisionSupport):
     def __init__(self):
         # Initialize pipeline and data generator

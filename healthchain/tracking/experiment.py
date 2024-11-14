@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import json
 from typing import Any, Dict, List, Optional, Set
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -96,15 +97,9 @@ class ExperimentTracker:
                     name=component.name,
                     type=component.func.__class__.__name__,
                     stage=component.stage,
-                    config=component.__dict__,
                     position=i,
                 )
                 experiment.components.append(pc)
-
-            # Serialize entire pipeline
-            pipeline_path = self.pipeline_dir / f"{experiment_id}.pkl"
-            with open(pipeline_path, "wb") as f:
-                dill.dump(pipeline, f)
 
         # Save to database
         session = self.Session()
@@ -152,9 +147,11 @@ class ExperimentTracker:
         session.close()
         return experiments
 
-    def _extract_pipeline_metadata(self, pipeline) -> PipelineMetadata:
+    def _extract_pipeline_metadata(self, pipeline) -> Dict[str, Any]:
         components = {}
         for name, component in pipeline.__dict__.items():
+            print("#######################")
+            print(name, component)
             if not name.startswith("_"):
                 config = {}
                 if hasattr(component, "get_config"):
@@ -163,22 +160,29 @@ class ExperimentTracker:
                     config = {
                         k: v
                         for k, v in component.__dict__.items()
-                        if not k.startswith("_")
+                        if not k.startswith("_") and self._is_json_serializable(v)
                     }
 
-                components[name] = ComponentMetadata(
-                    name=component.__class__.__name__,
-                    type=f"{component.__class__.__module__}.{component.__class__.__name__}",
-                    stage="unknown",
-                    config=config,
-                    input_nodes=set(),
-                    output_nodes=set(),
-                )
+                components[name] = {
+                    "name": component.__class__.__name__,
+                    "type": f"{component.__class__.__module__}.{component.__class__.__name__}",
+                    "stage": "unknown",
+                    "config": config,
+                    "input_nodes": [],  # Convert set to list
+                    "output_nodes": [],  # Convert set to list
+                }
 
-        return PipelineMetadata(
-            name=pipeline.__class__.__name__,
-            components=components,
-            input_components=[],
-            output_components=[],
-            stages=[],
-        )
+        return {
+            "name": pipeline.__class__.__name__,
+            "components": components,
+            "input_components": [],
+            "output_components": [],
+            "stages": [],
+        }
+
+    def _is_json_serializable(self, obj):
+        try:
+            json.dumps(obj)
+            return True
+        except (TypeError, OverflowError):
+            return False
