@@ -139,8 +139,10 @@ class LangChainLLM(BaseComponent[str]):
         **kwargs: Additional parameters to pass to the chain's invoke method
 
     Example:
-        >>> from langchain.chains import LLMChain
-        >>> chain = LLMChain(llm=llm, prompt=prompt)
+        >>> from langchain_core.prompts import ChatPromptTemplate
+        >>> from langchain_openai import ChatOpenAI
+
+        >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
         >>> component = LangChainLLM(chain=chain)
         >>> doc = component(doc)  # Runs the chain on doc.data
     """

@@ -40,6 +40,7 @@ class ModelSource(Enum):
 
     SPACY = "spacy"
     HUGGINGFACE = "huggingface"
+    LANGCHAIN = "langchain"
 
 
 @dataclass
@@ -127,17 +128,20 @@ class BasePipeline(Generic[T], ABC):
     @classmethod
     def load(
         cls,
-        model_id: str,
+        model: Union[str, Callable],
         source: Union[str, ModelSource] = "huggingface",
         template: Optional[str] = None,
         **model_kwargs: Any,
     ) -> "BasePipeline":
         """
-        Load and configure a pipeline from a given model.
+        Load and configure a pipeline from a given model or LangChain chain.
 
         Args:
-            model_id (str): Identifier for the model. Can be a model name from a supported source
-                (e.g. "gpt-4", "microsoft/omniparser") or a local path to a model.
+            model (Union[str, Callable]): Identifier for the model or LangChain chain. Can be:
+                - a model name from a supported source
+                (e.g. "en_core_sci_md", "meta-llama/Llama-3.2-1B")
+                - a local path to a model
+                - a LangChain Chain instance
             source (Union[str, ModelSource], optional): Model source - can be "huggingface", "spacy",
                 "openai" or other supported sources. Defaults to "huggingface".
             template (Optional[str], optional): Template string for formatting pipeline outputs.
@@ -155,43 +159,68 @@ class BasePipeline(Generic[T], ABC):
             ValueError: If an unsupported model source is provided.
 
         Examples:
-            >>> # Load a summarization pipeline with GPT model
-            >>> pipeline = SummarizationPipeline.load("gpt-4", source="openai")
-
             >>> # Load NER pipeline with SpaCy model
-            >>> pipeline = NERPipeline.load("en_core_sci_md", source="spacy")
+            >>> pipeline = MedicalCodingPipeline.load("en_core_sci_md", source="spacy")
 
-            >>> # Load classification pipeline with BERT
-            >>> pipeline = ClassificationPipeline.load(
-            ...     "microsoft/omniparser",  # HuggingFace is default source
-            ...     task="sequence-classification"
+            >>> # Load summarization pipeline with Hugging Face model
+            >>> pipeline = SummarizationPipeline.load(
+            ...     "meta-llama/Llama-3.2-1B",  # HuggingFace is default source
+            ...     task="text-generation"
             ... )
+
+            >>> # Load pipeline with LangChain
+            >>> from langchain_core.prompts import ChatPromptTemplate
+            >>> from langchain_openai import ChatOpenAI
+            >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
+            >>> pipeline = Pipeline.load(chain, temperature=0.7, max_tokens=100)
 
             >>> # Load custom pipeline from local SpaCy model
             >>> pipeline = CustomPipeline.load("./models/spacy/my_model")
         """
+        # Initialize pipeline instance
         pipeline = cls()
+        pipeline._output_template = template
 
-        # Convert string source to enum if needed
-        if isinstance(source, str):
-            try:
-                source = ModelSource(source.lower())
-            except ValueError:
-                raise ValueError(
-                    f"Unsupported model source: {source}. "
-                    f"Supported sources: {', '.join(s.value for s in ModelSource)}"
-                )
-
-        # Handle local paths
-        if model_id.startswith("./") or model_id.startswith("/"):
-            path = Path(model_id)
-            config = ModelConfig(source=source, model_id=path.name, path=path)
+        # Create model config based on input type
+        if hasattr(model, "invoke") or hasattr(model, "__call__"):
+            # Handle LangChain Chain
+            config = ModelConfig(
+                source=ModelSource.LANGCHAIN,
+                model_id="langchain_chain",
+                config=model_kwargs,
+            )
         else:
-            config = ModelConfig(source=source, model_id=model_id)
+            # Convert string source to enum if needed
+            if isinstance(source, str):
+                source_lower = source.lower()
 
+                if source_lower == "langchain":
+                    raise ValueError(
+                        "LangChain models must be passed directly as chain objects, "
+                        "not as string source identifiers."
+                    )
+
+                try:
+                    source = ModelSource(source_lower)
+                except ValueError:
+                    supported = ", ".join(s.value for s in ModelSource)
+                    raise ValueError(
+                        f"Unsupported model source: {source}. "
+                        f"Supported sources: {supported}"
+                    )
+
+            # Handle local paths vs model IDs
+            if isinstance(model, str) and (
+                model.startswith("./") or model.startswith("/")
+            ):
+                path = Path(model)
+                config = ModelConfig(source=source, model_id=path.name, path=path)
+            else:
+                config = ModelConfig(source=source, model_id=model)
+
+        # Configure and return pipeline
         config.config = model_kwargs
         pipeline._model_config = config
-        pipeline._output_template = template
         pipeline.configure_pipeline(config)
 
         return pipeline

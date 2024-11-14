@@ -91,7 +91,7 @@ class CdsFhirConnector(BaseConnector):
             - If out_data.cds_cards is None, a warning is logged and an empty list of cards is returned.
             - System actions (out_data.cds_actions) are included in the response if present.
         """
-        if out_data._cds._cards is None:
+        if out_data.cds.get_cards() is None:
             log.warning("No CDS cards found in Document, returning empty list of cards")
             return CDSResponse(cards=[])
 

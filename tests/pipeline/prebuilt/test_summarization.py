@@ -4,15 +4,27 @@ from healthchain.pipeline.base import ModelConfig, ModelSource
 from healthchain.pipeline.summarizationpipeline import SummarizationPipeline
 
 
-def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_request):
+def test_summarization_pipeline(
+    mock_cds_fhir_connector,
+    mock_hf_transformer,
+    mock_cds_card_creator,
+    test_cds_request,
+):
     with patch(
         "healthchain.pipeline.summarizationpipeline.CdsFhirConnector",
         mock_cds_fhir_connector,
     ), patch(
-        "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component", mock_llm
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_hf_transformer,
+    ), patch(
+        "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
+        mock_cds_card_creator,
     ):
-        # This also doesn't do anything yet
-        pipeline = SummarizationPipeline.load("llama3")
+        pipeline = SummarizationPipeline()
+        config = ModelConfig(
+            source=ModelSource.HUGGINGFACE, model_id="llama3", path=None, config={}
+        )
+        pipeline.configure_pipeline(config)
 
         # Process the request through the pipeline
         cds_response = pipeline(test_cds_request)
@@ -29,7 +41,7 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
         mock_cds_fhir_connector.return_value.output.assert_called_once()
 
         # Verify that the LLM was called
-        mock_llm.assert_called_once_with(
+        mock_hf_transformer.assert_called_once_with(
             ModelConfig(
                 source=ModelSource.HUGGINGFACE,
                 model_id="llama3",
@@ -37,7 +49,13 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
                 config={"task": "summarization"},
             )
         )
-        mock_llm.return_value.assert_called_once()
+        mock_hf_transformer.return_value.assert_called_once()
+
+        mock_cds_card_creator.assert_called_once_with(
+            source=ModelSource.HUGGINGFACE.value,
+            task="summarization",
+            template=pipeline._output_template,
+        )
 
         # Verify the pipeline used the mocked input and output
         input_data = mock_cds_fhir_connector.return_value.input.return_value
@@ -60,19 +78,35 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
             ],
         }
 
+        # Verify stages are set correctly
+        assert len(pipeline._stages) == 2
+        assert "summarization" in pipeline._stages
+        assert "card-creation" in pipeline._stages
 
-def test_full_summarization_pipeline_integration(mock_llm, test_cds_request):
+
+def test_full_summarization_pipeline_integration(mock_hf_transformer, test_cds_request):
     # Use mock LLM object for now
     with patch(
-        "healthchain.pipeline.summarizationpipeline.ModelRouter.get_component", mock_llm
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_hf_transformer,
     ):
-        pipeline = SummarizationPipeline.load("llama3")
+        template = """
+    {
+        "summary": "This is a test summary",
+        "indicator": "warning",
+        "source": {{ default_source | tojson }},
+        "detail": "{{ model_output }}"
+    }
+    """
+        pipeline = SummarizationPipeline.load(
+            "llama3", source="huggingface", template=template
+        )
 
         cds_response = pipeline(test_cds_request)
-        print(cds_response)
 
         assert isinstance(cds_response, CDSResponse)
         assert len(cds_response.cards) == 1
-        assert cds_response.cards[0].summary == "Summarized discharge information"
-        assert "Patient John Doe" in cds_response.cards[0].detail
-        assert "Encounter details" in cds_response.cards[0].detail
+
+        assert cds_response.cards[0].summary == "This is a test summary"
+        assert cds_response.cards[0].indicator == "warning"
+        assert cds_response.cards[0].detail == "Generated response from Hugging Face"
