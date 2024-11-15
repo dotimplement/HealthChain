@@ -13,13 +13,8 @@ class Experiment(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime, nullable=True)
     status = Column(String)
-    sandbox_class = Column(String, nullable=True)
-    workflow = Column(String, nullable=True)
-    input_schema = Column(JSON)
-    output_schema = Column(JSON)
     tags = Column(JSON)
     pipeline_config = Column(JSON, nullable=True)
-
     components = relationship("PipelineComponent", back_populates="experiment")
 
 

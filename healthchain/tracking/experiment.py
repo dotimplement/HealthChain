@@ -80,8 +80,6 @@ class ExperimentTracker:
             start_time=datetime.now(),
             status="RUNNING",
             tags=tags or {},
-            input_schema={},
-            output_schema={},
         )
 
         # Save pipeline configuration if provided
@@ -149,10 +147,8 @@ class ExperimentTracker:
 
     def _extract_pipeline_metadata(self, pipeline) -> Dict[str, Any]:
         components = {}
-        for name, component in pipeline.__dict__.items():
-            print("#######################")
-            print(name, component)
-            if not name.startswith("_"):
+        for component in pipeline._components:
+            if not component.name.startswith("_"):
                 config = {}
                 if hasattr(component, "get_config"):
                     config = component.get_config()
@@ -163,13 +159,11 @@ class ExperimentTracker:
                         if not k.startswith("_") and self._is_json_serializable(v)
                     }
 
-                components[name] = {
+                components[component.name] = {
                     "name": component.__class__.__name__,
                     "type": f"{component.__class__.__module__}.{component.__class__.__name__}",
                     "stage": "unknown",
                     "config": config,
-                    "input_nodes": [],  # Convert set to list
-                    "output_nodes": [],  # Convert set to list
                 }
 
         return {
