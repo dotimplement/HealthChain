@@ -45,7 +45,8 @@ class ModelConfig:
     """Configuration for model initialization"""
 
     source: ModelSource
-    model: str
+    model_id: Optional[str] = None
+    pipeline_object: Optional[Any] = None
     task: Optional[str] = None
     path: Optional[Path] = None
     kwargs: Dict[str, Any] = field(default_factory=dict)
@@ -141,40 +142,68 @@ class BasePipeline(Generic[T], ABC):
     def load(
         cls,
         pipeline: Callable,
+        source: str,
         task: Optional[str] = "text-generation",
-        source: str = "langchain",
         template: Optional[str] = None,
         template_path: Optional[Union[str, Path]] = None,
         **kwargs: Any,
     ) -> "BasePipeline":
         """
-        Load a pipeline from a pre-built pipeline object (e.g. LangChain chain).
+        Load a pipeline from a pre-built pipeline object (e.g. LangChain chain or HuggingFace pipeline).
 
         Args:
-            pipeline (Callable): A callable pipeline object (e.g. LangChain chain)
+            pipeline (Callable): A callable pipeline object (e.g. LangChain chain, HuggingFace pipeline)
+            source (str): Source of the pipeline. Can be "langchain" or "huggingface".
             task (Optional[str]): Task identifier used to retrieve model outputs.
                 Defaults to "text-generation".
             template (Optional[str]): Template string for formatting outputs.
+                Defaults to None.
+            template_path (Optional[Union[str, Path]]): Path to template file.
                 Defaults to None.
             **kwargs: Additional configuration options passed to the pipeline.
 
         Returns:
             BasePipeline: Configured pipeline instance.
 
+        Raises:
+            ValueError: If pipeline is not callable or source is invalid.
+
         Examples:
+            >>> # Load LangChain pipeline
             >>> from langchain_core.prompts import ChatPromptTemplate
             >>> from langchain_openai import ChatOpenAI
             >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
-            >>> pipeline = Pipeline.load(chain, temperature=0.7)
+            >>> pipeline = Pipeline.load(chain, source="langchain", temperature=0.7)
+            >>>
+            >>> # Load HuggingFace pipeline
+            >>> from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+            >>> tokenizer = AutoTokenizer.from_pretrained("gpt2")
+            >>> model = AutoModelForCausalLM.from_pretrained("gpt2")
+            >>> pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10)
+            >>> pipeline = Pipeline.load(pipe, source="huggingface")
         """
-        if not hasattr(pipeline, "__call__") and not hasattr(pipeline, "invoke"):
+        if not (hasattr(pipeline, "__call__") or hasattr(pipeline, "invoke")):
             raise ValueError("Pipeline must be a callable object")
+
+        # Validate source
+        source = source.lower()
+        if source not in ["langchain", "huggingface"]:
+            raise ValueError(
+                "Source must be either 'langchain' or 'huggingface' for direct pipeline loading"
+            )
+
+        # For HuggingFace pipelines, try to infer task if not provided
+        if source == "huggingface" and hasattr(pipeline, "task") and not task:
+            task = pipeline.task
 
         instance = cls()
         instance._configure_output_templates(template, template_path)
 
         config = ModelConfig(
-            source=ModelSource(source.lower()), model=pipeline, task=task, kwargs=kwargs
+            source=ModelSource(source),
+            pipeline_object=pipeline,
+            task=task,
+            kwargs=kwargs,
         )
 
         instance._model_config = config
@@ -200,10 +229,15 @@ class BasePipeline(Generic[T], ABC):
             source (Union[str, ModelSource]): Model source. Defaults to "huggingface".
                 Can be "huggingface", "spacy".
             task (Optional[str]): Task identifier for the model. Defaults to "text-generation".
+            template (Optional[str]): Optional template string for formatting model output.
+            template_path (Optional[Union[str, Path]]): Optional path to template file for formatting model output.
             **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
 
         Returns:
             BasePipeline: Configured pipeline instance.
+
+        Raises:
+            ValueError: If source is not a valid ModelSource.
 
         Examples:
             >>> # Load HuggingFace model
@@ -219,12 +253,23 @@ class BasePipeline(Generic[T], ABC):
             ...     source="spacy",
             ...     disable=["parser"]
             ... )
+            >>>
+            >>> # Load with output template
+            >>> template = '''{"summary": "{{ model_output }}"}'''
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "gpt-3.5-turbo",
+            ...     source="huggingface",
+            ...     template=template
+            ... )
         """
         pipeline = cls()
         pipeline._configure_output_templates(template, template_path)
 
         config = ModelConfig(
-            source=ModelSource(source.lower()), model=model_id, task=task, kwargs=kwargs
+            source=ModelSource(source.lower()),
+            model_id=model_id,
+            task=task,
+            kwargs=kwargs,
         )
         pipeline._model_config = config
         pipeline.configure_pipeline(config)
@@ -247,10 +292,15 @@ class BasePipeline(Generic[T], ABC):
             path (Union[str, Path]): Path to local model files/directory
             source (Union[str, ModelSource]): Model source (e.g. "huggingface", "spacy")
             task (Optional[str]): Task identifier for the model. Defaults to None.
+            template (Optional[str]): Optional template string for formatting model output.
+            template_path (Optional[Union[str, Path]]): Optional path to template file for formatting model output.
             **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
 
         Returns:
             BasePipeline: Configured pipeline instance.
+
+        Raises:
+            ValueError: If source is not a valid ModelSource.
 
         Examples:
             >>> # Load local HuggingFace model
@@ -267,6 +317,14 @@ class BasePipeline(Generic[T], ABC):
             ...     source="spacy",
             ...     disable=["parser"]
             ... )
+            >>>
+            >>> # Load with output template
+            >>> template = '''{"summary": "{{ model_output }}"}'''
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/gpt_model",
+            ...     source="huggingface",
+            ...     template=template
+            ... )
         """
         pipeline = cls()
         pipeline._configure_output_templates(template, template_path)
@@ -274,7 +332,7 @@ class BasePipeline(Generic[T], ABC):
         path = Path(path)
         config = ModelConfig(
             source=ModelSource(source.lower()),
-            model=path.name,
+            model_id=path.name,
             path=path,
             task=task,
             kwargs=kwargs,

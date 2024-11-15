@@ -1,8 +1,8 @@
 from healthchain.pipeline.base import BasePipeline
-from healthchain.pipeline.components.cdscardcreator import CdsCardCreator
+from healthchain.pipeline.components import CdsCardCreator
 from healthchain.pipeline.modelrouter import ModelConfig
 from healthchain.pipeline.mixins import ModelRoutingMixin
-from healthchain.io.cdsfhirconnector import CdsFhirConnector
+from healthchain.io import CdsFhirConnector
 
 
 class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
