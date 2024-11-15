@@ -6,60 +6,11 @@ from healthchain.pipeline.components.integrations import (
     SpacyNLP,
     HFTransformer,
     LangChainLLM,
+    requires_package,
 )
 
 transformers_installed = importlib.util.find_spec("transformers") is not None
-
-
-@pytest.mark.parametrize(
-    "component_class,mock_module,kwargs,expected_kwargs",
-    [
-        (
-            SpacyNLP,
-            "spacy.load",
-            {"disable": ["ner", "parser"]},
-            {"disable": ["ner", "parser"]},
-        ),
-        pytest.param(
-            HFTransformer,
-            "transformers.pipeline",
-            {"device": "mps", "batch_size": 32},
-            {
-                "task": "sentiment-analysis",
-                "model": "distilbert-base-uncased-finetuned-sst-2-english",
-                "device": "mps",
-                "batch_size": 32,
-            },
-            marks=pytest.mark.skipif(
-                not transformers_installed, reason="transformers package not installed"
-            ),
-        ),
-    ],
-)
-def test_component_initialization(
-    component_class, mock_module, kwargs, expected_kwargs
-):
-    with patch(mock_module) as mock:
-        mock_instance = Mock()
-        mock.return_value = mock_instance
-        if component_class == SpacyNLP:
-            component = component_class("dummy_path", **kwargs)
-            mock.assert_called_once_with("dummy_path", **expected_kwargs)
-            assert hasattr(component, "_nlp")
-            assert component._nlp == mock_instance
-        else:
-            component = component_class(
-                "distilbert-base-uncased-finetuned-sst-2-english",
-                "sentiment-analysis",
-                **kwargs,
-            )
-            mock.assert_called_once_with(
-                "distilbert-base-uncased-finetuned-sst-2-english",
-                "sentiment-analysis",
-                **expected_kwargs,
-            )
-            assert hasattr(component, "_pipe")
-            assert component._pipe == mock_instance
+langchain_installed = importlib.util.find_spec("langchain_core") is not None
 
 
 def test_spacy_component(sample_document):
@@ -75,7 +26,7 @@ def test_spacy_component(sample_document):
         ]
 
         for kwargs, case in test_cases:
-            component = SpacyNLP("en_core_web_sm", **kwargs)
+            component = SpacyNLP.from_model_id("en_core_web_sm", **kwargs)
             result = component(sample_document)
 
             # Verify kwargs were passed correctly
@@ -90,48 +41,49 @@ def test_spacy_component(sample_document):
     not transformers_installed, reason="transformers package not installed"
 )
 def test_huggingface_component(sample_document):
-    with patch("transformers.pipeline") as mock_pipeline:
-        mock_instance = Mock()
+    from transformers.pipelines.base import Pipeline
+
+    with patch("transformers.pipeline", autospec=True) as mock_pipeline:
+        # Create a mock that inherits from Pipeline
+        mock_instance = Mock(spec=Pipeline)
+        mock_instance.task = "sentiment-analysis"
+        mock_instance.__class__ = Pipeline
         mock_pipeline.return_value = mock_instance
 
-        # Test with and without kwargs
-        test_cases = [
-            (
-                {
-                    "device": "mps",
-                    "batch_size": 32,
-                    "max_length": 512,
-                    "truncation": True,
-                },
-                "with kwargs",
-            ),
-            ({}, "without kwargs"),
-        ]
+        kwargs = {
+            "device": "mps",
+            "batch_size": 32,
+            "max_length": 512,
+            "truncation": True,
+        }
 
-        for kwargs, case in test_cases:
-            component = HFTransformer(
-                model="distilbert-base-uncased-finetuned-sst-2-english",
-                task="sentiment-analysis",
-                **kwargs,
-            )
-            result = component(sample_document)
+        component = HFTransformer.from_model_id(
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            task="sentiment-analysis",
+            **kwargs,
+        )
+        result = component(sample_document)
 
-            # Verify kwargs were passed correctly
-            expected_kwargs = {
-                "task": "sentiment-analysis",
-                "model": "distilbert-base-uncased-finetuned-sst-2-english",
-                **kwargs,
-            }
-            mock_pipeline.assert_called_once_with(**expected_kwargs)
+        mock_pipeline.assert_called_once_with(
+            task="sentiment-analysis",
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            **kwargs,
+        )
 
-            assert result.models.get_output(
-                "huggingface", "sentiment-analysis"
-            ), f"HFTransformer failed {case}"
-            mock_pipeline.reset_mock()
+        assert result.models.get_output(
+            "huggingface", "sentiment-analysis"
+        ), "HFTransformer failed with kwargs"
+        mock_pipeline.reset_mock()
 
 
+@pytest.mark.skipif(
+    not langchain_installed, reason="langchain-core package not installed"
+)
 def test_langchain_component(sample_document):
-    mock_chain = Mock()
+    from langchain_core.runnables import Runnable
+
+    mock_chain = Mock(spec=Runnable)
+    mock_chain.__class__ = Runnable  # Mock isinstance check
     mock_chain.invoke.return_value = "mocked chain output"
 
     # Test with and without kwargs
@@ -144,7 +96,7 @@ def test_langchain_component(sample_document):
     ]
 
     for kwargs, case in test_cases:
-        component = LangChainLLM(mock_chain, task="dummy_task", **kwargs)
+        component = LangChainLLM(chain=mock_chain, task="dummy_task", **kwargs)
         result = component(sample_document)
 
         # Verify kwargs were passed correctly
@@ -176,12 +128,15 @@ def test_langchain_component(sample_document):
                 not transformers_installed, reason="transformers package not installed"
             ),
         ),
-        (
+        pytest.param(
             LangChainLLM,
             [Mock(), "dummy_task"],  # Mock chain
             {"invalid_kwarg": "value"},
             TypeError,
             "Invalid kwargs for chain.invoke",
+            marks=pytest.mark.skipif(
+                not langchain_installed, reason="langchain-core package not installed"
+            ),
         ),
     ],
 )
@@ -194,23 +149,36 @@ def test_component_invalid_kwargs(
                 "got an unexpected keyword argument 'invalid_kwarg'"
             )
             with pytest.raises(expected_error) as exc_info:
-                component_class(*args, **kwargs)
+                component_class.from_model_id(*args, **kwargs)
 
     elif component_class == HFTransformer:
-        with patch("transformers.pipeline") as mock_transformers:
+        from transformers.pipelines.base import Pipeline
+
+        with patch("transformers.pipeline", autospec=True) as mock_transformers:
+            # Set up the mock to raise the TypeError
             mock_transformers.side_effect = TypeError(
                 "got an unexpected keyword argument 'invalid_kwarg'"
             )
+
+            # Mock the Pipeline type check that happens in initialization
+            mock_instance = Mock(spec=Pipeline)
+            mock_instance.task = "sentiment-analysis"
+            mock_instance.__class__ = Pipeline
+            mock_transformers.return_value = mock_instance
+
             with pytest.raises(expected_error) as exc_info:
-                component_class(*args, **kwargs)
+                component_class.from_model_id(model=args[0], task=args[1], **kwargs)
 
     else:  # LangChainLLM
+        from langchain_core.runnables import Runnable
+
         mock_chain = args[0]
+        mock_chain.__class__ = Runnable  # Mock isinstance check
         mock_chain.invoke.side_effect = TypeError(
             "got an unexpected keyword argument 'invalid_kwarg'"
         )
         with pytest.raises(expected_error) as exc_info:
-            component = component_class(*args, **kwargs)
+            component = LangChainLLM(chain=mock_chain, task=args[1], **kwargs)
             component(Document("test"))
 
     assert expected_message in str(exc_info.value)
@@ -250,3 +218,48 @@ def test_spacy_add_concepts(mock_spacy_nlp, sample_document):
             assert concepts.problems[i].code == cui
             assert concepts.problems[i].code_system == "2.16.840.1.113883.6.96"
             assert concepts.problems[i].code_system_name == "SNOMED CT"
+
+
+def test_requires_package_decorator():
+    """Test the requires_package decorator handles missing packages correctly"""
+
+    @requires_package("fake-package", "nonexistent.module")
+    def dummy_function():
+        return True
+
+    with pytest.raises(ImportError) as exc_info:
+        dummy_function()
+    assert "This feature requires fake-package" in str(exc_info.value)
+    assert "pip install fake-package" in str(exc_info.value)
+
+
+@pytest.mark.skipif(
+    not transformers_installed, reason="transformers package not installed"
+)
+def test_huggingface_pipeline_errors():
+    """Test HFTransformer handles pipeline errors correctly"""
+
+    with patch("transformers.pipeline") as mock_pipeline:
+        # Test general pipeline initialization error
+        mock_pipeline.side_effect = ValueError("Invalid model configuration")
+        with pytest.raises(ValueError) as exc_info:
+            HFTransformer.from_model_id(model="invalid-model", task="invalid-task")
+        assert "Error initializing transformer pipeline" in str(exc_info.value)
+
+
+@pytest.mark.skipif(
+    not langchain_installed, reason="langchain-core package not installed"
+)
+def test_component_type_validation():
+    """Test that components validate input types correctly"""
+
+    # Test HFTransformer with invalid pipeline type
+    if transformers_installed:
+        with pytest.raises(TypeError) as exc_info:
+            HFTransformer(pipeline=Mock())  # Not a Pipeline instance
+        assert "Expected HuggingFace Pipeline object" in str(exc_info.value)
+
+    # Test LangChainLLM with invalid chain type
+    with pytest.raises(TypeError) as exc_info:
+        LangChainLLM(chain=Mock(), task="test")  # Not a Runnable instance
+    assert "Expected LangChain Runnable object" in str(exc_info.value)

@@ -23,7 +23,7 @@ def test_summarization_pipeline(
         pipeline = SummarizationPipeline()
         config = ModelConfig(
             source=ModelSource.HUGGINGFACE,
-            model="llama3",
+            pipeline_object="llama3",
             task="summarization",
             path=None,
             kwargs={},
@@ -49,7 +49,7 @@ def test_summarization_pipeline(
             ModelConfig(
                 source=ModelSource.HUGGINGFACE,
                 task="summarization",
-                model="llama3",
+                pipeline_object="llama3",
                 path=None,
                 kwargs={},
             )
