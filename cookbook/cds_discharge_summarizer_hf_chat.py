@@ -19,33 +19,32 @@ if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")
 
 
+def create_summarization_chain():
+    hf = HuggingFaceEndpoint(
+        repo_id="HuggingFaceH4/zephyr-7b-beta",
+        task="text-generation",
+        max_new_tokens=512,
+        do_sample=False,
+        repetition_penalty=1.03,
+    )
+    model = ChatHuggingFace(llm=hf)
+    template = """
+    You are a bed planner for a hospital. Provide a concise, objective summary of the input text in short bullet points separated by new lines,
+    focusing on key actions such as appointments and medication dispense instructions, without using second or third person pronouns.\n'''{text}'''
+    """
+    prompt = PromptTemplate.from_template(template)
+    return prompt | model | StrOutputParser()
+
+
 @hc.sandbox
 class DischargeNoteSummarizer(ClinicalDecisionSupport):
     def __init__(self):
         # Initialize pipeline and data generator
-        chain = self._init_chain()
+        chain = create_summarization_chain()
         self.pipeline = SummarizationPipeline.load(
             chain, source="langchain", template_path="templates/cds_card_template.json"
         )
         self.data_generator = CdsDataGenerator()
-
-    def _init_chain(self):
-        hf = HuggingFaceEndpoint(
-            repo_id="HuggingFaceH4/zephyr-7b-beta",
-            task="text-generation",
-            max_new_tokens=512,
-            do_sample=False,
-            repetition_penalty=1.03,
-        )
-        model = ChatHuggingFace(llm=hf)
-        template = """
-        You are a bed planner for a hospital. Provide a concise, objective summary of the input text in short bullet points separated by new lines,
-        focusing on key actions such as appointments and medication dispense instructions, without using second or third person pronouns.\n'''{text}'''
-        """
-        prompt = PromptTemplate.from_template(template)
-        chain = prompt | model | StrOutputParser()
-
-        return chain
 
     @hc.ehr(workflow="encounter-discharge")
     def load_data_in_client(self) -> CdsFhirData:
