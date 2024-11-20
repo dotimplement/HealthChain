@@ -5,7 +5,7 @@ from .practitionergenerators import PractitionerGenerator
 from .proceduregenerators import ProcedureGenerator
 from .medicationadministrationgenerators import MedicationAdministrationGenerator
 from .medicationrequestgenerators import MedicationRequestGenerator
-from .cdsdatagenerator import CdsDataGenerator
+from .cdsdatagenerator import CdsDataGenerator, Workflow
 
 __all__ = [
     "EncounterGenerator",
@@ -16,4 +16,5 @@ __all__ = [
     "MedicationAdministrationGenerator",
     "MedicationRequestGenerator",
     "CdsDataGenerator",
+    "Workflow",
 ]

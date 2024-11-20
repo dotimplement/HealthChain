@@ -1,0 +1,6 @@
+{
+    "summary": "Action Required",
+    "indicator": "info",
+    "source": {{ default_source | tojson }},
+    "detail": "{{ model_output }}"
+}

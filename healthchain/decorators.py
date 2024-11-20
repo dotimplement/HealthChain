@@ -5,7 +5,6 @@ import asyncio
 import json
 import uuid
 import requests
-import traceback
 
 from time import sleep
 from pathlib import Path
@@ -22,7 +21,7 @@ from .utils import UrlBuilder
 
 
 log = logging.getLogger(__name__)
-traceback.print_exc()
+# traceback.print_exc()
 
 F = TypeVar("F", bound=Callable)
 

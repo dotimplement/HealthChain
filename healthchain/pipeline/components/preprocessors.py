@@ -1,7 +1,7 @@
 import re
 from healthchain.pipeline.components.base import BaseComponent
 from healthchain.io.containers import Document
-from typing import Callable, List, TypeVar, Tuple
+from typing import Callable, List, TypeVar, Tuple, Union
 
 T = TypeVar("T")
 
@@ -14,7 +14,8 @@ class TextPreProcessor(BaseComponent[Document]):
     based on the provided configuration.
 
     Attributes:
-        tokenizer (str): The tokenizer to use. Defaults to "basic".
+        tokenizer (Union[str, Callable[[str], List[str]]]): The tokenizer to use. Can be "basic" or a custom
+            tokenization function that takes a string and returns a list of tokens. Defaults to "basic".
         lowercase (bool): Whether to convert text to lowercase. Defaults to False.
         remove_punctuation (bool): Whether to remove punctuation. Defaults to False.
         standardize_spaces (bool): Whether to standardize spaces. Defaults to False.
@@ -25,7 +26,7 @@ class TextPreProcessor(BaseComponent[Document]):
 
     def __init__(
         self,
-        tokenizer: str = "basic",
+        tokenizer: Union[str, Callable[[str], List[str]]] = "basic",
         lowercase: bool = False,
         remove_punctuation: bool = False,
         standardize_spaces: bool = False,
@@ -35,7 +36,8 @@ class TextPreProcessor(BaseComponent[Document]):
         Initialize the TextPreprocessor with the given configuration.
 
         Args:
-            tokenizer (str): The tokenizer to use. Defaults to "basic".
+            tokenizer (Union[str, Callable[[str], List[str]]]): The tokenizer to use. Can be "basic" or a custom
+                tokenization function that takes a string and returns a list of tokens. Defaults to "basic".
             lowercase (bool): Whether to convert text to lowercase. Defaults to False.
             remove_punctuation (bool): Whether to remove punctuation. Defaults to False.
             standardize_spaces (bool): Whether to standardize spaces. Defaults to False.
@@ -48,37 +50,29 @@ class TextPreProcessor(BaseComponent[Document]):
         self.tokenizer = self._get_tokenizer(tokenizer)
         self.cleaning_steps = self._configure_cleaning_steps()
 
-    def _get_tokenizer(self, tokenizer: str) -> Callable[[str], List[str]]:
+    def _get_tokenizer(
+        self, tokenizer: Union[str, Callable[[str], List[str]]]
+    ) -> Callable[[str], List[str]]:
         """
         Get the tokenization function based on the specified tokenizer.
 
         Args:
-            tokenizer (str): The name of the tokenizer to use.
+            tokenizer: Either "basic" or a custom tokenization function.
 
         Returns:
             Callable[[str], List[str]]: The tokenization function.
 
         Raises:
-            ValueError: If an unsupported tokenizer is specified.
-            ImportError: If the spacy tokenizer is requested but not installed.
+            ValueError: If an unsupported tokenizer string is specified.
         """
-        # TODO: test import errors
-        if tokenizer == "basic":
+        if callable(tokenizer):
+            return tokenizer
+        elif tokenizer == "basic":
             return lambda text: text.split()
-        elif tokenizer == "spacy":
-            try:
-                import spacy
-
-                nlp = spacy.load("en_core_web_sm")
-            except (ImportError, OSError):
-                raise ImportError(
-                    "To use the spacy tokenizer, please install spaCy and download the English model:\n"
-                    "1. pip install spacy\n"
-                    "2. python -m spacy download en_core_web_sm"
-                )
-            return lambda text: [token.text for token in nlp(text)]
         else:
-            raise ValueError(f"Unsupported tokenizer: {tokenizer}")
+            raise ValueError(
+                f"Unsupported tokenizer: {tokenizer}. Use 'basic' or provide a custom tokenization function."
+            )
 
     def _configure_cleaning_steps(self) -> List[Callable[[str], str]]:
         """
@@ -152,10 +146,8 @@ class TextPreProcessor(BaseComponent[Document]):
         preprocessed_text = self._clean_text(doc.text)
         doc.preprocessed_text = preprocessed_text
 
-        # Tokenize
-        tokens = self.tokenizer(preprocessed_text)
-
-        # Update document
-        doc.tokens = tokens
+        if self.tokenizer:
+            tokens = self.tokenizer(preprocessed_text)
+            doc.tokens = tokens
 
         return doc

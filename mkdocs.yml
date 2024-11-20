@@ -21,17 +21,18 @@ nav:
       - Pipeline:
         - Overview: reference/pipeline/pipeline.md
         - Data Container: reference/pipeline/data_container.md
-        - Component: reference/pipeline/component.md
-        - Integrations: reference/pipeline/integrations.md
+        - Components:
+          - Overview: reference/pipeline/components/components.md
+          - CdsCardCreator: reference/pipeline/components/cdscardcreator.md
         - Connectors:
           - Overview: reference/pipeline/connectors/connectors.md
           - CDA Connector: reference/pipeline/connectors/cdaconnector.md
           - CDS FHIR Connector: reference/pipeline/connectors/cdsfhirconnector.md
         - Prebuilt Pipelines:
           - Medical Coding: reference/pipeline/prebuilt_pipelines/medicalcoding.md
-
-      - Models:
-        - Overview: reference/pipeline/models/models.md
+          - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md
+      - Integrations:
+        - Overview: reference/pipeline/integrations/integrations.md
       - Sandbox:
         - Overview: reference/sandbox/sandbox.md
         - Client: reference/sandbox/client.md

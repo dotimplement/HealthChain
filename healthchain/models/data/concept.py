@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Dict, Union
+from typing import List, Optional, Dict, Union
 
 
 class Standard(Enum):
@@ -108,3 +108,14 @@ class AllergyConcept(Concept):
     )
     severity: Optional[Concept] = None
     reaction: Optional[Concept] = None
+
+
+class ConceptLists(BaseModel):
+    """Container for lists of medical concepts extracted from text."""
+
+    problems: List[ProblemConcept] = []
+    allergies: List[AllergyConcept] = []
+    medications: List[MedicationConcept] = []
+
+    class Config:
+        arbitrary_types_allowed = True

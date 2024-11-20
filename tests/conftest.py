@@ -12,6 +12,7 @@ from healthchain.models import CDSRequest, CdsFhirData
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.data.concept import (
     AllergyConcept,
+    ConceptLists,
     MedicationConcept,
     ProblemConcept,
 )
@@ -395,18 +396,25 @@ def test_soap_request():
 @pytest.fixture
 def test_ccd_data():
     return CcdData(
-        problems=[ProblemConcept(code="test")],
-        medications=[MedicationConcept(code="test")],
-        allergies=[AllergyConcept(code="test")],
+        concepts=ConceptLists(
+            problems=[ProblemConcept(code="test")],
+            medications=[MedicationConcept(code="test")],
+            allergies=[AllergyConcept(code="test")],
+        )
     )
 
 
 @pytest.fixture
 def test_multiple_ccd_data():
     return CcdData(
-        problems=[ProblemConcept(code="test1"), ProblemConcept(code="test2")],
-        medications=[MedicationConcept(code="test1"), MedicationConcept(code="test2")],
-        allergies=[AllergyConcept(code="test1"), AllergyConcept(code="tes2")],
+        concepts=ConceptLists(
+            problems=[ProblemConcept(code="test1"), ProblemConcept(code="test2")],
+            medications=[
+                MedicationConcept(code="test1"),
+                MedicationConcept(code="test2"),
+            ],
+            allergies=[AllergyConcept(code="test1"), AllergyConcept(code="tes2")],
+        )
     )
 
 

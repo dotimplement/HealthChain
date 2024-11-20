@@ -4,7 +4,10 @@ from healthchain.data_generators.conditiongenerators import (
     CategoryGenerator,
     ConditionGenerator,
 )
-from healthchain.data_generators.value_sets.conditioncodes import ConditionCodeSimple, ConditionCodeComplex
+from healthchain.data_generators.value_sets.conditioncodes import (
+    ConditionCodeSimple,
+    ConditionCodeComplex,
+)
 
 
 def test_ClinicalStatusGenerator():

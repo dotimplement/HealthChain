@@ -1,8 +1,9 @@
 import logging
+
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseConnector
 from healthchain.cda_parser import CdaAnnotator
-from healthchain.models.data.ccddata import CcdData
+from healthchain.models.data import CcdData, ConceptLists
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 
@@ -60,13 +61,18 @@ class CdaConnector(BaseConnector):
             note_text = ""
 
         ccd_data = CcdData(
-            problems=self.cda_doc.problem_list,
-            medications=self.cda_doc.medication_list,
-            allergies=self.cda_doc.allergy_list,
+            concepts=ConceptLists(
+                problems=self.cda_doc.problem_list,
+                medications=self.cda_doc.medication_list,
+                allergies=self.cda_doc.allergy_list,
+            ),
             note=note_text,
         )
 
-        return Document(data=ccd_data.note, ccd_data=ccd_data)
+        doc = Document(data=ccd_data.note)
+        doc.hl7.set_ccd_data(ccd_data)
+
+        return doc
 
     def output(self, out_data: Document) -> CdaResponse:
         """
@@ -89,27 +95,31 @@ class CdaConnector(BaseConnector):
             The update behavior (overwrite or append) is determined by the
             `overwrite` attribute of the CdaConnector instance.
         """
+        # TODO: check what to do with overwrite
+        updated_ccd_data = out_data.generate_ccd(overwrite=self.overwrite)
+
         # Update the CDA document with the results
-        if out_data.ccd_data.problems:
+
+        if updated_ccd_data.concepts.problems:
             log.debug(
-                f"Updating CDA document with {len(out_data.ccd_data.problems)} problem(s)."
+                f"Updating CDA document with {len(updated_ccd_data.concepts.problems)} problem(s)."
             )
             self.cda_doc.add_to_problem_list(
-                out_data.ccd_data.problems, overwrite=self.overwrite
+                updated_ccd_data.concepts.problems, overwrite=self.overwrite
             )
-        if out_data.ccd_data.allergies:
+        if updated_ccd_data.concepts.allergies:
             log.debug(
-                f"Updating CDA document with {len(out_data.ccd_data.allergies)} allergy(ies)."
+                f"Updating CDA document with {len(updated_ccd_data.concepts.allergies)} allergy(ies)."
             )
             self.cda_doc.add_to_allergy_list(
-                out_data.ccd_data.allergies, overwrite=self.overwrite
+                updated_ccd_data.concepts.allergies, overwrite=self.overwrite
             )
-        if out_data.ccd_data.medications:
+        if updated_ccd_data.concepts.medications:
             log.debug(
-                f"Updating CDA document with {len(out_data.ccd_data.medications)} medication(s)."
+                f"Updating CDA document with {len(updated_ccd_data.concepts.medications)} medication(s)."
             )
             self.cda_doc.add_to_medication_list(
-                out_data.ccd_data.medications, overwrite=self.overwrite
+                updated_ccd_data.concepts.medications, overwrite=self.overwrite
             )
 
         # Export the updated CDA document

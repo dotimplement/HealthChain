@@ -156,6 +156,7 @@ class ConditionGenerator(BaseGenerator):
             constraints=constraints
         )
         return Condition(
+            resourceType="Condition",
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
             verificationStatus=generator_registry.get(

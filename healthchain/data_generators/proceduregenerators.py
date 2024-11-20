@@ -51,6 +51,7 @@ class ProcedureGenerator(BaseGenerator):
             constraints=constraints
         )
         return Procedure(
+            resourceType="Procedure",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             code=code,

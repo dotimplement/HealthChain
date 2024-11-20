@@ -16,24 +16,6 @@ from healthchain.models.data.cdsfhirdata import CdsFhirData
 logger = logging.getLogger(__name__)
 
 
-workflow_mappings = {
-    Workflow.encounter_discharge: [
-        {"generator": "EncounterGenerator"},
-        {"generator": "ConditionGenerator"},
-        {"generator": "ProcedureGenerator"},
-        {"generator": "MedicationRequestGenerator"},
-    ],
-    Workflow.patient_view: [
-        {"generator": "PatientGenerator"},
-        {"generator": "EncounterGenerator"},
-        {"generator": "ConditionGenerator"},
-    ],
-}
-
-# TODO: Add ordering and logic so that patient/encounter IDs are passed to subsequent generators
-# TODO: Some of the resources should be allowed to be multiplied
-
-
 class CdsDataGenerator:
     """
     A class to generate CDS (Clinical Decision Support) data based on specified workflows and constraints.
@@ -44,9 +26,26 @@ class CdsDataGenerator:
         data (CdsFhirData): The generated CDS FHIR data.
     """
 
+    # TODO: Add ordering and logic so that patient/encounter IDs are passed to subsequent generators
+    # TODO: Some of the resources should be allowed to be multiplied
+
+    default_workflow_mappings = {
+        Workflow.encounter_discharge: [
+            {"generator": "EncounterGenerator"},
+            {"generator": "ConditionGenerator"},
+            {"generator": "ProcedureGenerator"},
+            {"generator": "MedicationRequestGenerator"},
+        ],
+        Workflow.patient_view: [
+            {"generator": "PatientGenerator"},
+            {"generator": "EncounterGenerator"},
+            {"generator": "ConditionGenerator"},
+        ],
+    }
+
     def __init__(self):
         self.registry = generator_registry
-        self.mappings = workflow_mappings
+        self.mappings = self.default_workflow_mappings
         self.data: CdsFhirData = None
 
     def fetch_generator(self, generator_name: str) -> Callable:
@@ -111,7 +110,7 @@ class CdsDataGenerator:
         if parsed_free_text:
             results.append(BundleEntry(resource=random.choice(parsed_free_text)))
 
-        output = CdsFhirData(prefetch=Bundle(entry=results))
+        output = CdsFhirData(prefetch=Bundle(resourceType="Bundle", entry=results))
         self.data = output
         return output
 
@@ -156,7 +155,7 @@ class CdsDataGenerator:
                 status="generated",
                 div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
             )
-            doc = DocumentReference(text=text)
+            doc = DocumentReference(resourceType="DocumentReference", text=text)
             document_list.append(doc)
 
         return document_list

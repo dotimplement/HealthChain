@@ -1,6 +1,7 @@
 import pytest
 
 from healthchain.io.containers import Document
+from healthchain.io.containers.document import CdsAnnotations
 from healthchain.models.responses.cdsresponse import Action, CDSResponse, Card
 from healthchain.models.data.cdsfhirdata import CdsFhirData
 
@@ -15,9 +16,9 @@ def test_input_with_valid_prefetch(cds_fhir_connector, test_cds_request):
     # Assert the result
     assert isinstance(result, Document)
     assert result.data == str(input_data.prefetch)
-    assert isinstance(result.fhir_resources, CdsFhirData)
-    assert result.fhir_resources.context == input_data.context.model_dump()
-    assert result.fhir_resources.model_dump_prefetch() == input_data.prefetch
+    assert isinstance(result._hl7._fhir_data, CdsFhirData)
+    assert result._hl7._fhir_data.context == input_data.context.model_dump()
+    assert result._hl7._fhir_data.model_dump_prefetch() == input_data.prefetch
 
 
 def test_output_with_cards(cds_fhir_connector):
@@ -44,7 +45,7 @@ def test_output_with_cards(cds_fhir_connector):
             resourceId="123",
         )
     ]
-    out_data = Document(data="", cds_cards=cards, cds_actions=actions)
+    out_data = Document(data="", _cds=CdsAnnotations(_cards=cards, _actions=actions))
 
     # Call the output method
     result = cds_fhir_connector.output(out_data)
@@ -57,7 +58,7 @@ def test_output_with_cards(cds_fhir_connector):
 
 def test_output_without_cards(cds_fhir_connector, caplog):
     # Prepare test data
-    out_data = Document(data="", cds_cards=None)
+    out_data = Document(data="", _cds=CdsAnnotations(_cards=None, _actions=None))
 
     # Call the output method
     result = cds_fhir_connector.output(out_data)
