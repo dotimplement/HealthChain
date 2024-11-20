@@ -2,6 +2,8 @@
 
 A sandbox example of NoteReader clinical documentation improvement which extracts problems, medications, and allergies entries from the progress note section of a pre-configured CDA document.
 
+Full example coming soon!
+
 ```python
 import healthchain as hc
 from healthchain.use_cases import ClinicalDocumentation

@@ -8,8 +8,9 @@ Components are the building blocks of the healthchain pipeline. They are designe
 | Component | Description | Methods |
 |-----------|-------------|---------|
 | `TextPreprocessor` | Handles text preprocessing tasks | `tokenizer`: Specifies the tokenization method (e.g., `"basic"` or `"spacy"`) <br> `lowercase`: Converts text to lowercase if `True` <br> `remove_punctuation`: Removes punctuation if `True` <br> `standardize_spaces`: Standardizes spaces if `True` <br> `regex`: List of custom regex patterns and replacements |
-| `Model` | Wraps machine learning and NLP models for use in the pipeline | `load_model`: Loads the specified model |
+| `LLM` | Wraps local LLMs for use in the pipeline [TODO] | `load_model`: Loads the specified model |
 | `TextPostProcessor` | Handles text postprocessing tasks | `postcoordination_lookup`: Dictionary for entity refinement lookups |
+| `CdsCardCreator` | Formats model outputs into CDS cards for clinical decision support | `create_card`: Creates a CDS card |
 
 ## Creating Custom Components
 

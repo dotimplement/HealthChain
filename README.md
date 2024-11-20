@@ -19,6 +19,8 @@ pip install healthchain
 ```
 First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain/) page!
 
+Came here from NHS RPySOC 2024 ✨? [CDS sandbox walkthrough](https://dotimplement.github.io/HealthChain/cookbook/cds_sandbox/)
+
 ## Features
 - [x] 🛠️ Build custom pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
 - [x] 🏗️ Add built-in [CDA and FHIR parsers](https://dotimplement.github.io/HealthChain/reference/utilities/cda_parser/) to connect your pipeline to interoperability standards
@@ -40,7 +42,7 @@ Pipelines provide a flexible way to build and manage processing pipelines for NL
 ```python
 from healthchain.io.containers import Document
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import TextPreProcessor, Model, TextPostProcessor
+from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
 
 # Initialize the pipeline
 nlp_pipeline = Pipeline[Document]()
@@ -50,8 +52,8 @@ preprocessor = TextPreProcessor(tokenizer="spacy")
 nlp_pipeline.add_node(preprocessor)
 
 # Add Model component (assuming we have a pre-trained model)
-model = Model(model_path="path/to/pretrained/model")
-nlp_pipeline.add_node(model)
+spacy_nlp = SpacyNLP.from_model_id("en_core_sci_md", source="spacy")
+nlp_pipeline.add_node(spacy_nlp)
 
 # Add TextPostProcessor component
 postprocessor = TextPostProcessor(
@@ -68,7 +70,7 @@ nlp = nlp_pipeline.build()
 # Use the pipeline
 result = nlp(Document("Patient has a history of heart attack and high blood pressure."))
 
-print(f"Entities: {result.entities}")
+print(f"Entities: {result.nlp.spacy_doc.ents}")
 ```
 
 #### Adding connectors
@@ -97,7 +99,9 @@ from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
 
 # Load from model ID
-pipeline = MedicalCodingPipeline.from_model_id("en_core_sci_md", source="spacy")
+pipeline = MedicalCodingPipeline.from_model_id(
+    model="blaze999/Medical-NER", task="token-classification", source="huggingface"
+)
 
 # Or load from local model
 pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
@@ -134,7 +138,7 @@ from typing import List
 class MyCDS(ClinicalDecisionSupport):
     def __init__(self) -> None:
         self.pipeline = SummarizationPipeline.from_model_id(
-            "DISLab/SummLlama3.2-3B", source="huggingface"
+            "facebook/bart-large-cnn", source="huggingface"
         )
         self.data_generator = CdsDataGenerator()
 
@@ -200,9 +204,9 @@ Then run:
 healthchain run mycds.py
 ```
 By default, the server runs at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`.
+
 ## Road Map
 - [ ] 🎛️ Versioning and artifact management for pipelines sandbox EHR configurations
-- [ ] 🤖 Integrations with other pipeline libraries such as spaCy, HuggingFace, LangChain etc.
 - [ ] ❓ Testing and evaluation framework for pipelines and use cases
 - [ ] 🧠 Multi-modal pipelines that that have built-in NLP to utilize unstructured data
 - [ ] ✨ Improvements to synthetic data generator methods
