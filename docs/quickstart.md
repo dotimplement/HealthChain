@@ -48,7 +48,7 @@ print(doc.pos_tags)
 
 Components are stateful - they're classes instead of functions. They can be useful for grouping related processing steps together, setting configurations, or wrapping specific model loading steps.
 
-HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/component.md) and [Models](./reference/pipeline/models/models.md) documentation pages.
+HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/components/components.md) and [Integrations](./reference/pipeline/integrations/integrations.md) documentation pages.
 
 Add components to your pipeline with the `.add_node()` method and compile with `.build()`.
 
@@ -100,7 +100,15 @@ For a full list of available prebuilt pipelines and details on how to configure 
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
 
-pipeline = MedicalCodingPipeline.load("./path/to/model")
+# Load from pre-built chain
+chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
+pipeline = MedicalCodingPipeline.load(chain, source="langchain")
+
+# Or load from model ID
+pipeline = MedicalCodingPipeline.from_model_id("facebook/bart-large-cnn", source="huggingface")
+
+# Or load from local model
+pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
 
 cda_data = CdaRequest(document="<CDA XML content>")
 output = pipeline(cda_data)
@@ -128,7 +136,9 @@ from healthchain.models import CdaRequest, CdaResponse, CcdData
 class MyCoolSandbox(ClinicalDocumentation):
     def __init__(self) -> None:
         # Load your pipeline
-        self.pipeline = MedicalCodingPipeline.load("./path/to/model")
+        self.pipeline = MedicalCodingPipeline.from_local_model(
+            "./path/to/model", source="spacy"
+        )
 
     @hc.ehr(workflow="sign-note-inpatient")
     def load_data_in_client(self) -> CcdData:

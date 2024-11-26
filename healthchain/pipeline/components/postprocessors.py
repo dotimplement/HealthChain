@@ -44,16 +44,16 @@ class TextPostProcessor(BaseComponent[Document]):
             If the entity_lookup is empty or the document has no 'entities' attribute,
             the document is returned unchanged.
         """
-        if not self.entity_lookup or not hasattr(doc, "entities"):
+        if not self.entity_lookup or not hasattr(doc._nlp, "_entities"):
             return doc
 
         refined_entities = []
-        for entity in doc.get_entities():
+        for entity in doc.nlp.get_entities():
             entity_text = entity["text"]
             if entity_text in self.entity_lookup:
                 entity["text"] = self.entity_lookup[entity_text]
             refined_entities.append(entity)
 
-        doc.entities = refined_entities
+        doc.nlp.set_entities(refined_entities)
 
         return doc

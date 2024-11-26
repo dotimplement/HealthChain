@@ -1,15 +1,34 @@
 from unittest.mock import patch
 from healthchain.models.responses.cdsresponse import CDSResponse
+from healthchain.pipeline.base import ModelConfig, ModelSource
 from healthchain.pipeline.summarizationpipeline import SummarizationPipeline
 
 
-def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_request):
+def test_summarization_pipeline(
+    mock_cds_fhir_connector,
+    mock_hf_transformer,
+    mock_cds_card_creator,
+    test_cds_request,
+):
     with patch(
         "healthchain.pipeline.summarizationpipeline.CdsFhirConnector",
         mock_cds_fhir_connector,
-    ), patch("healthchain.pipeline.summarizationpipeline.LLM", mock_llm):
-        # This also doesn't do anything yet
-        pipeline = SummarizationPipeline.load("gpt-3.5-turbo")
+    ), patch(
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_hf_transformer,
+    ), patch(
+        "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
+        mock_cds_card_creator,
+    ):
+        pipeline = SummarizationPipeline()
+        config = ModelConfig(
+            source=ModelSource.HUGGINGFACE,
+            pipeline_object="llama3",
+            task="summarization",
+            path=None,
+            kwargs={},
+        )
+        pipeline.configure_pipeline(config)
 
         # Process the request through the pipeline
         cds_response = pipeline(test_cds_request)
@@ -26,16 +45,32 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
         mock_cds_fhir_connector.return_value.output.assert_called_once()
 
         # Verify that the LLM was called
-        mock_llm.assert_called_once_with("gpt-3.5-turbo")
-        mock_llm.return_value.assert_called_once()
+        mock_hf_transformer.assert_called_once_with(
+            ModelConfig(
+                source=ModelSource.HUGGINGFACE,
+                task="summarization",
+                pipeline_object="llama3",
+                path=None,
+                kwargs={},
+            )
+        )
+        mock_hf_transformer.return_value.assert_called_once()
+
+        mock_cds_card_creator.assert_called_once_with(
+            source=ModelSource.HUGGINGFACE.value,
+            task="summarization",
+            template=pipeline._output_template,
+            template_path=pipeline._output_template_path,
+            delimiter="\n",
+        )
 
         # Verify the pipeline used the mocked input and output
         input_data = mock_cds_fhir_connector.return_value.input.return_value
-        assert input_data.fhir_resources.context == {
+        assert input_data.hl7._fhir_data.context == {
             "patientId": "123",
             "encounterId": "456",
         }
-        assert input_data.fhir_resources.model_dump_prefetch() == {
+        assert input_data.hl7._fhir_data.model_dump_prefetch() == {
             "resourceType": "Bundle",
             "entry": [
                 {
@@ -50,17 +85,41 @@ def test_summarization_pipeline(mock_cds_fhir_connector, mock_llm, test_cds_requ
             ],
         }
 
+        # Verify stages are set correctly
+        assert len(pipeline._stages) == 2
+        assert "summarization" in pipeline._stages
+        assert "card-creation" in pipeline._stages
 
-def test_full_summarization_pipeline_integration(mock_llm, test_cds_request):
+
+def test_full_summarization_pipeline_integration(
+    mock_hf_transformer, test_cds_request, tmp_path
+):
     # Use mock LLM object for now
-    with patch("healthchain.pipeline.summarizationpipeline.LLM", mock_llm):
-        pipeline = SummarizationPipeline.load("gpt-3.5-turbo")
+    with patch(
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_hf_transformer,
+    ):
+        # Create a temporary template file
+        template_file = tmp_path / "card_template.json"
+        template_content = """
+        {
+            "summary": "This is a test summary",
+            "indicator": "warning",
+            "source": {{ default_source | tojson }},
+            "detail": "{{ model_output }}"
+        }
+        """
+        template_file.write_text(template_content)
+
+        pipeline = SummarizationPipeline.from_model_id(
+            "llama3", source="huggingface", template_path=template_file
+        )
 
         cds_response = pipeline(test_cds_request)
-        print(cds_response)
 
         assert isinstance(cds_response, CDSResponse)
         assert len(cds_response.cards) == 1
-        assert cds_response.cards[0].summary == "Summarized discharge information"
-        assert "Patient John Doe" in cds_response.cards[0].detail
-        assert "Encounter details" in cds_response.cards[0].detail
+
+        assert cds_response.cards[0].summary == "This is a test summary"
+        assert cds_response.cards[0].indicator == "warning"
+        assert cds_response.cards[0].detail == "Generated response from Hugging Face"

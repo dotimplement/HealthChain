@@ -1,7 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
 from inspect import signature
+from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Optional,
     Type,
@@ -15,6 +17,7 @@ from typing import (
 from functools import reduce
 from pydantic import BaseModel
 from dataclasses import dataclass, field
+from enum import Enum
 
 from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
@@ -27,6 +30,26 @@ T = TypeVar("T")
 
 # TODO: dynamic resolution, maybe
 PositionType = Literal["first", "last", "default", "after", "before"]
+
+
+class ModelSource(Enum):
+    """Enumeration of supported model sources"""
+
+    SPACY = "spacy"
+    HUGGINGFACE = "huggingface"
+    LANGCHAIN = "langchain"
+
+
+@dataclass
+class ModelConfig:
+    """Configuration for model initialization"""
+
+    source: ModelSource
+    model_id: Optional[str] = None
+    pipeline_object: Optional[Any] = None
+    task: Optional[str] = None
+    path: Optional[Path] = None
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -53,12 +76,34 @@ class PipelineNode(Generic[T]):
 
 class BasePipeline(Generic[T], ABC):
     """
-    Abstract BasePipeline class for creating and managing a data processing pipeline.
-    The BasePipeline class allows users to create a data processing pipeline by adding components and defining their dependencies and execution order. It provides methods for adding, removing, and replacing components, as well as building and executing the pipeline.
-    This is an abstract base class and should be subclassed to create specific pipeline implementations.
+    Abstract base class for creating and managing data processing pipelines.
+
+    The BasePipeline class provides a framework for building modular data processing pipelines
+    by allowing users to add, remove, and configure components with defined dependencies and
+    execution order. Components can be added at specific positions, grouped into stages, and
+    connected via input/output connectors.
+
+    This is an abstract base class that should be subclassed to create specific pipeline
+    implementations.
+
     Attributes:
-        components (List[PipelineNode]): A list of PipelineNode objects representing the components in the pipeline.
-        stages (Dict[str, List[Callable]]): A dictionary mapping stage names to lists of component functions.
+        _components (List[PipelineNode[T]]): Ordered list of pipeline components
+        _stages (Dict[str, List[Callable]]): Components grouped by processing stage
+        _built_pipeline (Optional[Callable]): Compiled pipeline function
+        _input_connector (Optional[BaseConnector[T]]): Connector for processing input data
+        _output_connector (Optional[BaseConnector[T]]): Connector for processing output data
+        _output_template (Optional[str]): Template string for formatting pipeline outputs
+        _model_config (Optional[ModelConfig]): Configuration for the pipeline model
+
+    Example:
+        >>> class MyPipeline(BasePipeline[str]):
+        ...     def configure_pipeline(self, config: ModelConfig) -> None:
+        ...         self.add_node(preprocess, stage="preprocessing")
+        ...         self.add_node(process, stage="processing")
+        ...         self.add_node(postprocess, stage="postprocessing")
+        ...
+        >>> pipeline = MyPipeline()
+        >>> result = pipeline("input text")
     """
 
     def __init__(self):
@@ -67,6 +112,8 @@ class BasePipeline(Generic[T], ABC):
         self._built_pipeline: Optional[Callable] = None
         self._input_connector: Optional[BaseConnector[T]] = None
         self._output_connector: Optional[BaseConnector[T]] = None
+        self._output_template: Optional[str] = None
+        self._output_template_path: Optional[Path] = None
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -74,41 +121,267 @@ class BasePipeline(Generic[T], ABC):
         )
         return f"[{components_repr}]"
 
-    @classmethod
-    def load(cls, model_path: str) -> "BasePipeline":
+    def _configure_output_templates(
+        self,
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+    ) -> None:
         """
-        Load and configure a pipeline from a given model path.
-
-        This class method creates a new instance of the pipeline, configures it
-        using the provided model path, and returns the configured pipeline.
+        Configure template settings for the pipeline.
 
         Args:
-            model_path (str): The path to the model used for configuring the pipeline.
+            template (Optional[str]): Template string for formatting outputs.
+                Defaults to None.
+            template_path (Optional[Union[str, Path]]): Path to template file.
+                Defaults to None.
+        """
+        self._output_template = template
+        self._output_template_path = Path(template_path) if template_path else None
+
+    @classmethod
+    def load(
+        cls,
+        pipeline: Callable,
+        source: str,
+        task: Optional[str] = "text-generation",
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
+    ) -> "BasePipeline":
+        """
+        Load a pipeline from a pre-built pipeline object (e.g. LangChain chain or HuggingFace pipeline).
+
+        Args:
+            pipeline (Callable): A callable pipeline object (e.g. LangChain chain, HuggingFace pipeline)
+            source (str): Source of the pipeline. Can be "langchain" or "huggingface".
+            task (Optional[str]): Task identifier used to retrieve model outputs.
+                Defaults to "text-generation".
+            template (Optional[str]): Template string for formatting outputs.
+                Defaults to None.
+            template_path (Optional[Union[str, Path]]): Path to template file.
+                Defaults to None.
+            **kwargs: Additional configuration options passed to the pipeline.
 
         Returns:
-            BasePipeline: A new instance of the pipeline, configured with the given model.
+            BasePipeline: Configured pipeline instance.
+
+        Raises:
+            ValueError: If pipeline is not callable or source is invalid.
+
+        Examples:
+            >>> # Load LangChain pipeline
+            >>> from langchain_core.prompts import ChatPromptTemplate
+            >>> from langchain_openai import ChatOpenAI
+            >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
+            >>> pipeline = Pipeline.load(chain, source="langchain", temperature=0.7)
+            >>>
+            >>> # Load HuggingFace pipeline
+            >>> from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+            >>> tokenizer = AutoTokenizer.from_pretrained("gpt2")
+            >>> model = AutoModelForCausalLM.from_pretrained("gpt2")
+            >>> pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10)
+            >>> pipeline = Pipeline.load(pipe, source="huggingface")
+        """
+        if not (hasattr(pipeline, "__call__") or hasattr(pipeline, "invoke")):
+            raise ValueError("Pipeline must be a callable object")
+
+        # Validate source
+        source = source.lower()
+        if source not in ["langchain", "huggingface"]:
+            raise ValueError(
+                "Source must be either 'langchain' or 'huggingface' for direct pipeline loading"
+            )
+
+        # For HuggingFace pipelines, try to infer task if not provided
+        if source == "huggingface" and hasattr(pipeline, "task") and not task:
+            task = pipeline.task
+
+        instance = cls()
+        instance._configure_output_templates(template, template_path)
+
+        config = ModelConfig(
+            source=ModelSource(source),
+            pipeline_object=pipeline,
+            task=task,
+            kwargs=kwargs,
+        )
+
+        instance._model_config = config
+        instance.configure_pipeline(config)
+
+        return instance
+
+    @classmethod
+    def from_model_id(
+        cls,
+        model_id: str,
+        source: Union[str, ModelSource] = "huggingface",
+        task: Optional[str] = "text-generation",
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
+    ) -> "BasePipeline":
+        """
+        Load pipeline from a model identifier.
+
+        Args:
+            model_id (str): Model identifier (e.g. HuggingFace model ID, SpaCy model name)
+            source (Union[str, ModelSource]): Model source. Defaults to "huggingface".
+                Can be "huggingface", "spacy".
+            task (Optional[str]): Task identifier for the model. Defaults to "text-generation".
+            template (Optional[str]): Optional template string for formatting model output.
+            template_path (Optional[Union[str, Path]]): Optional path to template file for formatting model output.
+            **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
+
+        Returns:
+            BasePipeline: Configured pipeline instance.
+
+        Raises:
+            ValueError: If source is not a valid ModelSource.
+
+        Examples:
+            >>> # Load HuggingFace model
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "facebook/bart-large-cnn",
+            ...     task="summarization",
+            ...     temperature=0.7
+            ... )
+            >>>
+            >>> # Load SpaCy model
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "en_core_sci_md",
+            ...     source="spacy",
+            ...     disable=["parser"]
+            ... )
+            >>>
+            >>> # Load with output template
+            >>> template = '''{"summary": "{{ model_output }}"}'''
+            >>> pipeline = Pipeline.from_model_id(
+            ...     "gpt-3.5-turbo",
+            ...     source="huggingface",
+            ...     template=template
+            ... )
         """
         pipeline = cls()
-        pipeline.configure_pipeline(model_path)
+        pipeline._configure_output_templates(template, template_path)
+
+        config = ModelConfig(
+            source=ModelSource(source.lower()),
+            model_id=model_id,
+            task=task,
+            kwargs=kwargs,
+        )
+        pipeline._model_config = config
+        pipeline.configure_pipeline(config)
+
+        return pipeline
+
+    @classmethod
+    def from_local_model(
+        cls,
+        path: Union[str, Path],
+        source: Union[str, ModelSource],
+        task: Optional[str] = None,
+        template: Optional[str] = None,
+        template_path: Optional[Union[str, Path]] = None,
+        **kwargs: Any,
+    ) -> "BasePipeline":
+        """Load pipeline from a local model path.
+
+        Args:
+            path (Union[str, Path]): Path to local model files/directory
+            source (Union[str, ModelSource]): Model source (e.g. "huggingface", "spacy")
+            task (Optional[str]): Task identifier for the model. Defaults to None.
+            template (Optional[str]): Optional template string for formatting model output.
+            template_path (Optional[Union[str, Path]]): Optional path to template file for formatting model output.
+            **kwargs: Additional configuration options passed to the model. e.g. temperature, max_length, etc.
+
+        Returns:
+            BasePipeline: Configured pipeline instance.
+
+        Raises:
+            ValueError: If source is not a valid ModelSource.
+
+        Examples:
+            >>> # Load local HuggingFace model
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/my_summarizer",
+            ...     source="huggingface",
+            ...     task="summarization",
+            ...     temperature=0.7
+            ... )
+            >>>
+            >>> # Load local SpaCy model
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/en_core_sci_md",
+            ...     source="spacy",
+            ...     disable=["parser"]
+            ... )
+            >>>
+            >>> # Load with output template
+            >>> template = '''{"summary": "{{ model_output }}"}'''
+            >>> pipeline = Pipeline.from_local_model(
+            ...     "models/gpt_model",
+            ...     source="huggingface",
+            ...     template=template
+            ... )
+        """
+        pipeline = cls()
+        pipeline._configure_output_templates(template, template_path)
+
+        path = Path(path)
+        config = ModelConfig(
+            source=ModelSource(source.lower()),
+            model_id=path.name,
+            path=path,
+            task=task,
+            kwargs=kwargs,
+        )
+        pipeline._model_config = config
+        pipeline.configure_pipeline(config)
 
         return pipeline
 
     @abstractmethod
-    def configure_pipeline(self, model_path: str) -> None:
+    def configure_pipeline(self, model_config: ModelConfig) -> None:
         """
-        Configure the pipeline based on the provided model path.
+        Configure the pipeline based on the provided model configuration.
 
         This method should be implemented by subclasses to add specific components
-        and configure the pipeline according to the given model.
+        and configure the pipeline according to the given model configuration.
+        The configuration typically involves:
+        1. Setting up input/output connectors
+        2. Adding model components based on the model source
+        3. Adding any additional processing nodes
+        4. Configuring the pipeline stages and execution order
 
         Args:
-            model_path (str): The path to the model used for configuring the pipeline.
+            model_config (ModelConfig): Configuration object containing:
+                - source: Model source (e.g. huggingface, spacy, langchain)
+                - model: Model identifier or path
+                - task: Optional task name (e.g. summarization, ner)
+                - path: Optional local path to model files
+                - kwargs: Additional model configuration parameters
 
         Returns:
             None
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
+
+        Example:
+            >>> def configure_pipeline(self, config: ModelConfig):
+            ...     # Add FHIR connector for input/output
+            ...     connector = FhirConnector()
+            ...     self.add_input(connector)
+            ...
+            ...     # Add model component
+            ...     model = self.get_model_component(config)
+            ...     self.add_node(model, stage="processing")
+            ...
+            ...     # Add output formatting
+            ...     self.add_node(OutputFormatter(), stage="formatting")
+            ...     self.add_output(connector)
         """
         raise NotImplementedError("This method must be implemented by subclasses.")
 

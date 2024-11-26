@@ -172,6 +172,4 @@ class EncounterGenerator(BaseGenerator):
             subject={"reference": patient_reference, "display": patient_reference},
             actualPeriod=generator_registry.get("PeriodGenerator").generate(),
             location=[generator_registry.get("EncounterLocationGenerator").generate()],
-            participant=[],
-            reason=[],
         )

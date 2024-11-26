@@ -18,6 +18,20 @@ def test_text_preprocessor_basic_config():
     assert processed_doc.tokens == ["hello", "world", "this", "is", "a", "test"]
 
 
+def test_text_preprocessor_callable_tokenizer():
+    # Custom tokenizer that splits on vowels
+    def custom_tokenizer(text):
+        return [t for t in text.split() if t]
+
+    preprocessor = TextPreProcessor(tokenizer=custom_tokenizer, lowercase=True)
+
+    doc = Document("Hello World")
+    processed_doc = preprocessor(doc)
+
+    assert processed_doc.preprocessed_text == "hello world"
+    assert processed_doc.tokens == ["hello", "world"]
+
+
 def test_text_preprocessor_custom_regex_config():
     custom_regex_preprocessor = TextPreProcessor(
         tokenizer="basic",
