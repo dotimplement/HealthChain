@@ -208,7 +208,7 @@ By default, the server runs at `http://127.0.0.1:8000`, and you can interact wit
 ## Road Map
 - [ ] 🎛️ Versioning and artifact management for pipelines sandbox EHR configurations
 - [ ] ❓ Testing and evaluation framework for pipelines and use cases
-- [ ] 🧠 Multi-modal pipelines that that have built-in NLP to utilize unstructured data
+- [ ] 🧠 Multi-modal pipelines that have built-in NLP to utilize unstructured data
 - [ ] ✨ Improvements to synthetic data generator methods
 - [ ] 👾 Frontend UI for EHR client and visualization features
 - [ ] 🚀 Production deployment options
