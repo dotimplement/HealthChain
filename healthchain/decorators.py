@@ -5,7 +5,6 @@ import asyncio
 import json
 import uuid
 import requests
-
 from time import sleep
 from pathlib import Path
 from datetime import datetime
@@ -14,6 +13,7 @@ from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
 from healthchain.workflows import UseCaseType
 from healthchain.apimethod import APIMethod
+from healthchain.tracking.experiment import ExperimentTracker, ExperimentStatus
 
 from .base import BaseUseCase
 from .service import Service
@@ -124,15 +124,19 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
 
     Parameters:
         arg: Optional argument which can be either a callable (class) directly or a configuration dict.
-        **kwargs: Arbitrary keyword arguments, mainly used to pass in 'service_config'.
-        'service_config' must be a dictionary of valid kwargs to pass into uvivorn.run()
+        **kwargs: Arbitrary keyword arguments for configuring the service and experiment tracking.
+            service_config: Dictionary of valid kwargs to pass into uvivorn.run()
+            experiment_config: Dictionary with storage_uri and project_name for experiment tracking
 
     Returns:
         If `arg` is callable, it applies the default decorator with no extra configuration.
         Otherwise, it uses the provided arguments to configure the service environment.
 
     Example:
-    @sandbox(service_config={"port": 9000})
+    @sandbox(
+        service_config={"port": 9000},
+        experiment_config={"storage_uri": "./experiments", "project_name": "my_project"}
+    )
     class myCDS(ClinicalDecisionSupport):
         def __init__(self) -> None:
             self.data_generator = None
@@ -143,30 +147,33 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
         return sandbox_decorator()(cls)  # Apply default decorator with default settings
     else:
         # Arguments were provided, or no arguments but with parentheses
-        if "service_config" not in kwargs:
+        valid_configs = {"service_config", "experiment_config"}
+        invalid_args = set(kwargs.keys()) - valid_configs
+        if invalid_args:
             log.warning(
-                f"{list(kwargs.keys())} is not a valid argument and will not be used; use 'service_config'."
+                f"{list(invalid_args)} are not valid arguments and will not be used; "
+                f"use {list(valid_configs)}."
             )
+
         service_config = arg if arg is not None else kwargs.get("service_config", {})
+        experiment_config = kwargs.get("experiment_config", {})
 
-        return sandbox_decorator(service_config)
+        return sandbox_decorator(service_config, experiment_config)
 
 
-def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
+def sandbox_decorator(
+    service_config: Optional[Dict] = None, experiment_config: Optional[Dict] = None
+) -> Callable:
     """
-    A decorator function that sets up a sandbox environment. It modifies the class initialization
-    to incorporate service and client management based on provided configurations. It will:
+    Decorator that configures a sandbox class with service and experiment tracking.
 
-    - Initialise the use case strategy class
-    - Set up a service instance
-    - Trigger .send_request() function from the configured client
-
-    Parameters:
-        service_config: A dictionary containing configurations for the service.
-
-    Returns:
-        A wrapper function that modifies the class to which it is applied.
+    Args:
+        service_config: Optional configuration for the service
+        experiment_config: Optional configuration for experiment tracking
+            storage_uri: Where to store experiment data
+            project_name: Name of the project for grouping experiments
     """
+
     if service_config is None:
         service_config = {}
 
@@ -179,9 +186,30 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
         original_init = cls.__init__
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
-            # initialse parent class, which should be a strategy use case
+            # Initialize parent class
             super(cls, self).__init__(*args, **kwargs, service_config=service_config)
-            original_init(self, *args, **kwargs)  # Call the original __init__
+
+            # Initialize experiment tracker
+            storage_uri = (
+                experiment_config.get("storage_uri", "sqlite:///experiments.db")
+                if experiment_config
+                else "./output/experiments"
+            )
+            project_name = (
+                experiment_config.get("project_name", "healthchain")
+                if experiment_config
+                else "healthchain"
+            )
+
+            if experiment_config:
+                self.experiment_tracker = ExperimentTracker(
+                    storage_uri=storage_uri, project_name=project_name
+                )
+            else:
+                self.experiment_tracker = None
+
+            # Call original init
+            original_init(self, *args, **kwargs)
 
             service_route_count = 0
             client_count = 0
@@ -230,6 +258,21 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
             self.sandbox_id = uuid.uuid4()
 
+            # Start experiment tracking
+            pipeline = getattr(self, "pipeline", None)
+            if self.experiment_tracker:
+                self.experiment_tracker.start_experiment(
+                    name=f"{self.__class__.__name__}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                    pipeline=pipeline,
+                    tags={
+                        "sandbox_class": self.__class__.__name__,
+                        "workflow": self._client.workflow.value
+                        if self._client
+                        else None,
+                    },
+                )
+
+            # Configure logging
             if logging_config:
                 logging.config.dictConfig(logging_config)
             else:
@@ -259,19 +302,16 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                 service_id=service_id,
             )
 
-            # Send async request from client
+            # Send request and get response
             log.info(
-                f"Sending {len(self._client.request_data)} requests generated by {self._client.__class__.__name__} to {self.url.route}"
+                f"Sending {len(self._client.request_data)} requests to {self.url.route}"
+            )
+            self.responses = asyncio.run(
+                self._client.send_request(url=self.url.service)
             )
 
-            try:
-                self.responses = asyncio.run(
-                    self._client.send_request(url=self.url.service)
-                )
-            except Exception as e:
-                log.error(f"Couldn't start client: {e}")
-
             if save_data:
+                # Save request/response data as before
                 save_dir = Path(save_dir)
                 request_path = ensure_directory_exists(save_dir / "requests")
                 if self.type == UseCaseType.clindoc:
@@ -317,9 +357,16 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             log.info("Shutting down server...")
             requests.get(self.url.base + "/shutdown")
 
+            # End experiment successfully
+            if self.experiment_tracker:
+                self.experiment_tracker.end_experiment(ExperimentStatus.COMPLETED)
+
         cls.start_sandbox = start_sandbox
         cls.stop_sandbox = stop_sandbox
-
         return cls
 
     return wrapper
+
+
+# Update the sandbox alias
+# sandbox = sandbox_decorator
