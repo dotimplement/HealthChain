@@ -9,49 +9,47 @@ T = TypeVar("T", bound=BaseComponent)
 
 class ModelRouter(Generic[T]):
     """
-    A utility class used in prebuilt pipelines that creates appropriate components based on model source.
-    Maps model sources to initialization functions.
+    A utility class that creates appropriate model components based on configuration.
 
-    The ModelRouter handles initialization of different model types (e.g. SpaCy, Hugging Face, LangChain)
+    The ModelRouter handles initialization of different model types (SpaCy, Hugging Face, LangChain)
     based on a provided ModelConfig. It abstracts away the specific initialization details
     for each model source and provides a unified interface through get_component().
 
-    The router supports three main model sources:
+    Supported model sources:
     - SpaCy: For NLP tasks like NER, dependency parsing etc.
     - Hugging Face: For transformer-based models and tasks
     - LangChain: For LLM chains and chat-based tasks
 
     Attributes:
-        _init_functions (Dict[ModelSource, Callable]): Mapping of model sources to their
-            initialization functions
+        _init_functions (Dict[ModelSource, Callable]): Maps model sources to initialization functions
         model_config (ModelConfig): Currently active model configuration
 
     Examples:
-        >>> # Initialize SpaCy model
+        >>> # SpaCy model
         >>> config = ModelConfig(
         ...     source=ModelSource.SPACY,
-        ...     model="en_core_sci_md",
+        ...     model_id="en_core_sci_md",
         ...     kwargs={"disable": ["parser"]}
         ... )
         >>> router = ModelRouter()
         >>> spacy_component = router.get_component(config)
 
-        >>> # Initialize Hugging Face model
+        >>> # Hugging Face model
         >>> config = ModelConfig(
         ...     source=ModelSource.HUGGINGFACE,
-        ...     model="bert-base-uncased",
+        ...     model_id="bert-base-uncased",
         ...     task="text-classification",
         ...     kwargs={"device": "cuda"}
         ... )
         >>> hf_component = router.get_component(config)
 
-        >>> # Initialize LangChain model
+        >>> # LangChain model
         >>> from langchain_core.prompts import ChatPromptTemplate
         >>> from langchain_openai import ChatOpenAI
         >>> chain = ChatPromptTemplate.from_template("What is {input}?") | ChatOpenAI()
         >>> config = ModelConfig(
         ...     source=ModelSource.LANGCHAIN,
-        ...     model=chain,
+        ...     pipeline_object=chain,
         ...     task="chat",
         ...     kwargs={"temperature": 0.7}
         ... )
@@ -77,7 +75,8 @@ class ModelRouter(Generic[T]):
         Args:
             config (ModelConfig): Configuration object containing:
                 - source: The model source (e.g. ModelSource.SPACY, ModelSource.HUGGINGFACE)
-                - model: Model identifier, path, or LangChain chain instance
+                - model_id: Model identifier for pre-trained models
+                - pipeline_object: Optional pre-initialized model/chain instance
                 - task: Optional task name for the model (e.g. "ner", "text-classification")
                 - path: Optional local path to model files
                 - kwargs: Optional dict with additional configuration parameters
@@ -100,60 +99,46 @@ class ModelRouter(Generic[T]):
         return init_func()
 
     def _init_spacy_model(self) -> T:
-        """Initialize SpaCy model component.
+        """Initialize SpaCy model component."""
 
-        Uses the stored model_config to initialize a SpacyNLP with either:
-        - A local model from model_config.path if specified
-        - A remote/installed model using model_config.model_id
-
-        Returns:
-            SpacyNLP: Initialized SpaCy model component
-
-        Raises:
-            ImportError: If spacy or required model is not installed
-        """
         from healthchain.pipeline.components.integrations import SpacyNLP
 
         if self.model_config.path is not None:
-            return SpacyNLP(model=self.model_config.path, **self.model_config.kwargs)
+            return SpacyNLP.from_model_id(
+                model=self.model_config.path, **self.model_config.kwargs
+            )
 
-        return SpacyNLP(model=self.model_config.model, **self.model_config.kwargs)
+        return SpacyNLP.from_model_id(
+            model=self.model_config.model_id, **self.model_config.kwargs
+        )
 
     def _init_huggingface_model(self) -> T:
-        """Initialize Hugging Face model component.
+        """Initialize Hugging Face model component."""
 
-        Uses the stored model_config to initialize a HFTransformer with either:
-        - A local model from model_config.path if specified
-        - A remote/installed model using model_config.model_id
-
-        The task parameter is extracted from model_config.config if provided.
-
-        Returns:
-            HFTransformer: Initialized Hugging Face model component
-
-        Raises:
-            ImportError: If transformers or required model is not installed
-        """
         from healthchain.pipeline.components.integrations import HFTransformer
 
         if self.model_config.path is not None:
-            return HFTransformer(
+            return HFTransformer.from_model_id(
                 model=self.model_config.path,
                 task=self.model_config.task,
                 **self.model_config.kwargs,
             )
-        return HFTransformer(
-            model=self.model_config.model,
+        if self.model_config.pipeline_object is not None:
+            return HFTransformer(pipeline=self.model_config.pipeline_object)
+
+        return HFTransformer.from_model_id(
+            model=self.model_config.model_id,
             task=self.model_config.task,
             **self.model_config.kwargs,
         )
 
     def _init_langchain_model(self) -> T:
         """Initialize LangChain model component."""
+
         from healthchain.pipeline.components.integrations import LangChainLLM
 
         return LangChainLLM(
-            chain=self.model_config.model,
+            chain=self.model_config.pipeline_object,
             task=self.model_config.task,
             **self.model_config.kwargs,
         )

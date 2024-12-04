@@ -11,17 +11,28 @@ HealthChain comes with a set of prebuilt pipelines that are out-of-the-box imple
 | Pipeline | Container | Compatible Connector | Description | Example Use Case |
 |----------|-----------|-----------|-------------|------------------|
 | [**MedicalCodingPipeline**](./prebuilt_pipelines/medicalcoding.md) | `Document` | `CdaConnector` | An NLP pipeline that processes free-text clinical notes into structured data | Automatically generating SNOMED CT codes from clinical notes |
-| **SummarizationPipeline** [TODO] | `Document` | `CdsFhirConnector` | An NLP pipeline for summarizing clinical notes | Generating discharge summaries from patient history and notes |
+| [**SummarizationPipeline**](./prebuilt_pipelines/summarization.md) | `Document` | `CdsFhirConnector` | An NLP pipeline for summarizing clinical notes | Generating discharge summaries from patient history and notes |
 | **QAPipeline** [TODO] | `Document` | N/A | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
 | **ClassificationPipeline** [TODO] | `Tabular` | `CdsFhirConnector` | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
 
 Prebuilt pipelines are end-to-end workflows with Connectors built into them. They interact with raw data received from EHR interfaces, usually CDA or FHIR data from specific [use cases](../sandbox/use_cases/use_cases.md).
 
+You can load your models directly as a pipeline object, from local files or from a remote model repository such as Hugging Face.
+
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.models import CdaRequest
 
-pipeline = MedicalCodingPipeline.load('/path/to/model')
+# Load from Hugging Face
+pipeline = MedicalCodingPipeline.from_model_id(
+    'gpt2', source="huggingface"
+)
+# Load from local model files
+pipeline = MedicalCodingPipeline.from_local_model(
+    '/path/to/model', source="spacy"
+)
+# Load from a pipeline object
+pipeline = MedicalCodingPipeline.load(pipeline_object)
 
 cda_request = CdaRequest(document="<Clinical Document>")
 cda_response = pipeline(cda_request)
@@ -34,6 +45,12 @@ To customize a prebuilt pipeline, you can use the [pipeline management methods](
 If you need more control and don't mind writing more code, you can subclass `BasePipeline` and implement your own pipeline logic.
 
 [(BasePipeline API Reference)](../../api/pipeline.md#healthchain.pipeline.base.BasePipeline)
+
+## Integrations
+
+HealthChain offers powerful integrations with popular NLP libraries, enhancing its capabilities and allowing you to build more sophisticated pipelines. These integrations include components for spaCy, Hugging Face Transformers, and LangChain, enabling you to leverage state-of-the-art NLP models and techniques within your HealthChain workflows.
+
+Integrations are covered in detail on the [Integrations](./integrations/integrations.md) homepage.
 
 ## Freestyle 🕺
 
@@ -87,7 +104,7 @@ pipeline.add_node(remove_stopwords)
 
 Components are pre-configured building blocks that perform specific tasks. They are defined as separate classes and can be reused across multiple pipelines.
 
-You can see the full list of available components at the [Components](./component.md) page.
+You can see the full list of available components at the [Components](./components/components.md) page.
 
 ```python
 from healthchain.pipeline import TextPreProcessor
@@ -130,12 +147,6 @@ cda_connector = CdaConnector()
 pipeline.add_input(cda_connector)
 pipeline.add_output(cda_connector)
 ```
-
-### Integrations
-
-HealthChain offers powerful integrations with popular NLP libraries, enhancing its capabilities and allowing you to build more sophisticated pipelines. These integrations include components for spaCy, Hugging Face Transformers, and LangChain, enabling you to leverage state-of-the-art NLP models and techniques within your HealthChain workflows.
-
-Integrations are covered in detail on the [Integration](./integrations.md) homepage.
 
 ## Pipeline Management 🔨
 

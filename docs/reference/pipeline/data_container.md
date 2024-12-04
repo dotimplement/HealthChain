@@ -23,30 +23,58 @@ container_from_json = DataContainer.from_json(data_json)
 
 ## Document
 
-The `Document` class is used to store and manipulate text data. It extends `DataContainer` and provides additional functionality for working with text, including integration with spaCy.
+The `Document` class is used to store and manipulate text data along with various annotations. It extends `BaseDocument` and provides comprehensive functionality for working with text, NLP annotations, clinical concepts, and more.
 
 ```python
 from healthchain.io.containers import Document
 
-doc = Document("OpenAI released GPT-4 in 2023.")
+# Create a basic document
+doc = Document("Patient presents with hypertension and diabetes.")
 
-# Basic text operations
-print(f"Char count: {doc.nlp.char_count()}")
-print(f"Word count: {doc.nlp.word_count()}")
-
-# Access tokens and entities (requires spaCy preprocessing)
+# Access NLP annotations
+print(f"Word count: {doc.word_count()}")
 print(f"Tokens: {doc.nlp.get_tokens()}")
 print(f"Entities: {doc.nlp.get_entities()}")
+
+# Add clinical concepts
+from healthchain.models.data.concept import ProblemConcept, MedicationConcept
+doc.add_concepts(
+    problems=[ProblemConcept(display_name="Hypertension")],
+    medications=[MedicationConcept(display_name="Aspirin")]
+)
+
+# Generate CCD data
+ccd_data = doc.generate_ccd()
+
+# Add CDS cards and actions
+from healthchain.models.responses import Card, Action
+doc.add_cds_cards([Card(summary="Recommended follow-up")])
+doc.add_cds_actions([Action(type="order", description="Schedule follow-up")])
+
+# Access model outputs
+huggingface_output = doc.models.get_output("huggingface", "classification")
+generated_text = doc.models.get_generated_text("langchain", "summarization")
+
+# Access spacy doc
+spacy_doc = doc.nlp.get_spacy_doc()
 
 # Iterate over tokens
 for token in doc:
     print(token)
 
-# Get document length (word count)
+# Get document length (character count)
 print(f"Document length: {len(doc)}")
 ```
 
-Note: Some features like tokenization and entity recognition require setting a spaCy Doc object using a preprocessor. [TODO]
+The Document class includes several key components:
+
+- `nlp`: NLP annotations (tokens, entities, embeddings, spaCy docs)
+- `concepts`: Clinical concepts (problems, medications, allergies)
+- `hl7`: Structured clinical documents (CCD, FHIR)
+- `cds`: Clinical decision support results (cards, actions)
+- `models`: ML model outputs (Hugging Face, LangChain)
+
+Document API Reference: [healthchain.io.containers.document](../../api/containers.md#healthchain.io.containers.document)
 
 ## Tabular
 
