@@ -121,9 +121,9 @@ class HFTransformer(BaseComponent[str]):
         >>> doc = component(doc)  # Generates summary of doc.data
     """
 
-    def __init__(self, model: str, task: str, **kwargs: Any):
+    def __init__(self, task: str, model: str, **kwargs: Any):
         try:
-            from transformers import pipeline
+            import transformers
         except ImportError:
             raise ImportError(
                 "Could not import transformers. Please install it with: "
@@ -131,7 +131,7 @@ class HFTransformer(BaseComponent[str]):
             )
 
         try:
-            pipe = pipeline(task=task, model=model, **kwargs)
+            pipe = transformers.pipeline(task=task, model=model, **kwargs)
         except TypeError as e:
             raise TypeError(f"Invalid kwargs for transformers.pipeline: {str(e)}")
         except Exception as e:

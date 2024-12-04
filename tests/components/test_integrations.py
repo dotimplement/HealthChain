@@ -25,8 +25,6 @@ transformers_installed = importlib.util.find_spec("transformers") is not None
             "transformers.pipeline",
             {"device": "mps", "batch_size": 32},
             {
-                "task": "sentiment-analysis",
-                "model": "distilbert-base-uncased-finetuned-sst-2-english",
                 "device": "mps",
                 "batch_size": 32,
             },
@@ -49,13 +47,13 @@ def test_component_initialization(
             assert component._nlp == mock_instance
         else:
             component = component_class(
-                "distilbert-base-uncased-finetuned-sst-2-english",
                 "sentiment-analysis",
+                "distilbert-base-uncased-finetuned-sst-2-english",
                 **kwargs,
             )
             mock.assert_called_once_with(
-                "distilbert-base-uncased-finetuned-sst-2-english",
-                "sentiment-analysis",
+                task="sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
                 **expected_kwargs,
             )
             assert hasattr(component, "_pipe")
