@@ -13,10 +13,10 @@ from healthchain.data_generators.value_sets.conditioncodes import (
 def test_ClinicalStatusGenerator():
     clinical_status = ClinicalStatusGenerator.generate()
     assert (
-        clinical_status.coding_field[0].system_field
+        clinical_status.coding[0].system
         == "http://terminology.hl7.org/CodeSystem/condition-clinical"
     )
-    assert clinical_status.coding_field[0].code_field in (
+    assert clinical_status.coding[0].code in (
         "active",
         "recurrence",
         "inactive",
@@ -27,10 +27,10 @@ def test_ClinicalStatusGenerator():
 def test_VerificationStatusGenerator():
     verification_status = VerificationStatusGenerator.generate()
     assert (
-        verification_status.coding_field[0].system_field
+        verification_status.coding[0].system
         == "http://terminology.hl7.org/CodeSystem/condition-ver-status"
     )
-    assert verification_status.coding_field[0].code_field in (
+    assert verification_status.coding[0].code in (
         "provisional",
         "confirmed",
     )
@@ -38,15 +38,14 @@ def test_VerificationStatusGenerator():
 
 def test_CategoryGenerator():
     category = CategoryGenerator.generate()
-    assert category.coding_field[0].system_field == "http://snomed.info/sct"
-    assert category.coding_field[0].code_field in ("55607006", "404684003")
+    assert category.coding[0].system == "http://snomed.info/sct"
+    assert category.coding[0].code in ("55607006", "404684003")
 
 
 def test_ConditionGenerator():
     condition_model = ConditionGenerator.generate("Patient/456", "Encounter/789")
     value_set = [x.code for x in ConditionCodeSimple().value_set]
     value_set.extend([x.code for x in ConditionCodeComplex().value_set])
-    assert condition_model.resourceType == "Condition"
     assert condition_model.subject_field.reference_field == "Patient/456"
     assert condition_model.encounter_field.reference_field == "Encounter/789"
     assert condition_model.id_field is not None

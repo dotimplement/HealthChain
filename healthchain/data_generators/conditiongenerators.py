@@ -7,16 +7,23 @@ from healthchain.data_generators.basegenerators import (
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.fhir_resources.generalpurpose import (
-    CodeableConcept,
-    Coding,
-    Reference,
-)
-from healthchain.fhir_resources.condition import (
-    Condition,
-    ConditionStage,
-    ConditionParticipant,
-)
+
+# from healthchain.fhir_resources.generalpurpose import (
+#     CodeableConcept,
+#     Coding,
+#     Reference,
+# )
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
+from fhir.resources.reference import Reference
+
+# from healthchain.fhir_resources.condition import (
+#     Condition,
+#     ConditionStage,
+#     ConditionParticipant,
+# )
+from fhir.resources.condition import Condition, ConditionStage, ConditionParticipant
+
 from healthchain.data_generators.value_sets.conditioncodes import (
     ConditionCodeSimple,
     ConditionCodeComplex,
@@ -156,7 +163,6 @@ class ConditionGenerator(BaseGenerator):
             constraints=constraints
         )
         return Condition(
-            resourceType="Condition",
             id=generator_registry.get("IdGenerator").generate(),
             clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
             verificationStatus=generator_registry.get(

@@ -23,10 +23,13 @@ from healthchain.fhir_resources.primitives import (
     urlModel,
     uuidModel,
 )
-from healthchain.fhir_resources.generalpurpose import (
-    CodeableConcept,
-    Coding,
-)
+
+# from healthchain.fhir_resources.generalpurpose import (
+#     CodeableConcept,
+#     Coding,
+# )
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
 
 
 faker = Faker()
