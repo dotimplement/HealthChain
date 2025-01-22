@@ -1,15 +1,6 @@
 from typing import Optional
 from faker import Faker
 
-from healthchain.fhir_resources.medicationrequest import (
-    MedicationRequest,
-    Medication,
-    Dosage,
-)
-from healthchain.fhir_resources.generalpurpose import (
-    Reference,
-    CodeableReference,
-)
 from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
@@ -19,6 +10,10 @@ from healthchain.data_generators.basegenerators import (
 from healthchain.data_generators.value_sets.medicationcodes import (
     MedicationRequestMedication,
 )
+from fhir.resources.medicationrequest import MedicationRequest
+from fhir.resources.dosage import Dosage
+from fhir.resources.reference import Reference
+from fhir.resources.codeablereference import CodeableReference
 
 
 faker = Faker()
@@ -51,16 +46,10 @@ class MedicationRequestGenerator(BaseGenerator):
         Faker.seed(random_seed)
         subject_reference = "Patient/123"
         encounter_reference = "Encounter/123"
-        contained_medication = Medication(
-            code=generator_registry.get(
-                "MedicationRequestContainedGenerator"
-            ).generate()
-        )
         return MedicationRequest(
             resourceType="MedicationRequest",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
-            contained=[contained_medication],
             medication=CodeableReference(
                 reference=Reference(reference="Medication/123")
             ),

@@ -3,7 +3,7 @@ import copy
 from pydantic import BaseModel, Field
 from typing import Dict
 
-from healthchain.fhir_resources.bundleresources import Bundle
+from fhir.resources.bundle import Bundle
 
 
 class CdsFhirData(BaseModel):

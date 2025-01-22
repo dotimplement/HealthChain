@@ -1,22 +1,19 @@
 from typing import Optional
 from faker import Faker
 
-from healthchain.fhir_resources.encounter import (
-    Encounter,
-    EncounterLocation,
-)
-from healthchain.fhir_resources.primitives import dateTimeModel
-from healthchain.fhir_resources.generalpurpose import (
-    Coding,
-    CodeableConcept,
-    Period,
-    Reference,
-)
+from fhir.resources.encounter import Encounter, EncounterLocation
+
+from fhir.resources.coding import Coding
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.period import Period
+from fhir.resources.reference import Reference
 from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
 )
+
+from datetime import datetime
 
 
 faker = Faker()
@@ -24,22 +21,17 @@ faker = Faker()
 
 @register_generator
 class PeriodGenerator(BaseGenerator):
-    """
-    A generator class for creating FHIR Period resources.
-
-    Methods:
-        generate() -> Period:
-            Generates a FHIR Period resource with random start and end times.
-    """
-
     @staticmethod
     def generate():
-        start = faker.date_time()
-        end = faker.date_time_between(start_date=start).isoformat()
-        start = start.isoformat()
+        # Use date_between instead of date() for more control
+        start = faker.date_between(
+            start_date="-30y",  # You can adjust this range
+            end_date="today",
+        )
+        end = faker.date_between_dates(date_start=start, date_end=datetime.now())
         return Period(
-            start=dateTimeModel(start),
-            end=dateTimeModel(end),
+            start=start,
+            end=end,
         )
 
 
@@ -155,7 +147,6 @@ class EncounterGenerator(BaseGenerator):
         Faker.seed(random_seed)
         patient_reference = "Patient/123"
         return Encounter(
-            resourceType="Encounter",
             id=generator_registry.get("IdGenerator").generate(),
             status=faker.random_element(
                 elements=(
@@ -166,9 +157,9 @@ class EncounterGenerator(BaseGenerator):
                     "cancelled",
                 )
             ),
-            class_field=[generator_registry.get("ClassGenerator").generate()],
+            class_fhir=[generator_registry.get("ClassGenerator").generate()],
             priority=generator_registry.get("EncounterPriorityGenerator").generate(),
-            type_field=[generator_registry.get("EncounterTypeGenerator").generate()],
+            type=[generator_registry.get("EncounterTypeGenerator").generate()],
             subject={"reference": patient_reference, "display": patient_reference},
             actualPeriod=generator_registry.get("PeriodGenerator").generate(),
             location=[generator_registry.get("EncounterLocationGenerator").generate()],

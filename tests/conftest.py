@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
-from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
+from fhir.resources.bundle import Bundle, BundleEntry
 from healthchain.models import CDSRequest, CdsFhirData
 from healthchain.models.data.ccddata import CcdData
 from healthchain.models.data.concept import (
@@ -51,7 +51,9 @@ class synth_data:
 
 class MockDataGenerator:
     def __init__(self) -> None:
-        self.data = CdsFhirData(context={}, prefetch=Bundle(entry=[BundleEntry()]))
+        self.data = CdsFhirData(
+            context={}, prefetch=Bundle(entry=[BundleEntry()], type="document")
+        )
         # self.data = synth_data(context={}, prefetch=MockBundle())
         self.workflow = None
 

@@ -18,9 +18,5 @@ def test_MedicationRequestGenerator():
     medication_request = generator.generate()
     value_set = [x.code for x in MedicationRequestMedication().value_set]
     assert medication_request is not None
-    assert medication_request.resourceType == "MedicationRequest"
-    assert medication_request.id_field is not None
-    assert (
-        medication_request.contained_field[0].code_field.coding_field[0].code_field
-        in value_set
-    )
+    assert medication_request.id is not None
+    assert medication_request.contained[0].code.coding[0].code in value_set

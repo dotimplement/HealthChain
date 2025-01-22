@@ -8,20 +8,10 @@ from healthchain.data_generators.basegenerators import (
     CodeableConceptGenerator,
 )
 
-# from healthchain.fhir_resources.generalpurpose import (
-#     CodeableConcept,
-#     Coding,
-#     Reference,
-# )
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
 from fhir.resources.reference import Reference
 
-# from healthchain.fhir_resources.condition import (
-#     Condition,
-#     ConditionStage,
-#     ConditionParticipant,
-# )
 from fhir.resources.condition import Condition, ConditionStage, ConditionParticipant
 
 from healthchain.data_generators.value_sets.conditioncodes import (

@@ -8,30 +8,29 @@ from healthchain.data_generators.encountergenerators import (
 def test_ClassGenerator():
     patient_class = ClassGenerator.generate()
     assert (
-        patient_class.coding_field[0].system_field
+        patient_class.coding[0].system
         == "http://terminology.hl7.org/CodeSystem/v3-ActCode"
     )
-    assert patient_class.coding_field[0].code_field in ("IMP", "AMB")
-    assert patient_class.coding_field[0].display_field in ("inpatient", "ambulatory")
+    assert patient_class.coding[0].code in ("IMP", "AMB")
+    assert patient_class.coding[0].display in ("inpatient", "ambulatory")
 
 
 def test_EncounterTypeGenerator():
     encounter_type = EncounterTypeGenerator.generate()
-    assert encounter_type.coding_field[0].system_field == "http://snomed.info/sct"
-    assert encounter_type.coding_field[0].display_field in ("consultation", "emergency")
+    assert encounter_type.coding[0].system == "http://snomed.info/sct"
+    assert encounter_type.coding[0].display in ("consultation", "emergency")
 
 
 def test_EncounterModel():
     encounter = EncounterGenerator.generate()
 
-    assert encounter.resourceType == "Encounter"
-    assert encounter.id_field is not None
-    assert encounter.status_field in (
+    assert encounter.id is not None
+    assert encounter.status in (
         "planned",
         "in-progress",
         "on-hold",
         "discharged",
         "cancelled",
     )
-    assert encounter.subject_field.reference_field == "Patient/123"
-    assert encounter.subject_field.display_field == "Patient/123"
+    assert encounter.subject.reference == "Patient/123"
+    assert encounter.subject.display == "Patient/123"

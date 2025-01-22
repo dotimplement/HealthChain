@@ -46,10 +46,10 @@ def test_ConditionGenerator():
     condition_model = ConditionGenerator.generate("Patient/456", "Encounter/789")
     value_set = [x.code for x in ConditionCodeSimple().value_set]
     value_set.extend([x.code for x in ConditionCodeComplex().value_set])
-    assert condition_model.subject_field.reference_field == "Patient/456"
-    assert condition_model.encounter_field.reference_field == "Encounter/789"
-    assert condition_model.id_field is not None
-    assert condition_model.subject_field is not None
-    assert condition_model.encounter_field is not None
-    assert condition_model.code_field is not None
-    assert condition_model.code_field.coding_field[0].code_field in value_set
+    assert condition_model.subject.reference == "Patient/456"
+    assert condition_model.encounter.reference == "Encounter/789"
+    assert condition_model.id is not None
+    assert condition_model.subject is not None
+    assert condition_model.encounter is not None
+    assert condition_model.code is not None
+    assert condition_model.code.coding[0].code in value_set

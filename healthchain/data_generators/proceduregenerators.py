@@ -7,12 +7,12 @@ from healthchain.data_generators.basegenerators import (
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.fhir_resources.generalpurpose import Reference
-from healthchain.fhir_resources.procedure import Procedure
 from healthchain.data_generators.value_sets.procedurecodes import (
     ProcedureCodeSimple,
     ProcedureCodeComplex,
 )
+from fhir.resources.procedure import Procedure
+from fhir.resources.reference import Reference
 
 
 faker = Faker()
@@ -51,7 +51,6 @@ class ProcedureGenerator(BaseGenerator):
             constraints=constraints
         )
         return Procedure(
-            resourceType="Procedure",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             code=code,

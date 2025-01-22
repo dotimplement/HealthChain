@@ -7,10 +7,10 @@ from typing import Callable, Dict, Optional
 from pathlib import Path
 
 from healthchain.base import Workflow
-from healthchain.fhir_resources.bundleresources import Bundle, BundleEntry
+from fhir.resources.bundle import Bundle, BundleEntry
 from healthchain.data_generators.basegenerators import generator_registry
-from healthchain.fhir_resources.documentreference import DocumentReference
-from healthchain.fhir_resources.generalpurpose import Narrative
+from fhir.resources.documentreference import DocumentReference
+from fhir.resources.narrative import Narrative
 from healthchain.models.data.cdsfhirdata import CdsFhirData
 
 logger = logging.getLogger(__name__)
