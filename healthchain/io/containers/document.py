@@ -3,17 +3,17 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 from spacy.tokens import Doc as SpacyDoc
+from fhir.resources.condition import Condition
+from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.allergyintolerance import AllergyIntolerance
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
 from healthchain.models.data import CcdData, CdsFhirData, ConceptLists
-from healthchain.models.data.concept import (
-    AllergyConcept,
-    MedicationConcept,
-    ProblemConcept,
-)
 
 logger = logging.getLogger(__name__)
+
+# TODO: Update usage with FHIR resources
 
 
 @dataclass
@@ -375,9 +375,9 @@ class Document(BaseDocument):
 
     def add_concepts(
         self,
-        problems: List[ProblemConcept] = None,
-        medications: List[MedicationConcept] = None,
-        allergies: List[AllergyConcept] = None,
+        problems: List[Condition] = None,
+        medications: List[MedicationStatement] = None,
+        allergies: List[AllergyIntolerance] = None,
     ):
         """
         Add extracted medical concepts to the document.
@@ -387,17 +387,17 @@ class Document(BaseDocument):
         optional and will only be added if provided.
 
         Args:
-            problems (List[ProblemConcept], optional): List of medical problems/conditions
+            problems (List[Condition], optional): List of problems (FHIR Condition resources)
                 to add to the document. Defaults to None.
-            medications (List[MedicationConcept], optional): List of medications
-                to add to the document. Defaults to None.
-            allergies (List[AllergyConcept], optional): List of allergies
-                to add to the document. Defaults to None.
+            medications (List[MedicationStatement], optional): List of medications
+                (FHIR MedicationStatement resources) to add to the document. Defaults to None.
+            allergies (List[AllergyIntolerance], optional): List of allergies
+                (FHIR AllergyIntolerance resources) to add to the document. Defaults to None.
 
         Example:
             >>> doc.add_concepts(
-            ...     problems=[ProblemConcept(display_name="Hypertension")],
-            ...     medications=[MedicationConcept(display_name="Aspirin")]
+            ...     problems=[Condition(display_name="Hypertension")],
+            ...     medications=[MedicationStatement(display_name="Aspirin")]
             ... )
         """
         if problems:
@@ -455,7 +455,7 @@ class Document(BaseDocument):
             CcdData: The generated CCD data.
 
         Example:
-            >>> doc.add_concepts(problems=[ProblemConcept(display_name="Hypertension")])
+            >>> doc.add_concepts(problems=[Condition(display_name="Hypertension")])
             >>> doc.generate_ccd()  # Creates CCD with the hypertension problem
         """
         return self._hl7.update_ccd_from_concepts(self._concepts, overwrite)

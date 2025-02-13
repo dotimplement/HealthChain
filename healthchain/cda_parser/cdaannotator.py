@@ -7,9 +7,14 @@ from enum import Enum
 from datetime import datetime
 from typing import Dict, Optional, List, Tuple, Union
 
+from fhir.resources.condition import Condition
+from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
+
 from healthchain.cda_parser.model.datatypes import CD, CE, IVL_PQ
 from healthchain.models import (
-    ProblemConcept,
     MedicationConcept,
     AllergyConcept,
 )
@@ -23,6 +28,7 @@ from healthchain.cda_parser.model.sections import (
     Observation,
     SubstanceAdministration,
 )
+from healthchain.cda_parser.utils import CodeMapping
 
 
 log = logging.getLogger(__name__)
@@ -158,6 +164,7 @@ class ProblemCodes(Enum):
 class CdaAnnotator:
     """
     Annotates a Clinical Document Architecture (CDA) document.
+    Limited to problems, medications, allergies, and notes sections for now.
 
     Args:
         cda_data (ClinicalDocument): The CDA document data.
@@ -166,21 +173,21 @@ class CdaAnnotator:
     Attributes:
         clinical_document (ClinicalDocument): The CDA document data.
         fallback (str): The fallback value.
-        problem_list (List[ProblemConcept]): The list of problems extracted from the CDA document.
-        medication_list (List[MedicationConcept]): The list of medications extracted from the CDA document.
-        allergy_list (List[AllergyConcept]): The list of allergies extracted from the CDA document.
+        problem_list (List[Condition]): The list of problems extracted from the CDA document.
+        medication_list (List[MedicationStatement]): The list of medications extracted from the CDA document.
+        allergy_list (List[AllergyIntolerance]): The list of allergies extracted from the CDA document.
         note (str): The note extracted from the CDA document.
 
     Methods:
         from_dict(cls, data: Dict): Creates a CdaAnnotator instance from a dictionary.
         from_xml(cls, data: str): Creates a CdaAnnotator instance from an XML string.
-        add_to_problem_list(problems: List[ProblemConcept], overwrite: bool = False) -> None: Adds a list of problem concepts to the problems section.
+        add_to_problem_list(problems: List[Condition], overwrite: bool = False) -> None: Adds a list of Condition resources to the problems section.
         export(pretty_print: bool = True) -> str: Exports the CDA document as an XML string.
     """
 
-    def __init__(self, cda_data: ClinicalDocument, fallback="LLM") -> None:
+    def __init__(self, cda_data: ClinicalDocument) -> None:
         self.clinical_document = cda_data
-        self.fallback = fallback
+        self.code_mapping = CodeMapping()
         self._get_ccd_sections()
         self._extract_data()
 
@@ -260,9 +267,9 @@ class CdaAnnotator:
         Returns:
             None
         """
-        self.problem_list: List[ProblemConcept] = self._extract_problems()
-        self.medication_list: List[MedicationConcept] = self._extract_medications()
-        self.allergy_list: List[AllergyConcept] = self._extract_allergies()
+        self.problem_list: List[Condition] = self._extract_problems()
+        self.medication_list: List[MedicationStatement] = self._extract_medications()
+        self.allergy_list: List[AllergyIntolerance] = self._extract_allergies()
         self.note: str = self._extract_note()
 
     def _find_section_by_code(self, section_code: str) -> Optional[Section]:
@@ -343,27 +350,90 @@ class CdaAnnotator:
             SectionId.NOTE.value
         ) or self._find_section_by_code(SectionCode.NOTE.value)
 
-    def _extract_problems(self) -> List[ProblemConcept]:
+    def _extract_problems(self) -> List[Condition]:
         """
-        Extracts problem concepts from the problem section of the CDA document.
+        Extracts problems from the CDA document and converts them to FHIR Condition resources.
 
         Returns:
-            A list of ProblemConcept objects representing the extracted problem concepts.
+            A list of FHIR Condition resources representing the extracted problems.
         """
         if not self._problem_section:
             log.warning("Empty problem section!")
             return []
 
-        concepts = []
+        conditions = []
 
-        def get_problem_concept_from_cda_data_field(value: Dict) -> ProblemConcept:
-            concept = ProblemConcept(_standard="cda")
-            concept.code = value.get("@code")
-            concept.code_system = value.get("@codeSystem")
-            concept.code_system_name = value.get("@codeSystemName")
-            concept.display_name = value.get("@displayName")
+        def create_fhir_condition_from_cda(value: Dict, entry) -> Condition:
+            # Map CDA status to FHIR clinical status
+            if hasattr(entry, "act") and hasattr(entry.act, "statusCode"):
+                status_code = entry.act.statusCode.code
+                fhir_status = self.code_mapping.cda_to_fhir(
+                    status_code, "status", case_sensitive=False, default="unknown"
+                )
+                clinical_status = CodeableConcept(
+                    coding=[
+                        Coding(
+                            system="http://terminology.hl7.org/CodeSystem/condition-clinical",
+                            code=fhir_status,
+                            display=fhir_status.capitalize(),
+                        )
+                    ]
+                )
 
-            return concept
+            # Create base condition with mapped system
+            condition = Condition(
+                clinicalStatus=clinical_status,
+                subject={
+                    "reference": "Patient/123"  # {self.clinical_document.recordTarget.patientRole.id} # TODO: add patient reference
+                },
+                code=CodeableConcept(
+                    coding=[
+                        Coding(
+                            system=self.code_mapping.cda_to_fhir(
+                                value.get("@codeSystem"), "system"
+                            ),
+                            code=value.get("@code"),
+                            display=value.get("@displayName"),
+                        )
+                    ]
+                ),
+            )
+
+            # Extract dates from entry
+            # TODO: utility function for this
+            if hasattr(entry, "act") and hasattr(entry.act, "effectiveTime"):
+                effective_time = entry.act.effectiveTime
+                if hasattr(effective_time, "low") and effective_time.low:
+                    # Convert CDA date format (YYYYMMDD) to FHIR date format (YYYY-MM-DD)
+                    date_str = effective_time.low.value
+                    if date_str:
+                        formatted_date = (
+                            f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                        )
+                        condition.onsetDateTime = formatted_date
+
+                if hasattr(effective_time, "high") and effective_time.high:
+                    date_str = effective_time.high.value
+                    if date_str:
+                        formatted_date = (
+                            f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                        )
+                        condition.abatementDateTime = formatted_date
+
+            # Set category (problem-list-item by default for problems section)
+            condition.category = [
+                CodeableConcept(
+                    coding=[
+                        Coding(
+                            system="http://terminology.hl7.org/CodeSystem/condition-category",
+                            code="problem-list-item",
+                            display="Problem List Item",
+                        )
+                    ]
+                )
+            ]
+
+            return condition
 
         entries = (
             self._problem_section.entry
@@ -375,17 +445,17 @@ class CdaAnnotator:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
             for value in values:
-                concept = get_problem_concept_from_cda_data_field(value)
-                concepts.append(concept)
+                condition = create_fhir_condition_from_cda(value, entry)
+                conditions.append(condition)
 
-        return concepts
+        return conditions
 
-    def _extract_medications(self) -> List[MedicationConcept]:
+    def _extract_medications(self) -> List[MedicationStatement]:
         """
         Extracts medication concepts from the medication section of the CDA document.
 
         Returns:
-            A list of MedicationConcept objects representing the extracted medication concepts.
+            A list of MedicationStatement resources representing the extracted medication concepts.
         """
         if not self._medication_section:
             log.warning("Empty medication section!")
@@ -634,7 +704,7 @@ class CdaAnnotator:
 
     def _add_new_problem_entry(
         self,
-        new_problem: ProblemConcept,
+        new_problem: Condition,
         timestamp: str,
         act_id: str,
         problem_reference_name: str,
@@ -643,7 +713,7 @@ class CdaAnnotator:
         Adds a new problem entry to the problem section of the CDA document.
 
         Args:
-            new_problem (ProblemConcept): The new problem concept to be added.
+            new_problem (Condition): The new problem concept to be added.
             timestamp (str): The timestamp of the entry.
             act_id (str): The ID of the act.
             problem_reference_name (str): The reference name of the problem.
@@ -651,7 +721,19 @@ class CdaAnnotator:
         Returns:
             None
         """
-        # TODO: This will need work
+
+        # Get CDA status from FHIR clinical status
+        fhir_status = new_problem.clinicalStatus.coding[0].code
+        cda_status = self.code_mapping.fhir_to_cda(
+            fhir_status, "status", case_sensitive=False, default="unknown"
+        )
+
+        # Get CDA system from FHIR system
+        fhir_system = new_problem.code.coding[0].system
+        cda_system = self.code_mapping.fhir_to_cda(
+            fhir_system, "system", default="2.16.840.1.113883.6.96"
+        )  # Default to SNOMED-CT
+
         template = {
             "act": {
                 "@classCode": "ACT",
@@ -665,7 +747,7 @@ class CdaAnnotator:
                 ],
                 "id": {"@root": act_id},
                 "code": {"@nullflavor": "NA"},
-                "statusCode": {"@code": "active"},
+                "statusCode": {"@code": cda_status},
                 "effectiveTime": {"low": {"@value": timestamp}},
                 "entryRelationship": {
                     "@typeCode": "SUBJ",
@@ -687,10 +769,9 @@ class CdaAnnotator:
                         "text": {"reference": {"@value": problem_reference_name}},
                         "value": {
                             "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                            "@code": new_problem.code,
-                            "@codeSystem": new_problem.code_system,
-                            "@codeSystemName": new_problem.code_system_name,
-                            "@displayName": new_problem.display_name,
+                            "@code": new_problem.code.coding[0].code,
+                            "@codeSystem": cda_system,
+                            "@displayName": new_problem.code.coding[0].display,
                             "originalText": {
                                 "reference": {"@value": problem_reference_name}
                             },
@@ -730,13 +811,13 @@ class CdaAnnotator:
         self._problem_section.entry.append(new_entry)
 
     def add_to_problem_list(
-        self, problems: List[ProblemConcept], overwrite: bool = False
+        self, problems: List[Condition], overwrite: bool = False
     ) -> None:
         """
         Adds a list of problem lists to the problems section.
 
         Args:
-            problems (List[ProblemConcept]): A list of problem concepts to be added.
+            problems (List[Condition]): A list of Condition resources to be added.
             overwrite (bool, optional): If True, the existing problem list will be overwritten.
                 Defaults to False.
 

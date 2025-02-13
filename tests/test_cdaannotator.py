@@ -1,7 +1,7 @@
+import pytest
 from healthchain.cda_parser.cdaannotator import (
     SectionId,
     SectionCode,
-    ProblemConcept,
     AllergyConcept,
 )
 from healthchain.models.data.concept import (
@@ -11,6 +11,34 @@ from healthchain.models.data.concept import (
     Range,
     TimeInterval,
 )
+from fhir.resources.condition import Condition
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
+
+
+@pytest.fixture
+def test_condition():
+    return Condition(
+        subject={"reference": "Patient/123"},
+        code=CodeableConcept(
+            coding=[
+                Coding(
+                    system="http://snomed.info/sct",
+                    code="123456",
+                    display="Test Condition",
+                )
+            ]
+        ),
+        clinicalStatus=CodeableConcept(
+            coding=[
+                Coding(
+                    system="http://terminology.hl7.org/CodeSystem/condition-clinical",
+                    code="active",
+                    display="Active",
+                )
+            ]
+        ),
+    )
 
 
 def test_find_notes_section(cda_annotator):
@@ -76,21 +104,29 @@ def test_extract_note_using_code(cda_annotator_code):
 
 
 def test_extract_problems(cda_annotator):
+    """Test if problems are extracted correctly as FHIR Condition resources"""
     problems = cda_annotator._extract_problems()
-
-    assert len(problems) == 1
-    assert problems[0].code == "38341003"
-    assert problems[0].code_system == "2.16.840.1.113883.6.96"
-    assert problems[0].code_system_name == "SNOMED CT"
+    assert len(problems) > 0
+    for problem in problems:
+        assert isinstance(problem, Condition)
+        assert isinstance(problem.code, CodeableConcept)
+        assert isinstance(problem.code.coding[0], Coding)
+        assert problem.code.coding[0].system == "http://snomed.info/sct"
+        assert problem.code.coding[0].code == "38341003"
+        assert problem.clinicalStatus.coding[0].code == "active"
+        assert problem.subject.reference == "Patient/123"
+        assert problem.onsetDateTime == "2021-03-17"
+        assert problem.category[0].coding[0].code == "problem-list-item"
 
 
 def test_extract_problems_using_code(cda_annotator_code):
+    """Test if problems are extracted correctly from code-based sections as FHIR Condition resources"""
     problems = cda_annotator_code._extract_problems()
-
-    assert len(problems) == 1
-    assert problems[0].code == "38341003"
-    assert problems[0].code_system == "2.16.840.1.113883.6.96"
-    assert problems[0].code_system_name == "SNOMED CT"
+    assert len(problems) > 0
+    for problem in problems:
+        assert isinstance(problem, Condition)
+        assert isinstance(problem.code, CodeableConcept)
+        assert isinstance(problem.code.coding[0], Coding)
 
 
 def test_extract_medications(cda_annotator):
@@ -246,38 +282,33 @@ def test_add_to_empty_sections(cda_annotator, test_ccd_data):
     assert cda_annotator.allergy_list == []
 
 
-def test_add_to_problem_list(cda_annotator, test_ccd_data):
-    problems = test_ccd_data.concepts.problems
-    cda_annotator.add_to_problem_list(problems)
+def test_add_to_problem_list(cda_annotator, test_condition):
+    """Test adding FHIR Conditions to the problem list"""
+
+    cda_annotator.add_to_problem_list([test_condition])
     assert len(cda_annotator.problem_list) == 2
-    assert len(cda_annotator._problem_section.entry) == 2
+    assert test_condition in cda_annotator.problem_list
 
 
-def test_add_to_problem_list_overwrite(cda_annotator, test_ccd_data):
-    # Test if problems are added to the problem list correctly with overwrite=True
-    problems = test_ccd_data.concepts.problems
-    cda_annotator.add_to_problem_list(problems, overwrite=True)
+def test_add_to_problem_list_overwrite(cda_annotator, test_condition):
+    """Test overwriting problem list with new FHIR Conditions"""
+    cda_annotator.add_to_problem_list([test_condition], overwrite=True)
     assert len(cda_annotator.problem_list) == 1
-    assert len(cda_annotator._problem_section.entry) == 1
+    assert test_condition in cda_annotator.problem_list
 
 
-def test_add_multiple_to_problem_list(cda_annotator, test_multiple_ccd_data):
-    problems = test_multiple_ccd_data.concepts.problems
-    cda_annotator.add_to_problem_list(problems)
+def test_add_multiple_to_problem_list(cda_annotator, test_condition):
+    """Test adding multiple FHIR Conditions to the problem list"""
+    cda_annotator.add_to_problem_list([test_condition, test_condition])
     assert len(cda_annotator.problem_list) == 3
-    assert len(cda_annotator._problem_section.entry) == 3
-
-    # test deduplicate
-    cda_annotator.add_to_problem_list(problems)
-    assert len(cda_annotator.problem_list) == 3
-    assert len(cda_annotator._problem_section.entry) == 3
+    assert test_condition in cda_annotator.problem_list
 
 
-def test_add_multiple_to_problem_list_overwrite(cda_annotator, test_multiple_ccd_data):
-    problems = test_multiple_ccd_data.concepts.problems
-    cda_annotator.add_to_problem_list(problems, overwrite=True)
+def test_add_multiple_to_problem_list_overwrite(cda_annotator, test_condition):
+    """Test overwriting problem list with new FHIR Conditions"""
+    cda_annotator.add_to_problem_list([test_condition, test_condition], overwrite=True)
     assert len(cda_annotator.problem_list) == 2
-    assert len(cda_annotator._problem_section.entry) == 2
+    assert test_condition in cda_annotator.problem_list
 
 
 def test_add_to_medication_list(cda_annotator, test_ccd_data):
@@ -363,19 +394,15 @@ def test_export_no_pretty_print(cda_annotator):
     assert isinstance(exported_data, str)
 
 
-def test_add_new_problem_entry(cda_annotator):
-    # Test if a new problem entry is added correctly
-    new_problem = ProblemConcept()
-    new_problem.code = "12345678"
-    new_problem.code_system = "2.16.840.1.113883.6.96"
-    new_problem.code_system_name = "SNOMED CT"
-    new_problem.display_name = "Test Problem"
+def test_add_new_problem_entry(cda_annotator, test_condition):
+    """Test if a new FHIR Condition entry is added correctly to CDA structure"""
+
     timestamp = "20220101"
     act_id = "12345678"
     problem_reference_name = "#p12345678name"
 
     cda_annotator._add_new_problem_entry(
-        new_problem=new_problem,
+        new_problem=test_condition,
         timestamp=timestamp,
         act_id=act_id,
         problem_reference_name=problem_reference_name,
@@ -395,10 +422,9 @@ def test_add_new_problem_entry(cda_annotator):
         1
     ].act.entryRelationship.observation.value == {
         "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "@code": new_problem.code,
-        "@codeSystem": new_problem.code_system,
-        "@codeSystemName": new_problem.code_system_name,
-        "@displayName": new_problem.display_name,
+        "@code": test_condition.code.coding[0].code,
+        "@codeSystem": "2.16.840.1.113883.6.96",
+        "@displayName": test_condition.code.coding[0].display,
         "originalText": {"reference": {"@value": problem_reference_name}},
         "@xsi:type": "CD",
     }

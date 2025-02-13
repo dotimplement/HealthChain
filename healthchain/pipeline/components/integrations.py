@@ -5,7 +5,10 @@ from functools import wraps
 
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
-from healthchain.models.data import ProblemConcept
+
+from fhir.resources.condition import Condition
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
 
 T = TypeVar("T")
 
@@ -108,17 +111,22 @@ class SpacyNLP(BaseComponent[str]):
             spacy_doc (Doc): The processed spaCy Doc object containing entities
             hc_doc (Document): The HealthChain Document to store concepts in
 
-        Note: Defaults to ProblemConcepts and SNOMED CT concepts
+        Note: Defaults to Condition and SNOMED CT concepts
         # TODO: make configurable
         """
         concepts = []
+        # TODO: Review this, too specific to MedCAT, coding system needs to be configurable
         for ent in spacy_doc.ents:
-            # Check for CUI attribute from extensions like medcat
-            concept = ProblemConcept(
-                code=ent._.cui if hasattr(ent, "_.cui") else None,
-                code_system="2.16.840.1.113883.6.96",
-                code_system_name="SNOMED CT",
-                display_name=ent.text,
+            concept = Condition(
+                code=CodeableConcept(
+                    coding=[
+                        Coding(
+                            system="http://snomed.info/sct",
+                            code=ent._.cui if hasattr(ent, "_.cui") else None,
+                            display=ent.text,
+                        )
+                    ]
+                )
             )
             concepts.append(concept)
 
