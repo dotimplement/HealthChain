@@ -3,7 +3,7 @@
 import logging
 import base64
 import datetime
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
@@ -275,30 +275,37 @@ def create_document_reference(
 
 
 def read_attachment(
-    document_reference: DocumentReference, return_metadata: bool = False
-) -> Optional[Union[str, Dict[str, Any]]]:
-    """Read the attachment from a FHIR DocumentReference.
+    document_reference: DocumentReference,
+    include_content: bool = True,
+) -> Optional[List[Dict[str, Any]]]:
+    """Read the attachments from a FHIR DocumentReference.
 
     Args:
         document_reference: The FHIR DocumentReference resource
-        return_metadata: Whether to return the metadata of the attachment
+        include_content: Whether to include the content of the attachments - useful to set false for large attachments (default: True)
     Returns:
-        Optional[Union[str, Dict[str, Any]]]: The attachment data as a string, or a dict with data and metadata,
-            or None if no attachment is found
+        Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,
+            or None if no attachments are found
     """
     if not document_reference.content:
         return None
 
-    attachment = document_reference.content[0].attachment
-    data = attachment.url if attachment.url else attachment.data.decode("utf-8")
+    attachments = []
+    for content in document_reference.content:
+        attachment = content.attachment
+        result = {}
 
-    if not return_metadata:
-        return data
+        if include_content:
+            result["data"] = (
+                attachment.url if attachment.url else attachment.data.decode("utf-8")
+            )
 
-    metadata = {
-        "content_type": attachment.contentType,
-        "title": attachment.title,
-        "creation": attachment.creation,
-    }
+        result["metadata"] = {
+            "content_type": attachment.contentType,
+            "title": attachment.title,
+            "creation": attachment.creation,
+        }
 
-    return {"data": data, "metadata": metadata}
+        attachments.append(result)
+
+    return attachments

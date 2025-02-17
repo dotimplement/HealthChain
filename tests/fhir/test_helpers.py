@@ -188,19 +188,23 @@ def test_read_attachment_with_data():
         attachment_title="Test Doc",
     )
 
-    # Test reading content only
-    content = read_attachment(doc_ref)
-    assert isinstance(content, str)
-    assert content == test_content
+    # Test reading attachments
+    attachments = read_attachment(doc_ref)
+    assert isinstance(attachments, list)
+    assert len(attachments) == 1
+    assert attachments[0]["data"] == test_content
+    assert attachments[0]["metadata"]["content_type"] == "text/plain"
+    assert attachments[0]["metadata"]["title"] == "Test Doc"
+    assert attachments[0]["metadata"]["creation"] is not None
 
-    # Test reading with metadata
-    content = read_attachment(doc_ref, return_metadata=True)
-    assert isinstance(content, dict)
-    assert content["data"] == test_content
-    assert content["metadata"]["content_type"] == "text/plain"
-    assert content["metadata"]["title"] == "Test Doc"
-    assert content["metadata"]["creation"] is not None
-    assert isinstance(content["metadata"]["creation"], datetime)
+    # Test reading without content
+    attachments = read_attachment(doc_ref, include_content=False)
+    assert isinstance(attachments, list)
+    assert len(attachments) == 1
+    assert "data" not in attachments[0]
+    assert attachments[0]["metadata"]["content_type"] == "text/plain"
+    assert attachments[0]["metadata"]["title"] == "Test Doc"
+    assert attachments[0]["metadata"]["creation"] is not None
 
 
 def test_read_attachment_with_url():
@@ -211,14 +215,20 @@ def test_read_attachment_with_url():
         url=test_url, content_type="application/pdf", attachment_title="Test URL Doc"
     )
 
-    # Test reading content only
-    content = read_attachment(doc_ref)
-    assert content == test_url
+    # Test reading attachments
+    attachments = read_attachment(doc_ref)
+    assert isinstance(attachments, list)
+    assert len(attachments) == 1
+    assert attachments[0]["data"] == test_url
+    assert attachments[0]["metadata"]["content_type"] == "application/pdf"
+    assert attachments[0]["metadata"]["title"] == "Test URL Doc"
+    assert attachments[0]["metadata"]["creation"] is not None
 
-    # Test reading with metadata
-    content = read_attachment(doc_ref, return_metadata=True)
-    assert content["data"] == test_url
-    assert content["metadata"]["content_type"] == "application/pdf"
-    assert content["metadata"]["title"] == "Test URL Doc"
-    assert content["metadata"]["creation"] is not None
-    assert isinstance(content["metadata"]["creation"], datetime)
+    # Test reading without content
+    attachments = read_attachment(doc_ref, include_content=False)
+    assert isinstance(attachments, list)
+    assert len(attachments) == 1
+    assert "data" not in attachments[0]
+    assert attachments[0]["metadata"]["content_type"] == "application/pdf"
+    assert attachments[0]["metadata"]["title"] == "Test URL Doc"
+    assert attachments[0]["metadata"]["creation"] is not None
