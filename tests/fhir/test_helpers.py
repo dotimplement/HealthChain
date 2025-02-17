@@ -2,6 +2,9 @@ from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.documentreference import DocumentReference
+from fhir.resources.attachment import Attachment
+from datetime import datetime
 
 
 from healthchain.fhir.helpers import (
@@ -11,6 +14,9 @@ from healthchain.fhir.helpers import (
     create_medication_statement,
     create_allergy_intolerance,
     set_problem_list_item_category,
+    create_single_attachment,
+    create_document_reference,
+    read_attachment,
 )
 
 
@@ -99,3 +105,120 @@ def test_create_allergy_intolerance_minimal():
     assert allergy.code.coding[0].code == "123"
     assert allergy.code.coding[0].display == "Test Allergy"
     assert allergy.code.coding[0].system == "http://test.system"
+
+
+def test_create_single_attachment():
+    """Test creating an attachment with data content."""
+    attachment = create_single_attachment(
+        content_type="text/plain", data="Test content", title="Test Attachment"
+    )
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.contentType == "text/plain"
+    assert attachment.title == "Test Attachment"
+    # Verify data is base64 encoded
+    assert attachment.data is not None
+    assert isinstance(attachment.data, bytes)
+    # Verify creation date is set
+    assert attachment.creation is not None
+    assert isinstance(attachment.creation, datetime)
+
+
+def test_create_single_attachment_with_url():
+    """Test creating an attachment with URL reference."""
+    attachment = create_single_attachment(
+        content_type="application/pdf",
+        url="http://example.com/test.pdf",
+        title="Test URL Attachment",
+    )
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.contentType == "application/pdf"
+    assert attachment.url == "http://example.com/test.pdf"
+    assert attachment.title == "Test URL Attachment"
+    assert attachment.data is None
+
+
+def test_create_document_reference():
+    """Test creating a document reference with data content."""
+    doc_ref = create_document_reference(
+        data="Test document content",
+        content_type="text/plain",
+        description="Test Description",
+        attachment_title="Test Doc",
+    )
+
+    assert isinstance(doc_ref, DocumentReference)
+    assert doc_ref.status == "current"
+    assert doc_ref.description == "Test Description"
+    assert len(doc_ref.content) == 1
+    assert doc_ref.content[0].attachment.contentType == "text/plain"
+    assert doc_ref.content[0].attachment.title == "Test Doc"
+    assert doc_ref.content[0].attachment.data is not None
+    assert isinstance(doc_ref.content[0].attachment.data, bytes)
+    # Verify date is set
+    assert doc_ref.date is not None
+    assert isinstance(doc_ref.date, datetime)
+
+
+def test_create_document_reference_with_url():
+    """Test creating a document reference with URL reference."""
+    doc_ref = create_document_reference(
+        url="http://example.com/test.pdf",
+        content_type="application/pdf",
+        status="superseded",
+    )
+
+    assert isinstance(doc_ref, DocumentReference)
+    assert doc_ref.status == "superseded"
+    assert len(doc_ref.content) == 1
+    assert doc_ref.content[0].attachment.contentType == "application/pdf"
+    assert doc_ref.content[0].attachment.url == "http://example.com/test.pdf"
+    assert doc_ref.content[0].attachment.data is None
+
+
+def test_read_attachment_with_data():
+    """Test reading an attachment with embedded data content."""
+    # Create a document reference with data content
+    test_content = "Test document content"
+    doc_ref = create_document_reference(
+        data=test_content,
+        content_type="text/plain",
+        description="Test Description",
+        attachment_title="Test Doc",
+    )
+
+    # Test reading content only
+    content = read_attachment(doc_ref)
+    assert isinstance(content, str)
+    assert content == test_content
+
+    # Test reading with metadata
+    content = read_attachment(doc_ref, return_metadata=True)
+    assert isinstance(content, dict)
+    assert content["data"] == test_content
+    assert content["metadata"]["content_type"] == "text/plain"
+    assert content["metadata"]["title"] == "Test Doc"
+    assert content["metadata"]["creation"] is not None
+    assert isinstance(content["metadata"]["creation"], datetime)
+
+
+def test_read_attachment_with_url():
+    """Test reading an attachment with URL reference."""
+    # Create a document reference with URL
+    test_url = "http://example.com/test.pdf"
+    doc_ref = create_document_reference(
+        url=test_url, content_type="application/pdf", attachment_title="Test URL Doc"
+    )
+
+    # Test reading content only
+    content = read_attachment(doc_ref)
+    assert content == test_url
+
+    # Test reading with metadata
+    content = read_attachment(doc_ref, return_metadata=True)
+    assert content["data"] == test_url
+    assert content["metadata"]["content_type"] == "application/pdf"
+    assert content["metadata"]["title"] == "Test URL Doc"
+    assert content["metadata"]["creation"] is not None
+    assert isinstance(content["metadata"]["creation"], datetime)

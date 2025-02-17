@@ -128,7 +128,7 @@ def set_resources(
     bundle: Bundle,
     resources: List[Resource],
     resource_type: Union[str, Type[Resource]],
-    replace: bool = False,
+    replace: bool = True,
 ) -> None:
     """Set resources of a specific type in the bundle.
 
@@ -137,7 +137,7 @@ def set_resources(
         resources: The new resources to add
         resource_type: String name of the resource type (e.g. "Condition") or the type itself
         replace: If True, remove existing resources of this type before adding new ones.
-                If False, append new resources to existing ones. Defaults to False.
+                If False, append new resources to existing ones. Defaults to True.
 
     Example:
         >>> bundle = create_bundle()

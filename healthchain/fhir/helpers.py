@@ -1,11 +1,19 @@
 """Convenience functions for creating minimal FHIR resources."""
 
-from typing import Optional, List, Dict, Any
+import logging
+import base64
+import datetime
+from typing import Optional, List, Dict, Any, Union
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.documentreference import DocumentReference
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
+from fhir.resources.attachment import Attachment
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_single_codeable_concept(
@@ -13,7 +21,17 @@ def create_single_codeable_concept(
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
 ) -> CodeableConcept:
-    """Create a FHIR CodeableConcept with a single coding. Default system is SNOMED CT."""
+    """
+    Create a minimal FHIR CodeableConcept with a single coding.
+
+    Args:
+        code: REQUIRED. The code value from the code system
+        display: The display name for the code
+        system: The code system (default: SNOMED CT)
+
+    Returns:
+        CodeableConcept: A FHIR CodeableConcept resource with a single coding
+    """
     return CodeableConcept(coding=[Coding(system=system, code=code, display=display)])
 
 
@@ -23,7 +41,21 @@ def create_single_reaction(
     system: Optional[str] = "http://snomed.info/sct",
     severity: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Create a FHIR Reaction with a single coding. Default system is SNOMED CT."""
+    """Create a minimal FHIR Reaction with a single coding.
+
+    Creates a FHIR Reaction object with a single manifestation coding. The manifestation
+    describes the clinical reaction that was observed. The severity indicates how severe
+    the reaction was.
+
+    Args:
+        code: REQUIRED. The code value from the code system representing the reaction manifestation
+        display: The display name for the manifestation code
+        system: The code system for the manifestation code (default: SNOMED CT)
+        severity: The severity of the reaction (mild, moderate, severe)
+
+    Returns:
+        A list containing a single FHIR Reaction dictionary with manifestation and severity fields
+    """
     return [
         {
             "manifestation": [
@@ -36,8 +68,57 @@ def create_single_reaction(
     ]
 
 
+def create_single_attachment(
+    content_type: Optional[str] = None,
+    data: Optional[str] = None,
+    url: Optional[str] = None,
+    title: Optional[str] = "Attachment created by HealthChain",
+) -> Attachment:
+    """Create a minimal FHIR Attachment.
+
+    Creates a FHIR Attachment resource with basic fields. Either data or url should be provided.
+    If data is provided, it will be base64 encoded.
+
+    Args:
+        content_type: The MIME type of the content
+        data: The actual data content to be base64 encoded
+        url: The URL where the data can be found
+        title: A title for the attachment (default: "Attachment created by HealthChain")
+
+    Returns:
+        Attachment: A FHIR Attachment resource with basic metadata and content
+    """
+
+    if not data and not url:
+        logger.warning("No data or url provided for attachment")
+
+    if data:
+        data = base64.b64encode(data.encode("utf-8")).decode("utf-8")
+
+    return Attachment(
+        contentType=content_type,
+        data=data,
+        url=url,
+        title=title,
+        creation=datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        ),
+    )
+
+
 def set_problem_list_item_category(condition: Condition) -> Condition:
-    """Set the category of a FHIR Condition to problem-list-item."""
+    """Set the category of a FHIR Condition to problem-list-item.
+
+    Sets the category field of a FHIR Condition resource to indicate it is a problem list item.
+    This is commonly used to distinguish conditions that are part of the patient's active
+    problem list from other types of conditions (e.g. encounter-diagnosis).
+
+    Args:
+        condition: The FHIR Condition resource to modify
+
+    Returns:
+        Condition: The modified FHIR Condition resource with problem-list-item category set
+    """
     condition.category = [
         create_single_codeable_concept(
             code="problem-list-item",
@@ -146,3 +227,78 @@ def create_allergy_intolerance(
     )
 
     return allergy
+
+
+def create_document_reference(
+    data: Optional[Any] = None,
+    url: Optional[str] = None,
+    content_type: Optional[str] = None,
+    status: str = "current",
+    description: Optional[str] = "DocumentReference created by HealthChain",
+    attachment_title: Optional[str] = "Attachment created by HealthChain",
+) -> DocumentReference:
+    """
+    Create a minimal FHIR DocumentReference.
+    If you need to create a more complex document reference, use the FHIR DocumentReference resource directly.
+    https://build.fhir.org/documentreference.html
+
+    Args:
+        data: The data content of the document attachment
+        url: URL where the document can be accessed
+        content_type: MIME type of the document (e.g. "application/pdf", "text/xml", "image/png")
+        status: REQUIRED. Status of the document reference (default: current)
+        description: Description of the document reference
+        attachment_title: Title for the document attachment
+
+    Returns:
+        DocumentReference: A FHIR DocumentReference resource with basic metadata and content
+    """
+    document_reference = DocumentReference(
+        status=status,
+        date=datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        ),
+        description=description,
+        content=[
+            {
+                "attachment": create_single_attachment(
+                    content_type=content_type,
+                    data=data,
+                    url=url,
+                    title=attachment_title,
+                )
+            }
+        ],
+    )
+
+    return document_reference
+
+
+def read_attachment(
+    document_reference: DocumentReference, return_metadata: bool = False
+) -> Optional[Union[str, Dict[str, Any]]]:
+    """Read the attachment from a FHIR DocumentReference.
+
+    Args:
+        document_reference: The FHIR DocumentReference resource
+        return_metadata: Whether to return the metadata of the attachment
+    Returns:
+        Optional[Union[str, Dict[str, Any]]]: The attachment data as a string, or a dict with data and metadata,
+            or None if no attachment is found
+    """
+    if not document_reference.content:
+        return None
+
+    attachment = document_reference.content[0].attachment
+    data = attachment.url if attachment.url else attachment.data.decode("utf-8")
+
+    if not return_metadata:
+        return data
+
+    metadata = {
+        "content_type": attachment.contentType,
+        "title": attachment.title,
+        "creation": attachment.creation,
+    }
+
+    return {"data": data, "metadata": metadata}

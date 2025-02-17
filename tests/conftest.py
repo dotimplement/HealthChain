@@ -9,13 +9,6 @@ from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
 from fhir.resources.bundle import Bundle, BundleEntry
 from healthchain.models import CDSRequest, CdsFhirData
-from healthchain.models.data.ccddata import CcdData
-from healthchain.models.data.concept import (
-    AllergyConcept,
-    ConceptLists,
-    MedicationConcept,
-    ProblemConcept,
-)
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
@@ -28,8 +21,59 @@ from healthchain.clients.ehrclient import EHRClient
 from healthchain.decorators import sandbox
 from healthchain.use_cases.clindoc import ClinicalDocumentation
 from healthchain.workflows import UseCaseType
+from healthchain.io.containers import Document
+from healthchain.fhir import (
+    create_bundle,
+    create_condition,
+    create_medication_statement,
+    create_allergy_intolerance,
+)
+
 
 # TODO: Tidy up fixtures
+
+
+@pytest.fixture
+def empty_bundle():
+    """Create an empty bundle for testing."""
+    return create_bundle()
+
+
+@pytest.fixture
+def test_condition():
+    """Create a test condition."""
+    return create_condition(subject="Patient/123", code="123", display="Test Condition")
+
+
+@pytest.fixture
+def test_medication():
+    """Create a test medication statement."""
+    return create_medication_statement(
+        subject="Patient/123", code="456", display="Test Medication"
+    )
+
+
+@pytest.fixture
+def test_allergy():
+    """Create a test allergy intolerance."""
+    return create_allergy_intolerance(
+        patient="Patient/123", code="789", display="Test Allergy"
+    )
+
+
+@pytest.fixture
+def test_problem_list():
+    return [test_condition]
+
+
+@pytest.fixture
+def test_medication_list():
+    return [test_medication]
+
+
+@pytest.fixture
+def test_allergy_list():
+    return [test_allergy]
 
 
 @pytest.fixture(autouse=True)
@@ -54,11 +98,58 @@ class MockDataGenerator:
         self.data = CdsFhirData(
             context={}, prefetch=Bundle(entry=[BundleEntry()], type="document")
         )
-        # self.data = synth_data(context={}, prefetch=MockBundle())
         self.workflow = None
 
     def set_workflow(self, workflow):
         self.workflow = workflow
+
+
+@pytest.fixture
+def test_document(test_problem_list, test_medication_list, test_allergy_list):
+    """Create a test document with FHIR resources."""
+    doc = Document(data="Test note")
+    doc.fhir.set_bundle(create_bundle())
+
+    # Add test FHIR resources
+    doc.fhir.problem_list = test_problem_list
+    doc.fhir.medication_list = test_medication_list
+    doc.fhir.allergy_list = test_allergy_list
+    return doc
+
+
+@pytest.fixture
+def test_document_with_cda():
+    """Create a test document with CDA XML."""
+    doc = Document(data="Test note")
+    doc.cda_xml = "<ClinicalDocument>Test CDA</ClinicalDocument>"
+    return doc
+
+
+@pytest.fixture
+def test_document_multiple(test_problem_list, test_medication_list, test_allergy_list):
+    """Create a test document with multiple FHIR resources."""
+    doc = Document(data="Test note with multiple resources")
+    doc.fhir.set_bundle(create_bundle())
+
+    test_problem_list.append(
+        create_condition(subject="Patient/123", code="987", display="Test Condition 2")
+    )
+    test_medication_list.append(
+        create_medication_statement(
+            subject="Patient/123", code="654", display="Test Medication 2"
+        )
+    )
+    test_allergy_list.append(
+        create_allergy_intolerance(
+            patient="Patient/123", code="321", display="Test Allergy 2"
+        )
+    )
+
+    # Add multiple test FHIR resources
+    doc.fhir.problem_list = test_problem_list
+    doc.fhir.medication_list = test_medication_list
+    doc.fhir.allergy_list = test_allergy_list
+    return doc
 
 
 @pytest.fixture
@@ -393,31 +484,6 @@ def test_soap_request():
         test_soap = file.read()
 
     return CdaRequest(document=test_soap)
-
-
-@pytest.fixture
-def test_ccd_data():
-    return CcdData(
-        concepts=ConceptLists(
-            problems=[ProblemConcept(code="test")],
-            medications=[MedicationConcept(code="test")],
-            allergies=[AllergyConcept(code="test")],
-        )
-    )
-
-
-@pytest.fixture
-def test_multiple_ccd_data():
-    return CcdData(
-        concepts=ConceptLists(
-            problems=[ProblemConcept(code="test1"), ProblemConcept(code="test2")],
-            medications=[
-                MedicationConcept(code="test1"),
-                MedicationConcept(code="test2"),
-            ],
-            allergies=[AllergyConcept(code="test1"), AllergyConcept(code="tes2")],
-        )
-    )
 
 
 @pytest.fixture
