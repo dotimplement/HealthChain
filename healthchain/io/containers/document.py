@@ -206,11 +206,20 @@ class FhirData:
     This class stores and manages clinical data in FHIR format, including documents and their relationships,
     with additional support for CDS Hooks context when needed.
 
+    Also includes collections of resources for common continuity of care lists, such as a problem list, medication list, and allergy list.
+    These collections are accessible as properties of the class instance.
+
+
     Attributes:
         _bundle (Optional[Bundle]): FHIR Bundle containing clinical resources
             like problems, medications, allergies, documents and other clinical information.
         _cds_context (Optional[Dict]): Additional context required for CDS Hooks
             integration.
+
+    Properties:
+        problem_list: List[Condition]
+        medication_list: List[MedicationStatement]
+        allergy_list: List[AllergyIntolerance]
 
     Example:
         >>> fhir_data = FhirData()
@@ -227,18 +236,28 @@ class FhirData:
 
     @property
     def problem_list(self) -> List[Condition]:
+        """Get problem list from the bundle.
+        Problem list items are stored as Condition resources in the bundle.
+        See: https://www.hl7.org/fhir/condition.html
+        """
         return self.get_resources("Condition")
 
     @problem_list.setter
     def problem_list(self, conditions: List[Condition]) -> None:
+        """Set problem list in the bundle."""
         self.add_resources(conditions, "Condition")
 
     @property
     def medication_list(self) -> List[MedicationStatement]:
+        """Get medication list from the bundle."""
         return self.get_resources("MedicationStatement")
 
     @medication_list.setter
     def medication_list(self, medications: List[MedicationStatement]) -> None:
+        """Set medication list in the bundle.
+        Medication statements are stored as MedicationStatement resources in the bundle.
+        See: https://www.hl7.org/fhir/medicationstatement.html
+        """
         self.add_resources(medications, "MedicationStatement")
 
     @property
@@ -248,7 +267,10 @@ class FhirData:
 
     @allergy_list.setter
     def allergy_list(self, allergies: List[AllergyIntolerance]) -> None:
-        """Set allergy list in the bundle."""
+        """Set allergy list in the bundle.
+        Allergy intolerances are stored as AllergyIntolerance resources in the bundle.
+        See: https://www.hl7.org/fhir/allergyintolerance.html
+        """
         self.add_resources(allergies, "AllergyIntolerance")
 
     def get_bundle(self) -> Optional[Bundle]:
@@ -256,7 +278,10 @@ class FhirData:
         return self._bundle
 
     def set_bundle(self, bundle: Bundle):
-        """Sets the FHIR Bundle."""
+        """Sets the FHIR Bundle.
+        The bundle is a collection of FHIR resources.
+        See: https://www.hl7.org/fhir/bundle.html
+        """
         self._bundle = bundle
 
     def get_cds_context(self) -> Optional[Dict]:
@@ -270,12 +295,6 @@ class FhirData:
     def get_resources(self, resource_type: str) -> List[Any]:
         """
         Get resources of a specific type from the bundle.
-
-        Args:
-            resource_type: The FHIR resource type (e.g., "Condition", "MedicationStatement")
-
-        Returns:
-            List of resources of the specified type
         """
         if not self._bundle:
             return []
@@ -296,7 +315,7 @@ class FhirData:
             self._bundle = create_bundle()
         set_resources(self._bundle, resources, resource_type, replace=replace)
 
-    def add_document(
+    def add_document_reference(
         self,
         document: DocumentReference,
         parent_id: Optional[str] = None,
@@ -306,6 +325,7 @@ class FhirData:
         Adds a DocumentReference resource to the FHIR bundle and establishes
         relationships between documents if a parent_id is provided. The relationship is
         tracked using the FHIR relatesTo element with a specified relationship type.
+        See: https://build.fhir.org/documentreference-definitions.html#DocumentReference.relatesTo
 
         Args:
             document: The DocumentReference to add to the bundle
@@ -342,19 +362,80 @@ class FhirData:
 
         return document.id
 
-    def get_document_family(self, document_id: str) -> Dict[str, Any]:
+    def get_document_references_readable(
+        self, include_data: bool = True, include_relationships: bool = True
+    ) -> List[Dict[str, Any]]:
         """
-        Get a document and all its related documents.
+        Get DocumentReferences resources with their content and optional relationship data
+        in a human-readable dictionary format.
 
         Args:
-            document_id: ID of the document to find relationships for
+            include_data: If True, decode and include the document data (default: True)
+            include_relationships: If True, include related document information (default: True)
+
+        Returns:
+            List of documents with metadata and optionally their content and relationships
+        """
+        documents = []
+        for doc in self.get_resources("DocumentReference"):
+            doc_data = {
+                "id": doc.id,
+                "description": doc.description,
+                "status": doc.status,
+            }
+
+            attachments = read_content_attachment(doc, include_data=include_data)
+            if attachments:
+                doc_data["attachments"] = []
+                for attachment in attachments:
+                    if include_data:
+                        doc_data["attachments"].append(
+                            {
+                                "data": attachment.get("data"),
+                                "metadata": attachment.get("metadata"),
+                            }
+                        )
+                    else:
+                        doc_data["attachments"].append(
+                            {"metadata": attachment.get("metadata")}
+                        )
+
+            if include_relationships:
+                family = self.get_document_reference_family(doc.id)
+                doc_data["relationships"] = {
+                    "parents": [
+                        {"id": p.id, "description": p.description}
+                        for p in family["parents"]
+                    ],
+                    "children": [
+                        {"id": c.id, "description": c.description}
+                        for c in family["children"]
+                    ],
+                    "siblings": [
+                        {"id": s.id, "description": s.description}
+                        for s in family["siblings"]
+                    ],
+                }
+
+            documents.append(doc_data)
+
+        return documents
+
+    def get_document_reference_family(self, document_id: str) -> Dict[str, Any]:
+        """
+        Get a DocumentReference resource and all its related resources
+        based on the relatesTo element in the FHIR standard.
+        See: https://build.fhir.org/documentreference-definitions.html#DocumentReference.relatesTo
+
+        Args:
+            document_id: ID of the DocumentReference resource to find relationships for
 
         Returns:
             Dict containing:
-                'document': The requested document
-                'parents': List of parent documents
-                'children': List of child documents
-                'siblings': List of documents sharing the same parent
+                'document': The requested DocumentReference resource
+                'parents': List of parent DocumentReference resources
+                'children': List of child DocumentReference resources
+                'siblings': List of DocumentReference resources sharing the same parent
         """
         documents = self.get_resources("DocumentReference")
         family = {"document": None, "parents": [], "children": [], "siblings": []}
@@ -395,64 +476,6 @@ class FhirData:
                         family["siblings"].append(doc)
 
         return family
-
-    def get_documents(
-        self, include_data: bool = True, include_relationships: bool = True
-    ) -> List[Dict[str, Any]]:
-        """
-        Get document references with their content and optional relationship data.
-
-        Args:
-            include_data: If True, decode and include the document data (default: True)
-            include_relationships: If True, include related document information (default: True)
-
-        Returns:
-            List of documents with metadata and optionally their content and relationships
-        """
-        documents = []
-        for doc in self.get_resources("DocumentReference"):
-            doc_data = {
-                "id": doc.id,
-                "description": doc.description,
-                "status": doc.status,
-            }
-
-            attachments = read_content_attachment(doc, include_data=include_data)
-            if attachments:
-                doc_data["attachments"] = []
-                for attachment in attachments:
-                    if include_data:
-                        doc_data["attachments"].append(
-                            {
-                                "data": attachment.get("data"),
-                                "metadata": attachment.get("metadata"),
-                            }
-                        )
-                    else:
-                        doc_data["attachments"].append(
-                            {"metadata": attachment.get("metadata")}
-                        )
-
-            if include_relationships:
-                family = self.get_document_family(doc.id)
-                doc_data["relationships"] = {
-                    "parents": [
-                        {"id": p.id, "description": p.description}
-                        for p in family["parents"]
-                    ],
-                    "children": [
-                        {"id": c.id, "description": c.description}
-                        for c in family["children"]
-                    ],
-                    "siblings": [
-                        {"id": s.id, "description": s.description}
-                        for s in family["siblings"]
-                    ],
-                }
-
-            documents.append(doc_data)
-
-        return documents
 
 
 @dataclass

@@ -51,19 +51,19 @@ def test_document_relationships(fhir_data, document_family):
     original, summary, translation = document_family
 
     # Add documents with relationships
-    original_id = fhir_data.add_document(original)
-    summary_id = fhir_data.add_document(summary, parent_id=original_id)
-    fhir_data.add_document(translation, parent_id=original_id)
+    original_id = fhir_data.add_document_reference(original)
+    summary_id = fhir_data.add_document_reference(summary, parent_id=original_id)
+    fhir_data.add_document_reference(translation, parent_id=original_id)
 
     # Test original document family
-    original_family = fhir_data.get_document_family(original_id)
+    original_family = fhir_data.get_document_reference_family(original_id)
     assert original_family["document"].description == "Original Report"
     assert len(original_family["children"]) == 2
     assert len(original_family["parents"]) == 0
     assert len(original_family["siblings"]) == 0
 
     # Test child document family
-    summary_family = fhir_data.get_document_family(summary_id)
+    summary_family = fhir_data.get_document_reference_family(summary_id)
     assert len(summary_family["parents"]) == 1
     assert summary_family["parents"][0].description == "Original Report"
     assert len(summary_family["siblings"]) == 1
@@ -75,12 +75,14 @@ def test_get_documents_output(fhir_data, document_family):
     original, summary, translation = document_family
 
     # Add documents with relationships
-    original_id = fhir_data.add_document(original)
-    summary_id = fhir_data.add_document(summary, parent_id=original_id)
-    fhir_data.add_document(translation, parent_id=original_id)
+    original_id = fhir_data.add_document_reference(original)
+    summary_id = fhir_data.add_document_reference(summary, parent_id=original_id)
+    fhir_data.add_document_reference(translation, parent_id=original_id)
 
     # Test basic document retrieval
-    docs = fhir_data.get_documents(include_data=False, include_relationships=False)
+    docs = fhir_data.get_document_references_readable(
+        include_data=False, include_relationships=False
+    )
     assert len(docs) == 3
     for doc in docs:
         assert "id" in doc
@@ -90,7 +92,9 @@ def test_get_documents_output(fhir_data, document_family):
         assert "relationships" not in doc
 
     # Test with content
-    docs = fhir_data.get_documents(include_data=True, include_relationships=False)
+    docs = fhir_data.get_document_references_readable(
+        include_data=True, include_relationships=False
+    )
     assert len(docs) == 3
     for doc in docs:
         assert "attachments" in doc
@@ -102,7 +106,9 @@ def test_get_documents_output(fhir_data, document_family):
     assert original_doc["attachments"][0]["data"] == "original content"
 
     # Test with relationships
-    docs = fhir_data.get_documents(include_data=False, include_relationships=True)
+    docs = fhir_data.get_document_references_readable(
+        include_data=False, include_relationships=True
+    )
     original_doc = next(d for d in docs if d["id"] == original_id)
     summary_doc = next(d for d in docs if d["id"] == summary_id)
 
@@ -113,7 +119,7 @@ def test_get_documents_output(fhir_data, document_family):
 
 def test_document_not_found(fhir_data):
     """Test behavior when requesting non-existent document."""
-    family = fhir_data.get_document_family("nonexistent-id")
+    family = fhir_data.get_document_reference_family("nonexistent-id")
     assert family["document"] is None
     assert len(family["parents"]) == 0
     assert len(family["children"]) == 0
@@ -122,7 +128,7 @@ def test_document_not_found(fhir_data):
 
 def test_relationship_metadata(fhir_data, sample_document_reference):
     """Test the structure of relationship metadata."""
-    doc_id = fhir_data.add_document(sample_document_reference)
+    doc_id = fhir_data.add_document_reference(sample_document_reference)
 
     child_doc = create_document_reference(
         data="child content",
@@ -130,7 +136,7 @@ def test_relationship_metadata(fhir_data, sample_document_reference):
         description="Child Document",
     )
 
-    fhir_data.add_document(child_doc, parent_id=doc_id)
+    fhir_data.add_document_reference(child_doc, parent_id=doc_id)
 
     # Verify relationship structure
     child = fhir_data.get_resources("DocumentReference")[1]
