@@ -7,6 +7,8 @@ from healthchain.fhir.helpers import (
     create_single_codeable_concept,
     create_single_reaction,
     set_problem_list_item_category,
+    read_content_attachment,
+    create_document_reference,
 )
 
 from healthchain.fhir.bundle_helpers import (
@@ -14,7 +16,6 @@ from healthchain.fhir.bundle_helpers import (
     add_resource,
     get_resources,
     set_resources,
-    RESOURCE_TYPES,
 )
 
 __all__ = [
@@ -25,10 +26,11 @@ __all__ = [
     "create_single_codeable_concept",
     "create_single_reaction",
     "set_problem_list_item_category",
+    "read_content_attachment",
+    "create_document_reference",
     # Bundle operations
     "create_bundle",
     "add_resource",
     "get_resources",
     "set_resources",
-    "RESOURCE_TYPES",
 ]

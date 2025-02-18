@@ -16,7 +16,7 @@ from healthchain.fhir.helpers import (
     set_problem_list_item_category,
     create_single_attachment,
     create_document_reference,
-    read_attachment,
+    read_content_attachment,
 )
 
 
@@ -64,6 +64,8 @@ def test_create_condition():
     )
 
     assert isinstance(condition, Condition)
+    assert condition.id.startswith("hc-")
+    assert len(condition.id) > 3  # Ensure there's content after "hc-"
     assert condition.subject.reference == "Patient/123"
     assert condition.clinicalStatus.coding[0].code == "resolved"
     assert condition.code.coding[0].code == "123"
@@ -84,6 +86,8 @@ def test_create_medication_statement_minimal():
     )
 
     assert isinstance(medication, MedicationStatement)
+    assert medication.id.startswith("hc-")
+    assert len(medication.id) > 3  # Ensure there's content after "hc-"
     assert medication.subject.reference == "Patient/123"
     assert medication.status == "recorded"
     assert medication.medication.concept.coding[0].code == "123"
@@ -101,6 +105,8 @@ def test_create_allergy_intolerance_minimal():
     )
 
     assert isinstance(allergy, AllergyIntolerance)
+    assert allergy.id.startswith("hc-")
+    assert len(allergy.id) > 3  # Ensure there's content after "hc-"
     assert allergy.patient.reference == "Patient/123"
     assert allergy.code.coding[0].code == "123"
     assert allergy.code.coding[0].display == "Test Allergy"
@@ -149,6 +155,8 @@ def test_create_document_reference():
     )
 
     assert isinstance(doc_ref, DocumentReference)
+    assert doc_ref.id.startswith("hc-")
+    assert len(doc_ref.id) > 3  # Ensure there's content after "hc-"
     assert doc_ref.status == "current"
     assert doc_ref.description == "Test Description"
     assert len(doc_ref.content) == 1
@@ -170,6 +178,8 @@ def test_create_document_reference_with_url():
     )
 
     assert isinstance(doc_ref, DocumentReference)
+    assert doc_ref.id.startswith("hc-")
+    assert len(doc_ref.id) > 3  # Ensure there's content after "hc-"
     assert doc_ref.status == "superseded"
     assert len(doc_ref.content) == 1
     assert doc_ref.content[0].attachment.contentType == "application/pdf"
@@ -189,7 +199,7 @@ def test_read_attachment_with_data():
     )
 
     # Test reading attachments
-    attachments = read_attachment(doc_ref)
+    attachments = read_content_attachment(doc_ref)
     assert isinstance(attachments, list)
     assert len(attachments) == 1
     assert attachments[0]["data"] == test_content
@@ -198,7 +208,7 @@ def test_read_attachment_with_data():
     assert attachments[0]["metadata"]["creation"] is not None
 
     # Test reading without content
-    attachments = read_attachment(doc_ref, include_content=False)
+    attachments = read_content_attachment(doc_ref, include_data=False)
     assert isinstance(attachments, list)
     assert len(attachments) == 1
     assert "data" not in attachments[0]
@@ -216,7 +226,7 @@ def test_read_attachment_with_url():
     )
 
     # Test reading attachments
-    attachments = read_attachment(doc_ref)
+    attachments = read_content_attachment(doc_ref)
     assert isinstance(attachments, list)
     assert len(attachments) == 1
     assert attachments[0]["data"] == test_url
@@ -225,7 +235,7 @@ def test_read_attachment_with_url():
     assert attachments[0]["metadata"]["creation"] is not None
 
     # Test reading without content
-    attachments = read_attachment(doc_ref, include_content=False)
+    attachments = read_content_attachment(doc_ref, include_data=False)
     assert isinstance(attachments, list)
     assert len(attachments) == 1
     assert "data" not in attachments[0]

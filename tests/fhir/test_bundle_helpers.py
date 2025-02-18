@@ -5,6 +5,7 @@ from fhir.resources.bundle import Bundle
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.documentreference import DocumentReference
 
 from healthchain.fhir.bundle_helpers import (
     create_bundle,
@@ -12,7 +13,6 @@ from healthchain.fhir.bundle_helpers import (
     get_resources,
     set_resources,
     get_resource_type,
-    RESOURCE_TYPES,
 )
 
 
@@ -46,12 +46,12 @@ def test_get_resource_type():
     assert get_resource_type("Condition") == Condition
     assert get_resource_type("MedicationStatement") == MedicationStatement
     assert get_resource_type("AllergyIntolerance") == AllergyIntolerance
-
+    assert get_resource_type("DocumentReference") == DocumentReference
     # Test with class
     assert get_resource_type(Condition) == Condition
 
     # Test invalid type
-    with pytest.raises(ValueError, match="Unsupported resource type"):
+    with pytest.raises(ValueError, match="Could not import resource type"):
         get_resource_type("InvalidType")
 
     # Test invalid input type
@@ -78,10 +78,6 @@ def test_get_resources(empty_bundle, test_condition, test_medication, test_aller
     medications = get_resources(empty_bundle, MedicationStatement)
     assert len(medications) == 1
     assert isinstance(medications[0], MedicationStatement)
-
-    # Test getting non-existent type
-    with pytest.raises(ValueError, match="Unsupported resource type"):
-        get_resources(empty_bundle, "Patient")
 
 
 def test_set_resources_append(empty_bundle, test_condition, test_medication):
@@ -124,13 +120,3 @@ def test_set_resources_type_validation(empty_bundle, test_condition):
         ValueError, match="Resource must be of type MedicationStatement"
     ):
         set_resources(empty_bundle, [test_condition], "MedicationStatement")
-
-
-def test_resource_types_registry():
-    """Test the RESOURCE_TYPES registry."""
-    assert "Condition" in RESOURCE_TYPES
-    assert "MedicationStatement" in RESOURCE_TYPES
-    assert "AllergyIntolerance" in RESOURCE_TYPES
-    assert RESOURCE_TYPES["Condition"] == Condition
-    assert RESOURCE_TYPES["MedicationStatement"] == MedicationStatement
-    assert RESOURCE_TYPES["AllergyIntolerance"] == AllergyIntolerance

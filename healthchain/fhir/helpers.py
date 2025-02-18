@@ -3,6 +3,8 @@
 import logging
 import base64
 import datetime
+import uuid
+
 from typing import Optional, List, Dict, Any
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
@@ -14,6 +16,15 @@ from fhir.resources.attachment import Attachment
 
 
 logger = logging.getLogger(__name__)
+
+
+def _generate_id() -> str:
+    """Generate a unique ID prefixed with 'hc-'.
+
+    Returns:
+        str: A unique ID string prefixed with 'hc-'
+    """
+    return f"hc-{str(uuid.uuid4())}"
 
 
 def create_single_codeable_concept(
@@ -147,6 +158,9 @@ def create_condition(
         code: The condition code
         display: The display name for the condition
         system: The code system (default: SNOMED CT)
+
+    Returns:
+        Condition: A FHIR Condition resource with an auto-generated ID prefixed with 'hc-'
     """
     if code:
         condition_code = create_single_codeable_concept(code, display, system)
@@ -154,6 +168,7 @@ def create_condition(
         condition_code = None
 
     condition = Condition(
+        id=_generate_id(),
         subject={"reference": subject},
         clinicalStatus=create_single_codeable_concept(
             code=status,
@@ -184,6 +199,9 @@ def create_medication_statement(
         code: The medication code
         display: The display name for the medication
         system: The code system (default: SNOMED CT)
+
+    Returns:
+        MedicationStatement: A FHIR MedicationStatement resource with an auto-generated ID prefixed with 'hc-'
     """
     if code:
         medication_concept = create_single_codeable_concept(code, display, system)
@@ -191,6 +209,7 @@ def create_medication_statement(
         medication_concept = None
 
     medication = MedicationStatement(
+        id=_generate_id(),
         subject={"reference": subject},
         status=status,
         medication={"concept": medication_concept},
@@ -215,6 +234,9 @@ def create_allergy_intolerance(
         code: The allergen code
         display: The display name for the allergen
         system: The code system (default: SNOMED CT)
+
+    Returns:
+        AllergyIntolerance: A FHIR AllergyIntolerance resource with an auto-generated ID prefixed with 'hc-'
     """
     if code:
         allergy_code = create_single_codeable_concept(code, display, system)
@@ -222,6 +244,7 @@ def create_allergy_intolerance(
         allergy_code = None
 
     allergy = AllergyIntolerance(
+        id=_generate_id(),
         patient={"reference": patient},
         code=allergy_code,
     )
@@ -251,9 +274,10 @@ def create_document_reference(
         attachment_title: Title for the document attachment
 
     Returns:
-        DocumentReference: A FHIR DocumentReference resource with basic metadata and content
+        DocumentReference: A FHIR DocumentReference resource with an auto-generated ID prefixed with 'hc-'
     """
     document_reference = DocumentReference(
+        id=_generate_id(),
         status=status,
         date=datetime.datetime.now(datetime.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%S%z"
@@ -274,15 +298,17 @@ def create_document_reference(
     return document_reference
 
 
-def read_attachment(
+def read_content_attachment(
     document_reference: DocumentReference,
-    include_content: bool = True,
+    include_data: bool = True,
 ) -> Optional[List[Dict[str, Any]]]:
-    """Read the attachments from a FHIR DocumentReference.
+    """Read the attachments in a human readable format from a FHIR DocumentReference content field.
 
     Args:
         document_reference: The FHIR DocumentReference resource
-        include_content: Whether to include the content of the attachments - useful to set false for large attachments (default: True)
+        include_data: Whether to include the data of the attachments.
+        If true, the data will be also be decoded (default: True)
+
     Returns:
         Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,
             or None if no attachments are found
@@ -295,7 +321,7 @@ def read_attachment(
         attachment = content.attachment
         result = {}
 
-        if include_content:
+        if include_data:
             result["data"] = (
                 attachment.url if attachment.url else attachment.data.decode("utf-8")
             )

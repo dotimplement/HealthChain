@@ -19,21 +19,12 @@ Example usage:
     >>> set_resources(bundle, [new_allergy], "AllergyIntolerance")
 """
 
-from typing import List, Type, TypeVar, Optional, Dict, Union
+from typing import List, Type, TypeVar, Optional, Union
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.resource import Resource
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
+
 
 T = TypeVar("T", bound=Resource)
-
-# Registry of supported FHIR resource types
-RESOURCE_TYPES: Dict[str, Type[Resource]] = {
-    "Condition": Condition,
-    "MedicationStatement": MedicationStatement,
-    "AllergyIntolerance": AllergyIntolerance,
-}
 
 
 def create_bundle(bundle_type: str = "collection") -> Bundle:
@@ -74,7 +65,7 @@ def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resourc
         The resource type class
 
     Raises:
-        ValueError: If the resource type is not supported
+        ValueError: If the resource type is not supported or cannot be imported
     """
     if isinstance(resource_type, type) and issubclass(resource_type, Resource):
         return resource_type
@@ -84,13 +75,17 @@ def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resourc
             f"Resource type must be a string or Resource class, got {type(resource_type)}"
         )
 
-    if resource_type not in RESOURCE_TYPES:
-        raise ValueError(
-            f"Unsupported resource type: {resource_type}. "
-            f"Supported types are: {', '.join(RESOURCE_TYPES.keys())}"
+    try:
+        # Try to import the resource type dynamically from fhir.resources
+        module = __import__(
+            f"fhir.resources.{resource_type.lower()}", fromlist=[resource_type]
         )
-
-    return RESOURCE_TYPES[resource_type]
+        return getattr(module, resource_type)
+    except (ImportError, AttributeError) as e:
+        raise ValueError(
+            f"Could not import resource type: {resource_type}. "
+            "Make sure it is a valid FHIR resource type."
+        ) from e
 
 
 def get_resources(
