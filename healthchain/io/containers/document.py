@@ -9,6 +9,7 @@ from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.bundle import Bundle
 from fhir.resources.documentreference import DocumentReference
+from fhir.resources.resource import Resource
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
@@ -201,20 +202,18 @@ class ModelOutputs:
 @dataclass
 class FhirData:
     """
-    Container for FHIR resources and CDS Hooks context.
+    Container for FHIR resource data and its context.
 
-    This class stores and manages clinical data in FHIR format, including documents and their relationships,
-    with additional support for CDS Hooks context when needed.
+    Stores and manages clinical data in FHIR format.
+    Access document references within resources easily through convenience functions.
 
-    Also includes collections of resources for common continuity of care lists, such as a problem list, medication list, and allergy list.
+    Also allows you to set common continuity of care lists,
+    such as a problem list, medication list, and allergy list.
     These collections are accessible as properties of the class instance.
 
-
     Attributes:
-        _bundle (Optional[Bundle]): FHIR Bundle containing clinical resources
-            like problems, medications, allergies, documents and other clinical information.
-        _cds_context (Optional[Dict]): Additional context required for CDS Hooks
-            integration.
+        _prefetch_resources (Optional[Dict[str, Resource]]): Resources specifically requested by CDS services
+        _bundle (Optional[Bundle]): Working bundle containing all other clinical resources
 
     Properties:
         problem_list: List[Condition]
@@ -231,8 +230,8 @@ class FhirData:
         >>> documents = fhir_data.get_documents(include_data=True)
     """
 
+    _prefetch_resources: Optional[Dict[str, Resource]] = None
     _bundle: Optional[Bundle] = None
-    _cds_context: Optional[Dict] = None
 
     @property
     def problem_list(self) -> List[Condition]:
@@ -284,18 +283,18 @@ class FhirData:
         """
         self._bundle = bundle
 
-    def get_cds_context(self) -> Optional[Dict]:
-        """Returns the CDS context if it exists."""
-        return self._cds_context
+    def get_prefetch_resources(self, key: str) -> List[Any]:
+        """Get resources of a specific type from the prefetch bundle."""
+        if not self._prefetch_resources:
+            return []
+        return self._prefetch_resources.get(key, [])
 
-    def set_cds_context(self, context: Dict):
-        """Sets the CDS context."""
-        self._cds_context = context
+    def set_prefetch_resources(self, prefetch_resources: Dict[str, Resource]):
+        """Sets the prefetch FHIR resources from CDS service requests."""
+        self._prefetch_resources = prefetch_resources
 
     def get_resources(self, resource_type: str) -> List[Any]:
-        """
-        Get resources of a specific type from the bundle.
-        """
+        """Get resources of a specific type from the working bundle."""
         if not self._bundle:
             return []
         return get_resources(self._bundle, resource_type)
@@ -303,14 +302,7 @@ class FhirData:
     def add_resources(
         self, resources: List[Any], resource_type: str, replace: bool = False
     ):
-        """
-        Add resources of a specific type to the bundle.
-
-        Args:
-            resources: List of FHIR resources to add
-            resource_type: The FHIR resource type (e.g., "Condition", "MedicationStatement")
-            replace: If True, replace existing resources of this type. If False, append.
-        """
+        """Add resources to the working bundle."""
         if not self._bundle:
             self._bundle = create_bundle()
         set_resources(self._bundle, resources, resource_type, replace=replace)

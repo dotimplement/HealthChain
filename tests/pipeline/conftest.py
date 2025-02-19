@@ -5,7 +5,7 @@ from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import (
     CdsAnnotations,
-    HL7Data,
+    FhirData,
     ModelOutputs,
     NlpAnnotations,
 )
@@ -19,8 +19,10 @@ from healthchain.models.data.concept import (
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.pipeline.base import BasePipeline, ModelConfig, ModelSource
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
-from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.pipeline.modelrouter import ModelRouter
+
+
+# Basic object fixtures
 
 
 @pytest.fixture
@@ -55,6 +57,9 @@ def mock_chain():
     return chain
 
 
+# Config fixtures
+
+
 @pytest.fixture
 def spacy_config():
     return ModelConfig(
@@ -78,6 +83,62 @@ def hf_config():
     )
 
 
+# CDS component fixtures
+
+
+@pytest.fixture
+def mock_cds_card_creator():
+    with patch("healthchain.pipeline.modelrouter.ModelRouter.get_component") as mock:
+        llm_instance = mock.return_value
+        llm_instance.return_value = Document(
+            data="Summarized discharge information",
+            _cds=CdsAnnotations(
+                _cards=[
+                    Card(
+                        summary="Summarized discharge information",
+                        detail="Patient John Doe was discharged. Encounter details...",
+                        indicator="info",
+                        source={"label": "Summarization LLM"},
+                    )
+                ],
+            ),
+        )
+        yield mock
+
+
+@pytest.fixture
+def mock_cds_fhir_connector(test_condition):
+    with patch("healthchain.io.cdsfhirconnector.CdsFhirConnector") as mock:
+        connector_instance = mock.return_value
+
+        # Mock the input method
+        fhir_data = FhirData()
+        fhir_data.set_prefetch_resources({"problem": test_condition})
+
+        connector_instance.input.return_value = Document(
+            data="Original FHIR data",
+            _fhir=fhir_data,
+        )
+
+        # Mock the output method
+        connector_instance.output.return_value = CDSResponse(
+            cards=[
+                Card(
+                    summary="Summarized discharge information",
+                    detail="Patient John Doe was discharged. Encounter details...",
+                    indicator="info",
+                    source={"label": "Summarization LLM"},
+                )
+            ]
+        )
+
+        yield mock
+
+
+# CDA component fixtures
+
+
+# TODO: UPDATE THESE
 @pytest.fixture
 def mock_cda_annotator():
     with patch("healthchain.io.cdaconnector.CdaAnnotator") as mock:
@@ -112,26 +173,6 @@ def mock_cda_annotator():
 
 
 @pytest.fixture
-def mock_cds_card_creator():
-    with patch("healthchain.pipeline.modelrouter.ModelRouter.get_component") as mock:
-        llm_instance = mock.return_value
-        llm_instance.return_value = Document(
-            data="Summarized discharge information",
-            _cds=CdsAnnotations(
-                _cards=[
-                    Card(
-                        summary="Summarized discharge information",
-                        detail="Patient John Doe was discharged. Encounter details...",
-                        indicator="info",
-                        source={"label": "Summarization LLM"},
-                    )
-                ],
-            ),
-        )
-        yield mock
-
-
-@pytest.fixture
 def mock_cda_connector():
     with patch("healthchain.io.cdaconnector.CdaConnector") as mock:
         connector_instance = mock.return_value
@@ -139,7 +180,7 @@ def mock_cda_connector():
         # Mock the input method
         connector_instance.input.return_value = Document(
             data="Original note",
-            _hl7=HL7Data(
+            _fhir=FhirData(
                 _ccd_data=CcdData(
                     concepts=ConceptLists(
                         problems=[
@@ -179,50 +220,10 @@ def mock_cda_connector():
         yield mock
 
 
-@pytest.fixture
-def mock_cds_fhir_connector():
-    with patch("healthchain.io.cdsfhirconnector.CdsFhirConnector") as mock:
-        connector_instance = mock.return_value
-
-        # Mock the input method
-        connector_instance.input.return_value = Document(
-            data="Original FHIR data",
-            _hl7=HL7Data(
-                _fhir_data=CdsFhirData(
-                    context={"patientId": "123", "encounterId": "456"},
-                    prefetch={
-                        "resourceType": "Bundle",
-                        "entry": [
-                            {
-                                "resource": {
-                                    "resourceType": "Patient",
-                                    "id": "123",
-                                    "name": [{"family": "Doe", "given": ["John"]}],
-                                    "gender": "male",
-                                    "birthDate": "1970-01-01",
-                                }
-                            },
-                        ],
-                    },
-                ),
-            ),
-        )
-
-        # Mock the output method
-        connector_instance.output.return_value = CDSResponse(
-            cards=[
-                Card(
-                    summary="Summarized discharge information",
-                    detail="Patient John Doe was discharged. Encounter details...",
-                    indicator="info",
-                    source={"label": "Summarization LLM"},
-                )
-            ]
-        )
-
-        yield mock
+# NLP component fixtures
 
 
+# TODO: UPDATE THIS
 @pytest.fixture
 def mock_spacy_nlp():
     with patch("healthchain.pipeline.components.integrations.SpacyNLP") as mock:

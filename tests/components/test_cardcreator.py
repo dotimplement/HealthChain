@@ -52,7 +52,7 @@ def test_document_processing_with_model_output():
     )
 
     processed_doc = creator(doc)
-    cards = processed_doc.cds.get_cards()
+    cards = processed_doc.cds.cards
 
     assert len(cards) == 1
     assert cards[0].summary == "Model summary"
@@ -64,7 +64,7 @@ def test_document_processing_with_static_content():
     doc = Document(data="test")
 
     processed_doc = creator(doc)
-    cards = processed_doc.cds.get_cards()
+    cards = processed_doc.cds.cards
 
     assert len(cards) == 1
     assert cards[0].summary == "Static content"
@@ -77,7 +77,7 @@ def test_missing_model_output_warning(caplog):
     processed_doc = creator(doc)
 
     assert "No generated text for huggingface/missing_task found" in caplog.text
-    assert not processed_doc.cds.get_cards()
+    assert not processed_doc.cds.cards
 
 
 def test_invalid_input_configuration():

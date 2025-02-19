@@ -9,15 +9,6 @@ def test_bundle_operations(fhir_data, sample_bundle):
     assert fhir_data.get_bundle() == sample_bundle
 
 
-def test_cds_context_operations(fhir_data):
-    """Test CDS context operations."""
-    assert fhir_data.get_cds_context() is None
-
-    test_context = {"hook": "patient-view", "hookInstance": "123"}
-    fhir_data.set_cds_context(test_context)
-    assert fhir_data.get_cds_context() == test_context
-
-
 def test_resource_operations(fhir_data):
     """Test adding and getting generic resources."""
     # Create test conditions
@@ -148,3 +139,16 @@ def test_relationship_metadata(fhir_data, sample_document_reference):
         == "http://hl7.org/fhir/ValueSet/document-relationship-type"
     )
     assert child.relatesTo[0]["target"]["reference"] == f"DocumentReference/{doc_id}"
+
+
+def test_multiple_document_attachments(fhir_data, doc_ref_with_multiple_content):
+    """Test handling documents with multiple attachments."""
+    # Add and retrieve document
+    doc_id = fhir_data.add_document_reference(doc_ref_with_multiple_content)
+    docs = fhir_data.get_document_references_readable(include_data=True)
+    retrieved_doc = next(d for d in docs if d["id"] == doc_id)
+
+    # Verify attachments
+    assert len(retrieved_doc["attachments"]) == 2
+    assert retrieved_doc["attachments"][0]["data"] == "First content"
+    assert retrieved_doc["attachments"][1]["data"] == "Second content"

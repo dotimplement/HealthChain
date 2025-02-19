@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
 from fhir.resources.bundle import Bundle, BundleEntry
-from healthchain.models import CDSRequest, CdsFhirData
+from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.models.requests.cdarequest import CdaRequest
+from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.service.soap.epiccdsservice import CDSServices
@@ -27,10 +28,17 @@ from healthchain.fhir import (
     create_condition,
     create_medication_statement,
     create_allergy_intolerance,
+    create_single_attachment,
+    create_document_reference,
 )
+
+from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
 
 
 # TODO: Tidy up fixtures
+
+
+# FHIR resource fixtures
 
 
 @pytest.fixture
@@ -76,6 +84,85 @@ def test_allergy_list():
     return [test_allergy]
 
 
+@pytest.fixture
+def doc_ref_with_content():
+    """Create a DocumentReference with single text content."""
+    return create_document_reference(
+        data="Test document content",
+        content_type="text/plain",
+        description="Test Description",
+    )
+
+
+@pytest.fixture
+def doc_ref_with_multiple_content():
+    """Create a DocumentReference with multiple text content."""
+    doc_ref = create_document_reference(
+        data="First content",
+        content_type="text/plain",
+        description="Test Description",
+    )
+    doc_ref.content.append(
+        DocumentReferenceContent(
+            attachment=create_single_attachment(
+                data="Second content", content_type="text/plain"
+            )
+        )
+    )
+    return doc_ref
+
+
+@pytest.fixture
+def doc_ref_without_content():
+    """Create a DocumentReference without content for error testing."""
+    return DocumentReference(
+        status="current",
+        content=[
+            {"attachment": {"contentType": "text/plain"}}
+        ],  # Missing required data
+    )
+
+
+@pytest.fixture
+def test_document(test_problem_list, test_medication_list, test_allergy_list):
+    """Create a test document with FHIR resources."""
+    doc = Document(data="Test note")
+    doc.fhir.set_bundle(create_bundle())
+
+    # Add test FHIR resources
+    doc.fhir.problem_list = test_problem_list
+    doc.fhir.medication_list = test_medication_list
+    doc.fhir.allergy_list = test_allergy_list
+    return doc
+
+
+@pytest.fixture
+def test_document_multiple(test_problem_list, test_medication_list, test_allergy_list):
+    """Create a test document with multiple FHIR resources."""
+    doc = Document(data="Test note with multiple resources")
+    doc.fhir.set_bundle(create_bundle())
+
+    test_problem_list.append(
+        create_condition(subject="Patient/123", code="987", display="Test Condition 2")
+    )
+    test_medication_list.append(
+        create_medication_statement(
+            subject="Patient/123", code="654", display="Test Medication 2"
+        )
+    )
+    test_allergy_list.append(
+        create_allergy_intolerance(
+            patient="Patient/123", code="321", display="Test Allergy 2"
+        )
+    )
+
+    # Add multiple test FHIR resources
+    doc.fhir.problem_list = test_problem_list
+    doc.fhir.medication_list = test_medication_list
+    doc.fhir.allergy_list = test_allergy_list
+    return doc
+
+
 @pytest.fixture(autouse=True)
 def setup_caplog(caplog):
     caplog.set_level(logging.WARNING)
@@ -105,51 +192,8 @@ class MockDataGenerator:
 
 
 @pytest.fixture
-def test_document(test_problem_list, test_medication_list, test_allergy_list):
-    """Create a test document with FHIR resources."""
-    doc = Document(data="Test note")
-    doc.fhir.set_bundle(create_bundle())
-
-    # Add test FHIR resources
-    doc.fhir.problem_list = test_problem_list
-    doc.fhir.medication_list = test_medication_list
-    doc.fhir.allergy_list = test_allergy_list
-    return doc
-
-
-@pytest.fixture
-def test_document_with_cda():
-    """Create a test document with CDA XML."""
-    doc = Document(data="Test note")
-    doc.cda_xml = "<ClinicalDocument>Test CDA</ClinicalDocument>"
-    return doc
-
-
-@pytest.fixture
-def test_document_multiple(test_problem_list, test_medication_list, test_allergy_list):
-    """Create a test document with multiple FHIR resources."""
-    doc = Document(data="Test note with multiple resources")
-    doc.fhir.set_bundle(create_bundle())
-
-    test_problem_list.append(
-        create_condition(subject="Patient/123", code="987", display="Test Condition 2")
-    )
-    test_medication_list.append(
-        create_medication_statement(
-            subject="Patient/123", code="654", display="Test Medication 2"
-        )
-    )
-    test_allergy_list.append(
-        create_allergy_intolerance(
-            patient="Patient/123", code="321", display="Test Allergy 2"
-        )
-    )
-
-    # Add multiple test FHIR resources
-    doc.fhir.problem_list = test_problem_list
-    doc.fhir.medication_list = test_medication_list
-    doc.fhir.allergy_list = test_allergy_list
-    return doc
+def cdsservices():
+    return CDSServices()
 
 
 @pytest.fixture
@@ -228,63 +272,7 @@ def mock_cds() -> BaseUseCase:
     return MockClinicalDecisionSupport
 
 
-@pytest.fixture
-def test_cds_request():
-    cds_dict = {
-        "hook": "patient-view",
-        "hookInstance": "29e93987-c345-4cb7-9a92-b5136289c2a4",
-        "context": {"userId": "Practitioner/123", "patientId": "123"},
-        "prefetch": {
-            "resourceType": "Bundle",
-            "entry": [
-                {
-                    "resource": {
-                        "resourceType": "Patient",
-                        "id": "123",
-                        "name": [{"family": "Doe", "given": ["John"]}],
-                        "gender": "male",
-                        "birthDate": "1970-01-01",
-                    }
-                },
-            ],
-        },
-    }
-    return CDSRequest(**cds_dict)
-
-
-@pytest.fixture
-def test_cds_response_single_card():
-    return CDSResponse(
-        cards=[
-            Card(
-                summary="Test Card",
-                indicator="info",
-                source={"label": "Test Source"},
-                detail="This is a test card for CDS response",
-            )
-        ]
-    )
-
-
-@pytest.fixture
-def test_cds_response_empty():
-    return CDSResponse(cards=[])
-
-
-@pytest.fixture
-def test_cds_response_multiple_cards():
-    return CDSResponse(
-        cards=[
-            Card(
-                summary="Test Card 1", indicator="info", source={"label": "Test Source"}
-            ),
-            Card(
-                summary="Test Card 2",
-                indicator="warning",
-                source={"label": "Test Source"},
-            ),
-        ]
-    )
+# Sandbox fixtures
 
 
 @pytest.fixture
@@ -455,6 +443,63 @@ def clindoc():
     )
 
 
+# Test request and response fixtures
+
+
+@pytest.fixture
+def test_cds_request():
+    cds_dict = {
+        "hook": "patient-view",
+        "hookInstance": "29e93987-c345-4cb7-9a92-b5136289c2a4",
+        "context": {"userId": "Practitioner/123", "patientId": "123"},
+        "prefetch": {
+            "patient": {
+                "resourceType": "Patient",
+                "id": "123",
+                "name": [{"family": "Doe", "given": ["John"]}],
+                "gender": "male",
+                "birthDate": "1970-01-01",
+            },
+        },
+    }
+    return CDSRequest(**cds_dict)
+
+
+@pytest.fixture
+def test_cds_response_single_card():
+    return CDSResponse(
+        cards=[
+            Card(
+                summary="Test Card",
+                indicator="info",
+                source={"label": "Test Source"},
+                detail="This is a test card for CDS response",
+            )
+        ]
+    )
+
+
+@pytest.fixture
+def test_cds_response_empty():
+    return CDSResponse(cards=[])
+
+
+@pytest.fixture
+def test_cds_response_multiple_cards():
+    return CDSResponse(
+        cards=[
+            Card(
+                summary="Test Card 1", indicator="info", source={"label": "Test Source"}
+            ),
+            Card(
+                summary="Test Card 2",
+                indicator="warning",
+                source={"label": "Test Source"},
+            ),
+        ]
+    )
+
+
 @pytest.fixture
 def test_cda_request():
     with open("./tests/data/test_cda.xml", "r") as file:
@@ -499,8 +544,3 @@ def cda_annotator_code():
     with open("./tests/data/test_cda_without_template_id.xml", "r") as file:
         test_cda_without_template_id = file.read()
     return CdaAnnotator.from_xml(test_cda_without_template_id)
-
-
-@pytest.fixture
-def cdsservices():
-    return CDSServices()

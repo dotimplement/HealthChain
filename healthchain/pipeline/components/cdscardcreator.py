@@ -186,6 +186,6 @@ class CdsCardCreator(BaseComponent[str]):
                     logger.warning(f"Error creating card: {str(e)}")
 
         if cards:
-            doc.add_cds_cards(cards)
+            doc.cds.cards = cards
 
         return doc

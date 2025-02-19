@@ -1,10 +1,13 @@
 import logging
+from typing import Optional
+
+from fhir.resources.documentreference import DocumentReference
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseConnector
-from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
+from healthchain.fhir import read_content_attachment
 
 
 log = logging.getLogger(__name__)
@@ -25,83 +28,86 @@ class CdsFhirConnector(BaseConnector):
     def __init__(self, hook_name: str):
         self.hook_name = hook_name
 
-    def input(self, in_data: CDSRequest) -> Document:
+    def input(
+        self, cds_request: CDSRequest, prefetch_document_key: Optional[str] = "document"
+    ) -> Document:
         """
-        Converts a CDSRequest object into a Document object containing FHIR resources.
+        Converts a CDSRequest object into a Document object.
 
-        This method takes a CDSRequest object as input, extracts the context and prefetch data,
-        and creates a CdsFhirData object. It then returns a Document object containing the FHIR data
-        and any extracted text content from DocumentReference resources.
+        Takes a CDSRequest containing FHIR resources and extracts them into a Document object.
+        The Document will contain all prefetched FHIR resources in its fhir.prefetch_resources.
+        If a DocumentReference resource is provided via prefetch_document_key, its text content
+        will be extracted into Document.data.
 
         Args:
-            in_data (CDSRequest): The input CDSRequest object containing context and prefetch data.
+            cds_request (CDSRequest): The CDSRequest containing FHIR resources in its prefetch
+                and/or a FHIR server URL.
+            prefetch_document_key (str, optional): Key in the prefetch data containing a
+                DocumentReference resource whose text content should be extracted.
+                Defaults to "document".
 
         Returns:
-            Document: A Document object with the following attributes:
-                - data: Either a string representation of the prefetch data, or if a DocumentReference
-                  is present, the text content from that resource
-                - hl7: Contains the CdsFhirData object with context and prefetch data
+            Document: A Document object containing:
+                - All prefetched FHIR resources in fhir.prefetch_resources
+                - Any text content from the DocumentReference in data (empty string if none found)
 
         Raises:
-            ValueError: If neither prefetch nor fhirServer is provided in the input data
-            NotImplementedError: If fhirServer is provided (not yet implemented)
-            ValueError: If the provided prefetch data is invalid
-
-        Note:
-            The method currently only supports prefetch data and does not handle FHIR server interactions.
-            When a DocumentReference resource is present in the prefetch data, its text content will be
-            extracted and stored as the Document's data field.
+            ValueError: If neither prefetch nor fhirServer is provided in cds_request
+            ValueError: If the prefetch data is invalid or cannot be processed
+            NotImplementedError: If fhirServer is provided (FHIR server support not implemented)
         """
-        if in_data.prefetch is None and in_data.fhirServer is None:
+        if cds_request.prefetch is None and cds_request.fhirServer is None:
             raise ValueError(
                 "Either prefetch or fhirServer must be provided to extract FHIR data!"
             )
 
-        if in_data.fhirServer is not None:
+        if cds_request.fhirServer is not None:
             raise NotImplementedError("FHIR server is not implemented yet!")
 
-        try:
-            cds_fhir_data = CdsFhirData.create(
-                context=in_data.context.model_dump(), prefetch=in_data.prefetch
+        # Create an empty Document object
+        doc = Document(data="")
+
+        # Set the prefetch resources
+        doc.fhir.set_prefetch_resources(cds_request.prefetch)
+
+        # Extract text content from DocumentReference resource if provided
+        document_resource = cds_request.prefetch.get(prefetch_document_key)
+        if not document_resource:
+            log.warning(
+                f"No DocumentReference resource found in prefetch data with key {prefetch_document_key}"
             )
-        except Exception as e:
-            raise ValueError("Invalid prefetch data provided: {e}!") from e
-
-        doc = Document(data=str(cds_fhir_data.model_dump_prefetch()))
-
-        # Extract text from DocumentReference resources if present
-        for entry in cds_fhir_data.prefetch.entry_field:
-            if entry.resource_field.resourceType == "DocumentReference":
-                doc.data = entry.resource_field.text_field.div_field
-
-        doc.hl7.set_fhir_data(cds_fhir_data)
+        elif isinstance(document_resource, DocumentReference):
+            try:
+                attachments = read_content_attachment(
+                    document_resource, include_data=True
+                )
+                for attachment in attachments:
+                    if len(attachments) > 1:
+                        doc.data += attachment.get("data", "") + "\n"
+                    else:
+                        doc.data += attachment.get("data", "")
+            except Exception as e:
+                log.warning(f"Error extracting text from DocumentReference: {e}")
 
         return doc
 
-    def output(self, out_data: Document) -> CDSResponse:
+    def output(self, document: Document) -> CDSResponse:
         """
-        Generates a CDSResponse object from a processed Document object.
+        Convert Document to CDSResponse.
 
-        This method takes a Document object that has been processed and potentially
-        contains CDS cards and system actions. It creates and returns a CDSResponse
-        object based on the contents of the Document.
+        This method takes a Document object containing CDS cards and actions,
+        and converts them into a CDSResponse object that follows the CDS Hooks
+        specification.
 
         Args:
-            out_data (Document): A Document object potentially containing CDS cards
-                                 and system actions.
+            document (Document): The Document object containing CDS results.
 
         Returns:
             CDSResponse: A response object containing CDS cards and optional system actions.
                          If no cards are found in the Document, an empty list of cards is returned.
-
-        Note:
-            - If out_data.cds_cards is None, a warning is logged and an empty list of cards is returned.
-            - System actions (out_data.cds_actions) are included in the response if present.
         """
-        if out_data.cds.get_cards() is None:
+        if document.cds.cards is None:
             log.warning("No CDS cards found in Document, returning empty list of cards")
             return CDSResponse(cards=[])
 
-        return CDSResponse(
-            cards=out_data.cds.get_cards(), systemActions=out_data.cds.get_actions()
-        )
+        return CDSResponse(cards=document.cds.cards, systemActions=document.cds.actions)
