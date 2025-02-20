@@ -113,6 +113,15 @@ def doc_ref_with_multiple_content():
 
 
 @pytest.fixture
+def doc_ref_with_cda_xml():
+    """Create a DocumentReference with CDA XML content."""
+    return create_document_reference(
+        data="<CDA XML>",
+        content_type="text/xml",
+    )
+
+
+@pytest.fixture
 def doc_ref_without_content():
     """Create a DocumentReference without content for error testing."""
     return DocumentReference(
@@ -202,19 +211,12 @@ def cds_strategy():
 
 
 @pytest.fixture
-def valid_data():
-    return CdsFhirData(
-        context={"userId": "Practitioner/123", "patientId": "123"},
-        prefetch=Bundle(entry=[BundleEntry()]),
-    )
-
-
-@pytest.fixture
-def invalid_data():
-    return CdsFhirData(
-        context={"invalidId": "Practitioner", "patientId": "123"},
-        prefetch=Bundle(entry=[BundleEntry()]),
-    )
+def valid_prefetch_data():
+    return {
+        "document": create_document_reference(
+            content_type="text/plain", data="Test document content"
+        )
+    }
 
 
 @pytest.fixture
