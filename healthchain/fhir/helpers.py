@@ -11,6 +11,7 @@ from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.documentreference import DocumentReference
 from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.codeablereference import CodeableReference
 from fhir.resources.coding import Coding
 from fhir.resources.attachment import Attachment
 
@@ -70,8 +71,10 @@ def create_single_reaction(
     return [
         {
             "manifestation": [
-                CodeableConcept(
-                    coding=[Coding(system=system, code=code, display=display)]
+                CodeableReference(
+                    concept=CodeableConcept(
+                        coding=[Coding(system=system, code=code, display=display)]
+                    )
                 )
             ],
             "severity": severity,
@@ -252,6 +255,7 @@ def create_allergy_intolerance(
     return allergy
 
 
+# TODO: create a function that creates a DocumentReferenceContent to add to the DocumentReference
 def create_document_reference(
     data: Optional[Any] = None,
     url: Optional[str] = None,
@@ -311,7 +315,13 @@ def read_content_attachment(
 
     Returns:
         Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,
-            or None if no attachments are found
+            or None if no attachments are found:
+            [
+                {
+                    "data": str,
+                    "metadata": Dict[str, Any]
+                }
+            ]
     """
     if not document_reference.content:
         return None

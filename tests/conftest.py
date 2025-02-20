@@ -30,6 +30,8 @@ from healthchain.fhir import (
     create_allergy_intolerance,
     create_single_attachment,
     create_document_reference,
+    create_single_codeable_concept,
+    create_single_reaction,
 )
 
 from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
@@ -67,6 +69,38 @@ def test_allergy():
     return create_allergy_intolerance(
         patient="Patient/123", code="789", display="Test Allergy"
     )
+
+
+@pytest.fixture
+def test_allergy_with_reaction(test_allergy):
+    test_allergy.type = create_single_codeable_concept(
+        code="ABC", display="Test Allergy", system="http://snomed.info/sct"
+    )
+
+    test_allergy.reaction = create_single_reaction(
+        code="DEF",
+        display="Test Allergy",
+        system="http://snomed.info/sct",
+        severity="GHI",
+    )
+    return test_allergy
+
+
+@pytest.fixture
+def test_medication_with_dosage(test_medication):
+    test_medication.dosage = [
+        {
+            "doseAndRate": [{"doseQuantity": {"value": 500, "unit": "mg"}}],
+            "route": create_single_codeable_concept(
+                code="test", display="test", system="http://snomed.info/sct"
+            ),
+            "timing": {"repeat": {"period": 1, "periodUnit": "d"}},
+        }
+    ]
+
+    # Add effective period
+    test_medication.effectivePeriod = {"end": "2022-10-20"}
+    return test_medication
 
 
 @pytest.fixture
@@ -534,7 +568,7 @@ def test_soap_request():
 
 
 @pytest.fixture
-def cda_annotator():
+def cda_annotator_with_data():
     with open("./tests/data/test_cda.xml", "r") as file:
         test_cda = file.read()
 
@@ -542,7 +576,7 @@ def cda_annotator():
 
 
 @pytest.fixture
-def cda_annotator_code():
+def cda_annotator_without_template_id():
     with open("./tests/data/test_cda_without_template_id.xml", "r") as file:
         test_cda_without_template_id = file.read()
     return CdaAnnotator.from_xml(test_cda_without_template_id)

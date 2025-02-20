@@ -9,6 +9,7 @@ from healthchain.fhir.helpers import (
     set_problem_list_item_category,
     read_content_attachment,
     create_document_reference,
+    create_single_attachment,
 )
 
 from healthchain.fhir.bundle_helpers import (
@@ -28,6 +29,7 @@ __all__ = [
     "set_problem_list_item_category",
     "read_content_attachment",
     "create_document_reference",
+    "create_single_attachment",
     # Bundle operations
     "create_bundle",
     "add_resource",

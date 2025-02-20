@@ -15,8 +15,9 @@ class MappingStrategy(Enum):
     ERROR = "error"  # Raise error if multiple matches found
 
 
+# TODO: Dates, times, human readable names, etc.
 class CodeMapping:
-    """Handles bidirectional mapping between CDA and FHIR codes."""
+    """Handles bidirectional mapping between CDA and FHIR codes and formats."""
 
     # Default mappings as fallback
     DEFAULT_MAPPINGS = {
@@ -33,6 +34,18 @@ class CodeMapping:
                 "completed": "resolved",
                 "aborted": "inactive",
                 "suspended": "inactive",
+            }
+        },
+        "date_format": {
+            "cda_to_fhir": {
+                "YYYYMMDD": "YYYY-MM-DD",
+            }
+        },
+        "severity": {
+            "cda_to_fhir": {
+                "H": "severe",
+                "M": "moderate",
+                "L": "mild",
             }
         },
     }
@@ -140,3 +153,58 @@ class CodeMapping:
 
         self.mappings[mapping_type]["cda_to_fhir"][cda_code] = fhir_code
         log.info(f"Added mapping: {mapping_type} - {cda_code} -> {fhir_code}")
+
+    # TODO: use datetime
+    @classmethod
+    def convert_date_cda_to_fhir(cls, date_str: Optional[str]) -> Optional[str]:
+        """Convert CDA date format (YYYYMMDD) to FHIR date format (YYYY-MM-DD).
+
+        Args:
+            date_str: Date string in CDA format (YYYYMMDD)
+
+        Returns:
+            Date string in FHIR format (YYYY-MM-DD) or None if input is invalid
+        """
+        if not date_str or not isinstance(date_str, str):
+            return None
+
+        # Validate input format
+        if not date_str.isdigit() or len(date_str) != 8:
+            log.warning(f"Invalid CDA date format: {date_str}")
+            return None
+
+        try:
+            from datetime import datetime
+
+            parsed_date = datetime.strptime(date_str, "%Y%m%d")
+            return parsed_date.strftime("%Y-%m-%d")
+        except (ValueError, TypeError):
+            log.warning(f"Invalid CDA date format: {date_str}")
+            return None
+
+    @classmethod
+    def convert_date_fhir_to_cda(cls, date_str: Optional[str]) -> Optional[str]:
+        """Convert FHIR date format (YYYY-MM-DD) to CDA date format (YYYYMMDD).
+
+        Args:
+            date_str: Date string in FHIR format (YYYY-MM-DD)
+
+        Returns:
+            Date string in CDA format (YYYYMMDD) or None if input is invalid
+        """
+        if not date_str or not isinstance(date_str, str):
+            return None
+
+        # Validate input format
+        if not len(date_str) == 10 or date_str[4] != "-" or date_str[7] != "-":
+            log.warning(f"Invalid FHIR date format: {date_str}")
+            return None
+
+        try:
+            from datetime import datetime
+
+            parsed_date = datetime.strptime(date_str, "%Y-%m-%d")
+            return parsed_date.strftime("%Y%m%d")
+        except (ValueError, TypeError):
+            log.warning(f"Invalid FHIR date format: {date_str}")
+            return None
