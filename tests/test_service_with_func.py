@@ -19,7 +19,7 @@ class myCDS(ClinicalDecisionSupport):
     # decorator sets up an instance of ehr configured with use case CDS
     @ehr(workflow="encounter-discharge", num=3)
     def load_data(self):
-        return self.data_generator.data
+        return self.data_generator.generated_data
 
     @api
     def test_service(self, request: CDSRequest):
