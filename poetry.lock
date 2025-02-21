@@ -572,6 +572,20 @@ files = [
 ]
 
 [[package]]
+name = "eval-type-backport"
+version = "0.1.3"
+description = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "eval_type_backport-0.1.3-py3-none-any.whl", hash = "sha256:519d2a993b3da286df9f90e17f503f66435106ad870cf26620c5720e2158ddf2"},
+    {file = "eval_type_backport-0.1.3.tar.gz", hash = "sha256:d83ee225331dfa009493cec1f3608a71550b515ee4749abe78da14e3c5e314f5"},
+]
+
+[package.extras]
+tests = ["pytest"]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
@@ -3392,4 +3406,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "f317cb685fbe5ee37470f03beeaca699601a5bb5029bcc359e76d2939dc6668c"
+content-hash = "26e0e1c27f5b77fda60153a68515bbb3767e097e7277834df08e11237513d0dd"
