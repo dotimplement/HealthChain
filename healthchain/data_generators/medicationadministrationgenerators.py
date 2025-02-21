@@ -40,12 +40,14 @@ class MedicationAdministrationGenerator(BaseGenerator):
         return MedicationAdministration(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
+            occurenceDateTime=generator_registry.get("DateGenerator").generate(),
             medication=CodeableReference(
-                reference=Reference(reference="Medication/123")
+                concept=generator_registry.get(
+                    "MedicationRequestContainedGenerator"
+                ).generate()
             ),
             subject=Reference(reference=subject_reference),
             encounter=Reference(reference=encounter_reference),
-            authoredOn=generator_registry.get("DateGenerator").generate(),
             dosage=generator_registry.get(
                 "MedicationAdministrationDosageGenerator"
             ).generate(),

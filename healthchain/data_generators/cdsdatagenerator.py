@@ -2,28 +2,38 @@ import random
 import csv
 import logging
 
-from pydantic import BaseModel
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, List
 from pathlib import Path
 
 from healthchain.base import Workflow
-from fhir.resources.bundle import Bundle, BundleEntry
+from fhir.resources.resource import Resource
 from healthchain.data_generators.basegenerators import generator_registry
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.narrative import Narrative
-from healthchain.models.data.cdsfhirdata import CdsFhirData
+from healthchain.fhir import create_document_reference
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: generate test context - move from hook models
 class CdsDataGenerator:
     """
     A class to generate CDS (Clinical Decision Support) data based on specified workflows and constraints.
 
+    This class provides functionality to generate synthetic FHIR resources for testing CDS systems.
+    It uses registered data generators to create resources like Patients, Encounters, Conditions etc.
+    based on configured workflows. It can also incorporate free text data from CSV files.
+
     Attributes:
-        registry (dict): A registry of data generators.
-        mappings (dict): A mapping of workflows to their respective data generators.
-        data (CdsFhirData): The generated CDS FHIR data.
+        registry (dict): A registry mapping generator names to generator classes.
+        mappings (dict): A mapping of workflow names to lists of required generators.
+        generated_data (Dict[str, Resource]): The most recently generated FHIR resources.
+        workflow (str): The currently active workflow.
+
+    Example:
+        >>> generator = CdsDataGenerator()
+        >>> generator.set_workflow("encounter_discharge")
+        >>> data = generator.generate_prefetch(
+        ...     random_seed=42
+        ... )
     """
 
     # TODO: Add ordering and logic so that patient/encounter IDs are passed to subsequent generators
@@ -46,17 +56,22 @@ class CdsDataGenerator:
     def __init__(self):
         self.registry = generator_registry
         self.mappings = self.default_workflow_mappings
-        self.data: CdsFhirData = None
+        self.generated_data: Dict[str, Resource] = {}
 
     def fetch_generator(self, generator_name: str) -> Callable:
         """
-        Fetches a data generator function by its name from the registry.
+        Fetches a data generator class by its name from the registry.
 
-        Parameters:
-            generator_name (str): The name of the data generator to fetch.
+        Args:
+            generator_name (str): The name of the data generator to fetch (e.g. "PatientGenerator", "EncounterGenerator")
 
         Returns:
-            Callable: The data generator function.
+            Callable: The data generator class that can be used to generate FHIR resources. Returns None if generator not found.
+
+        Example:
+            >>> generator = CdsDataGenerator()
+            >>> patient_gen = generator.fetch_generator("PatientGenerator")
+            >>> patient = patient_gen.generate()
         """
         return self.registry.get(generator_name)
 
@@ -69,26 +84,42 @@ class CdsDataGenerator:
         """
         self.workflow = workflow
 
-    def generate(
+    def generate_prefetch(
         self,
         constraints: Optional[list] = None,
         free_text_path: Optional[str] = None,
         column_name: Optional[str] = None,
         random_seed: Optional[int] = None,
-    ) -> BaseModel:
+    ) -> Dict[str, Resource]:
         """
         Generates CDS data based on the current workflow, constraints, and optional free text data.
 
-        Parameters:
+        This method generates FHIR resources according to the configured workflow mapping. For each
+        resource type in the workflow, it uses the corresponding generator to create a FHIR resource.
+        If free text data is provided via CSV, it will also generate a DocumentReference containing
+        randomly selected text from the CSV.
+
+        Args:
             constraints (Optional[list]): A list of constraints to apply to the data generation.
-            free_text_path (Optional[str]): The path to a CSV file containing free text data.
-            column_name (Optional[str]): The column name in the CSV file to use for free text data.
-            random_seed (Optional[int]): The random seed to use for reproducible data generation.
+                Each constraint should match the format expected by the individual generators.
+            free_text_path (Optional[str]): Path to a CSV file containing free text data to be
+                included as DocumentReferences. If provided, column_name must also be specified.
+            column_name (Optional[str]): The name of the column in the CSV file containing the
+                free text data to use. Required if free_text_path is provided.
+            random_seed (Optional[int]): Seed value for random number generation to ensure
+                reproducible results. If not provided, generation will be truly random.
 
         Returns:
-            BaseModel: The generated CDS FHIR data.
+            Dict[str, Resource]: A dictionary mapping resource types to generated FHIR resources.
+                The keys are lowercase resource type names (e.g. "patient", "encounter").
+                If free text is provided, includes a "document" key with a DocumentReference.
+
+        Raises:
+            ValueError: If the configured workflow is not found in the mappings
+            FileNotFoundError: If the free_text_path is provided but file not found
+            ValueError: If free_text_path provided without column_name
         """
-        results = []
+        prefetch = {}
 
         if self.workflow not in self.mappings.keys():
             raise ValueError(f"Workflow {self.workflow} not found in mappings")
@@ -96,11 +127,11 @@ class CdsDataGenerator:
         for resource in self.mappings[self.workflow]:
             generator_name = resource["generator"]
             generator = self.fetch_generator(generator_name)
-            result = generator.generate(
+            resource = generator.generate(
                 constraints=constraints, random_seed=random_seed
             )
 
-            results.append(BundleEntry(resource=result))
+            prefetch[resource.__resource_type__.lower()] = resource
 
         parsed_free_text = (
             self.free_text_parser(free_text_path, column_name)
@@ -108,24 +139,38 @@ class CdsDataGenerator:
             else None
         )
         if parsed_free_text:
-            results.append(BundleEntry(resource=random.choice(parsed_free_text)))
+            prefetch["document"] = create_document_reference(
+                data=random.choice(parsed_free_text),
+                content_type="text/plain",
+                status="current",
+                description="Free text created by HealthChain CdsDataGenerator",
+                attachment_title="Free text created by HealthChain CdsDataGenerator",
+            )
 
-        output = CdsFhirData(prefetch=Bundle(resourceType="Bundle", entry=results))
-        self.data = output
-        return output
+        self.generated_data = prefetch
 
-    def free_text_parser(self, path_to_csv: str, column_name: str) -> Dict:
+        return self.generated_data
+
+    def free_text_parser(self, path_to_csv: str, column_name: str) -> List[str]:
         """
-        Parses free text data from a CSV file and converts it into a list of DocumentReference models.
+        Parse free text data from a CSV file.
 
-        Parameters:
-            path_to_csv (str): The path to the CSV file containing free text data.
-            column_name (str): The column name in the CSV file to use for free text data.
+        This method reads a CSV file and extracts text data from a specified column. The text data
+        can later be used to create DocumentReference resources.
+
+        Args:
+            path_to_csv (str): Path to the CSV file containing the free text data.
+            column_name (str): Name of the column in the CSV file to extract text from.
 
         Returns:
-            dict: A dictionary of parsed free text data converted into DocumentReference models.
+            List[str]: List of text strings extracted from the specified column.
+
+        Raises:
+            FileNotFoundError: If the specified CSV file does not exist or is not a file.
+            ValueError: If column_name is not provided.
+            Exception: If any other error occurs while reading/parsing the CSV file.
         """
-        column_data = []
+        text_data = []
 
         # Check that path_to_csv is a valid path with pathlib
         path = Path(path_to_csv)
@@ -139,7 +184,7 @@ class CdsDataGenerator:
                 reader = csv.DictReader(file)
                 if column_name is not None:
                     for row in reader:
-                        column_data.append(row[column_name])
+                        text_data.append(row[column_name])
                 else:
                     raise ValueError(
                         "Column name must be provided when header is True."
@@ -147,15 +192,4 @@ class CdsDataGenerator:
         except Exception as ex:
             logger.error(f"An error occurred: {ex}")
 
-        document_list = []
-
-        for x in column_data:
-            # First parse x in to documentreferencemodel format
-            text = Narrative(
-                status="generated",
-                div=f'<div xmlns="http://www.w3.org/1999/xhtml">{x}</div>',
-            )
-            doc = DocumentReference(resourceType="DocumentReference", text=text)
-            document_list.append(doc)
-
-        return document_list
+        return text_data

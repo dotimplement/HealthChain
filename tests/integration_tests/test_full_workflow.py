@@ -22,7 +22,7 @@ def test_run():
         # decorator sets up an instance of ehr configured with use case CDS
         @ehr(workflow="encounter-discharge", num=3)
         def load_data(self):
-            data = self.data_generator.generate(constraints=["long_duration"])
+            data = self.data_generator.generate_prefetch(constraints=["long_duration"])
             return data
 
         @api

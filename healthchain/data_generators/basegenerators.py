@@ -1,5 +1,6 @@
 # generators.py
 
+import datetime
 import random
 import string
 
@@ -75,7 +76,25 @@ class DateGenerator(BaseGenerator):
 class DateTimeGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return faker.date_time().isoformat()
+        return faker.date_time(tzinfo=datetime.timezone.utc).isoformat()
+
+
+@register_generator
+class IntentGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        return faker.random_element(
+            [
+                "proposal",
+                "plan",
+                "order",
+                "original-order",
+                "reflex-order",
+                "instance-order",
+                "filler-order",
+                "option",
+            ]
+        )
 
 
 @register_generator
