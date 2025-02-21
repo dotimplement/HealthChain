@@ -4,8 +4,6 @@ from unittest.mock import Mock
 
 from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
-from fhir.resources.bundle import Bundle, BundleEntry
-from healthchain.models.data.cdsfhirdata import CdsFhirData
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
@@ -180,9 +178,7 @@ def test_empty_document():
 
 class MockDataGenerator:
     def __init__(self) -> None:
-        self.data = CdsFhirData(
-            context={}, prefetch=Bundle(entry=[BundleEntry()], type="document")
-        )
+        self.generated_data = {"document": create_bundle()}
         self.workflow = None
 
     def set_workflow(self, workflow):

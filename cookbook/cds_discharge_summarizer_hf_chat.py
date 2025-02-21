@@ -49,7 +49,7 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
     @hc.ehr(workflow="encounter-discharge")
     def load_data_in_client(self) -> CdsFhirData:
         # Generate synthetic FHIR data for testing
-        data = self.data_generator.generate(
+        data = self.data_generator.generate_prefetch(
             free_text_path="data/discharge_notes.csv", column_name="text"
         )
         return data
