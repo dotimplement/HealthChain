@@ -1098,12 +1098,6 @@ class CdaAnnotator:
             None
         """
 
-        # Get CDA system from FHIR system
-        fhir_system = new_allergy.code.coding[0].system
-        allergy_type__system = self.code_mapping.fhir_to_cda(
-            fhir_system, "system", default="2.16.840.1.113883.6.96"
-        )
-
         template = {
             "act": {
                 "@classCode": "ACT",
@@ -1146,19 +1140,24 @@ class CdaAnnotator:
 
         # Attach allergy type code
         if new_allergy.type:
-            allergy_type__system = self.code_mapping.fhir_to_cda(
+            allergy_type_system = self.code_mapping.fhir_to_cda(
                 new_allergy.type.coding[0].system,
                 "system",
                 default="2.16.840.1.113883.6.96",
             )
             allergen_observation["code"] = {
                 "@code": new_allergy.type.coding[0].code,
-                "@codeSystem": allergy_type__system,
+                "@codeSystem": allergy_type_system,
                 # "@codeSystemName": new_allergy.type.coding[0].display,
                 "@displayName": new_allergy.type.coding[0].display,
             }
         else:
-            raise ValueError("Allergy type code cannot be missing when adding allergy.")
+            log.warning("Allergy type code is missing, using default.")
+            allergen_observation["code"] = {
+                "@code": "420134006",
+                "@codeSystem": "2.16.840.1.113883.6.96",
+                "@displayName": "Propensity to adverse reactions",
+            }
 
         # Attach allergen code to value and participant
         allergen_code_system = self.code_mapping.fhir_to_cda(
