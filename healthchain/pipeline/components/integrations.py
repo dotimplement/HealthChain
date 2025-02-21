@@ -6,9 +6,7 @@ from functools import wraps
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
 
-from fhir.resources.condition import Condition
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.coding import Coding
+from healthchain.fhir import create_condition
 
 T = TypeVar("T")
 
@@ -117,21 +115,17 @@ class SpacyNLP(BaseComponent[str]):
         concepts = []
         # TODO: Review this, too specific to MedCAT, coding system needs to be configurable
         for ent in spacy_doc.ents:
-            concept = Condition(
-                code=CodeableConcept(
-                    coding=[
-                        Coding(
-                            system="http://snomed.info/sct",
-                            code=ent._.cui if hasattr(ent, "_.cui") else None,
-                            display=ent.text,
-                        )
-                    ]
-                )
+            concept = create_condition(
+                subject="Patient/123",
+                code=ent._.cui if hasattr(ent, "_.cui") else None,
+                display=ent.text,
+                system="http://snomed.info/sct",
             )
+
             concepts.append(concept)
 
         # Add to document concepts
-        hc_doc.add_concepts(problems=concepts)
+        hc_doc.fhir.problem_list = concepts
 
     def __call__(self, doc: Document) -> Document:
         """Process the document using the spaCy pipeline. Adds outputs to nlp.spacy_docs."""

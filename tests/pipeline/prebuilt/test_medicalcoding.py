@@ -49,15 +49,14 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
 
         # Verify the pipeline used the mocked input and output
         input_doc = mock_cda_connector.return_value.input.return_value
-        assert input_doc.data == "Original note"
+        assert input_doc.data == "Test note"
+        assert input_doc.fhir.problem_list[0].code.coding[0].display == "Hypertension"
         assert (
-            input_doc._hl7._ccd_data.concepts.problems[0].display_name == "Hypertension"
+            input_doc.fhir.medication_list[0].medication.concept.coding[0].display
+            == "Aspirin"
         )
         assert (
-            input_doc._hl7._ccd_data.concepts.medications[0].display_name == "Aspirin"
-        )
-        assert (
-            input_doc._hl7._ccd_data.concepts.allergies[0].display_name
+            input_doc.fhir.allergy_list[0].code.coding[0].display
             == "Allergy to peanuts"
         )
 

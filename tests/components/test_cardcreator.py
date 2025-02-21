@@ -4,9 +4,9 @@ from healthchain.io.containers import Document
 from healthchain.models.responses.cdsresponse import Card, Source, IndicatorEnum
 
 
-def test_default_template_rendering(basic_creator):
+def test_default_template_rendering(test_card_creator):
     content = "Test message"
-    card = basic_creator.create_card(content)
+    card = test_card_creator.create_card(content)
 
     assert isinstance(card, Card)
     assert card.summary == "Test message"[:140]
@@ -15,9 +15,9 @@ def test_default_template_rendering(basic_creator):
     assert card.detail == "Test message"
 
 
-def test_custom_template_rendering(custom_template_creator):
+def test_custom_template_rendering(test_custom_template_creator):
     content = "Test message"
-    card = custom_template_creator.create_card(content)
+    card = test_custom_template_creator.create_card(content)
 
     assert card.summary == "Custom: Test message"
     assert card.indicator == IndicatorEnum.warning
@@ -25,15 +25,15 @@ def test_custom_template_rendering(custom_template_creator):
     assert card.detail == "Test message"
 
 
-def test_long_summary_truncation(basic_creator):
+def test_long_summary_truncation(test_card_creator):
     long_content = "x" * 200
-    card = basic_creator.create_card(long_content)
+    card = test_card_creator.create_card(long_content)
 
     assert len(card.summary) == 140
     assert card.summary == "x" * 140
 
 
-def test_invalid_template_json(basic_creator):
+def test_invalid_template_json(test_card_creator):
     invalid_template = """
     {
         "summary": {{ invalid_json }},

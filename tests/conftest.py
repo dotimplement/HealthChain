@@ -1,9 +1,6 @@
-import dataclasses
-import logging
 import pytest
 
 from unittest.mock import Mock
-from pydantic import BaseModel
 
 from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
@@ -104,21 +101,6 @@ def test_medication_with_dosage(test_medication):
 
 
 @pytest.fixture
-def test_problem_list():
-    return [test_condition]
-
-
-@pytest.fixture
-def test_medication_list():
-    return [test_medication]
-
-
-@pytest.fixture
-def test_allergy_list():
-    return [test_allergy]
-
-
-@pytest.fixture
 def doc_ref_with_content():
     """Create a DocumentReference with single text content."""
     return create_document_reference(
@@ -167,60 +149,33 @@ def doc_ref_without_content():
 
 
 @pytest.fixture
-def test_document(test_problem_list, test_medication_list, test_allergy_list):
+def test_document():
     """Create a test document with FHIR resources."""
     doc = Document(data="Test note")
     doc.fhir.set_bundle(create_bundle())
 
     # Add test FHIR resources
-    doc.fhir.problem_list = test_problem_list
-    doc.fhir.medication_list = test_medication_list
-    doc.fhir.allergy_list = test_allergy_list
+    problem_list = create_condition(
+        subject="Patient/123", code="38341003", display="Hypertension"
+    )
+    doc.fhir.problem_list = [problem_list]
+
+    medication_list = create_medication_statement(
+        subject="Patient/123", code="123454", display="Aspirin"
+    )
+    doc.fhir.medication_list = [medication_list]
+
+    allergy_list = create_allergy_intolerance(
+        patient="Patient/123", code="70618", display="Allergy to peanuts"
+    )
+    doc.fhir.allergy_list = [allergy_list]
+
     return doc
 
 
 @pytest.fixture
-def test_document_multiple(test_problem_list, test_medication_list, test_allergy_list):
-    """Create a test document with multiple FHIR resources."""
-    doc = Document(data="Test note with multiple resources")
-    doc.fhir.set_bundle(create_bundle())
-
-    test_problem_list.append(
-        create_condition(subject="Patient/123", code="987", display="Test Condition 2")
-    )
-    test_medication_list.append(
-        create_medication_statement(
-            subject="Patient/123", code="654", display="Test Medication 2"
-        )
-    )
-    test_allergy_list.append(
-        create_allergy_intolerance(
-            patient="Patient/123", code="321", display="Test Allergy 2"
-        )
-    )
-
-    # Add multiple test FHIR resources
-    doc.fhir.problem_list = test_problem_list
-    doc.fhir.medication_list = test_medication_list
-    doc.fhir.allergy_list = test_allergy_list
-    return doc
-
-
-@pytest.fixture(autouse=True)
-def setup_caplog(caplog):
-    caplog.set_level(logging.WARNING)
-    return caplog
-
-
-class MockBundle(BaseModel):
-    condition: str = "test"
-
-
-# TEMP
-@dataclasses.dataclass
-class synth_data:
-    context: dict
-    prefetch: MockBundle
+def test_empty_document():
+    return Document(data="This is a sample text for testing.")
 
 
 class MockDataGenerator:

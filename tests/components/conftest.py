@@ -1,11 +1,11 @@
 import pytest
-from healthchain.io.containers.document import Document
+
 from healthchain.pipeline.components import CdsCardCreator
 from tests.pipeline.conftest import mock_spacy_nlp  # noqa: F401
 
 
 @pytest.fixture
-def sample_lookup():
+def test_lookup():
     return {
         "high blood pressure": "hypertension",
         "heart attack": "myocardial infarction",
@@ -13,17 +13,12 @@ def sample_lookup():
 
 
 @pytest.fixture
-def sample_document():
-    return Document(data="This is a sample text for testing.")
-
-
-@pytest.fixture
-def basic_creator():
+def test_card_creator():
     return CdsCardCreator()
 
 
 @pytest.fixture
-def custom_template_creator():
+def test_custom_template_creator():
     template = """
     {
         "summary": "Custom: {{ model_output }}",
