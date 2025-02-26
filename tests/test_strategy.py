@@ -44,7 +44,7 @@ def test_valid_request_construction(cds_strategy, valid_prefetch_data):
         mock_init.assert_called_once_with(
             hook=Workflow.patient_view.value,
             context=PatientViewContext(userId="Practitioner/123", patientId="123"),
-            prefetch=valid_prefetch_data,
+            prefetch=valid_prefetch_data.prefetch,
         )
 
     # # Test OrderSelectContext
@@ -96,7 +96,7 @@ def test_error_handling(cds_strategy, valid_prefetch_data):
     # Test invalid context keys
     with pytest.raises(ValueError):
         cds_strategy.construct_request(
-            prefetch_data={},
+            prefetch_data=valid_prefetch_data,
             workflow=Workflow.patient_view,
             context={"invalidId": "Practitioner", "patientId": "123"},
         )
@@ -104,20 +104,10 @@ def test_error_handling(cds_strategy, valid_prefetch_data):
     # Test missing required context data
     with pytest.raises(ValueError):
         cds_strategy.construct_request(
-            prefetch_data={},
+            prefetch_data=valid_prefetch_data,
             workflow=Workflow.patient_view,
             context={"userId": "Practitioner"},
         )
-
-    # Test invalid prefetch data type
-    invalid_prefetch = {"patient": {"id": "123"}}  # Not a FHIR Resource
-    with pytest.raises(TypeError) as excinfo:
-        cds_strategy.construct_request(
-            prefetch_data=invalid_prefetch,
-            workflow=Workflow.patient_view,
-            context={"userId": "Practitioner/123", "patientId": "123"},
-        )
-    assert "not a valid FHIR resource" in str(excinfo.value)
 
     # Test unsupported workflow
     mock_workflow = MagicMock()
@@ -144,12 +134,12 @@ def test_workflow_validation(cds_strategy, valid_prefetch_data):
 
     # Test valid workflow
     result = cds_strategy.construct_request(
-        prefetch_data={},
+        prefetch_data=valid_prefetch_data,
         workflow=Workflow.patient_view,
         context={"userId": "Practitioner/123", "patientId": "123"},
     )
     assert isinstance(result, CDSRequest)
-    assert result.prefetch == {}
+    assert result.prefetch == valid_prefetch_data.prefetch
 
 
 def test_cda_request_construction(

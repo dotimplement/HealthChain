@@ -13,6 +13,7 @@ from .responses import (
     CDSServiceInformation,
     CdaResponse,
 )
+from .hooks import Prefetch
 
 __all__ = [
     "CDSRequest",
@@ -30,4 +31,5 @@ __all__ = [
     "CDSResponse",
     "CdaRequest",
     "CdaResponse",
+    "Prefetch",
 ]

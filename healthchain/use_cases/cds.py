@@ -26,6 +26,7 @@ from healthchain.models.hooks import (
     OrderSignContext,
     PatientViewContext,
     EncounterDischargeContext,
+    Prefetch,
 )
 
 
@@ -75,20 +76,15 @@ class ClinicalDecisionSupportStrategy(BaseStrategy):
             raise ValueError(
                 f"Invalid workflow {workflow.value} or workflow model not implemented."
             )
-        if not isinstance(prefetch_data, dict):
+        if not isinstance(prefetch_data, Prefetch):
             raise TypeError(
-                f"Prefetch data must be a dictionary, but got {type(prefetch_data)}"
+                f"Prefetch data must be a Prefetch object, but got {type(prefetch_data)}"
             )
-        for key, value in prefetch_data.items():
-            if not isinstance(value, Resource):
-                raise TypeError(
-                    f"Prefetch value {key} is not a valid FHIR resource, but {type(value)}"
-                )
 
         request = CDSRequest(
             hook=workflow.value,
             context=context_model(**context),
-            prefetch=prefetch_data,
+            prefetch=prefetch_data.prefetch,
         )
 
         return request

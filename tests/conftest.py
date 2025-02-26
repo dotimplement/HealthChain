@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from healthchain.base import BaseStrategy, BaseUseCase
 from healthchain.cda_parser.cdaannotator import CdaAnnotator
+from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
@@ -197,11 +198,13 @@ def cds_strategy():
 
 @pytest.fixture
 def valid_prefetch_data():
-    return {
-        "document": create_document_reference(
-            content_type="text/plain", data="Test document content"
-        )
-    }
+    return Prefetch(
+        prefetch={
+            "document": create_document_reference(
+                content_type="text/plain", data="Test document content"
+            )
+        }
+    )
 
 
 @pytest.fixture

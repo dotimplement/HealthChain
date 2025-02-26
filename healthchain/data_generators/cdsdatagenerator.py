@@ -8,6 +8,7 @@ from pathlib import Path
 from healthchain.base import Workflow
 from fhir.resources.resource import Resource
 from healthchain.data_generators.basegenerators import generator_registry
+from healthchain.models import Prefetch
 from healthchain.fhir import create_document_reference
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ class CdsDataGenerator:
         free_text_path: Optional[str] = None,
         column_name: Optional[str] = None,
         random_seed: Optional[int] = None,
-    ) -> Dict[str, Resource]:
+    ) -> Prefetch:
         """
         Generates CDS data based on the current workflow, constraints, and optional free text data.
 
@@ -110,7 +111,7 @@ class CdsDataGenerator:
                 reproducible results. If not provided, generation will be truly random.
 
         Returns:
-            Dict[str, Resource]: A dictionary mapping resource types to generated FHIR resources.
+            Prefetch: A dictionary mapping resource types to generated FHIR resources.
                 The keys are lowercase resource type names (e.g. "patient", "encounter").
                 If free text is provided, includes a "document" key with a DocumentReference.
 
@@ -119,7 +120,7 @@ class CdsDataGenerator:
             FileNotFoundError: If the free_text_path is provided but file not found
             ValueError: If free_text_path provided without column_name
         """
-        prefetch = {}
+        prefetch = Prefetch(prefetch={})
 
         if self.workflow not in self.mappings.keys():
             raise ValueError(f"Workflow {self.workflow} not found in mappings")
@@ -131,7 +132,7 @@ class CdsDataGenerator:
                 constraints=constraints, random_seed=random_seed
             )
 
-            prefetch[resource.__resource_type__.lower()] = resource
+            prefetch.prefetch[resource.__resource_type__.lower()] = resource
 
         parsed_free_text = (
             self.free_text_parser(free_text_path, column_name)
@@ -139,7 +140,7 @@ class CdsDataGenerator:
             else None
         )
         if parsed_free_text:
-            prefetch["document"] = create_document_reference(
+            prefetch.prefetch["document"] = create_document_reference(
                 data=random.choice(parsed_free_text),
                 content_type="text/plain",
                 status="current",

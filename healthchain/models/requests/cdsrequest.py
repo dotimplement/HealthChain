@@ -1,4 +1,5 @@
 from pydantic import BaseModel, HttpUrl, Field
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from healthchain.models.hooks.basehookcontext import BaseHookContext
@@ -43,3 +44,23 @@ class CDSRequest(BaseModel):
         None  # fhir resource is passed either thru prefetched template of fhir server
     )
     extension: Optional[List[Dict[str, Any]]] = None
+
+    def model_dump(self, **kwargs):
+        """
+        Convert the model to a dictionary, converting any nested datetime objects to strings
+        and byte objects to strings.
+        """
+
+        def convert_objects(obj):
+            if isinstance(obj, dict):
+                return {k: convert_objects(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_objects(i) for i in obj]
+            elif isinstance(obj, datetime):
+                return obj.isoformat()
+            elif isinstance(obj, bytes):
+                return obj.decode("utf-8")
+            return obj
+
+        dump = super().model_dump(**kwargs)
+        return convert_objects(dump)
