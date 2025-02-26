@@ -179,7 +179,7 @@ def test_empty_document():
 
 class MockDataGenerator:
     def __init__(self) -> None:
-        self.generated_data = {"document": create_bundle()}
+        self.generated_data = Prefetch(prefetch={"document": create_bundle()})
         self.workflow = None
 
     def set_workflow(self, workflow):
