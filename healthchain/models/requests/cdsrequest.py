@@ -47,8 +47,9 @@ class CDSRequest(BaseModel):
 
     def model_dump(self, **kwargs):
         """
-        Convert the model to a dictionary, converting any nested datetime objects to strings
-        and byte objects to strings.
+        Model dump method to convert any nested datetime and byte objects to strings for readability.
+        This is also a workaround to this Pydantic V2 issue https://github.com/pydantic/pydantic/issues/9571
+        For proper JSON serialization, should use model_dump_json() instead when issue is resolved.
         """
 
         def convert_objects(obj):
@@ -57,7 +58,7 @@ class CDSRequest(BaseModel):
             elif isinstance(obj, list):
                 return [convert_objects(i) for i in obj]
             elif isinstance(obj, datetime):
-                return obj.isoformat()
+                return obj.astimezone().isoformat()
             elif isinstance(obj, bytes):
                 return obj.decode("utf-8")
             return obj

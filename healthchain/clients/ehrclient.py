@@ -170,6 +170,7 @@ class EHRClient(BaseClient):
                         response_model = CdaResponse(document=response.text)
                         responses.append(response_model.model_dump_xml())
                     else:
+                        # TODO: use model_dump_json() once Pydantic V2 timezone serialization issue is resolved
                         response = await client.post(
                             url=url,
                             json=request.model_dump(exclude_none=True),
