@@ -3,6 +3,8 @@ import pytest
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import CdsAnnotations
 from healthchain.models.responses.cdsresponse import Action, CDSResponse, Card
+from fhir.resources.resource import Resource
+from fhir.resources.documentreference import DocumentReference
 
 
 def test_input_with_no_document_reference(cds_fhir_connector, test_cds_request):
@@ -17,29 +19,32 @@ def test_input_with_no_document_reference(cds_fhir_connector, test_cds_request):
     assert (
         result.data == ""
     )  # Data should be empty since no DocumentReference is provided
-    assert result._fhir._prefetch_resources == input_data.prefetch
+    assert all(
+        isinstance(resource, Resource)
+        for resource in result.fhir._prefetch_resources.values()
+    )
 
 
 def test_input_with_document_reference(
     cds_fhir_connector, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_with_content
+    test_cds_request.prefetch["document"] = doc_ref_with_content.model_dump()
 
     # Call the input method
     result = cds_fhir_connector.input(test_cds_request)
 
     # Assert the result
     assert isinstance(result, Document)
+    assert isinstance(result.fhir._prefetch_resources["document"], DocumentReference)
     assert result.data == "Test document content"
-    assert result._fhir._prefetch_resources == test_cds_request.prefetch
 
 
 def test_input_with_multiple_attachments(
     cds_fhir_connector, test_cds_request, doc_ref_with_multiple_content
 ):
     # Add DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_with_multiple_content
+    test_cds_request.prefetch["document"] = doc_ref_with_multiple_content.model_dump()
 
     # Call the input method
     result = cds_fhir_connector.input(test_cds_request)
@@ -49,14 +54,26 @@ def test_input_with_multiple_attachments(
     assert (
         result.data == "First content\nSecond content\n"
     )  # Attachments should be concatenated
-    assert result._fhir._prefetch_resources == test_cds_request.prefetch
+    assert isinstance(result.fhir._prefetch_resources["document"], DocumentReference)
+    assert (
+        result.fhir._prefetch_resources["document"]
+        .content[0]
+        .attachment.data.decode("utf-8")
+        == "First content"
+    )
+    assert (
+        result.fhir._prefetch_resources["document"]
+        .content[1]
+        .attachment.data.decode("utf-8")
+        == "Second content"
+    )
 
 
 def test_input_with_custom_document_key(
     cds_fhir_connector, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data with custom key
-    test_cds_request.prefetch["custom_key"] = doc_ref_with_content
+    test_cds_request.prefetch["custom_key"] = doc_ref_with_content.model_dump()
 
     # Call the input method with custom key
     result = cds_fhir_connector.input(
@@ -66,14 +83,14 @@ def test_input_with_custom_document_key(
     # Assert the result
     assert isinstance(result, Document)
     assert result.data == "Test document content"
-    assert result._fhir._prefetch_resources == test_cds_request.prefetch
+    assert isinstance(result.fhir._prefetch_resources["custom_key"], DocumentReference)
 
 
 def test_input_with_document_reference_error(
     cds_fhir_connector, test_cds_request, doc_ref_without_content, caplog
 ):
     # Add invalid DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_without_content
+    test_cds_request.prefetch["document"] = doc_ref_without_content.model_dump()
 
     # Call the input method
     result = cds_fhir_connector.input(test_cds_request)

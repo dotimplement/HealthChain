@@ -8,7 +8,7 @@ from healthchain.io.base import BaseConnector
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.fhir import read_content_attachment
-
+from healthchain.models.hooks.prefetch import Prefetch
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,8 @@ class CdsFhirConnector(BaseConnector):
         Takes a CDSRequest containing FHIR resources and extracts them into a Document object.
         The Document will contain all prefetched FHIR resources in its fhir.prefetch_resources.
         If a DocumentReference resource is provided via prefetch_document_key, its text content
-        will be extracted into Document.data.
+        will be extracted into Document.data. For multiple attachments, the text content will be
+        concatenated with newlines.
 
         Args:
             cds_request (CDSRequest): The CDSRequest containing FHIR resources in its prefetch
@@ -50,6 +51,7 @@ class CdsFhirConnector(BaseConnector):
             Document: A Document object containing:
                 - All prefetched FHIR resources in fhir.prefetch_resources
                 - Any text content from the DocumentReference in data (empty string if none found)
+                - For multiple attachments, text content is concatenated with newlines
 
         Raises:
             ValueError: If neither prefetch nor fhirServer is provided in cds_request
@@ -67,11 +69,15 @@ class CdsFhirConnector(BaseConnector):
         # Create an empty Document object
         doc = Document(data="")
 
+        # Validate the prefetch data
+        validated_prefetch = Prefetch(prefetch=cds_request.prefetch)
+
         # Set the prefetch resources
-        doc.fhir.set_prefetch_resources(cds_request.prefetch)
+        doc.fhir.set_prefetch_resources(validated_prefetch.prefetch)
 
         # Extract text content from DocumentReference resource if provided
-        document_resource = cds_request.prefetch.get(prefetch_document_key)
+        document_resource = validated_prefetch.prefetch.get(prefetch_document_key)
+
         if not document_resource:
             log.warning(
                 f"No DocumentReference resource found in prefetch data with key {prefetch_document_key}"

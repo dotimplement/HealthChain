@@ -2,7 +2,7 @@ import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.models import CdsFhirData, CDSRequest, CDSResponse
+from healthchain.models import Prefetch, CDSRequest, CDSResponse
 from healthchain.data_generators import CdsDataGenerator
 
 import getpass
@@ -22,7 +22,7 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
         self.data_generator = CdsDataGenerator()
 
     @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> CdsFhirData:
+    def load_data_in_client(self) -> Prefetch:
         data = self.data_generator.generate_prefetch(
             free_text_path="data/discharge_notes.csv", column_name="text"
         )
