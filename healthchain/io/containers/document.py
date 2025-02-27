@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from uuid import uuid4
 
 from spacy.tokens import Doc as SpacyDoc
+from spacy.tokens import Span
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
@@ -19,6 +20,7 @@ from healthchain.fhir import (
     set_resources,
     create_single_codeable_concept,
     read_content_attachment,
+    create_condition,
 )
 
 logger = logging.getLogger(__name__)
@@ -629,6 +631,41 @@ class Document(BaseDocument):
         Get the word count from the document's text.
         """
         return len(self._nlp._tokens)
+
+    def update_problem_list_from_nlp(self):
+        """
+        Updates the document's problem list by extracting medical entities from the spaCy annotations.
+
+        This method looks for entities in the document's spaCy annotations that have associated
+        SNOMED CT concept IDs (CUIs). For each valid entity found, it creates a new FHIR Condition
+        resource and adds it to the document's problem list.
+
+        The method requires that:
+        1. A spaCy doc has been added to the document's NLP annotations
+        2. The entities in the spaCy doc have the 'cui' extension attribute set
+
+        Note:
+            - Currently defaults to using SNOMED CT coding system
+            - Uses a hardcoded patient reference "Patient/123"
+            - Preserves any existing conditions in the problem list
+        """
+        conditions = self.fhir.problem_list
+        # TODO: Make this configurable
+        for ent in self.nlp._spacy_doc.ents:
+            if not Span.has_extension("cui") or ent._.cui is None:
+                logger.debug(f"No CUI found for entity {ent.text}")
+                continue
+            condition = create_condition(
+                subject="Patient/123",
+                code=ent._.cui,
+                display=ent.text,
+                system="http://snomed.info/sct",
+            )
+            logger.debug(f"Adding condition {condition.model_dump()}")
+            conditions.append(condition)
+
+        # Add to document concepts
+        self.fhir.problem_list = conditions
 
     def __iter__(self) -> Iterator[str]:
         return iter(self._nlp._tokens)

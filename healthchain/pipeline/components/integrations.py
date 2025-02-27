@@ -1,14 +1,16 @@
+import logging
 from typing import Any, Callable, TypeVar
-from spacy.tokens import Doc as SpacyDoc
 from spacy.language import Language
 from functools import wraps
 
 from healthchain.io.containers import Document
 from healthchain.pipeline.components.base import BaseComponent
 
-from healthchain.fhir import create_condition
 
 T = TypeVar("T")
+
+
+log = logging.getLogger(__name__)
 
 
 def requires_package(package_name: str, import_path: str) -> Callable:
@@ -101,36 +103,41 @@ class SpacyNLP(BaseComponent[str]):
 
         return cls(nlp)
 
-    def _add_concepts_to_hc_doc(self, spacy_doc: SpacyDoc, hc_doc: Document):
-        """
-        Extract entities from spaCy Doc and add them to the HealthChain Document concepts.
+    # def _add_concepts_to_hc_doc(self, spacy_doc: SpacyDoc, hc_doc: Document):
+    #     """
+    #     Extract entities from spaCy Doc and add them to the HealthChain Document concepts.
 
-        Args:
-            spacy_doc (Doc): The processed spaCy Doc object containing entities
-            hc_doc (Document): The HealthChain Document to store concepts in
+    #     Args:
+    #         spacy_doc (Doc): The processed spaCy Doc object containing entities
+    #         hc_doc (Document): The HealthChain Document to store concepts in
 
-        Note: Defaults to Condition and SNOMED CT concepts
-        # TODO: make configurable
-        """
-        concepts = []
-        # TODO: Review this, too specific to MedCAT, coding system needs to be configurable
-        for ent in spacy_doc.ents:
-            concept = create_condition(
-                subject="Patient/123",
-                code=ent._.cui if hasattr(ent, "_.cui") else None,
-                display=ent.text,
-                system="http://snomed.info/sct",
-            )
+    #     Note: Defaults to Condition and SNOMED CT concepts
+    #     # TODO: make configurable
+    #     """
+    #     concepts = []
+    #     # TODO: Review this, too specific to MedCAT, coding system needs to be configurable
+    #     for ent in spacy_doc.ents:
+    #         print(ent._.cui)
+    #         if not ent._.cui:
+    #             log.warning(f"No CUI found for entity {ent.text}")
+    #             continue
+    #         condition = create_condition(
+    #             subject="Patient/123",
+    #             code=ent._.cui,
+    #             display=ent.text,
+    #             system="http://snomed.info/sct",
+    #         )
 
-            concepts.append(concept)
+    #         print("adding condition", condition.model_dump())
+    #         concepts.append(condition)
 
-        # Add to document concepts
-        hc_doc.fhir.problem_list = concepts
+    #     # Add to document concepts
+    #     hc_doc.fhir.problem_list = concepts
 
     def __call__(self, doc: Document) -> Document:
         """Process the document using the spaCy pipeline. Adds outputs to nlp.spacy_docs."""
         spacy_doc = self._nlp(doc.data)
-        self._add_concepts_to_hc_doc(spacy_doc, doc)
+        # self._add_concepts_to_hc_doc(spacy_doc, doc)
         doc.nlp.add_spacy_doc(spacy_doc)
         return doc
 
