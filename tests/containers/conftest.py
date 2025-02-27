@@ -1,5 +1,4 @@
 import pytest
-
 from healthchain.io.containers.document import FhirData, Document
 from healthchain.fhir import create_bundle, create_document_reference
 

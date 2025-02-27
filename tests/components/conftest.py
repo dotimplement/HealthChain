@@ -1,7 +1,6 @@
 import pytest
 
 from healthchain.pipeline.components import CdsCardCreator
-from tests.pipeline.conftest import mock_spacy_nlp  # noqa: F401
 
 
 @pytest.fixture

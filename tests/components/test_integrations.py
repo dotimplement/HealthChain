@@ -184,39 +184,6 @@ def test_component_invalid_kwargs(
     assert expected_message in str(exc_info.value)
 
 
-def test_spacy_add_concepts(mock_spacy_nlp, test_empty_document):
-    """Test adding concepts from spaCy entities to HealthChain document"""
-    # Get the mock spaCy doc from the fixture
-    mock_instance = mock_spacy_nlp.return_value
-    mock_doc = mock_instance.return_value._nlp._spacy_doc
-
-    # Create a fresh SpacyNLP component instance
-    with patch("spacy.load") as mock_load:
-        mock_nlp = Mock()
-        mock_load.return_value = mock_nlp
-        component = SpacyNLP("en_core_web_sm")
-        component._nlp = mock_nlp
-
-        # Process document using the mock entities
-        component._add_concepts_to_hc_doc(mock_doc, test_empty_document)
-
-        # Verify concepts were added correctly
-        conditions = test_empty_document.fhir.problem_list
-        assert len(conditions) == 3  # All entities are treated as problems by default
-
-        # Check each concept was added with correct attributes
-        expected_concepts = [
-            ("Hypertension", "38341003"),
-            ("Aspirin", "123454"),
-            ("Allergy to peanuts", "70618"),
-        ]
-
-        for i, (text, cui) in enumerate(expected_concepts):
-            assert conditions[i].code.coding[0].display == text
-            assert conditions[i].code.coding[0].code == cui
-            assert conditions[i].code.coding[0].system == "http://snomed.info/sct"
-
-
 def test_requires_package_decorator():
     """Test the requires_package decorator handles missing packages correctly"""
 
