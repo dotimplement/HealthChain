@@ -1,3 +1,4 @@
+import base64
 import inspect
 import logging
 import pkgutil
@@ -72,6 +73,8 @@ class ClinicalDocumentationStrategy(BaseStrategy):
             # Make a copy of the SOAP envelope template
             soap_envelope = self.soap_envelope.copy()
 
+            cda_xml = base64.b64encode(cda_xml).decode("utf-8")
+
             # Insert encoded cda in the Document section
             if not insert_at_key(soap_envelope, "urn:Document", cda_xml):
                 raise ValueError(
@@ -96,7 +99,6 @@ class ClinicalDocumentation(BaseUseCase):
         service_config (Optional[Dict]): The configuration for the service.
         service (Optional[Service]): The service to be used for processing the documents.
         client (Optional[BaseClient]): The client to be used for communication with the service.
-        overwrite (bool): Whether to overwrite existing data in the CDA document.
 
     """
 
@@ -123,7 +125,6 @@ class ClinicalDocumentation(BaseUseCase):
                 api_protocol="SOAP",
             )
         }
-        self.overwrite: bool = False
 
     @property
     def description(self) -> str:
