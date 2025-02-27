@@ -33,35 +33,6 @@ from healthchain.fhir import (
 log = logging.getLogger(__name__)
 
 
-# def get_time_range_from_cda_value(value: Dict) -> Range:
-#     """
-#     Converts a dictionary representing a time range from a CDA value into a Range object.
-
-#     Args:
-#         value (Dict): A dictionary representing the CDA value.
-
-#     Returns:
-#         Range: A Range object representing the time range.
-
-#     """
-#     range_model = Range(
-#         low=Quantity(
-#             value=value.get("low", {}).get("@value"),
-#             unit=value.get("low", {}).get("@unit"),
-#         ),
-#         high=Quantity(
-#             value=value.get("high", {}).get("@value"),
-#             unit=value.get("high", {}).get("@unit"),
-#         ),
-#     )
-#     if range_model.low.value is None:
-#         range_model.low = None
-#     if range_model.high.value is None:
-#         range_model.high = None
-
-#     return range_model
-
-
 def get_value_from_entry_relationship(entry_relationship: EntryRelationship) -> List:
     """
     Retrieves the values from the given entry_relationship.
@@ -646,7 +617,9 @@ class CdaAnnotator:
             for value in values:
                 # Map CDA system to FHIR system
                 allergy_code_system = self.code_mapping.cda_to_fhir(
-                    value.get("@codeSystem"), "system", default="http://snomed.info/sct"
+                    value.get("@codeSystem", ""),
+                    "system",
+                    default="http://snomed.info/sct",
                 )
                 allergy = create_allergy_intolerance(
                     patient="Patient/123",  # TODO: Get from patient context
@@ -654,7 +627,7 @@ class CdaAnnotator:
                     display=value.get("@displayName"),
                     system=allergy_code_system,
                 )
-                if allergy.code.coding[0].display is None:
+                if allergy.code and allergy.code.coding[0].display is None:
                     allergy.code.coding[0].display = allergen_name
 
                 if allergy_type:
@@ -734,6 +707,10 @@ class CdaAnnotator:
         )
 
         # Get CDA system from FHIR system
+        if not new_problem.code:
+            log.warning("No code found for problem")
+            return
+
         fhir_system = new_problem.code.coding[0].system
         cda_system = self.code_mapping.fhir_to_cda(
             fhir_system, "system", default="2.16.840.1.113883.6.96"
@@ -847,7 +824,7 @@ class CdaAnnotator:
         for problem in problems:
             if problem in self.problem_list:
                 log.debug(
-                    f"Skipping: Problem {problem.display_name} already exists in the problem list."
+                    f"Skipping: Problem {problem.model_dump()} already exists in the problem list."
                 )
                 continue
             log.debug(f"Adding problem: {problem}")
@@ -886,6 +863,10 @@ class CdaAnnotator:
         - Effective time periods
         - Status as Active
         """
+
+        if not new_medication.medication.concept:
+            log.warning("No medication concept found for medication")
+            return
 
         # Get CDA system from FHIR system
         fhir_system = new_medication.medication.concept.coding[0].system
@@ -1060,7 +1041,7 @@ class CdaAnnotator:
         for medication in medications:
             if medication in self.medication_list:
                 log.debug(
-                    f"Skipping: medication {medication.medication.concept.coding[0].display} already exists in the medication list."
+                    f"Skipping: medication {medication.model_dump()} already exists in the medication list."
                 )
                 continue
 
@@ -1097,6 +1078,9 @@ class CdaAnnotator:
         Returns:
             None
         """
+        if not new_allergy.code:
+            log.warning("No code found for allergy")
+            return
 
         template = {
             "act": {
@@ -1319,7 +1303,7 @@ class CdaAnnotator:
 
         for allergy in allergies:
             if allergy in self.allergy_list:
-                log.debug(f"Allergy {allergy.code.coding[0].display} already exists")
+                log.debug(f"Allergy {allergy.model_dump()} already exists")
                 continue
             log.debug(f"Adding allergy: {allergy}")
             self._add_new_allergy_entry(

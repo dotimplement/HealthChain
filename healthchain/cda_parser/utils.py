@@ -94,6 +94,12 @@ class CodeMapping:
         """Convert CDA code to FHIR code."""
         try:
             mapping = self.mappings[mapping_type]["cda_to_fhir"]
+
+            # Add null check for code
+            if code is None:
+                log.error(f"Received None code for mapping type '{mapping_type}'")
+                return default
+
             if not case_sensitive:
                 code = code.lower()
                 mapping = {k.lower(): v for k, v in mapping.items()}
@@ -105,6 +111,14 @@ class CodeMapping:
 
         except KeyError:
             log.error(f"Invalid mapping type: {mapping_type}")
+            return default
+        except AttributeError as e:
+            log.error(f"Invalid code type for '{code}' in {mapping_type}: {str(e)}")
+            return default
+        except Exception as e:
+            log.error(
+                f"Unexpected error converting code '{code}' in {mapping_type}: {str(e)}"
+            )
             return default
 
     def fhir_to_cda(
