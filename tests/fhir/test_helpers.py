@@ -60,7 +60,7 @@ def test_create_condition():
     """Test creating a condition with all optional fields."""
     condition = create_condition(
         subject="Patient/123",
-        status="resolved",
+        clinical_status="resolved",
         code="123",
         display="Test Condition",
         system="http://test.system",

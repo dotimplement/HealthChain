@@ -145,7 +145,7 @@ def set_problem_list_item_category(condition: Condition) -> Condition:
 
 def create_condition(
     subject: str,
-    status: str = "active",
+    clinical_status: str = "active",
     code: Optional[str] = None,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
@@ -174,8 +174,8 @@ def create_condition(
         id=_generate_id(),
         subject={"reference": subject},
         clinicalStatus=create_single_codeable_concept(
-            code=status,
-            display=status.capitalize(),
+            code=clinical_status,
+            display=clinical_status.capitalize(),
             system="http://terminology.hl7.org/CodeSystem/condition-clinical",
         ),
         code=condition_code,

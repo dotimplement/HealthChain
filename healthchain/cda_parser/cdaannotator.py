@@ -368,7 +368,7 @@ class CdaAnnotator:
             # Create condition using helper function
             condition = create_condition(
                 subject="Patient/123",  # TODO: add patient reference {self.clinical_document.recordTarget.patientRole.id}
-                status=status,
+                clinical_status=status,
                 code=value.get("@code"),
                 display=value.get("@displayName"),
                 system=self.code_mapping.cda_to_fhir(
