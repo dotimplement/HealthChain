@@ -7,14 +7,10 @@ Full example coming soon!
 ```python
 import healthchain as hc
 from healthchain.use_cases import ClinicalDocumentation
-from healthchain.models import (
-    CcdData,
-    AllergyConcept,
-    Concept,
-    MedicationConcept,
-    ProblemConcept,
-    Quantity,
-)
+from healthchain.fhir import create_document_reference
+
+from fhir.resources.documentreference import DocumentReference
+
 
 @hc.sandbox
 class NotereaderSandbox(ClinicalDocumentation):
@@ -25,11 +21,16 @@ class NotereaderSandbox(ClinicalDocumentation):
       )
 
   @hc.ehr(workflow="sign-note-inpatient")
-  def load_data_in_client(self) -> CcdData:
-      with open(self.cda_path, "r") as file:
-          xml_string = file.read()
+  def load_data_in_client(self) -> DocumentReference:
+    with open(self.cda_path, "r") as file:
+        xml_string = file.read()
 
-      return CcdData(cda_xml=xml_string)
+    cda_document_reference = create_document_reference(
+        data=xml_string,
+        content_type="text/xml",
+        description="Original CDA Document loaded from my sandbox",
+    )
+    return cda_document_reference
 
   @hc.api
   def my_service(self, request: CdaRequest) -> CdaResponse:

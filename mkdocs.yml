@@ -42,6 +42,7 @@ nav:
           - Clinical Decision Support: reference/sandbox/use_cases/cds.md
           - Clinical Documentation: reference/sandbox/use_cases/clindoc.md
       - Utilities:
+        - FHIR Helpers: reference/utilities/fhir_helpers.md
         - Data Generator: reference/utilities/data_generator.md
         - CDA Parser: reference/utilities/cda_parser.md
   - API Reference:

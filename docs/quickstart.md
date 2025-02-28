@@ -130,7 +130,10 @@ import healthchain as hc
 
 from healthchain.use_cases import ClinicalDocumentation
 from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.models import CdaRequest, CdaResponse, CcdData
+from healthchain.models import CdaRequest, CdaResponse
+from healthchain.fhir import create_document_reference
+
+from fhir.resources.documentreference import DocumentReference
 
 @hc.sandbox
 class MyCoolSandbox(ClinicalDocumentation):
@@ -141,12 +144,18 @@ class MyCoolSandbox(ClinicalDocumentation):
         )
 
     @hc.ehr(workflow="sign-note-inpatient")
-    def load_data_in_client(self) -> CcdData:
+    def load_data_in_client(self) -> DocumentReference:
         # Load your data
         with open('/path/to/data.xml', "r") as file:
           xml_string = file.read()
 
-        return CcdData(cda_xml=xml_string)
+        cda_document_reference = create_document_reference(
+            data=xml_string,
+            content_type="text/xml",
+            description="Original CDA Document loaded from my sandbox",
+        )
+
+        return cda_document_reference
 
     @hc.api
     def my_service(self, request: CdaRequest) -> CdaResponse:
@@ -174,7 +183,7 @@ This will start a server by default at `http://127.0.0.1:8000`, and you can inte
 
 You can use the data generator to generate synthetic data for your sandbox runs.
 
-The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
+The `.generate_prefetch()` method is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
 
 We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
 
@@ -185,7 +194,7 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
     import healthchain as hc
 
     from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.models import CdsFhirData
+    from healthchain.models import Prefetch
     from healthchain.data_generators import CdsDataGenerator
 
     @hc.sandbox
@@ -194,8 +203,8 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
             self.data_generator = CdsDataGenerator()
 
         @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
+        def load_data_in_client(self) -> Prefetch:
+            data = self.data_generator.generate_prefetch()
             return data
 
         @hc.api
@@ -214,7 +223,7 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
 
     # Generate FHIR resources for use case workflow
     data_generator.set_workflow(Workflow.encounter_discharge)
-    data = data_generator.generate()
+    data = data_generator.generate_prefetch()
 
     print(data.model_dump())
 

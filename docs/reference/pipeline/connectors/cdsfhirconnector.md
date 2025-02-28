@@ -52,12 +52,12 @@ def example_pipeline_node(document: Document) -> Document:
 
 pipe = pipeline.build()
 cds_response = pipe(cds_request)
-# Output: CdsFhirData object...
+# Output: CdsResponse object...
 
 ```
 
 ## Accessing data inside your pipeline
 
-Data parsed from the FHIR resources is stored in the `Document.fhir_resources` attribute as a `CdsFhirData` object, as shown in the example above.
+Data parsed from the FHIR resources is stored in the `Document.fhir_resources` attribute as a dictionary of FHIR resources corresponding to the keys in the `prefetch` field of the `CDSRequest`, as shown in the example above.
 
-[(CdsFhirData Reference)](../../../api/data_models.md#healthchain.models.data.cdsfhirdata)
+[(Prefetch Reference)](../../../api/data_models.md#healthchain.models.data.prefetch)

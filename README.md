@@ -130,7 +130,7 @@ import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.models import Card, CdsFhirData, CDSRequest
+from healthchain.models import Card, Prefetch, CDSRequest
 from healthchain.data_generator import CdsDataGenerator
 from typing import List
 
@@ -144,8 +144,8 @@ class MyCDS(ClinicalDecisionSupport):
 
     # Sets up an instance of a mock EHR client of the specified workflow
     @hc.ehr(workflow="encounter-discharge")
-    def ehr_database_client(self) -> CdsFhirData:
-        return self.data_generator.generate()
+    def ehr_database_client(self) -> Prefetch:
+        return self.data_generator.generate_prefetch()
 
     # Define your application logic here
     @hc.api
@@ -167,7 +167,8 @@ import healthchain as hc
 
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.use_cases import ClinicalDocumentation
-from healthchain.models import CcdData, CdaRequest, CdaResponse
+from healthchain.models import CdaRequest, CdaResponse
+from fhir.resources.documentreference import DocumentReference
 
 @hc.sandbox
 class NotereaderSandbox(ClinicalDocumentation):
@@ -178,11 +179,16 @@ class NotereaderSandbox(ClinicalDocumentation):
 
     # Load an existing CDA file
     @hc.ehr(workflow="sign-note-inpatient")
-    def load_data_in_client(self) -> CcdData:
+    def load_data_in_client(self) -> DocumentReference:
         with open("/path/to/cda/data.xml", "r") as file:
             xml_string = file.read()
 
-        return CcdData(cda_xml=xml_string)
+        cda_document_reference = create_document_reference(
+            data=xml_string,
+            content_type="text/xml",
+            description="Original CDA Document loaded from my sandbox",
+        )
+        return cda_document_reference
 
     @hc.api
     def my_service(self, data: CdaRequest) -> CdaResponse:

@@ -10,15 +10,15 @@ Connectors make certain assumptions about the data they receive depending on the
 
 Some connectors require the same instance to be used for both input and output, while others may be input or output only.
 
-| Connector | Input | Output | Internal Data Representation | Access it by... | Same instance I/O? |
+| Connector | Input | Output | FHIR Resources | Access it by... | Same instance I/O? |
 |-----------|-------|--------|-------------------------|----------------|--------------------------|
-| [**CdaConnector**](cdaconnector.md) | `CdaRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdaRequest` | [**CcdData**](../../../api/data_models.md#healthchain.models.data.ccddata.CcdData) | `.ccd_data` | ✅ |
-| [**CdsFhirConnector**](cdsfhirconnector.md) | `CDSRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdsResponse` | [**CdsFhirData**](../../../api/data_models.md#healthchain.models.data.cdsfhirdata.CdsFhirData) | `.fhir_resources` | ✅ |
+| [**CdaConnector**](cdaconnector.md) | `CdaRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdaResponse` | [**DocumentReference**] | `` | ✅ |
+| [**CdsFhirConnector**](cdsfhirconnector.md) | `CDSRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdsResponse` | **Any FHIR Resource** | `.fhir_resources` | ✅ |
 
 !!! example "CdaConnector Example"
     The `CdaConnector` expects a `CdaRequest` object as input and outputs a `CdaResponse` object. The connector converts the input data into a `Document` object because CDAs are usually represented as a document object.
 
-    This `Document` object contains a `.ccd_data` attribute, which stores the structured data from the CDA document in a `CcdData` object. Any free-text notes are stored in the `Document.text` attribute.
+    This `Document` object contains a `.fhir` attribute, which stores the structured data from the CDA document in a `DocumentReference` FHIR resource. Any free-text notes are stored in the `Document.text` attribute.
 
     Because CDAs are annotated documents, the same `CdaConnector` instance must be used for both input and output operations in the pipeline.
 

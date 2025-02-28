@@ -10,22 +10,14 @@ The `ClinicalDocumentation` use case implements a real-time Clinical Documentati
 
 ## Data Flow
 
-| Stage | Input | Internal Data Representation | Output |
-|-------|-------|------------------------------|--------|
-| Client | N/A | N/A | `CcdData` |
-| Service | `CdaRequest` | `CcdData` | `CdaResponse` |
+| Stage | Input | Output |
+|-------|-------|--------|
+| Client | N/A | `DocumentReference` |
+| Service | `CdaRequest` | `CdaResponse` |
 
 
-[CdaConnector](../../pipeline/connectors/cdaconnector.md) handles the conversion of `CdaRequests` :material-swap-horizontal: `CcdData` :material-swap-horizontal: `CdaResponse` in a HealthChain pipeline.
+[CdaConnector](../../pipeline/connectors/cdaconnector.md) handles the conversion of `CdaRequests` :material-swap-horizontal: `DocumentReference` :material-swap-horizontal: `CdaResponse` in a HealthChain pipeline.
 
-Attributes of `CcdData` are:
-
-- `problems`
-- `allergies`
-- `medications`
-- `note`
-
-[(CcdData API Reference)](../../../api/data_models.md/#healthchain.models.data.ccddata.CcdData)
 
 ## Supported Workflows
 

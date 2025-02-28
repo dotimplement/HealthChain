@@ -37,14 +37,12 @@ def example_pipeline_node(document: Document) -> Document:
 
 pipe = pipeline.build()
 cda_response = pipe(cda_request)
-# Output: CcdData object...
+# Output: CdaResponse object...
 ```
 
 ## Accessing data inside your pipeline
 
-Data parsed from the CDA document is stored in the `Document.ccd_data` attribute as a `CcdData` object, as shown in the example above.
-
-[(CcdData Reference)](../../../api/data_models.md#healthchain.models.data.ccddata.CcdData)
+Data parsed from the CDA document is stored in the `Document.fhir` attribute as a `DocumentReference` FHIR resource, as shown in the example above.
 
 ## Configuration
 
