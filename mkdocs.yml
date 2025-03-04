@@ -57,8 +57,7 @@ nav:
       - api/clients.md
       - api/cda_parser.md
       - api/data_generators.md
-      - api/data_models.md
-
+      - api/fhir_helpers.md
   - Community:
       - community/index.md
       - Contribution Guide: community/contribution_guide.md

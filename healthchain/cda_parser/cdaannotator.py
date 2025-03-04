@@ -138,7 +138,6 @@ class CdaAnnotator:
 
     Args:
         cda_data (ClinicalDocument): The CDA document data.
-        fallback (str, optional): The fallback value. Defaults to "LLM".
 
     Attributes:
         clinical_document (ClinicalDocument): The CDA document data.

@@ -157,7 +157,7 @@ def create_condition(
 
     Args:
         subject: REQUIRED. Reference to the patient (e.g. "Patient/123")
-        status: REQUIRED. Clinical status (default: active)
+        clinical_status: REQUIRED. Clinical status (default: active)
         code: The condition code
         display: The display name for the condition
         system: The code system (default: SNOMED CT)
@@ -197,7 +197,7 @@ def create_medication_statement(
     https://build.fhir.org/medicationstatement.html
 
     Args:
-        subject_reference: REQUIRED. Reference to the patient (e.g. "Patient/123")
+        subject: REQUIRED. Reference to the patient (e.g. "Patient/123")
         status: REQUIRED. Status of the medication (default: recorded)
         code: The medication code
         display: The display name for the medication
@@ -310,8 +310,7 @@ def read_content_attachment(
 
     Args:
         document_reference: The FHIR DocumentReference resource
-        include_data: Whether to include the data of the attachments.
-        If true, the data will be also be decoded (default: True)
+        include_data: Whether to include the data of the attachments. If true, the data will be also be decoded (default: True)
 
     Returns:
         Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,

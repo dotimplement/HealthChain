@@ -102,7 +102,7 @@ def mock_cds_fhir_connector(test_condition):
 
         # Mock the input method
         fhir_data = FhirData()
-        fhir_data.set_prefetch_resources({"problem": test_condition})
+        fhir_data.prefetch_resources = {"problem": test_condition}
 
         connector_instance.input.return_value = Document(
             data="Original FHIR data",

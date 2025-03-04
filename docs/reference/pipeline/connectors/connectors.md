@@ -6,21 +6,17 @@ Connectors are what give you the power to build *end-to-end* pipelines that inte
 
 ## Available connectors
 
-Connectors make certain assumptions about the data they receive depending on the use case to convert it to an appropriate internal data format and container.
+Connectors parse data from a specific format into FHIR resources and store them in a `Document` container.
 
-Some connectors require the same instance to be used for both input and output, while others may be input or output only.
+([Document API Reference](../../../api/containers.md#healthchain.io.containers.document.Document))
 
-| Connector | Input | Output | FHIR Resources | Access it by... | Same instance I/O? |
-|-----------|-------|--------|-------------------------|----------------|--------------------------|
-| [**CdaConnector**](cdaconnector.md) | `CdaRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdaResponse` | [**DocumentReference**] | `` | ✅ |
-| [**CdsFhirConnector**](cdsfhirconnector.md) | `CDSRequest` :material-arrow-right: `Document` | `Document` :material-arrow-right: `CdsResponse` | **Any FHIR Resource** | `.fhir_resources` | ✅ |
+Some connectors require the same instance to be used for both input and output as they respond to a synchronous call, while others may be input or output only.
 
-!!! example "CdaConnector Example"
-    The `CdaConnector` expects a `CdaRequest` object as input and outputs a `CdaResponse` object. The connector converts the input data into a `Document` object because CDAs are usually represented as a document object.
+| Connector | FHIR Resources | Access | Same instance I/O? |
+|-----------|-------------------------|----------------|--------------------------|
+| [**CdaConnector**](cdaconnector.md) | [**DocumentReference**](https://www.hl7.org/fhir/documentreference.html) | `Document.text`, `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.fhir.allergy_list` | ✅ |
+| [**CdsFhirConnector**](cdsfhirconnector.md) | [**Any FHIR Resource**](https://www.hl7.org/fhir/resourcelist.html) | `Document.fhir.get_prefetch_resources()` | ✅ |
 
-    This `Document` object contains a `.fhir` attribute, which stores the structured data from the CDA document in a `DocumentReference` FHIR resource. Any free-text notes are stored in the `Document.text` attribute.
-
-    Because CDAs are annotated documents, the same `CdaConnector` instance must be used for both input and output operations in the pipeline.
 
 ## Use Cases
 Each connector can be mapped to a specific use case in the sandbox module.
@@ -46,4 +42,4 @@ pipeline.add_input(cda_connector)
 pipeline.add_output(cda_connector)
 ```
 
-Connectors are currently intended for development and testing purposes only. They are not production-ready, although this is something we want to work towards on our long-term roadmap. If there is a specific connector you would like to see, please feel free to [open an issue](https://github.com/dotimplement/healthchain/issues) or [contact us](https://discord.gg/UQC6uAepUz)!
+Connectors are currently intended for development and testing purposes only. They are not production-ready, although this is something we are working towards on our long-term roadmap. If there is a specific connector you would like to see, please feel free to [open an issue](https://github.com/dotimplement/healthchain/issues) or [contact us](https://discord.gg/UQC6uAepUz)!

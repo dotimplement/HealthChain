@@ -3,10 +3,10 @@ from healthchain.fhir import create_condition, create_document_reference
 
 def test_bundle_operations(fhir_data, sample_bundle):
     """Test basic bundle operations."""
-    assert fhir_data.get_bundle() is None
+    assert fhir_data.bundle is None
 
-    fhir_data.set_bundle(sample_bundle)
-    assert fhir_data.get_bundle() == sample_bundle
+    fhir_data.bundle = sample_bundle
+    assert fhir_data.bundle == sample_bundle
 
 
 def test_resource_operations(fhir_data):

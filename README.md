@@ -10,20 +10,22 @@
 
 </div>
 
-Simplify developing, testing and validating AI and NLP applications in a healthcare context 💫 🏥.
+Build simple, portable, and scalable AI and NLP applications in a healthcare context 💫 🏥.
 
-Building applications that integrate with electronic health record systems (EHRs) is complex, and so is designing reliable, reactive algorithms involving unstructured data. Let's try to change that.
+Integrating electronic health record systems (EHRs) data is complex, and so is designing reliable, reactive algorithms involving unstructured healthcare data. Let's try to change that.
 
 ```bash
 pip install healthchain
 ```
 First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain/) page!
 
-Came here from NHS RPySOC 2024 ✨? [CDS sandbox walkthrough](https://dotimplement.github.io/HealthChain/cookbook/cds_sandbox/)
+Came here from NHS RPySOC 2024 ✨?
+[CDS sandbox walkthrough](https://dotimplement.github.io/HealthChain/cookbook/cds_sandbox/)
+[Slides](https://speakerdeck.com/jenniferjiangkells/building-healthcare-context-aware-applications-with-healthchain)
 
 ## Features
-- [x] 🛠️ Build custom pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
-- [x] 🏗️ Add built-in [CDA and FHIR parsers](https://dotimplement.github.io/HealthChain/reference/utilities/cda_parser/) to connect your pipeline to interoperability standards
+- [x] 🔥 Build FHIR-native pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
+- [x] 🔌 Connect pipelines to any EHR system with built-in [CDA and FHIR Connectors](https://dotimplement.github.io/HealthChain/reference/pipeline/connectors/connectors/)
 - [x] 🧪 Test your pipelines in full healthcare-context aware [sandbox](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) environments
 - [x] 🗃️ Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) for testing and development
 - [x] 🚀 Deploy sandbox servers locally with [FastAPI](https://fastapi.tiangolo.com/)
@@ -42,24 +44,28 @@ Pipelines provide a flexible way to build and manage processing pipelines for NL
 ```python
 from healthchain.io.containers import Document
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
+from healthchain.pipeline.components import (
+    TextPreProcessor,
+    SpacyNLP,
+    TextPostProcessor,
+)
 
 # Initialize the pipeline
 nlp_pipeline = Pipeline[Document]()
 
 # Add TextPreProcessor component
-preprocessor = TextPreProcessor(tokenizer="spacy")
+preprocessor = TextPreProcessor()
 nlp_pipeline.add_node(preprocessor)
 
 # Add Model component (assuming we have a pre-trained model)
-spacy_nlp = SpacyNLP.from_model_id("en_core_sci_md", source="spacy")
+spacy_nlp = SpacyNLP.from_model_id("en_core_sci_sm")
 nlp_pipeline.add_node(spacy_nlp)
 
 # Add TextPostProcessor component
 postprocessor = TextPostProcessor(
     postcoordination_lookup={
         "heart attack": "myocardial infarction",
-        "high blood pressure": "hypertension"
+        "high blood pressure": "hypertension",
     }
 )
 nlp_pipeline.add_node(postprocessor)
@@ -70,7 +76,7 @@ nlp = nlp_pipeline.build()
 # Use the pipeline
 result = nlp(Document("Patient has a history of heart attack and high blood pressure."))
 
-print(f"Entities: {result.nlp.spacy_doc.ents}")
+print(f"Entities: {result.nlp.get_entities()}")
 ```
 
 #### Adding connectors
@@ -89,6 +95,7 @@ pipe = pipeline.build()
 
 cda_data = CdaRequest(document="<CDA XML content>")
 output = pipe(cda_data)
+# output: CdsResponse model
 ```
 
 ### Using pre-built pipelines
@@ -212,12 +219,12 @@ healthchain run mycds.py
 By default, the server runs at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`.
 
 ## Road Map
-- [ ] 🎛️ Versioning and artifact management for pipelines sandbox EHR configurations
-- [ ] ❓ Testing and evaluation framework for pipelines and use cases
+- [ ] 🔄 Transform and validate healthcare HL7v2, CDA to FHIR with template-based interop engine
+- [ ] 🏥 Runtime connection health and EHR integration management - connect to FHIR APIs and legacy systems
+- [ ] 📊 Track configurations, data provenance, and monitor model performance with MLFlow integration
+- [ ] 🚀 Compliance monitoring, auditing at deployment as a sidecar service
+- [ ] 🔒 Built-in HIPAA compliance validation and PHI detection
 - [ ] 🧠 Multi-modal pipelines that that have built-in NLP to utilize unstructured data
-- [ ] ✨ Improvements to synthetic data generator methods
-- [ ] 👾 Frontend UI for EHR client and visualization features
-- [ ] 🚀 Production deployment options
 
 ## Contribute
 We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
@@ -225,4 +232,4 @@ We are always eager to hear feedback and suggestions, especially if you are a de
 - 🛠️ [Contribution Guidelines](CONTRIBUTING.md)
 
 ## Acknowledgement
-This repository makes use of CDS Hooks developed by Boston Children’s Hospital.
+This repository makes use of [fhir.resources](https://github.com/nazrulworld/fhir.resources), and [CDS Hooks](https://cds-hooks.org/) developed by [HL7](https://www.hl7.org/) and [Boston Children’s Hospital](https://www.childrenshospital.org/).

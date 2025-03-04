@@ -1,10 +1,18 @@
 # CDA Connector
 
-The `CdaConnector` handles Clinical Document Architecture (CDA) documents, serving as both an input and output connector in the pipeline. It parses CDA documents, extracting free-text notes and relevant structured clinical data into a `Document` object, and can return an annotated CDA document as output.
+The `CdaConnector` parses CDA documents, extracting free-text notes and relevant structured clinical data into FHIR resources in the `Document` container, and returns an annotated CDA document as output. It will also extract the text from the note section of the document and store it in the `Document.text` attribute.
 
-This connector is particularly useful for clinical documentation improvement (CDI) workflows where CDA documents need to be processed and updated with additional structured data.
+This connector is particularly useful for clinical documentation improvement (CDI) workflows where a document needs to be processed and updated with additional structured data.
 
 [(Full Documentation on Clinical Documentation)](../../sandbox/use_cases/clindoc.md)
+
+[(Full Documentation on CDA Parser)](../../utilities/cda_parser.md)
+
+## Input and Output
+
+| Input | Output | Access |
+|-------|--------|-----------|
+| [**CdaRequest**](../../../api/use_cases.md#healthchain.models.requests.cdarequest.CdaRequest) | [**CdaResponse**](../../../api/use_cases.md#healthchain.models.responses.cdaresponse.CdaResponse) | `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.fhir.allergy_list`, `Document.text` |
 
 ## Usage
 
@@ -21,28 +29,33 @@ pipeline.add_input(cda_connector)
 pipeline.add_output(cda_connector)
 
 # Example CDA request
-cda_request = CdaRequest(document="<CDA XML content>")
+cda_request = CdaRequest(document="<CDA>test</CDA>")
 
-# Example 1: Simple pipeline execution
+# Accessing CDA data inside a pipeline node
+@pipeline.add_node
+def example_pipeline_node(document: Document) -> Document:
+    print(document.fhir.problem_list)
+    print(document.text)
+    return document
+
+# Pipeline execution
 pipe = pipeline.build()
 cda_response = pipe(cda_request)
 print(cda_response)
 # Output: CdaResponse(document='<Annotated CDA XML content>')
-
-# Example 2: Accessing CDA data inside a pipeline node
-@pipeline.add_node
-def example_pipeline_node(document: Document) -> Document:
-    print(document.ccd_data)
-    return document
-
-pipe = pipeline.build()
-cda_response = pipe(cda_request)
-# Output: CdaResponse object...
 ```
 
 ## Accessing data inside your pipeline
 
-Data parsed from the CDA document is stored in the `Document.fhir` attribute as a `DocumentReference` FHIR resource, as shown in the example above.
+Data parsed from the CDA document is converted into FHIR resources and stored in the `Document.fhir.bundle` attribute. The connector currently supports the following CDA section to FHIR resource mappings:
+
+CDA section | FHIR resource | Document.fhir attribute
+--- | --- | ---
+Problem List | [Condition](https://www.hl7.org/fhir/condition.html) | `Document.fhir.problem_list`
+Medication List | [MedicationStatement](https://www.hl7.org/fhir/medicationstatement.html) | `Document.fhir.medication_list`
+Allergy List | [AllergyIntolerance](https://www.hl7.org/fhir/allergyintolerance.html) | `Document.fhir.allergy_list`
+Note | [DocumentReference](https://www.hl7.org/fhir/documentreference.html) | `Document.fhir.bundle` (use `get_resources("DocumentReference")` to access)
+
 
 ## Configuration
 

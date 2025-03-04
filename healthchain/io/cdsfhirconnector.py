@@ -73,7 +73,7 @@ class CdsFhirConnector(BaseConnector):
         validated_prefetch = Prefetch(prefetch=cds_request.prefetch)
 
         # Set the prefetch resources
-        doc.fhir.set_prefetch_resources(validated_prefetch.prefetch)
+        doc.fhir.prefetch_resources = validated_prefetch.prefetch
 
         # Extract text content from DocumentReference resource if provided
         document_resource = validated_prefetch.prefetch.get(prefetch_document_key)

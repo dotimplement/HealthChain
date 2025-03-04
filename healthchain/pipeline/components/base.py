@@ -12,9 +12,6 @@ class BaseComponent(Generic[T], ABC):
 
     This class should be subclassed to create specific components.
     Subclasses must implement the __call__ method.
-
-    Attributes:
-        None
     """
 
     @abstractmethod

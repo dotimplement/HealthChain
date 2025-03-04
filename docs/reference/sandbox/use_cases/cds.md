@@ -18,13 +18,6 @@ CDS workflows are based on [CDS Hooks](https://cds-hooks.org/). CDS Hooks is an 
 
 [CdsFhirConnector](../../pipeline/connectors/cdsfhirconnector.md) handles the conversion of `CDSRequests` :material-swap-horizontal: `Document` :material-swap-horizontal: `CDSResponse` in a HealthChain pipeline.
 
-Attributes of `Document` are:
-
-- `fhir_resources`
-- `context`
-- `prefetch`
-
-[(Document API Reference)](../../../api/data_models.md#healthchain.models.data.document)
 
 ## Supported Workflows
 

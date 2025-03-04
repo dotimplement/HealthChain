@@ -213,27 +213,50 @@ class FhirData:
     such as a problem list, medication list, and allergy list.
     These collections are accessible as properties of the class instance.
 
-    Attributes:
-        _prefetch_resources (Optional[Dict[str, Resource]]): Resources specifically requested by CDS services
-        _bundle (Optional[Bundle]): Working bundle containing all other clinical resources
-
     Properties:
-        problem_list: List[Condition]
-        medication_list: List[MedicationStatement]
-        allergy_list: List[AllergyIntolerance]
+        bundle: The FHIR bundle containing resources
+        prefetch_resources: Dictionary of CDS Hooks prefetch resources
+        problem_list: List of Condition resources
+        medication_list: List of MedicationStatement resources
+        allergy_list: List of AllergyIntolerance resources
 
     Example:
-        >>> fhir_data = FhirData()
-        >>> # Add a document
-        >>> doc_id = fhir_data.add_document(document_ref)
+        >>> fhir = FhirData()
+        >>> # Add prefetch resources from CDS request
+        >>> fhir.prefetch_resources = {"patient": patient_resource}
+        >>> # Add document to bundle
+        >>> doc_id = fhir.add_document_reference(document)
         >>> # Get document with relationships
-        >>> doc_family = fhir_data.get_document_family(doc_id)
-        >>> # Get all documents with content
-        >>> documents = fhir_data.get_documents(include_data=True)
+        >>> doc_family = fhir.get_document_reference_family(doc_id)
+        >>> # Access clinical lists
+        >>> conditions = fhir.problem_list
     """
 
     _prefetch_resources: Optional[Dict[str, Resource]] = None
     _bundle: Optional[Bundle] = None
+
+    @property
+    def bundle(self) -> Optional[Bundle]:
+        """Returns the FHIR Bundle if it exists."""
+        return self._bundle
+
+    @bundle.setter
+    def bundle(self, bundle: Bundle):
+        """Sets the FHIR Bundle.
+        The bundle is a collection of FHIR resources.
+        See: https://www.hl7.org/fhir/bundle.html
+        """
+        self._bundle = bundle
+
+    @property
+    def prefetch_resources(self) -> Optional[Dict[str, Resource]]:
+        """Returns the prefetch FHIR resources."""
+        return self._prefetch_resources
+
+    @prefetch_resources.setter
+    def prefetch_resources(self, resources: Dict[str, Resource]):
+        """Sets the prefetch FHIR resources from CDS service requests."""
+        self._prefetch_resources = resources
 
     @property
     def problem_list(self) -> List[Condition]:
@@ -274,26 +297,11 @@ class FhirData:
         """
         self.add_resources(allergies, "AllergyIntolerance")
 
-    def get_bundle(self) -> Optional[Bundle]:
-        """Returns the FHIR Bundle if it exists."""
-        return self._bundle
-
-    def set_bundle(self, bundle: Bundle):
-        """Sets the FHIR Bundle.
-        The bundle is a collection of FHIR resources.
-        See: https://www.hl7.org/fhir/bundle.html
-        """
-        self._bundle = bundle
-
     def get_prefetch_resources(self, key: str) -> List[Any]:
         """Get resources of a specific type from the prefetch bundle."""
         if not self._prefetch_resources:
             return []
         return self._prefetch_resources.get(key, [])
-
-    def set_prefetch_resources(self, prefetch_resources: Dict[str, Resource]):
-        """Sets the prefetch FHIR resources from CDS service requests."""
-        self._prefetch_resources = prefetch_resources
 
     def get_resources(self, resource_type: str) -> List[Any]:
         """Get resources of a specific type from the working bundle."""

@@ -151,7 +151,7 @@ def doc_ref_without_content():
 def test_document():
     """Create a test document with FHIR resources."""
     doc = Document(data="Test note")
-    doc.fhir.set_bundle(create_bundle())
+    doc.fhir.bundle = create_bundle()
 
     # Add test FHIR resources
     problem_list = create_condition(

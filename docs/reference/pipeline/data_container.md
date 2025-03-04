@@ -107,7 +107,7 @@ prefetch = {
     "Condition": doc.fhir.problem_list,
     "MedicationStatement": doc.fhir.medication_list,
 }
-doc.fhir.set_prefetch_resources(prefetch)
+doc.fhir.prefetch_resources = prefetch
 conditions = doc.fhir.get_prefetch_resources("Condition")
 
 ```

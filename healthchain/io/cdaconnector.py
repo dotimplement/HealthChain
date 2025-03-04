@@ -96,7 +96,7 @@ class CdaConnector(BaseConnector):
         doc = Document(data=note_text)
 
         # Create FHIR Bundle and add documents
-        doc.fhir.set_bundle(create_bundle())
+        doc.fhir.bundle = create_bundle()
         doc.fhir.add_document_reference(cda_document_reference)
         doc.fhir.add_document_reference(
             note_document_reference, parent_id=cda_document_reference.id

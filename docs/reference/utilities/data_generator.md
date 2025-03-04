@@ -60,7 +60,7 @@ You can use the data generator within a client function or on its own.
     from healthchain.data_generators import CdsDataGenerator
     from healthchain.workflows import Workflow
 
-    # Initialise data generator
+    # Initialize data generator
     data_generator = CdsDataGenerator()
 
     # Generate FHIR resources for use case workflow

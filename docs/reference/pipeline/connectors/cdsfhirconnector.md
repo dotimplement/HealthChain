@@ -1,10 +1,15 @@
 # CDS FHIR Connector
 
-The `CdsFhirConnector` handles FHIR data in the context of Clinical Decision Support (CDS) services, serving as both an input and output connector in the pipeline.
-
-Note that this is not meant to be used as a generic FHIR connector, but specifically designed for use with the [CDS Hooks specification](https://cds-hooks.org/).
+The `CdsFhirConnector` handles FHIR data in the context of Clinical Decision Support (CDS) services, specifically using the [CDS Hooks specification](https://cds-hooks.org/).
 
 [(Full Documentation on Clinical Decision Support)](../../sandbox/use_cases/cds.md)
+
+## Input and Output
+
+| Input | Output | Access |
+|-------|--------|-----------|
+| [**CDSRequest**](../../../api/use_cases.md#healthchain.models.requests.cdsrequest.CDSRequest) | [**CDSResponse**](../../../api/use_cases.md#healthchain.models.responses.cdsresponse.CDSResponse) | `Document.fhir.prefetch_resources` |
+
 
 ## Usage
 
@@ -16,7 +21,7 @@ from healthchain.pipeline import Pipeline
 # Create a pipeline with CdsFhirConnector
 pipeline = Pipeline()
 
-cds_fhir_connector = CdsFhirConnector()
+cds_fhir_connector = CdsFhirConnector(hook_name="patient-view")
 pipeline.add_input(cds_fhir_connector)
 pipeline.add_output(cds_fhir_connector)
 
@@ -38,26 +43,33 @@ cds_request = CDSRequest(
     }
 )
 
-# Example 1: Simple pipeline execution
-pipe = pipeline.build()
-cds_response = pipe(cds_request)
-print(cds_response)
-# Output: CDSResponse with cards...
-
-# Example 2: Accessing FHIR data inside a pipeline node
+# Accessing FHIR data inside a pipeline node
 @pipeline.add_node
 def example_pipeline_node(document: Document) -> Document:
-    print(document.fhir_resources)
+    print(document.fhir.get_prefetch_resources("patient"))
     return document
 
+# Execute the pipeline
 pipe = pipeline.build()
 cds_response = pipe(cds_request)
-# Output: CdsResponse object...
-
+# Output: CdsResponse with cards...
 ```
 
 ## Accessing data inside your pipeline
 
-Data parsed from the FHIR resources is stored in the `Document.fhir_resources` attribute as a dictionary of FHIR resources corresponding to the keys in the `prefetch` field of the `CDSRequest`, as shown in the example above.
+Data parsed from the CDS request is stored in the `Document.fhir.prefetch_resources` attribute as a dictionary of FHIR resources corresponding to the keys in the `prefetch` field of the `CDSRequest`. For more information on the `prefetch` field, check out the [CDS Hooks specification on providing FHIR resources to a CDS service](https://cds-hooks.org/specification/current/#providing-fhir-resources-to-a-cds-service).
 
-[(Prefetch Reference)](../../../api/data_models.md#healthchain.models.data.prefetch)
+### Example Prefetch
+
+```json
+{
+    "patient": {
+        "resourceType": "Patient",
+        "id": "123",
+        "name": [{"family": "Doe", "given": ["John"]}],
+        "birthDate": "1970-01-01"
+    },
+    "condition": // Condition FHIR resource...
+    "document": // DocumentReference FHIR resource...
+}
+```

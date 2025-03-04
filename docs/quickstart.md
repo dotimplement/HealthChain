@@ -54,13 +54,13 @@ Add components to your pipeline with the `.add_node()` method and compile with `
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import TextPreProcessor, Model, TextPostProcessor
+from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
 from healthchain.io import Document
 
 pipeline = Pipeline[Document]()
 
 pipeline.add_node(TextPreProcessor())
-pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
 pipeline.add_node(TextPostProcessor())
 
 pipe = pipeline.build()
@@ -73,7 +73,7 @@ Let's go one step further! You can use [Connectors](./reference/pipeline/connect
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import Model
+from healthchain.pipeline.components import SpacyNLP
 from healthchain.io import CdaConnector
 from healthchain.models import CdaRequest
 
@@ -81,7 +81,7 @@ pipeline = Pipeline()
 cda_connector = CdaConnector()
 
 pipeline.add_input(cda_connector)
-pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
 pipeline.add_output(cda_connector)
 
 pipe = pipeline.build()
@@ -183,9 +183,7 @@ This will start a server by default at `http://127.0.0.1:8000`, and you can inte
 
 You can use the data generator to generate synthetic data for your sandbox runs.
 
-The `.generate_prefetch()` method is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
-
-We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
+The `.generate_prefetch()` method is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data as [Pydantic](https://docs.pydantic.dev/) models suitable for the workflow specified by the use case.
 
 [(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
 
@@ -216,9 +214,9 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
 === "On its own"
     ```python
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.workflow import Workflow
+    from healthchain.workflows import Workflow
 
-    # Initialise data generator
+    # Initialize data generator
     data_generator = CdsDataGenerator()
 
     # Generate FHIR resources for use case workflow
@@ -229,11 +227,10 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
 
     # {
     #    "prefetch": {
-    #        "entry": [
+    #        "encounter":
     #            {
-    #                "resource": ...
+    #              "resourceType": ...
     #            }
-    #        ]
     #    }
     #}
     ```
