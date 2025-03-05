@@ -155,7 +155,6 @@ class EHRClient(BaseClient):
         """
         async with httpx.AsyncClient() as client:
             responses: List[Dict] = []
-            # TODO: pass timeout as config
             timeout = httpx.Timeout(self.timeout, read=None)
             for request in self.request_data:
                 try:
@@ -171,6 +170,7 @@ class EHRClient(BaseClient):
                         response_model = CdaResponse(document=response.text)
                         responses.append(response_model.model_dump_xml())
                     else:
+                        # TODO: use model_dump_json() once Pydantic V2 timezone serialization issue is resolved
                         response = await client.post(
                             url=url,
                             json=request.model_dump(exclude_none=True),
@@ -180,7 +180,7 @@ class EHRClient(BaseClient):
                         responses.append(response.json())
                 except httpx.HTTPStatusError as exc:
                     log.error(
-                        f"Error response {exc.response.status_code} while requesting {exc.request.url!r}."
+                        f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.json()}"
                     )
                     responses.append({})
                 except httpx.TimeoutException as exc:

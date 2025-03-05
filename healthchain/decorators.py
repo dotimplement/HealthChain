@@ -269,7 +269,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
                     self._client.send_request(url=self.url.service)
                 )
             except Exception as e:
-                log.error(f"Couldn't start client: {e}")
+                log.error(f"Couldn't start client: {e}", exc_info=True)
 
             if save_data:
                 save_dir = Path(save_dir)

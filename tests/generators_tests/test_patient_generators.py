@@ -25,6 +25,5 @@ def test_patient_data_generator():
     assert patient_data is not None
 
     # Assert that the patient data has the expected pydantic fields
-    assert patient_data.resourceType == "Patient"
-    assert patient_data.id_field is not None
-    assert patient_data.active_field is not None
+    assert patient_data.id is not None
+    assert patient_data.active is not None

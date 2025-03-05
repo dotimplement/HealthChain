@@ -10,20 +10,14 @@ CDS workflows are based on [CDS Hooks](https://cds-hooks.org/). CDS Hooks is an 
 
 ## Data Flow
 
-| Stage | Input | Internal Data Representation | Output |
-|-------|-------|------------------------------|--------|
-| Client | N/A | N/A | `CdsFhirData` |
-| Service | `CdsRequest` | `CdsFhirData` | `CdsResponse` |
+| Stage | Input | Output |
+|-------|-------|--------|
+| Client | N/A | `Prefetch` |
+| Service | `CDSRequest` | `CDSResponse` |
 
 
-[CdsFhirConnector](../../pipeline/connectors/cdsfhirconnector.md) handles the conversion of `CDSRequests` :material-swap-horizontal: `CdsFhirData` :material-swap-horizontal: `CdsResponse` in a HealthChain pipeline.
+[CdsFhirConnector](../../pipeline/connectors/cdsfhirconnector.md) handles the conversion of `CDSRequests` :material-swap-horizontal: `Document` :material-swap-horizontal: `CDSResponse` in a HealthChain pipeline.
 
-Attributes of `CdsFhirData` are:
-
-- `context`
-- `prefetch`
-
-[(CdsFhirData API Reference)](../../../api/data_models.md#healthchain.models.data.cdsfhirdata)
 
 ## Supported Workflows
 

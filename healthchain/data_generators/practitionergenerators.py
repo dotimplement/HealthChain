@@ -6,21 +6,14 @@ from healthchain.data_generators.basegenerators import (
     generator_registry,
     register_generator,
 )
-from healthchain.fhir_resources.primitives import (
-    booleanModel,
-    stringModel,
-    uriModel,
-    codeModel,
-)
-from healthchain.fhir_resources.generalpurpose import (
-    CodeableConcept,
-    Coding,
-)
-from healthchain.fhir_resources.practitioner import (
+
+from fhir.resources.practitioner import (
     Practitioner,
-    PractitionerQualification,
     PractitionerCommunication,
+    PractitionerQualification,
 )
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
 
 
 faker = Faker()
@@ -45,16 +38,12 @@ class QualificationGenerator(BaseGenerator):
         return CodeableConcept(
             coding=[
                 Coding(
-                    system=uriModel("http://example.org"),
-                    code=codeModel(random_qual),
-                    display=stringModel(
-                        QualificationGenerator.qualification_dict.get(random_qual)
-                    ),
+                    system="http://example.org",
+                    code=random_qual,
+                    display=QualificationGenerator.qualification_dict.get(random_qual),
                 )
             ],
-            text=stringModel(
-                QualificationGenerator.qualification_dict.get(random_qual)
-            ),
+            text=QualificationGenerator.qualification_dict.get(random_qual),
         )
 
 
@@ -63,7 +52,7 @@ class Practitioner_QualificationGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return PractitionerQualification(
-            id=stringModel(faker.uuid4()),
+            id=faker.uuid4(),
             code=generator_registry.get("QualificationGenerator").generate(),
             # TODO: Modify period generator to have flexibility to set to present date
             period=generator_registry.get("PeriodGenerator").generate(),
@@ -91,12 +80,12 @@ class LanguageGenerator:
         return CodeableConcept(
             coding=[
                 Coding(
-                    system=uriModel("http://terminology.hl7.org/CodeSystem/languages"),
-                    code=codeModel(language),
-                    display=stringModel(language_value_dict.get(language)),
+                    system="http://terminology.hl7.org/CodeSystem/languages",
+                    code=language,
+                    display=language_value_dict.get(language),
                 )
             ],
-            text=stringModel(language_value_dict.get(language)),
+            text=language_value_dict.get(language),
         )
 
 
@@ -105,9 +94,9 @@ class Practitioner_CommunicationGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return PractitionerCommunication(
-            id=stringModel(faker.uuid4()),
+            id=faker.uuid4(),
             language=generator_registry.get("LanguageGenerator").generate(),
-            preferred=booleanModel("true"),
+            preferred=True,
         )
 
 
@@ -116,13 +105,12 @@ class PractitionerGenerator(BaseGenerator):
     @staticmethod
     def generate(constraints: Optional[list] = None):
         return Practitioner(
-            resourceType="Practitioner",
-            id=stringModel(faker.uuid4()),
-            active=booleanModel("true"),
+            id=faker.uuid4(),
+            active=True,
             name=[generator_registry.get("HumanNameGenerator").generate()],
             telecom=[generator_registry.get("ContactPointGenerator").generate()],
-            gender=codeModel(
-                faker.random_element(elements=("male", "female", "other", "unknown"))
+            gender=faker.random_element(
+                elements=("male", "female", "other", "unknown")
             ),
             address=[generator_registry.get("AddressGenerator").generate()],
             qualification=[

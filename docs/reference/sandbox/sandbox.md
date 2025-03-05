@@ -35,7 +35,7 @@ import healthchain as hc
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.data_generators import CdsDataGenerator
-from healthchain.models import CDSRequest, CdsFhirData, CDSResponse
+from healthchain.models import CDSRequest, Prefetch, CDSResponse
 
 
 @hc.sandbox
@@ -45,9 +45,9 @@ class MyCoolSandbox(ClinicalDecisionSupport):
         self.pipeline = SummarizationPipeline('gpt-4o')
 
     @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> CdsFhirData:
-        cds_fhir_data = self.data_generator.generate()
-        return cds_fhir_data
+    def load_data_in_client(self) -> Prefetch:
+        prefetch = self.data_generator.generate_prefetch()
+        return prefetch
 
     @hc.api
     def my_service(self, request: CDSRequest) -> CDSResponse:

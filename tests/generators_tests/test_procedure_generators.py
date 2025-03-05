@@ -11,7 +11,6 @@ def test_ProcedureGenerator():
     procedure = ProcedureGenerator.generate(
         subject_reference="Patient/123", encounter_reference="Encounter/123"
     )
-    assert procedure.resourceType == "Procedure"
-    assert procedure.subject_field.reference_field == "Patient/123"
-    assert procedure.encounter_field.reference_field == "Encounter/123"
-    assert procedure.code_field.coding_field[0].code_field in value_set
+    assert procedure.subject.reference == "Patient/123"
+    assert procedure.encounter.reference == "Encounter/123"
+    assert procedure.code.coding[0].code in value_set

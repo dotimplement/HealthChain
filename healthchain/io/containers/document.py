@@ -1,16 +1,26 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
+from uuid import uuid4
 
 from spacy.tokens import Doc as SpacyDoc
+from spacy.tokens import Span
+from fhir.resources.condition import Condition
+from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.bundle import Bundle
+from fhir.resources.documentreference import DocumentReference
+from fhir.resources.resource import Resource
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
-from healthchain.models.data import CcdData, CdsFhirData, ConceptLists
-from healthchain.models.data.concept import (
-    AllergyConcept,
-    MedicationConcept,
-    ProblemConcept,
+from healthchain.fhir import (
+    create_bundle,
+    get_resources,
+    set_resources,
+    create_single_codeable_concept,
+    read_content_attachment,
+    create_condition,
 )
 
 logger = logging.getLogger(__name__)
@@ -192,77 +202,282 @@ class ModelOutputs:
 
 
 @dataclass
-class HL7Data:
+class FhirData:
     """
-    Container for structured clinical document formats.
+    Container for FHIR resource data and its context.
 
-    This class stores and manages structured clinical data in different formats,
-    including CCD (Continuity of Care Document) and FHIR (Fast Healthcare
-    Interoperability Resources).
+    Stores and manages clinical data in FHIR format.
+    Access document references within resources easily through convenience functions.
 
-    Attributes:
-        _ccd_data (Optional[CcdData]): Clinical data in CCD format, containing
-            problems, medications, allergies and other clinical information.
-        _fhir_data (Optional[CdsFhirData]): Clinical data in FHIR format for
-            clinical decision support.
+    Also allows you to set common continuity of care lists,
+    such as a problem list, medication list, and allergy list.
+    These collections are accessible as properties of the class instance.
 
-    Methods:
-        update_ccd_from_concepts(concepts: ConceptLists, overwrite: bool = False) -> CcdData:
-            Updates the CCD data with new clinical concepts, either by overwriting or extending
-            existing data.
-        get_fhir_data() -> Optional[CdsFhirData]:
-            Returns the FHIR format clinical data if it exists, otherwise None.
-        get_ccd_data() -> Optional[CcdData]:
-            Returns the CCD format clinical data if it exists, otherwise None.
+    Properties:
+        bundle: The FHIR bundle containing resources
+        prefetch_resources: Dictionary of CDS Hooks prefetch resources
+        problem_list: List of Condition resources
+        medication_list: List of MedicationStatement resources
+        allergy_list: List of AllergyIntolerance resources
+
+    Example:
+        >>> fhir = FhirData()
+        >>> # Add prefetch resources from CDS request
+        >>> fhir.prefetch_resources = {"patient": patient_resource}
+        >>> # Add document to bundle
+        >>> doc_id = fhir.add_document_reference(document)
+        >>> # Get document with relationships
+        >>> doc_family = fhir.get_document_reference_family(doc_id)
+        >>> # Access clinical lists
+        >>> conditions = fhir.problem_list
     """
 
-    _ccd_data: Optional[CcdData] = None
-    _fhir_data: Optional[CdsFhirData] = None
+    _prefetch_resources: Optional[Dict[str, Resource]] = None
+    _bundle: Optional[Bundle] = None
 
-    def update_ccd_from_concepts(
-        self, concepts: ConceptLists, overwrite: bool = False
-    ) -> CcdData:
+    @property
+    def bundle(self) -> Optional[Bundle]:
+        """Returns the FHIR Bundle if it exists."""
+        return self._bundle
+
+    @bundle.setter
+    def bundle(self, bundle: Bundle):
+        """Sets the FHIR Bundle.
+        The bundle is a collection of FHIR resources.
+        See: https://www.hl7.org/fhir/bundle.html
         """
-        Updates the CCD data with new clinical concepts.
+        self._bundle = bundle
 
-        This method takes a ConceptLists object containing problems, medications,
-        and allergies, and updates the internal CCD data accordingly. If no CCD
-        data exists, it creates a new CcdData instance.
+    @property
+    def prefetch_resources(self) -> Optional[Dict[str, Resource]]:
+        """Returns the prefetch FHIR resources."""
+        return self._prefetch_resources
+
+    @prefetch_resources.setter
+    def prefetch_resources(self, resources: Dict[str, Resource]):
+        """Sets the prefetch FHIR resources from CDS service requests."""
+        self._prefetch_resources = resources
+
+    @property
+    def problem_list(self) -> List[Condition]:
+        """Get problem list from the bundle.
+        Problem list items are stored as Condition resources in the bundle.
+        See: https://www.hl7.org/fhir/condition.html
+        """
+        return self.get_resources("Condition")
+
+    @problem_list.setter
+    def problem_list(self, conditions: List[Condition]) -> None:
+        """Set problem list in the bundle."""
+        self.add_resources(conditions, "Condition")
+
+    @property
+    def medication_list(self) -> List[MedicationStatement]:
+        """Get medication list from the bundle."""
+        return self.get_resources("MedicationStatement")
+
+    @medication_list.setter
+    def medication_list(self, medications: List[MedicationStatement]) -> None:
+        """Set medication list in the bundle.
+        Medication statements are stored as MedicationStatement resources in the bundle.
+        See: https://www.hl7.org/fhir/medicationstatement.html
+        """
+        self.add_resources(medications, "MedicationStatement")
+
+    @property
+    def allergy_list(self) -> List[AllergyIntolerance]:
+        """Get allergy list from the bundle."""
+        return self.get_resources("AllergyIntolerance")
+
+    @allergy_list.setter
+    def allergy_list(self, allergies: List[AllergyIntolerance]) -> None:
+        """Set allergy list in the bundle.
+        Allergy intolerances are stored as AllergyIntolerance resources in the bundle.
+        See: https://www.hl7.org/fhir/allergyintolerance.html
+        """
+        self.add_resources(allergies, "AllergyIntolerance")
+
+    def get_prefetch_resources(self, key: str) -> List[Any]:
+        """Get resources of a specific type from the prefetch bundle."""
+        if not self._prefetch_resources:
+            return []
+        return self._prefetch_resources.get(key, [])
+
+    def get_resources(self, resource_type: str) -> List[Any]:
+        """Get resources of a specific type from the working bundle."""
+        if not self._bundle:
+            return []
+        return get_resources(self._bundle, resource_type)
+
+    def add_resources(
+        self, resources: List[Any], resource_type: str, replace: bool = False
+    ):
+        """Add resources to the working bundle."""
+        if not self._bundle:
+            self._bundle = create_bundle()
+        set_resources(self._bundle, resources, resource_type, replace=replace)
+
+    def add_document_reference(
+        self,
+        document: DocumentReference,
+        parent_id: Optional[str] = None,
+        relationship_type: Optional[str] = "transforms",
+    ) -> str:
+        """
+        Adds a DocumentReference resource to the FHIR bundle and establishes
+        relationships between documents if a parent_id is provided. The relationship is
+        tracked using the FHIR relatesTo element with a specified relationship type.
+        See: https://build.fhir.org/documentreference-definitions.html#DocumentReference.relatesTo
 
         Args:
-            concepts (ConceptLists): The new clinical concepts to add, containing
-                problems, medications, and allergies lists.
-            overwrite (bool, optional): If True, replaces existing concepts.
-                If False, extends the existing lists. Defaults to False.
+            document: The DocumentReference to add to the bundle
+            parent_id: Optional ID of the parent document. If provided, establishes a
+                relationship between this document and its parent.
+            relationship_type: The type of relationship to establish with the parent
+                document. Defaults to "transforms". This is used in the FHIR relatesTo
+                element's code. See: http://hl7.org/fhir/valueset-document-relationship-type
 
         Returns:
-            CcdData: The updated CCD data.
+            str: The ID of the added document. If the document had no ID, a new UUID-based
+                ID is generated.
         """
-        if self._ccd_data is None:
-            self._ccd_data = CcdData()
+        # Generate a consistent ID if not present
+        if not document.id:
+            document.id = f"doc-{uuid4()}"
 
-        if overwrite:
-            self._ccd_data.concepts.problems = concepts.problems
-            self._ccd_data.concepts.medications = concepts.medications
-            self._ccd_data.concepts.allergies = concepts.allergies
-        else:
-            self._ccd_data.concepts.problems.extend(concepts.problems)
-            self._ccd_data.concepts.medications.extend(concepts.medications)
-            self._ccd_data.concepts.allergies.extend(concepts.allergies)
+        # Add relationship metadata if there's a parent
+        if parent_id:
+            if not hasattr(document, "relatesTo") or not document.relatesTo:
+                document.relatesTo = []
+            document.relatesTo.append(
+                {
+                    "target": {"reference": f"DocumentReference/{parent_id}"},
+                    "code": create_single_codeable_concept(
+                        code=relationship_type,
+                        display=relationship_type.capitalize(),
+                        system="http://hl7.org/fhir/ValueSet/document-relationship-type",
+                    ),
+                }
+            )
 
-        return self._ccd_data
+        self.add_resources([document], "DocumentReference", replace=False)
 
-    def get_fhir_data(self) -> Optional[CdsFhirData]:
-        return self._fhir_data
+        return document.id
 
-    def set_fhir_data(self, fhir_data: CdsFhirData):
-        self._fhir_data = fhir_data
+    def get_document_references_readable(
+        self, include_data: bool = True, include_relationships: bool = True
+    ) -> List[Dict[str, Any]]:
+        """
+        Get DocumentReferences resources with their content and optional relationship data
+        in a human-readable dictionary format.
 
-    def get_ccd_data(self) -> Optional[CcdData]:
-        return self._ccd_data
+        Args:
+            include_data: If True, decode and include the document data (default: True)
+            include_relationships: If True, include related document information (default: True)
 
-    def set_ccd_data(self, ccd_data: CcdData):
-        self._ccd_data = ccd_data
+        Returns:
+            List of documents with metadata and optionally their content and relationships
+        """
+        documents = []
+        for doc in self.get_resources("DocumentReference"):
+            doc_data = {
+                "id": doc.id,
+                "description": doc.description,
+                "status": doc.status,
+            }
+
+            attachments = read_content_attachment(doc, include_data=include_data)
+            if attachments:
+                doc_data["attachments"] = []
+                for attachment in attachments:
+                    if include_data:
+                        doc_data["attachments"].append(
+                            {
+                                "data": attachment.get("data"),
+                                "metadata": attachment.get("metadata"),
+                            }
+                        )
+                    else:
+                        doc_data["attachments"].append(
+                            {"metadata": attachment.get("metadata")}
+                        )
+
+            if include_relationships:
+                family = self.get_document_reference_family(doc.id)
+                doc_data["relationships"] = {
+                    "parents": [
+                        {"id": p.id, "description": p.description}
+                        for p in family["parents"]
+                    ],
+                    "children": [
+                        {"id": c.id, "description": c.description}
+                        for c in family["children"]
+                    ],
+                    "siblings": [
+                        {"id": s.id, "description": s.description}
+                        for s in family["siblings"]
+                    ],
+                }
+
+            documents.append(doc_data)
+
+        return documents
+
+    def get_document_reference_family(self, document_id: str) -> Dict[str, Any]:
+        """
+        Get a DocumentReference resource and all its related resources
+        based on the relatesTo element in the FHIR standard.
+        See: https://build.fhir.org/documentreference-definitions.html#DocumentReference.relatesTo
+
+        Args:
+            document_id: ID of the DocumentReference resource to find relationships for
+
+        Returns:
+            Dict containing:
+                'document': The requested DocumentReference resource
+                'parents': List of parent DocumentReference resources
+                'children': List of child DocumentReference resources
+                'siblings': List of DocumentReference resources sharing the same parent
+        """
+        documents = self.get_resources("DocumentReference")
+        family = {"document": None, "parents": [], "children": [], "siblings": []}
+
+        # Find the requested document
+        target_doc = next((doc for doc in documents if doc.id == document_id), None)
+        if not target_doc:
+            return family
+
+        family["document"] = target_doc
+
+        # Find direct relationships
+        if hasattr(target_doc, "relatesTo") and target_doc.relatesTo:
+            # Find parents from target's relationships
+            for relation in target_doc.relatesTo:
+                parent_ref = relation.get("target", {}).get("reference")
+                parent_id = parent_ref.split("/")[-1]
+                parent = next((doc for doc in documents if doc.id == parent_id), None)
+                if parent:
+                    family["parents"].append(parent)
+
+        # Find children and siblings
+        for doc in documents:
+            if not hasattr(doc, "relatesTo") or not doc.relatesTo:
+                continue
+
+            for relation in doc.relatesTo:
+                target_ref = relation.get("target", {}).get("reference")
+                related_id = target_ref.split("/")[-1]
+
+                # Check if this doc is a child of our target
+                if related_id == document_id:
+                    family["children"].append(doc)
+
+                # For siblings, check if they share the same parent
+                elif family["parents"] and related_id == family["parents"][0].id:
+                    if doc.id != document_id:  # Don't include self as sibling
+                        family["siblings"].append(doc)
+
+        return family
 
 
 @dataclass
@@ -270,39 +485,86 @@ class CdsAnnotations:
     """
     Container for Clinical Decision Support (CDS) results.
 
-    This class stores the outputs from clinical decision support systems,
+    This class stores and manages outputs from clinical decision support systems,
     including CDS Hooks cards and suggested clinical actions. The cards contain
     recommendations, warnings, and other decision support content that can be
     displayed to clinicians. Actions represent specific clinical tasks or
     interventions that are suggested based on the analysis.
 
     Attributes:
-        _cards (Optional[List[Card]]): Internal storage for CDS Hooks cards containing
-            clinical recommendations, warnings, or other decision support content.
-        _actions (Optional[List[Action]]): Internal storage for suggested clinical actions
-            that could be taken based on the CDS analysis.
+        _cards (Optional[List[Card]]): CDS Hooks cards containing clinical
+            recommendations, warnings, or other decision support content.
+        _actions (Optional[List[Action]]): Suggested clinical actions that
+            could be taken based on the CDS analysis.
 
-    Methods:
-        set_cards(cards: List[Card]): Sets the list of CDS Hooks cards
-        get_cards() -> Optional[List[Card]]: Returns the current list of cards if any exist
-        set_actions(actions: List[Action]): Sets the list of suggested clinical actions
-        get_actions() -> Optional[List[Action]]: Returns the current list of actions if any exist
+    Example:
+        >>> cds = CdsAnnotations()
+        >>> cds.cards = [Card(summary="Consider aspirin")]
+        >>> cds.actions = [Action(type="create", description="Order aspirin")]
     """
 
     _cards: Optional[List[Card]] = None
     _actions: Optional[List[Action]] = None
 
-    def set_cards(self, cards: List[Card]):
-        self._cards = cards
-
-    def get_cards(self) -> Optional[List[Card]]:
+    @property
+    def cards(self) -> Optional[List[Card]]:
+        """Get the current list of CDS Hooks cards."""
         return self._cards
 
-    def set_actions(self, actions: List[Action]):
-        self._actions = actions
+    @cards.setter
+    def cards(self, cards: Union[List[Card], List[Dict[str, Any]]]) -> None:
+        """
+        Set CDS Hooks cards, converting from dictionaries if needed.
 
-    def get_actions(self) -> Optional[List[Action]]:
+        Args:
+            cards: List of Card objects or dictionaries that can be converted to Cards.
+
+        Raises:
+            ValueError: If cards list is empty or has invalid format.
+            TypeError: If cards are neither Card objects nor dictionaries.
+        """
+        if not cards:
+            raise ValueError("Cards must be provided as a list!")
+
+        try:
+            if isinstance(cards[0], dict):
+                self._cards = [Card(**card) for card in cards]
+            elif isinstance(cards[0], Card):
+                self._cards = cards
+            else:
+                raise TypeError("Cards must be either Card objects or dictionaries")
+        except (IndexError, KeyError) as e:
+            raise ValueError("Invalid card format") from e
+
+    @property
+    def actions(self) -> Optional[List[Action]]:
+        """Get the current list of suggested clinical actions."""
         return self._actions
+
+    @actions.setter
+    def actions(self, actions: Union[List[Action], List[Dict[str, Any]]]) -> None:
+        """
+        Set suggested clinical actions, converting from dictionaries if needed.
+
+        Args:
+            actions: List of Action objects or dictionaries that can be converted to Actions.
+
+        Raises:
+            ValueError: If actions list is empty or has invalid format.
+            TypeError: If actions are neither Action objects nor dictionaries.
+        """
+        if not actions:
+            raise ValueError("Actions must be provided as a list!")
+
+        try:
+            if isinstance(actions[0], dict):
+                self._actions = [Action(**action) for action in actions]
+            elif isinstance(actions[0], Action):
+                self._actions = actions
+            else:
+                raise TypeError("Actions must be either Action objects or dictionaries")
+        except (IndexError, KeyError) as e:
+            raise ValueError("Invalid action format") from e
 
 
 @dataclass
@@ -317,32 +579,35 @@ class Document(BaseDocument):
     The Document class provides a comprehensive representation that can include:
     - Raw text and basic tokenization
     - NLP annotations (tokens, entities, embeddings, spaCy docs)
-    - Clinical concepts (problems, medications, allergies)
-    - Structured clinical documents (CCD, FHIR)
-    - Clinical decision support results (cards, actions)
+    - FHIR resources through the fhir property (problem list, medication list, allergy list)
+    - Clinical decision support results through the cds property (cards, actions)
     - ML model outputs (Hugging Face, LangChain)
 
     Attributes:
         nlp (NlpAnnotations): Container for NLP-related annotations like tokens and entities
-        concepts (ConceptLists): Container for extracted medical concepts
-        hl7 (StructuredData): Container for structured clinical documents (CCD, FHIR)
+        fhir (FhirData): Container for FHIR resources and CDS context
         cds (CdsAnnotations): Container for clinical decision support results
         models (ModelOutputs): Container for ML model outputs
 
-    The class provides methods to:
-    - Add and access medical concepts
-    - Generate structured clinical documents
-    - Get basic text statistics
-    - Iterate over tokens
-    - Access raw text
+    Example:
+        >>> doc = Document(data="Patient has hypertension")
+        >>> # Add set continuity of care lists
+        >>> doc.fhir.problem_list = [Condition(...)]
+        >>> doc.fhir.medication_list = [MedicationStatement(...)]
+        >>> # Add FHIR resources
+        >>> doc.fhir.add_resources([Patient(...)], "Patient")
+        >>> # Add a document with a parent
+        >>> parent_id = doc.fhir.add_document(DocumentReference(...), parent_id="123")
+        >>> # Add CDS results
+        >>> doc.cds.cards = [Card(...)]
+        >>> doc.cds.actions = [Action(...)]
 
     Inherits from:
         BaseDocument: Provides base document functionality and raw text storage
     """
 
     _nlp: NlpAnnotations = field(default_factory=NlpAnnotations)
-    _concepts: ConceptLists = field(default_factory=ConceptLists)
-    _hl7: HL7Data = field(default_factory=HL7Data)
+    _fhir: FhirData = field(default_factory=FhirData)
     _cds: CdsAnnotations = field(default_factory=CdsAnnotations)
     _models: ModelOutputs = field(default_factory=ModelOutputs)
 
@@ -351,12 +616,8 @@ class Document(BaseDocument):
         return self._nlp
 
     @property
-    def concepts(self) -> ConceptLists:
-        return self._concepts
-
-    @property
-    def hl7(self) -> HL7Data:
-        return self._hl7
+    def fhir(self) -> FhirData:
+        return self._fhir
 
     @property
     def cds(self) -> CdsAnnotations:
@@ -373,98 +634,46 @@ class Document(BaseDocument):
         if not self._nlp._tokens:
             self._nlp._tokens = self.text.split()  # Basic tokenization if not provided
 
-    def add_concepts(
-        self,
-        problems: List[ProblemConcept] = None,
-        medications: List[MedicationConcept] = None,
-        allergies: List[AllergyConcept] = None,
-    ):
-        """
-        Add extracted medical concepts to the document.
-
-        This method adds medical concepts (problems, medications, allergies) to their
-        respective lists in the document's concepts container. Each concept type is
-        optional and will only be added if provided.
-
-        Args:
-            problems (List[ProblemConcept], optional): List of medical problems/conditions
-                to add to the document. Defaults to None.
-            medications (List[MedicationConcept], optional): List of medications
-                to add to the document. Defaults to None.
-            allergies (List[AllergyConcept], optional): List of allergies
-                to add to the document. Defaults to None.
-
-        Example:
-            >>> doc.add_concepts(
-            ...     problems=[ProblemConcept(display_name="Hypertension")],
-            ...     medications=[MedicationConcept(display_name="Aspirin")]
-            ... )
-        """
-        if problems:
-            self._concepts.problems.extend(problems)
-        if medications:
-            self._concepts.medications.extend(medications)
-        if allergies:
-            self._concepts.allergies.extend(allergies)
-
-    def add_cds_cards(
-        self, cards: Union[List[Card], List[Dict[str, Any]]]
-    ) -> List[Card]:
-        if not cards:
-            raise ValueError("Cards must be provided as a list!")
-
-        try:
-            if isinstance(cards[0], dict):
-                cards = [Card(**card) for card in cards]
-            elif not isinstance(cards[0], Card):
-                raise TypeError("Cards must be either Card objects or dictionaries")
-        except (IndexError, KeyError) as e:
-            raise ValueError("Invalid card format") from e
-
-        return self._cds.set_cards(cards)
-
-    def add_cds_actions(
-        self, actions: Union[List[Action], List[Dict[str, Any]]]
-    ) -> List[Action]:
-        if not actions:
-            raise ValueError("Actions must be provided as a list!")
-
-        try:
-            if isinstance(actions[0], dict):
-                actions = [Action(**action) for action in actions]
-            elif not isinstance(actions[0], Action):
-                raise TypeError("Actions must be either Action objects or dictionaries")
-        except (IndexError, KeyError) as e:
-            raise ValueError("Invalid action format") from e
-
-        return self._cds.set_actions(actions)
-
-    def generate_ccd(self, overwrite: bool = False) -> CcdData:
-        """
-        Generate a CCD (Continuity of Care Document) from the current medical concepts.
-
-        This method creates or updates a CCD in the hl7 container using the
-        medical concepts (problems, medications, allergies) currently stored in the document.
-        The CCD is a standard format for exchanging clinical information.
-
-        Args:
-            overwrite (bool, optional): If True, overwrites any existing CCD data.
-                If False, merges with existing CCD data. Defaults to False.
-
-        Returns:
-            CcdData: The generated CCD data.
-
-        Example:
-            >>> doc.add_concepts(problems=[ProblemConcept(display_name="Hypertension")])
-            >>> doc.generate_ccd()  # Creates CCD with the hypertension problem
-        """
-        return self._hl7.update_ccd_from_concepts(self._concepts, overwrite)
-
     def word_count(self) -> int:
         """
         Get the word count from the document's text.
         """
         return len(self._nlp._tokens)
+
+    def update_problem_list_from_nlp(self):
+        """
+        Updates the document's problem list by extracting medical entities from the spaCy annotations.
+
+        This method looks for entities in the document's spaCy annotations that have associated
+        SNOMED CT concept IDs (CUIs). For each valid entity found, it creates a new FHIR Condition
+        resource and adds it to the document's problem list.
+
+        The method requires that:
+        1. A spaCy doc has been added to the document's NLP annotations
+        2. The entities in the spaCy doc have the 'cui' extension attribute set
+
+        Note:
+            - Currently defaults to using SNOMED CT coding system
+            - Uses a hardcoded patient reference "Patient/123"
+            - Preserves any existing conditions in the problem list
+        """
+        conditions = self.fhir.problem_list
+        # TODO: Make this configurable
+        for ent in self.nlp._spacy_doc.ents:
+            if not Span.has_extension("cui") or ent._.cui is None:
+                logger.debug(f"No CUI found for entity {ent.text}")
+                continue
+            condition = create_condition(
+                subject="Patient/123",
+                code=ent._.cui,
+                display=ent.text,
+                system="http://snomed.info/sct",
+            )
+            logger.debug(f"Adding condition {condition.model_dump()}")
+            conditions.append(condition)
+
+        # Add to document concepts
+        self.fhir.problem_list = conditions
 
     def __iter__(self) -> Iterator[str]:
         return iter(self._nlp._tokens)

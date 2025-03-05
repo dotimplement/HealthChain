@@ -1,10 +1,12 @@
+import base64
 import inspect
 import logging
 import pkgutil
 import xmltodict
-import base64
 
 from typing import Dict, Optional
+
+from fhir.resources.documentreference import DocumentReference
 
 from healthchain.base import BaseClient, BaseUseCase, BaseStrategy
 from healthchain.service import Service
@@ -16,7 +18,7 @@ from healthchain.workflows import (
     Workflow,
     validate_workflow,
 )
-from healthchain.models import CdaRequest, CdaResponse, CcdData
+from healthchain.models import CdaRequest, CdaResponse
 from healthchain.apimethod import APIMethod
 
 
@@ -38,37 +40,43 @@ class ClinicalDocumentationStrategy(BaseStrategy):
 
     def construct_cda_xml_document(self):
         """
-        This function should wrap FHIR data from CcdFhirData into a template CDA file (dep. vendor
+        This function should wrap FHIR resources from Document into a template CDA file
         TODO: implement this function
         """
-        pass
+        raise NotImplementedError("This function is not implemented yet.")
 
     @validate_workflow(UseCaseMapping.ClinicalDocumentation)
-    def construct_request(self, data: CcdData, workflow: Workflow) -> CdaRequest:
+    def construct_request(
+        self, document_reference: DocumentReference, workflow: Workflow
+    ) -> CdaRequest:
         """
         Constructs a CDA request for clinical documentation use cases (NoteReader)
 
         Parameters:
-            data: CDA data to be injected in the request
+            document_reference (DocumentReference): FHIR DocumentReference containing CDA XML data
             workflow (Workflow): The NoteReader workflow type, e.g. notereader-sign-inpatient
 
         Returns:
-            CdaRequest: A Pydantic model that wraps CDA data for SOAP request
+            CdaRequest: A Pydantic model containing the CDA XML wrapped in a SOAP envelope
 
         Raises:
-            ValueError: If the workflow is invalid or the data does not validate properly.
+            ValueError: If the SOAP envelope template is invalid or missing required keys
         """
-        # TODO: handle converting fhir data from data generator to cda
         # TODO: handle different workflows
-        if data.cda_xml is not None:
-            # Encode the cda xml in base64
-            encoded_xml = base64.b64encode(data.cda_xml.encode("utf-8")).decode("utf-8")
+        cda_xml = None
+        for content in document_reference.content:
+            if content.attachment.contentType == "text/xml":
+                cda_xml = content.attachment.data
+                break
 
+        if cda_xml is not None:
             # Make a copy of the SOAP envelope template
             soap_envelope = self.soap_envelope.copy()
 
+            cda_xml = base64.b64encode(cda_xml).decode("utf-8")
+
             # Insert encoded cda in the Document section
-            if not insert_at_key(soap_envelope, "urn:Document", encoded_xml):
+            if not insert_at_key(soap_envelope, "urn:Document", cda_xml):
                 raise ValueError(
                     "Key 'urn:Document' missing from SOAP envelope template!"
                 )
@@ -76,9 +84,7 @@ class ClinicalDocumentationStrategy(BaseStrategy):
 
             return request
         else:
-            log.warning(
-                "Data generation methods for CDA documents not implemented yet!"
-            )
+            log.warning("No CDA document found in the DocumentReference!")
 
 
 class ClinicalDocumentation(BaseUseCase):
@@ -93,7 +99,6 @@ class ClinicalDocumentation(BaseUseCase):
         service_config (Optional[Dict]): The configuration for the service.
         service (Optional[Service]): The service to be used for processing the documents.
         client (Optional[BaseClient]): The client to be used for communication with the service.
-        overwrite (bool): Whether to overwrite existing data in the CDA document.
 
     """
 
@@ -120,7 +125,6 @@ class ClinicalDocumentation(BaseUseCase):
                 api_protocol="SOAP",
             )
         }
-        self.overwrite: bool = False
 
     @property
     def description(self) -> str:

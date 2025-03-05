@@ -7,54 +7,30 @@ from enum import Enum
 from datetime import datetime
 from typing import Dict, Optional, List, Tuple, Union
 
-from healthchain.cda_parser.model.datatypes import CD, CE, IVL_PQ
-from healthchain.models import (
-    ProblemConcept,
-    MedicationConcept,
-    AllergyConcept,
-)
-from healthchain.models.data.concept import Concept, Quantity, Range, TimeInterval
+from fhir.resources.condition import Condition
+from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.allergyintolerance import AllergyIntolerance
 
+from healthchain.cda_parser.model.datatypes import CD, CE, IVL_PQ
 from healthchain.cda_parser.model.cda import ClinicalDocument
 from healthchain.cda_parser.model.sections import (
     Entry,
     Section,
     EntryRelationship,
     Observation,
-    SubstanceAdministration,
+)
+from fhir.resources.dosage import Dosage
+from healthchain.cda_parser.utils import CodeMapping
+from healthchain.fhir import (
+    create_condition,
+    create_allergy_intolerance,
+    create_medication_statement,
+    create_single_codeable_concept,
+    set_problem_list_item_category,
+    create_single_reaction,
 )
 
-
 log = logging.getLogger(__name__)
-
-
-def get_time_range_from_cda_value(value: Dict) -> Range:
-    """
-    Converts a dictionary representing a time range from a CDA value into a Range object.
-
-    Args:
-        value (Dict): A dictionary representing the CDA value.
-
-    Returns:
-        Range: A Range object representing the time range.
-
-    """
-    range_model = Range(
-        low=Quantity(
-            value=value.get("low", {}).get("@value"),
-            unit=value.get("low", {}).get("@unit"),
-        ),
-        high=Quantity(
-            value=value.get("high", {}).get("@value"),
-            unit=value.get("high", {}).get("@unit"),
-        ),
-    )
-    if range_model.low.value is None:
-        range_model.low = None
-    if range_model.high.value is None:
-        range_model.high = None
-
-    return range_model
 
 
 def get_value_from_entry_relationship(entry_relationship: EntryRelationship) -> List:
@@ -158,29 +134,29 @@ class ProblemCodes(Enum):
 class CdaAnnotator:
     """
     Annotates a Clinical Document Architecture (CDA) document.
+    Limited to problems, medications, allergies, and notes sections for now.
 
     Args:
         cda_data (ClinicalDocument): The CDA document data.
-        fallback (str, optional): The fallback value. Defaults to "LLM".
 
     Attributes:
         clinical_document (ClinicalDocument): The CDA document data.
         fallback (str): The fallback value.
-        problem_list (List[ProblemConcept]): The list of problems extracted from the CDA document.
-        medication_list (List[MedicationConcept]): The list of medications extracted from the CDA document.
-        allergy_list (List[AllergyConcept]): The list of allergies extracted from the CDA document.
+        problem_list (List[Condition]): The list of problems extracted from the CDA document.
+        medication_list (List[MedicationStatement]): The list of medications extracted from the CDA document.
+        allergy_list (List[AllergyIntolerance]): The list of allergies extracted from the CDA document.
         note (str): The note extracted from the CDA document.
 
     Methods:
         from_dict(cls, data: Dict): Creates a CdaAnnotator instance from a dictionary.
         from_xml(cls, data: str): Creates a CdaAnnotator instance from an XML string.
-        add_to_problem_list(problems: List[ProblemConcept], overwrite: bool = False) -> None: Adds a list of problem concepts to the problems section.
+        add_to_problem_list(problems: List[Condition], overwrite: bool = False) -> None: Adds a list of Condition resources to the problems section.
         export(pretty_print: bool = True) -> str: Exports the CDA document as an XML string.
     """
 
-    def __init__(self, cda_data: ClinicalDocument, fallback="LLM") -> None:
+    def __init__(self, cda_data: ClinicalDocument) -> None:
         self.clinical_document = cda_data
-        self.fallback = fallback
+        self.code_mapping = CodeMapping()
         self._get_ccd_sections()
         self._extract_data()
 
@@ -260,9 +236,9 @@ class CdaAnnotator:
         Returns:
             None
         """
-        self.problem_list: List[ProblemConcept] = self._extract_problems()
-        self.medication_list: List[MedicationConcept] = self._extract_medications()
-        self.allergy_list: List[AllergyConcept] = self._extract_allergies()
+        self.problem_list: List[Condition] = self._extract_problems()
+        self.medication_list: List[MedicationStatement] = self._extract_medications()
+        self.allergy_list: List[AllergyIntolerance] = self._extract_allergies()
         self.note: str = self._extract_note()
 
     def _find_section_by_code(self, section_code: str) -> Optional[Section]:
@@ -343,27 +319,72 @@ class CdaAnnotator:
             SectionId.NOTE.value
         ) or self._find_section_by_code(SectionCode.NOTE.value)
 
-    def _extract_problems(self) -> List[ProblemConcept]:
+    def _extract_problems(self) -> List[Condition]:
         """
-        Extracts problem concepts from the problem section of the CDA document.
+        Extracts problems from the CDA document's problem section and converts them to FHIR Condition resources.
+
+        The method processes each problem entry in the CDA document and:
+        - Maps CDA status codes to FHIR clinical status
+        - Extracts onset and abatement dates
+        - Creates FHIR Condition resources with appropriate coding
+        - Sets problem list item category
+        - Handles both single entries and lists of entries
 
         Returns:
-            A list of ProblemConcept objects representing the extracted problem concepts.
+            List[Condition]: A list of FHIR Condition resources representing the extracted problems.
+                           Returns empty list if problem section is not found.
         """
         if not self._problem_section:
             log.warning("Empty problem section!")
             return []
 
-        concepts = []
+        conditions = []
 
-        def get_problem_concept_from_cda_data_field(value: Dict) -> ProblemConcept:
-            concept = ProblemConcept(_standard="cda")
-            concept.code = value.get("@code")
-            concept.code_system = value.get("@codeSystem")
-            concept.code_system_name = value.get("@codeSystemName")
-            concept.display_name = value.get("@displayName")
+        def create_fhir_condition_from_cda(value: Dict, entry) -> Condition:
+            # Map CDA status to FHIR clinical status
+            status = "unknown"
+            if hasattr(entry, "act") and hasattr(entry.act, "statusCode"):
+                status_code = entry.act.statusCode.code
+                status = self.code_mapping.cda_to_fhir(
+                    status_code, "status", case_sensitive=False, default="unknown"
+                )
 
-            return concept
+            # Extract dates from entry
+            onset_date = None
+            abatement_date = None
+            if hasattr(entry, "act") and hasattr(entry.act, "effectiveTime"):
+                effective_time = entry.act.effectiveTime
+                if hasattr(effective_time, "low") and effective_time.low:
+                    onset_date = CodeMapping.convert_date_cda_to_fhir(
+                        effective_time.low.value
+                    )
+
+                if hasattr(effective_time, "high") and effective_time.high:
+                    abatement_date = CodeMapping.convert_date_cda_to_fhir(
+                        effective_time.high.value
+                    )
+
+            # Create condition using helper function
+            condition = create_condition(
+                subject="Patient/123",  # TODO: add patient reference {self.clinical_document.recordTarget.patientRole.id}
+                clinical_status=status,
+                code=value.get("@code"),
+                display=value.get("@displayName"),
+                system=self.code_mapping.cda_to_fhir(
+                    value.get("@codeSystem"), "system"
+                ),
+            )
+
+            # Add dates if present
+            if onset_date:
+                condition.onsetDateTime = onset_date
+            if abatement_date:
+                condition.abatementDateTime = abatement_date
+
+            # Set category (problem-list-item by default for problems section)
+            set_problem_list_item_category(condition)
+
+            return condition
 
         entries = (
             self._problem_section.entry
@@ -375,48 +396,72 @@ class CdaAnnotator:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
             for value in values:
-                concept = get_problem_concept_from_cda_data_field(value)
-                concepts.append(concept)
+                condition = create_fhir_condition_from_cda(value, entry)
+                conditions.append(condition)
 
-        return concepts
+        return conditions
 
-    def _extract_medications(self) -> List[MedicationConcept]:
+    def _extract_medications(self) -> List[MedicationStatement]:
         """
         Extracts medication concepts from the medication section of the CDA document.
 
         Returns:
-            A list of MedicationConcept objects representing the extracted medication concepts.
+            A list of MedicationStatement resources representing the extracted medication concepts.
         """
         if not self._medication_section:
             log.warning("Empty medication section!")
             return []
 
-        def get_medication_concept_from_cda_data_field(
+        medications = []
+
+        def create_medication_statement_from_cda(
             code: CD,
             dose_quantity: Optional[IVL_PQ],
             route_code: Optional[CE],
             effective_times: Optional[Union[List[Dict], Dict]],
-            precondition: Optional[Dict],
-        ) -> MedicationConcept:
-            concept = MedicationConcept(_standard="cda")
-            concept.code = code.code
-            concept.code_system = code.codeSystem
-            concept.code_system_name = code.codeSystemName
-            concept.display_name = code.displayName
+        ) -> MedicationStatement:
+            # Map CDA system to FHIR system
+            fhir_system = self.code_mapping.cda_to_fhir(
+                code.codeSystem, "system", default="http://snomed.info/sct"
+            )
 
+            # Create base medication statement using helper
+            medication = create_medication_statement(
+                subject="Patient/123",  # TODO: extract patient reference
+                status="recorded",  # TODO: extract status
+                code=code.code,
+                display=code.displayName,
+                system=fhir_system,
+            )
+
+            # Add dosage if present
             if dose_quantity:
-                concept.dosage = Quantity(
-                    _source=dose_quantity.model_dump(),
-                    value=dose_quantity.value,
-                    unit=dose_quantity.unit,
-                )
+                medication.dosage = [
+                    {
+                        "doseAndRate": [
+                            {
+                                "doseQuantity": {
+                                    "value": dose_quantity.value,
+                                    "unit": dose_quantity.unit,
+                                }
+                            }
+                        ]
+                    }
+                ]
+
+            # Add route if present
             if route_code:
-                concept.route = Concept(
-                    code=route_code.code,
-                    code_system=route_code.codeSystem,
-                    code_system_name=route_code.codeSystemName,
-                    display_name=route_code.displayName,
+                route_system = self.code_mapping.cda_to_fhir(
+                    route_code.codeSystem, "system", default="http://snomed.info/sct"
                 )
+                medication.dosage = medication.dosage or [Dosage()]
+                medication.dosage[0].route = create_single_codeable_concept(
+                    code=route_code.code,
+                    display=route_code.displayName,
+                    system=route_system,
+                )
+
+            # Add timing if present
             if effective_times:
                 effective_times = (
                     effective_times
@@ -426,39 +471,48 @@ class CdaAnnotator:
                 # TODO: could refactor this into a pydantic validator
                 for effective_time in effective_times:
                     if effective_time.get("@xsi:type") == "IVL_TS":
-                        concept.duration = get_time_range_from_cda_value(effective_time)
-                        concept.duration._source = effective_time
+                        # Handle duration
+                        low_value = effective_time.get("low", {}).get("@value")
+                        high_value = effective_time.get("high", {}).get("@value")
+
+                        if low_value or high_value:
+                            medication.effectivePeriod = {}
+                            if low_value:
+                                medication.effectivePeriod.start = (
+                                    CodeMapping.convert_date_cda_to_fhir(low_value)
+                                )
+                            if high_value:
+                                medication.effectivePeriod.end = (
+                                    CodeMapping.convert_date_cda_to_fhir(high_value)
+                                )
+
                     elif effective_time.get("@xsi:type") == "PIVL_TS":
+                        # Handle frequency
                         period = effective_time.get("period")
                         if period:
-                            concept.frequency = TimeInterval(
-                                period=Quantity(
-                                    value=period.get("@value"), unit=period.get("@unit")
-                                ),
-                                institution_specified=effective_time.get(
-                                    "@institutionSpecified"
-                                ),
-                            )
-                        concept.frequency._source = effective_time
+                            medication.dosage = medication.dosage or [Dosage()]
+                            medication.dosage[0].timing = {
+                                "repeat": {
+                                    "period": float(period.get("@value")),
+                                    "periodUnit": period.get("@unit"),
+                                }
+                            }
 
-            # TODO: this is read-only for now! can also extract status, translations, supply in entryRelationships
-            if precondition:
-                concept.precondition = precondition.model_dump(
-                    exclude_none=True, by_alias=True
-                )
+            return medication
 
-            return concept
+        entries = (
+            self._medication_section.entry
+            if isinstance(self._medication_section.entry, list)
+            else [self._medication_section.entry]
+        )
 
-        def get_medication_details_from_substance_administration(
-            substance_administration: SubstanceAdministration,
-        ) -> Tuple[
-            Optional[CD],
-            Optional[CE],
-            Optional[IVL_PQ],
-            Optional[Union[List[Dict], Dict]],
-            Optional[Dict],
-        ]:
-            # Get the medication code from the consumable
+        for entry in entries:
+            substance_administration = entry.substanceAdministration
+            if not substance_administration:
+                log.warning("Substance administration not found in entry.")
+                continue
+
+            # Get medication details
             consumable = substance_administration.consumable
             manufactured_product = (
                 consumable.manufacturedProduct if consumable else None
@@ -470,85 +524,33 @@ class CdaAnnotator:
             )
             code = manufactured_material.code if manufactured_material else None
 
-            return (
-                code,
-                substance_administration.doseQuantity,
-                substance_administration.routeCode,
-                substance_administration.effectiveTime,
-                substance_administration.precondition,
-            )
-
-        concepts = []
-
-        entries = (
-            self._medication_section.entry
-            if isinstance(self._medication_section.entry, list)
-            else [self._medication_section.entry]
-        )
-        for entry in entries:
-            substance_administration = entry.substanceAdministration
-            if not substance_administration:
-                log.warning("Substance administration not found in entry.")
-                continue
-            code, dose_quantity, route_code, effective_times, precondition = (
-                get_medication_details_from_substance_administration(
-                    substance_administration
-                )
-            )
             if not code:
                 log.warning("Code not found in the consumable")
                 continue
-            concept = get_medication_concept_from_cda_data_field(
-                code, dose_quantity, route_code, effective_times, precondition
+
+            # Create FHIR medication statement
+            medication = create_medication_statement_from_cda(
+                code=code,
+                dose_quantity=substance_administration.doseQuantity,
+                route_code=substance_administration.routeCode,
+                effective_times=substance_administration.effectiveTime,
             )
-            concepts.append(concept)
+            medications.append(medication)
 
-        return concepts
+        return medications
 
-    def _extract_allergies(self) -> List[AllergyConcept]:
+    def _extract_allergies(self) -> List[AllergyIntolerance]:
+        """
+        Extracts allergy concepts from the allergy section of the CDA document.
+
+        Returns:
+            List[AllergyIntolerance]: A list of FHIR AllergyIntolerance resources.
+        """
         if not self._allergy_section:
             log.warning("Empty allergy section!")
             return []
 
-        concepts = []
-
-        def get_allergy_concept_from_cda_data_fields(
-            value: Dict,
-            allergen_name: str,
-            allergy_type: CD,
-            reaction: Dict,
-            severity: Dict,
-        ) -> AllergyConcept:
-            concept = AllergyConcept(_standard="cda")
-            concept.code = value.get("@code")
-            concept.code_system = value.get("@codeSystem")
-            concept.code_system_name = value.get("@codeSystemName")
-            concept.display_name = value.get("@displayName")
-            if concept.display_name is None:
-                concept.display_name = allergen_name
-
-            if allergy_type:
-                concept.allergy_type = Concept()
-                concept.allergy_type.code = allergy_type.code
-                concept.allergy_type.code_system = allergy_type.codeSystem
-                concept.allergy_type.code_system_name = allergy_type.codeSystemName
-                concept.allergy_type.display_name = allergy_type.displayName
-
-            if reaction:
-                concept.reaction = Concept()
-                concept.reaction.code = reaction.get("@code")
-                concept.reaction.code_system = reaction.get("@codeSystem")
-                concept.reaction.code_system_name = reaction.get("@codeSystemName")
-                concept.reaction.display_name = reaction.get("@displayName")
-
-            if severity:
-                concept.severity = Concept()
-                concept.severity.code = severity.get("@code")
-                concept.severity.code_system = severity.get("@codeSystem")
-                concept.severity.code_system_name = severity.get("@codeSystemName")
-                concept.severity.display_name = severity.get("@displayName")
-
-            return concept
+        allergies = []
 
         def get_allergy_details_from_entry_relationship(
             entry_relationship: EntryRelationship,
@@ -602,6 +604,7 @@ class CdaAnnotator:
             if isinstance(self._allergy_section.entry, list)
             else [self._allergy_section.entry]
         )
+
         for entry in entries:
             entry_relationship = entry.act.entryRelationship
             values = get_value_from_entry_relationship(entry_relationship)
@@ -611,12 +614,56 @@ class CdaAnnotator:
             )
 
             for value in values:
-                concept = get_allergy_concept_from_cda_data_fields(
-                    value, allergen_name, allergy_type, reaction, severity
+                # Map CDA system to FHIR system
+                allergy_code_system = self.code_mapping.cda_to_fhir(
+                    value.get("@codeSystem", ""),
+                    "system",
+                    default="http://snomed.info/sct",
                 )
-                concepts.append(concept)
+                allergy = create_allergy_intolerance(
+                    patient="Patient/123",  # TODO: Get from patient context
+                    code=value.get("@code"),
+                    display=value.get("@displayName"),
+                    system=allergy_code_system,
+                )
+                if allergy.code and allergy.code.coding[0].display is None:
+                    allergy.code.coding[0].display = allergen_name
 
-        return concepts
+                if allergy_type:
+                    allergy_type_system = self.code_mapping.cda_to_fhir(
+                        allergy_type.codeSystem,
+                        "system",
+                        default="http://snomed.info/sct",
+                    )
+                    allergy.type = create_single_codeable_concept(
+                        code=allergy_type.code,
+                        display=allergy_type.displayName,
+                        system=allergy_type_system,
+                    )
+
+                if reaction:
+                    reaction_system = self.code_mapping.cda_to_fhir(
+                        reaction.get("@codeSystem"),
+                        "system",
+                        default="http://snomed.info/sct",
+                    )
+                    allergy.reaction = create_single_reaction(
+                        code=reaction.get("@code"),
+                        display=reaction.get("@displayName"),
+                        system=reaction_system,
+                    )
+
+                if severity:
+                    severity_code = self.code_mapping.cda_to_fhir(
+                        severity.get("@code"),
+                        "severity",
+                        default="http://snomed.info/sct",
+                    )
+                    if allergy.reaction:
+                        allergy.reaction[0].severity = severity_code
+                allergies.append(allergy)
+
+        return allergies
 
     def _extract_note(self) -> str:
         """
@@ -634,7 +681,7 @@ class CdaAnnotator:
 
     def _add_new_problem_entry(
         self,
-        new_problem: ProblemConcept,
+        new_problem: Condition,
         timestamp: str,
         act_id: str,
         problem_reference_name: str,
@@ -643,7 +690,7 @@ class CdaAnnotator:
         Adds a new problem entry to the problem section of the CDA document.
 
         Args:
-            new_problem (ProblemConcept): The new problem concept to be added.
+            new_problem (Condition): The new problem concept to be added.
             timestamp (str): The timestamp of the entry.
             act_id (str): The ID of the act.
             problem_reference_name (str): The reference name of the problem.
@@ -651,7 +698,23 @@ class CdaAnnotator:
         Returns:
             None
         """
-        # TODO: This will need work
+
+        # Get CDA status from FHIR clinical status
+        fhir_status = new_problem.clinicalStatus.coding[0].code
+        cda_status = self.code_mapping.fhir_to_cda(
+            fhir_status, "status", case_sensitive=False, default="unknown"
+        )
+
+        # Get CDA system from FHIR system
+        if not new_problem.code:
+            log.warning("No code found for problem")
+            return
+
+        fhir_system = new_problem.code.coding[0].system
+        cda_system = self.code_mapping.fhir_to_cda(
+            fhir_system, "system", default="2.16.840.1.113883.6.96"
+        )  # Default to SNOMED-CT
+
         template = {
             "act": {
                 "@classCode": "ACT",
@@ -665,7 +728,7 @@ class CdaAnnotator:
                 ],
                 "id": {"@root": act_id},
                 "code": {"@nullflavor": "NA"},
-                "statusCode": {"@code": "active"},
+                "statusCode": {"@code": cda_status},
                 "effectiveTime": {"low": {"@value": timestamp}},
                 "entryRelationship": {
                     "@typeCode": "SUBJ",
@@ -687,10 +750,9 @@ class CdaAnnotator:
                         "text": {"reference": {"@value": problem_reference_name}},
                         "value": {
                             "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                            "@code": new_problem.code,
-                            "@codeSystem": new_problem.code_system,
-                            "@codeSystemName": new_problem.code_system_name,
-                            "@displayName": new_problem.display_name,
+                            "@code": new_problem.code.coding[0].code,
+                            "@codeSystem": cda_system,
+                            "@displayName": new_problem.code.coding[0].display,
                             "originalText": {
                                 "reference": {"@value": problem_reference_name}
                             },
@@ -730,13 +792,13 @@ class CdaAnnotator:
         self._problem_section.entry.append(new_entry)
 
     def add_to_problem_list(
-        self, problems: List[ProblemConcept], overwrite: bool = False
+        self, problems: List[Condition], overwrite: bool = False
     ) -> None:
         """
         Adds a list of problem lists to the problems section.
 
         Args:
-            problems (List[ProblemConcept]): A list of problem concepts to be added.
+            problems (List[Condition]): A list of Condition resources to be added.
             overwrite (bool, optional): If True, the existing problem list will be overwritten.
                 Defaults to False.
 
@@ -761,7 +823,7 @@ class CdaAnnotator:
         for problem in problems:
             if problem in self.problem_list:
                 log.debug(
-                    f"Skipping: Problem {problem.display_name} already exists in the problem list."
+                    f"Skipping: Problem {problem.model_dump()} already exists in the problem list."
                 )
                 continue
             log.debug(f"Adding problem: {problem}")
@@ -780,43 +842,77 @@ class CdaAnnotator:
 
     def _add_new_medication_entry(
         self,
-        new_medication: MedicationConcept,
+        new_medication: MedicationStatement,
         timestamp: str,
         subad_id: str,
         medication_reference_name: str,
-    ):
+    ) -> None:
+        """
+        Adds a new medication entry to the medication section of the CDA document.
+
+        Args:
+            new_medication (MedicationStatement): The FHIR MedicationStatement resource to add to the CDA
+            timestamp (str): The timestamp for when this entry was created, in YYYYMMDD format
+            subad_id (str): The unique ID for this substance administration entry
+            medication_reference_name (str): The reference name used to link narrative text to this medication
+
+        The method creates a CDA substance administration entry with:
+        - Medication details (code, name, etc)
+        - Dosage information if present (amount, route, frequency)
+        - Effective time periods
+        - Status as Active
+        """
+
+        if not new_medication.medication.concept:
+            log.warning("No medication concept found for medication")
+            return
+
+        # Get CDA system from FHIR system
+        fhir_system = new_medication.medication.concept.coding[0].system
+        cda_system = self.code_mapping.fhir_to_cda(
+            fhir_system, "system", default="2.16.840.1.113883.6.96"
+        )
+
         effective_times = []
-        if new_medication.frequency:
+
+        # Handle timing/frequency
+        if new_medication.dosage and new_medication.dosage[0].timing:
+            timing = new_medication.dosage[0].timing.repeat
             effective_times.append(
                 {
                     "@xsi:type": "PIVL_TS",
-                    "@institutionSpecified": new_medication.frequency.institution_specified,
+                    "@institutionSpecified": True,
                     "@operator": "A",
                     "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
                     "period": {
-                        "@unit": new_medication.frequency.period.unit,
-                        "@value": new_medication.frequency.period.value,
+                        "@unit": timing.periodUnit,
+                        "@value": str(timing.period),
                     },
                 }
             )
-        if new_medication.duration:
-            low = {"@nullFlavor": "UNK"}
-            high = {"@nullFlavor": "UNK"}
-            if new_medication.duration.low:
-                low = {"@value": new_medication.duration.low.value}
-            if new_medication.duration.high:
-                high = {"@value": new_medication.duration.high.value}
-            effective_times.append(
-                {
-                    "@xsi:type": "IVL_TS",
-                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                    "low": low,
-                    "high": high,
-                }
-            )
 
-        if len(effective_times) == 1:
-            effective_times = effective_times[0]
+        # Handle effective period
+        # TODO: standardize datetime format
+        if new_medication.effectivePeriod:
+            time_range = {
+                "@xsi:type": "IVL_TS",
+                "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "low": {"@nullFlavor": "UNK"},
+                "high": {"@nullFlavor": "UNK"},
+            }
+            if new_medication.effectivePeriod.start:
+                time_range["low"] = {
+                    "@value": CodeMapping.convert_date_fhir_to_cda(
+                        new_medication.effectivePeriod.start
+                    )
+                }
+            if new_medication.effectivePeriod.end:
+                time_range["high"] = {
+                    "@value": CodeMapping.convert_date_fhir_to_cda(
+                        new_medication.effectivePeriod.end
+                    )
+                }
+            effective_times.append(time_range)
 
         template = {
             "substanceAdministration": {
@@ -833,23 +929,30 @@ class CdaAnnotator:
                 "statusCode": {"@code": "completed"},
             }
         }
-        # Add dosage, route, duration, frequency
-        if effective_times:
-            template["substanceAdministration"]["effectiveTime"] = effective_times
-        if new_medication.route:
-            template["substanceAdministration"]["routeCode"] = {
-                "@code": new_medication.route.code,
-                "@codeSystem": new_medication.route.code_system,
-                "@codeSystemDisplayName": new_medication.route.code_system_name,
-                "@displayName": new_medication.route.display_name,
-            }
-        if new_medication.dosage:
+
+        # Add dosage if present
+        if new_medication.dosage and new_medication.dosage[0].doseAndRate:
+            dose = new_medication.dosage[0].doseAndRate[0].doseQuantity
             template["substanceAdministration"]["doseQuantity"] = {
-                "@value": new_medication.dosage.value,
-                "@unit": new_medication.dosage.unit,
+                "@value": dose.value,
+                "@unit": dose.unit,
             }
 
-        # Add medication entry
+        # Add route if present
+        if new_medication.dosage and new_medication.dosage[0].route:
+            route = new_medication.dosage[0].route.coding[0]
+            route_system = self.code_mapping.fhir_to_cda(route.system, "system")
+            template["substanceAdministration"]["routeCode"] = {
+                "@code": route.code,
+                "@codeSystem": route_system,
+                "@displayName": route.display,
+            }
+
+        # Add timing
+        if effective_times:
+            template["substanceAdministration"]["effectiveTime"] = effective_times
+
+        # Add medication details
         template["substanceAdministration"]["consumable"] = {
             "@typeCode": "CSM",
             "manufacturedProduct": {
@@ -862,10 +965,11 @@ class CdaAnnotator:
                 ],
                 "manufacturedMaterial": {
                     "code": {
-                        "@code": new_medication.code,
-                        "@codeSystem": new_medication.code_system,
-                        "@codeSystemName": new_medication.code_system_name,
-                        "@displayName": new_medication.display_name,
+                        "@code": new_medication.medication.concept.coding[0].code,
+                        "@codeSystem": cda_system,
+                        "@displayName": new_medication.medication.concept.coding[
+                            0
+                        ].display,
                         "originalText": {
                             "reference": {"@value": medication_reference_name}
                         },
@@ -901,9 +1005,6 @@ class CdaAnnotator:
                 },
             },
         )
-        template["substanceAdministration"]["precondition"] = (
-            new_medication.precondition
-        )
 
         if not isinstance(self._medication_section.entry, list):
             self._medication_section.entry = [self._medication_section.entry]
@@ -912,17 +1013,14 @@ class CdaAnnotator:
         self._medication_section.entry.append(new_entry)
 
     def add_to_medication_list(
-        self, medications: List[MedicationConcept], overwrite: bool = False
+        self, medications: List[MedicationStatement], overwrite: bool = False
     ) -> None:
         """
         Adds medications to the medication list.
 
         Args:
-            medications (List[MedicationConcept]): A list of MedicationConcept objects representing the medications to be added.
-            overwrite (bool, optional): If True, the existing medication list will be overwritten. Defaults to False.
-
-        Returns:
-            None
+            medications (List[MedicationStatement]): A list of MedicationStatement resources to be added
+            overwrite (bool, optional): If True, existing medication list will be overwritten. Defaults to False.
         """
         if self._medication_section is None:
             log.warning(
@@ -942,10 +1040,11 @@ class CdaAnnotator:
         for medication in medications:
             if medication in self.medication_list:
                 log.debug(
-                    f"Skipping: medication {medication.display_name} already exists in the medication list."
+                    f"Skipping: medication {medication.model_dump()} already exists in the medication list."
                 )
                 continue
-            log.debug(f"Adding medication {medication}")
+
+            log.debug(f"Adding medication: {medication}")
             self._add_new_medication_entry(
                 new_medication=medication,
                 timestamp=timestamp,
@@ -961,7 +1060,7 @@ class CdaAnnotator:
 
     def _add_new_allergy_entry(
         self,
-        new_allergy: AllergyConcept,
+        new_allergy: AllergyIntolerance,
         timestamp: str,
         act_id: str,
         allergy_reference_name: str,
@@ -970,7 +1069,7 @@ class CdaAnnotator:
         Adds a new allergy entry to the allergy section of the CDA document.
 
         Args:
-            new_allergy (AllergyConcept): The new allergy concept to be added.
+            new_allergy (AllergyIntolerance): The new allergy concept to be added.
             timestamp (str): The timestamp of the entry.
             act_id (str): The ID of the act.
             allergy_reference_name (str): The reference name of the allergy.
@@ -978,6 +1077,9 @@ class CdaAnnotator:
         Returns:
             None
         """
+        if not new_allergy.code:
+            log.warning("No code found for allergy")
+            return
 
         template = {
             "act": {
@@ -1020,23 +1122,38 @@ class CdaAnnotator:
         allergen_observation = template["act"]["entryRelationship"]["observation"]
 
         # Attach allergy type code
-        if new_allergy.allergy_type:
+        if new_allergy.type:
+            allergy_type_system = self.code_mapping.fhir_to_cda(
+                new_allergy.type.coding[0].system,
+                "system",
+                default="2.16.840.1.113883.6.96",
+            )
             allergen_observation["code"] = {
-                "@code": new_allergy.allergy_type.code,
-                "@codeSystem": new_allergy.allergy_type.code_system,
-                "@codeSystemName": new_allergy.allergy_type.code_system_name,
-                "@displayName": new_allergy.allergy_type.display_name,
+                "@code": new_allergy.type.coding[0].code,
+                "@codeSystem": allergy_type_system,
+                # "@codeSystemName": new_allergy.type.coding[0].display,
+                "@displayName": new_allergy.type.coding[0].display,
             }
         else:
-            raise ValueError("Allergy_type code cannot be missing when adding allergy.")
+            log.warning("Allergy type code is missing, using default.")
+            allergen_observation["code"] = {
+                "@code": "420134006",
+                "@codeSystem": "2.16.840.1.113883.6.96",
+                "@displayName": "Propensity to adverse reactions",
+            }
 
         # Attach allergen code to value and participant
+        allergen_code_system = self.code_mapping.fhir_to_cda(
+            new_allergy.code.coding[0].system,
+            "system",
+            default="2.16.840.1.113883.6.96",
+        )
         allergen_observation["value"] = {
             "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-            "@code": new_allergy.code,
-            "@codeSystem": new_allergy.code_system,
-            "@codeSystemName": new_allergy.code_system_name,
-            "@displayName": new_allergy.display_name,
+            "@code": new_allergy.code.coding[0].code,
+            "@codeSystem": allergen_code_system,
+            # "@codeSystemName": new_allergy.code.coding[0].display,
+            "@displayName": new_allergy.code.coding[0].display,
             "originalText": {"reference": {"@value": allergy_reference_name}},
             "@xsi:type": "CD",
         }
@@ -1051,18 +1168,18 @@ class CdaAnnotator:
                         "originalText": {
                             "reference": {"@value": allergy_reference_name}
                         },
-                        "@code": new_allergy.code,
-                        "@codeSystem": new_allergy.code_system,
-                        "@codeSystemName": new_allergy.code_system_name,
-                        "@displayName": new_allergy.display_name,
+                        "@code": new_allergy.code.coding[0].code,
+                        "@codeSystem": allergen_code_system,
+                        # "@codeSystemName": new_allergy.code.coding[0].display,
+                        "@displayName": new_allergy.code.coding[0].display,
                     },
-                    "name": new_allergy.display_name,
+                    "name": new_allergy.code.coding[0].display,
                 },
             },
         }
 
         # We need an entryRelationship if either reaction or severity is present
-        if new_allergy.reaction or new_allergy.severity:
+        if new_allergy.reaction:
             allergen_observation["entryRelationship"] = {
                 "@typeCode": "MFST",
                 "observation": {
@@ -1087,12 +1204,23 @@ class CdaAnnotator:
             }
             # Attach reaction code if given otherwise attach nullFlavor
             if new_allergy.reaction:
+                reaction_code_system = self.code_mapping.fhir_to_cda(
+                    new_allergy.reaction[0].manifestation[0].concept.coding[0].system,
+                    "system",
+                    default="2.16.840.1.113883.6.96",
+                )
                 allergen_observation["entryRelationship"]["observation"]["value"] = {
                     "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                    "@code": new_allergy.reaction.code,
-                    "@codeSystem": new_allergy.reaction.code_system,
-                    "@codeSystemName": new_allergy.reaction.code_system_name,
-                    "@displayName": new_allergy.reaction.display_name,
+                    "@code": new_allergy.reaction[0]
+                    .manifestation[0]
+                    .concept.coding[0]
+                    .code,
+                    "@codeSystem": reaction_code_system,
+                    # "@codeSystemName": new_allergy.reaction[0].manifestation[0].concept.coding[0].display,
+                    "@displayName": new_allergy.reaction[0]
+                    .manifestation[0]
+                    .concept.coding[0]
+                    .display,
                     "@xsi:type": "CD",
                     "originalText": {
                         "reference": {"@value": allergy_reference_name + "reaction"}
@@ -1105,7 +1233,10 @@ class CdaAnnotator:
                     "@xsi:type": "CD",
                 }
             # Attach severity code if given
-            if new_allergy.severity:
+            if new_allergy.reaction[0].severity:
+                severity_code = self.code_mapping.fhir_to_cda(
+                    new_allergy.reaction[0].severity, "severity"
+                )
                 allergen_observation["entryRelationship"]["observation"][
                     "entryRelationship"
                 ] = {
@@ -1129,10 +1260,10 @@ class CdaAnnotator:
                         "statusCode": {"@code": "completed"},
                         "value": {
                             "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                            "@code": new_allergy.severity.code,
-                            "@codeSystem": new_allergy.severity.code_system,
-                            "@codeSystemName": new_allergy.severity.code_system_name,
-                            "@displayName": new_allergy.severity.display_name,
+                            "@code": new_allergy.reaction[0].severity,
+                            "@codeSystem": severity_code,
+                            # "@codeSystemName": new_allergy.severity.code_system_name,
+                            "@displayName": new_allergy.reaction[0].severity,
                             "@xsi:type": "CD",
                         },
                     },
@@ -1145,8 +1276,15 @@ class CdaAnnotator:
         self._allergy_section.entry.append(new_entry)
 
     def add_to_allergy_list(
-        self, allergies: List[AllergyConcept], overwrite: bool = False
+        self, allergies: List[AllergyIntolerance], overwrite: bool = False
     ) -> None:
+        """
+        Adds allergies to the allergy list.
+
+        Args:
+            allergies: List of FHIR AllergyIntolerance resources to add
+            overwrite: If True, overwrites existing allergy list
+        """
         if self._allergy_section is None:
             log.warning(
                 "Skipping: No allergy section to add to, check your CDA configuration"
@@ -1164,9 +1302,7 @@ class CdaAnnotator:
 
         for allergy in allergies:
             if allergy in self.allergy_list:
-                log.debug(
-                    f"Skipping: Allergy {allergy.display_name} already exists in the allergy list."
-                )
+                log.debug(f"Allergy {allergy.model_dump()} already exists")
                 continue
             log.debug(f"Adding allergy: {allergy}")
             self._add_new_allergy_entry(

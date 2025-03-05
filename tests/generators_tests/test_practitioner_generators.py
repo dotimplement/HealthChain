@@ -16,24 +16,23 @@ def test_practitioner_data_generator():
     assert practitioner_data is not None
 
     # Assert that the practitioner data has the expected pydantic fields
-    assert practitioner_data.resourceType == "Practitioner"
-    assert practitioner_data.id_field is not None
-    assert practitioner_data.active_field is not None
-    assert practitioner_data.name_field is not None
-    assert practitioner_data.qualification_field is not None
-    assert practitioner_data.communication_field is not None
+    assert practitioner_data.id is not None
+    assert practitioner_data.active is not None
+    assert practitioner_data.name is not None
+    assert practitioner_data.qualification is not None
+    assert practitioner_data.communication is not None
 
     # Assert that the qualification data has the expected pydantic fields
-    qualification_data = practitioner_data.qualification_field[0]
-    assert qualification_data.id_field is not None
-    assert qualification_data.code_field is not None
-    assert qualification_data.period_field is not None
+    qualification_data = practitioner_data.qualification[0]
+    assert qualification_data.id is not None
+    assert qualification_data.code is not None
+    assert qualification_data.period is not None
 
     # Assert that the communication data has the expected pydantic fields
-    communication_data = practitioner_data.communication_field[0]
-    assert communication_data.id_field is not None
-    assert communication_data.language_field is not None
-    assert communication_data.preferred_field is not None
+    communication_data = practitioner_data.communication[0]
+    assert communication_data.id is not None
+    assert communication_data.language is not None
+    assert communication_data.preferred is not None
 
 
 def test_practitioner_qualification_generator():
@@ -47,9 +46,9 @@ def test_practitioner_qualification_generator():
     assert qualification is not None
 
     # Assert that the qualification has the expected pydantic fields
-    assert qualification.id_field is not None
-    assert qualification.code_field is not None
-    assert qualification.period_field is not None
+    assert qualification.id is not None
+    assert qualification.code is not None
+    assert qualification.period is not None
 
 
 def test_practitioner_communication_generator():
@@ -63,6 +62,6 @@ def test_practitioner_communication_generator():
     assert communication is not None
 
     # Assert that the communication has the expected pydantic fields
-    assert communication.id_field is not None
-    assert communication.language_field is not None
-    assert communication.preferred_field is not None
+    assert communication.id is not None
+    assert communication.language is not None
+    assert communication.preferred is not None

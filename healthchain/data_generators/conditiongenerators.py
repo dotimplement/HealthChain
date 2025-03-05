@@ -1,21 +1,15 @@
 from typing import Optional
 from faker import Faker
 
+from fhir.resources.reference import Reference
+from fhir.resources.condition import ConditionStage, ConditionParticipant
+
+from healthchain.fhir.helpers import create_single_codeable_concept, create_condition
 from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
-)
-from healthchain.fhir_resources.generalpurpose import (
-    CodeableConcept,
-    Coding,
-    Reference,
-)
-from healthchain.fhir_resources.condition import (
-    Condition,
-    ConditionStage,
-    ConditionParticipant,
 )
 from healthchain.data_generators.value_sets.conditioncodes import (
     ConditionCodeSimple,
@@ -30,15 +24,11 @@ faker = Faker()
 class ClinicalStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConcept(
-            coding=[
-                Coding(
-                    system="http://terminology.hl7.org/CodeSystem/condition-clinical",
-                    code=faker.random_element(
-                        elements=("active", "recurrence", "inactive", "resolved")
-                    ),
-                )
-            ]
+        return create_single_codeable_concept(
+            code=faker.random_element(
+                elements=("active", "recurrence", "inactive", "resolved")
+            ),
+            system="http://terminology.hl7.org/CodeSystem/condition-clinical",
         )
 
 
@@ -46,13 +36,9 @@ class ClinicalStatusGenerator(BaseGenerator):
 class VerificationStatusGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConcept(
-            coding=[
-                Coding(
-                    system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
-                    code=faker.random_element(elements=("provisional", "confirmed")),
-                )
-            ]
+        return create_single_codeable_concept(
+            code=faker.random_element(elements=("provisional", "confirmed")),
+            system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
         )
 
 
@@ -60,15 +46,11 @@ class VerificationStatusGenerator(BaseGenerator):
 class CategoryGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConcept(
-            coding=[
-                Coding(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(
-                        elements=("55607006", "404684003")
-                    ),  # Snomed Codes -> probably want to overwrite with template
-                )
-            ]
+        return create_single_codeable_concept(
+            code=faker.random_element(
+                elements=("55607006", "404684003")
+            ),  # Snomed Codes -> probably want to overwrite with template
+            system="http://snomed.info/sct",
         )
 
 
@@ -87,16 +69,9 @@ class ConditionStageGenerator(BaseGenerator):
 class SeverityGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConcept(
-            coding=[
-                Coding(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(
-                        elements=("24484000", "6736007", "255604002")
-                    ),
-                    # TODO: Add display values for the codes
-                )
-            ]
+        return create_single_codeable_concept(
+            code=faker.random_element(elements=("24484000", "6736007", "255604002")),
+            system="http://snomed.info/sct",
         )
 
 
@@ -119,14 +94,10 @@ class SnomedCodeGenerator(CodeableConceptGenerator):
 class BodySiteGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return CodeableConcept(
-            coding=[
-                Coding(
-                    system="http://snomed.info/sct",
-                    code=faker.random_element(elements=("38266002")),
-                    display=faker.random_element(elements=("Entire body as a whole")),
-                )
-            ]
+        return create_single_codeable_concept(
+            code=faker.random_element(elements=("38266002")),
+            display=faker.random_element(elements=("Entire body as a whole")),
+            system="http://snomed.info/sct",
         )
 
 
@@ -155,22 +126,22 @@ class ConditionGenerator(BaseGenerator):
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints
         )
-        return Condition(
-            resourceType="Condition",
-            id=generator_registry.get("IdGenerator").generate(),
-            clinicalStatus=generator_registry.get("ClinicalStatusGenerator").generate(),
-            verificationStatus=generator_registry.get(
-                "VerificationStatusGenerator"
-            ).generate(),
-            category=[generator_registry.get("CategoryGenerator").generate()],
-            severity=generator_registry.get("SeverityGenerator").generate(),
-            code=code,
-            bodySite=[generator_registry.get("BodySiteGenerator").generate()],
-            subject=Reference(reference=subject_reference),
-            encounter=Reference(reference=encounter_reference),
-            onsetDateTime=generator_registry.get("DateGenerator").generate(),
-            abatementDateTime=generator_registry.get(
-                "DateGenerator"
-            ).generate(),  ## TODO: Constraint abatementDateTime to be after onsetDateTime
-            recordedDate=generator_registry.get("DateGenerator").generate(),
-        )
+        condition = create_condition(subject=subject_reference)
+        condition.clinicalStatus = generator_registry.get(
+            "ClinicalStatusGenerator"
+        ).generate()
+        condition.verificationStatus = generator_registry.get(
+            "VerificationStatusGenerator"
+        ).generate()
+        condition.category = [generator_registry.get("CategoryGenerator").generate()]
+        condition.severity = generator_registry.get("SeverityGenerator").generate()
+        condition.code = code
+        condition.bodySite = [generator_registry.get("BodySiteGenerator").generate()]
+        condition.encounter = Reference(reference=encounter_reference)
+        condition.onsetDateTime = generator_registry.get("DateGenerator").generate()
+        condition.abatementDateTime = generator_registry.get(
+            "DateGenerator"
+        ).generate()  ## TODO: Constraint abatementDateTime to be after onsetDateTime
+        condition.recordedDate = generator_registry.get("DateGenerator").generate()
+
+        return condition

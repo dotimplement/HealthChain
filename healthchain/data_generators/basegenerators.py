@@ -1,32 +1,14 @@
 # generators.py
 
+import datetime
 import random
 import string
 
 from faker import Faker
-from healthchain.fhir_resources.primitives import (
-    booleanModel,
-    canonicalModel,
-    codeModel,
-    dateModel,
-    dateTimeModel,
-    decimalModel,
-    idModel,
-    instantModel,
-    integerModel,
-    markdownModel,
-    positiveIntModel,
-    stringModel,
-    timeModel,
-    unsignedIntModel,
-    uriModel,
-    urlModel,
-    uuidModel,
-)
-from healthchain.fhir_resources.generalpurpose import (
-    CodeableConcept,
-    Coding,
-)
+
+
+from fhir.resources.codeableconcept import CodeableConcept
+from fhir.resources.coding import Coding
 
 
 faker = Faker()
@@ -65,14 +47,14 @@ class BaseGenerator:
 class BooleanGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return booleanModel(random.choice(["true", "false"]))
+        return random.choice([True, False])
 
 
 @register_generator
 class CanonicalGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return canonicalModel(f"https://example/{faker.uri_path()}")
+        return f"https://example/{faker.uri_path()}"
 
 
 @register_generator
@@ -80,107 +62,123 @@ class CodeGenerator(BaseGenerator):
     # TODO: Codes can technically have whitespace but here I've left it out for simplicity
     @staticmethod
     def generate():
-        return codeModel(
-            "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        )
+        return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
 @register_generator
 class DateGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return dateModel(faker.date())
+        return faker.date()
 
 
 @register_generator
 class DateTimeGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return dateTimeModel(faker.date_time().isoformat())
+        return faker.date_time(tzinfo=datetime.timezone.utc).isoformat()
+
+
+@register_generator
+class IntentGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        return faker.random_element(
+            [
+                "proposal",
+                "plan",
+                "order",
+                "original-order",
+                "reflex-order",
+                "instance-order",
+                "filler-order",
+                "option",
+            ]
+        )
 
 
 @register_generator
 class DecimalGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return decimalModel(faker.random_number())
+        return faker.random_number()
 
 
 @register_generator
 class IdGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return idModel(faker.uuid4())
+        return faker.uuid4()
 
 
 @register_generator
 class InstantGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return instantModel(faker.date_time().isoformat())
+        return faker.date_time().isoformat()
 
 
 @register_generator
 class IntegerGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return integerModel(faker.random_int())
+        return faker.random_int()
 
 
 @register_generator
 class MarkdownGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return markdownModel(faker.text())
+        return faker.text()
 
 
 @register_generator
 class PositiveIntGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return positiveIntModel(faker.random_int(min=1))
+        return faker.random_int(min=1)
 
 
 @register_generator
 class StringGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return stringModel(faker.word())
+        return faker.word()
 
 
 @register_generator
 class TimeGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return timeModel(faker.time())
+        return faker.time()
 
 
 @register_generator
 class UnsignedIntGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return unsignedIntModel(faker.random_int(min=0))
+        return faker.random_int(min=0)
 
 
 @register_generator
 class UriGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return uriModel(f"https://example/{faker.uri_path()}")
+        return f"https://example/{faker.uri_path()}"
 
 
 @register_generator
 class UrlGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return urlModel(f"https://example/{faker.uri_path()}")
+        return f"https://example/{faker.uri_path()}"
 
 
 @register_generator
 class UuidGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return uuidModel(faker.uuid4())
+        return faker.uuid4()
 
 
 class CodeableConceptGenerator(BaseGenerator):
@@ -201,7 +199,7 @@ class CodeableConceptGenerator(BaseGenerator):
                     system=value_set_instance.system,
                     code=code,
                     display=display,
-                    # extension=[ExtensionModel(value_set_instance.extension)],
+                    # extension=[Extension(value_set_instance.extension)],
                 )
             ]
         )

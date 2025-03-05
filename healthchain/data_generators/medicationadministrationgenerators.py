@@ -1,15 +1,10 @@
 from typing import Optional
 from faker import Faker
 
-from healthchain.fhir_resources.medicationadministration import (
-    MedicationAdministration,
-    MedicationAdministrationDosage,
-)
-from healthchain.fhir_resources.generalpurpose import (
-    Reference,
-    CodeableReference,
-)
-from healthchain.fhir_resources.medicationrequest import Medication
+from fhir.resources.medicationadministration import MedicationAdministration
+from fhir.resources.medicationadministration import MedicationAdministrationDosage
+from fhir.resources.reference import Reference
+from fhir.resources.codeablereference import CodeableReference
 from healthchain.data_generators.basegenerators import (
     BaseGenerator,
     generator_registry,
@@ -42,22 +37,17 @@ class MedicationAdministrationGenerator(BaseGenerator):
         encounter_reference: str,
         constraints: Optional[list] = None,
     ):
-        contained_medication = Medication(
-            code=generator_registry.get(
-                "MedicationRequestContainedGenerator"
-            ).generate()
-        )
         return MedicationAdministration(
-            resourceType="MedicationAdministration",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
-            contained=[contained_medication],
+            occurenceDateTime=generator_registry.get("DateGenerator").generate(),
             medication=CodeableReference(
-                reference=Reference(reference="Medication/123")
+                concept=generator_registry.get(
+                    "MedicationRequestContainedGenerator"
+                ).generate()
             ),
             subject=Reference(reference=subject_reference),
             encounter=Reference(reference=encounter_reference),
-            authoredOn=generator_registry.get("DateGenerator").generate(),
             dosage=generator_registry.get(
                 "MedicationAdministrationDosageGenerator"
             ).generate(),
