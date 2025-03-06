@@ -1,0 +1,27 @@
+{
+  "resourceType": "AllergyIntolerance",
+  "id": "{{ entry.id }}",
+  "code": {
+    "coding": [{
+      "system": "{{ entry.observation.value.codeSystem | map_system }}",
+      "code": "{{ entry.observation.value.code }}",
+      "display": "{{ entry.observation.value.displayName }}"
+    }]
+  },
+  {% if entry.observation.entryRelationship %}
+  "reaction": [{
+    {% if entry.observation.entryRelationship.observation.value %}
+    "manifestation": [{
+      "coding": [{
+        "system": "{{ entry.observation.entryRelationship.observation.value.codeSystem | map_system }}",
+        "code": "{{ entry.observation.entryRelationship.observation.value.code }}",
+        "display": "{{ entry.observation.entryRelationship.observation.value.displayName }}"
+      }]
+    }],
+    {% endif %}
+    {% if entry.observation.entryRelationship.observation.entryRelationship %}
+    "severity": "{{ entry.observation.entryRelationship.observation.entryRelationship.observation.value.code | map_severity }}"
+    {% endif %}
+  }]
+  {% endif %}
+}
