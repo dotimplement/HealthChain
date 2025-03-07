@@ -1,0 +1,85 @@
+{
+  "act": {
+    "@classCode": "ACT",
+    "@moodCode": "EVN",
+    "templateId": [
+      {"@root": "2.16.840.1.113883.10.20.1.27"},
+      {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"},
+      {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5.2"},
+      {"@root": "2.16.840.1.113883.3.88.11.32.7"},
+      {"@root": "2.16.840.1.113883.3.88.11.83.7"}
+    ],
+    "id": {"@root": "{{ resource.id | generate_id }}"},
+    "code": {"@nullFlavor": "NA"},
+    "statusCode": {
+      "@code": "active"
+    },
+    "effectiveTime": {
+      "low": {"@value": "{{ context.timestamp }}"}
+    },
+    "entryRelationship": {
+      "@typeCode": "SUBJ",
+      "@inversionInd": false,
+      "observation": {
+        "@classCode": "OBS",
+        "@moodCode": "EVN",
+        "templateId": [
+          {"@root": "1.3.6.1.4.1.19376.1.5.3.1.4.5"},
+          {"@root": "2.16.840.1.113883.10.20.1.28"}
+        ],
+        "id": {"@root": "{{ resource.id }}_obs"},
+        "code": {
+          "@code": "55607006",
+          "@codeSystem": "2.16.840.1.113883.6.96",
+          "@codeSystemName": "SNOMED CT",
+          "@displayName": "Problem"
+        },
+        "text": {
+          "reference": {"@value": "#{{ context.text_reference_name }}"}
+        },
+        "statusCode": {"@code": "completed"},
+        "effectiveTime": {
+          {% if resource.onsetDateTime %}
+          "low": {"@value": "{{ resource.onsetDateTime }}"}
+          {% endif %}
+          {% if resource.abatementDateTime %}
+          "high": {"@value": "{{ resource.abatementDateTime }}"}
+          {% endif %}
+        },
+        "value": {
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@xsi:type": "CD",
+          "@code": "{{ resource.code.coding[0].code }}",
+          "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
+          "@displayName": "{{ resource.code.coding[0].display }}",
+          "originalText": {
+            "reference": {"@value": "#{{ context.text_reference_name }}"}
+          }
+        },
+        "entryRelationship": {
+          "@typeCode": "REFR",
+          "observation": {
+            "@classCode": "OBS",
+            "@moodCode": "EVN",
+            "code": {
+              "@code": "33999-4",
+              "@codeSystem": "2.16.840.1.113883.6.1",
+              "@displayName": "Status"
+            },
+            "value": {
+              "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+              "@code": "{{ resource.clinicalStatus.coding[0].code | map_status: 'fhir_to_cda' }}",
+              "@codeSystem": "{{ resource.clinicalStatus.coding[0].system | map_system: 'fhir_to_cda' }}",
+              "@displayName": "{{ resource.clinicalStatus.coding[0].display }}",
+              "@xsi:type": "CE"
+            },
+            "statusCode": {"@code": "completed"},
+            "effectiveTime": {
+              "low": {"@value": "{{ context.timestamp }}"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

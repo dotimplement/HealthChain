@@ -11,10 +11,10 @@
       "coding": [
         {
           "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-          "code": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@code'] | map_status }}"
+          "code": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@code'] | map_status: 'cda_to_fhir' }}"
         },
         {
-          "system": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@codeSystem'] | map_system }}",
+          "system": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
           "code": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@code'] }}",
           "display": "{{ actEntryRelationship.observation.entryRelationship.observation.value['@displayName'] }}"
         }
@@ -32,7 +32,7 @@
   {% if actEntryRelationship.observation.value %}
   "code": {
     "coding": [{
-      "system": "{{ actEntryRelationship.observation.value['@codeSystem'] | map_system }}",
+      "system": "{{ actEntryRelationship.observation.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
       "code": "{{ actEntryRelationship.observation.value['@code'] }}",
       "display": "{{ actEntryRelationship.observation.value['@displayName'] }}"
     }]
@@ -47,6 +47,6 @@
     {% endif %}
   {% endif %}
   "subject": {
-    "reference": "Patient/foo"
+    "reference": "Patient/{{ entry.subject_id | default: 'example' }}"
   }
 }

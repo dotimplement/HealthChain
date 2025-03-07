@@ -1,18 +1,4 @@
-# Code system mappings
-code_systems:
-  # Maps CDA code systems to FHIR systems
-  "2.16.840.1.113883.6.96": "http://snomed.info/sct"
-  "2.16.840.1.113883.6.1": "http://loinc.org"
-  "2.16.840.1.113883.6.88": "http://www.nlm.nih.gov/research/umls/rxnorm"
-
-# Status code mappings
-status:
-  # Maps CDA status codes to FHIR status
-  "55561003": "active"
-  "413322009": "resolved"
-  "73425007": "inactive"
-
-# Section definitions
+# CDA to FHIR section definitions
 sections:
   problems:
     template: cda/problem.liquid

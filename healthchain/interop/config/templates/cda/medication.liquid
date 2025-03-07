@@ -1,10 +1,10 @@
 {
   "resourceType": "MedicationStatement",
-  "id": "{{ entry.id }}",
-  "status": "{{ entry.statusCode | map_status }}",
+  "id": "{{ entry.id | generate_id }}",
+  "status": "{{ entry.statusCode | map_status: 'cda_to_fhir' }}",
   "medicationCodeableConcept": {
     "coding": [{
-      "system": "{{ entry.consumable.manufacturedProduct.manufacturedMaterial.code.codeSystem | map_system }}",
+      "system": "{{ entry.consumable.manufacturedProduct.manufacturedMaterial.code.codeSystem | map_system: 'cda_to_fhir' }}",
       "code": "{{ entry.consumable.manufacturedProduct.manufacturedMaterial.code.code }}",
       "display": "{{ entry.consumable.manufacturedProduct.manufacturedMaterial.code.displayName }}"
     }]
@@ -12,7 +12,7 @@
   {% if entry.effectiveTime %}
   "effectivePeriod": {
     {% if entry.effectiveTime.low %}
-    "start": "{{ entry.effectiveTime.low.value | format_date }}",
+    "start": "{{ entry.effectiveTime.low.value | format_date }}"
     {% endif %}
     {% if entry.effectiveTime.high %}
     "end": "{{ entry.effectiveTime.high.value | format_date }}"
