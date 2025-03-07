@@ -1,0 +1,31 @@
+{
+  "ClinicalDocument": {
+    "@xmlns": "urn:hl7-org:v3",
+    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    "id": {
+      "@root": "{{ bundle.identifier.value | generate_id }}"
+    },
+    "code": {
+      "@code": "{{ document.type.code }}",
+      "@codeSystem": "{{ document.type.system }}",
+      "@codeSystemName": "LOINC",
+      "@displayName": "{{ document.type.display }}"
+    },
+    "title": "Clinical Document",
+    "effectiveTime": {
+      "@value": "{{ bundle.timestamp | format_timestamp }}"
+    },
+    "confidentialityCode": {
+      "@code": "{{ document.confidentiality.code }}",
+      "@codeSystem": "{{ document.confidentiality.system }}"
+    },
+    "languageCode": {
+      "@code": "{{ document.language }}"
+    },
+    "component": {
+      "structuredBody": {
+        "component": {{ formatted_sections | json }}
+      }
+    }
+  }
+}
