@@ -1,5 +1,4 @@
 # Shared mappings between CDA and FHIR formats
-
 code_systems:
   cda_to_fhir:
     "2.16.840.1.113883.6.96": "http://snomed.info/sct"

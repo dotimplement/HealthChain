@@ -6,25 +6,25 @@
       "@root": "{{ bundle.identifier.value | generate_id }}"
     },
     "code": {
-      "@code": "{{ document.type.code }}",
-      "@codeSystem": "{{ document.type.system }}",
+      "@code": "{{ config.type.code }}",
+      "@codeSystem": "{{ config.type.system }}",
       "@codeSystemName": "LOINC",
-      "@displayName": "{{ document.type.display }}"
+      "@displayName": "{{ config.type.display }}"
     },
     "title": "Clinical Document",
     "effectiveTime": {
       "@value": "{{ bundle.timestamp | format_timestamp }}"
     },
     "confidentialityCode": {
-      "@code": "{{ document.confidentiality.code }}",
-      "@codeSystem": "{{ document.confidentiality.system }}"
+      "@code": "{{ config.confidentiality.code }}",
+      "@codeSystem": "{{ config.confidentiality.system }}"
     },
     "languageCode": {
-      "@code": "{{ document.language }}"
+      "@code": "{{ config.language }}"
     },
     "component": {
       "structuredBody": {
-        "component": {{ formatted_sections | json }}
+        "component": {{ sections | json }}
       }
     }
   }

@@ -7,7 +7,7 @@ import re
 import xmltodict
 
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -42,7 +42,8 @@ class InteropEngine:
 
     def __init__(self, config_dir: Path):
         self.config_dir = config_dir
-        self.mappings = self._load_mappings()
+        self.mappings = self._load_configs("mappings")
+        self.configs = self._load_configs("configs")
 
         # Create Liquid environment with loader and custom filters
         template_dir = self.config_dir / "templates"
@@ -110,15 +111,15 @@ class InteropEngine:
         self.env.filters["generate_id"] = generate_id_filter
         self.env.filters["format_timestamp"] = format_timestamp_filter
 
-    def _load_mappings(self) -> Dict:
-        """Load all mapping configurations"""
-        mappings = {}
-        mapping_dir = self.config_dir / "mappings"
-        for mapping_file in mapping_dir.glob("*.yaml"):
-            with open(mapping_file) as f:
-                mappings[mapping_file.stem] = yaml.safe_load(f)
+    def _load_configs(self, directory: str) -> Dict:
+        """Load all configuration files"""
+        configs = {}
+        config_dir = self.config_dir / directory
+        for config_file in config_dir.rglob("*.yaml"):
+            with open(config_file) as f:
+                configs[config_file.stem] = yaml.safe_load(f)
 
-        return mappings
+        return configs
 
     def _load_templates(self) -> Dict:
         """Load all liquid templates"""
@@ -155,17 +156,31 @@ class InteropEngine:
         Raises:
             ValueError: If required mappings are missing or if sections are unsupported
         """
-        resources = []
-
         # Get required configurations
-        cda_fhir_config = self.mappings.get("cda_fhir", {})
-        section_mappings = cda_fhir_config.get("sections", {})
-        if not section_mappings:
-            raise ValueError("No section mappings found in cda_fhir.yaml")
+        section_configs = self.configs.get("section", {})
+
+        if not section_configs:
+            raise ValueError("No section configs found in configs/cda/section.yaml")
 
         # Parse sections from CDA XML
+        section_entries = self._parse_cda_sections(source_data, section_configs)
+
+        # Convert entries to FHIR resources
+        return self._convert_entries_to_fhir(section_entries, section_configs)
+
+    def _parse_cda_sections(self, source_data: str, section_configs: Dict) -> Dict:
+        """Parse sections from CDA XML document
+
+        Args:
+            source_data: CDA document as XML string
+            section_configs: Configuration for each section
+
+        Returns:
+            Dict: Dictionary mapping section keys to their entries
+        """
         section_entries = {}
-        for section_key, section_config in section_mappings.items():
+
+        for section_key, section_config in section_configs.items():
             try:
                 entries = self.parser.parse_section(source_data, section_config)
                 if entries:
@@ -174,10 +189,25 @@ class InteropEngine:
                 log.error(f"Failed to parse section {section_key}: {str(e)}")
                 continue
 
-        # Convert entries to FHIR resources
+        return section_entries
+
+    def _convert_entries_to_fhir(
+        self, section_entries: Dict, section_configs: Dict
+    ) -> List[Resource]:
+        """Convert parsed CDA entries to FHIR resources
+
+        Args:
+            section_entries: Dictionary mapping section keys to their entries
+            section_configs: Configuration for each section
+
+        Returns:
+            List[Resource]: List of FHIR resources
+        """
+        resources = []
+
         for section_key, entries in section_entries.items():
-            section_config = section_mappings[section_key]
-            template_key = Path(section_config["template"]).stem
+            section_config = section_configs[section_key]
+            template_key = Path(section_config["resource_template"]).stem
 
             if template_key not in self.templates:
                 log.warning(
@@ -187,40 +217,95 @@ class InteropEngine:
 
             template = self.templates[template_key]
 
-            # Convert each entry using template
-            for entry in entries:
-                try:
-                    # Render template with entry data
-                    rendered = template.render(
-                        {"entry": entry, "section_config": section_config}
-                    )
-
-                    # Parse rendered JSON and clean empty values
-                    resource_dict = clean_empty(json.loads(rendered))
-
-                    # Add required fields based on resource type
-                    resource_type = section_config["resource"]
-                    self._add_required_fields(resource_dict, resource_type)
-
-                    # Create FHIR resource instance
-                    try:
-                        resource_module = importlib.import_module(
-                            f"fhir.resources.{resource_type.lower()}"
-                        )
-                        resource_class = getattr(resource_module, resource_type)
-                        resource = resource_class(**resource_dict)
-                        resources.append(resource)
-                    except Exception as e:
-                        log.error(f"Failed to create FHIR resource: {str(e)}")
-                        continue
-
-                except Exception as e:
-                    log.error(
-                        f"Failed to convert entry in section {section_key}: {str(e)}"
-                    )
-                    continue
+            # Process each entry in the section
+            section_resources = self._process_section_entries(
+                entries, template, section_config, section_key
+            )
+            resources.extend(section_resources)
 
         return resources
+
+    def _process_section_entries(
+        self, entries: List[Dict], template, section_config: Dict, section_key: str
+    ) -> List[Resource]:
+        """Process entries from a single section and convert to FHIR resources
+
+        Args:
+            entries: List of entries from a section
+            template: The template to use for rendering
+            section_config: Configuration for the section
+            section_key: Key identifying the section
+
+        Returns:
+            List[Resource]: List of FHIR resources from this section
+        """
+        resources = []
+        resource_type = section_config["resource"]
+
+        for entry in entries:
+            try:
+                # Convert entry to FHIR resource dictionary
+                resource_dict = self._render_and_process_entry(
+                    entry, template, section_config
+                )
+
+                # Create FHIR resource instance
+                resource = self._create_fhir_resource(resource_dict, resource_type)
+                if resource:
+                    resources.append(resource)
+
+            except Exception as e:
+                log.error(f"Failed to convert entry in section {section_key}: {str(e)}")
+                continue
+
+        return resources
+
+    def _render_and_process_entry(
+        self, entry: Dict, template, section_config: Dict
+    ) -> Dict:
+        """Render an entry using a template and process the result
+
+        Args:
+            entry: The entry data
+            template: The template to use for rendering
+            section_config: Configuration for the section
+
+        Returns:
+            Dict: Processed resource dictionary
+        """
+        # Render template with entry data and config
+        rendered = template.render({"entry": entry, "config": section_config})
+
+        # Parse rendered JSON and clean empty values
+        resource_dict = clean_empty(json.loads(rendered))
+
+        # Add required fields based on resource type
+        resource_type = section_config["resource"]
+        self._add_required_fields(resource_dict, resource_type)
+
+        return resource_dict
+
+    def _create_fhir_resource(
+        self, resource_dict: Dict, resource_type: str
+    ) -> Optional[Resource]:
+        """Create a FHIR resource instance from a dictionary
+
+        Args:
+            resource_dict: Dictionary representation of the resource
+            resource_type: Type of FHIR resource to create
+
+        Returns:
+            Optional[Resource]: FHIR resource instance or None if creation failed
+        """
+        try:
+            resource_module = importlib.import_module(
+                f"fhir.resources.{resource_type.lower()}"
+            )
+            resource_class = getattr(resource_module, resource_type)
+            return resource_class(**resource_dict)
+        except Exception as e:
+            log.error(f"Failed to create FHIR resource: {str(e)}")
+            return None
 
     def _add_required_fields(self, resource_dict: Dict, resource_type: str):
         """Add required fields to resource dictionary based on type"""
@@ -272,33 +357,53 @@ class InteropEngine:
             ValueError: If required mappings are missing or if resource types are unsupported
         """
         # Normalize input to list of resources
-        resource_list = []
-        if isinstance(resources, Bundle):
-            resource_list.extend(
-                entry.resource for entry in resources.entry if entry.resource
-            )
-        elif isinstance(resources, list):
-            resource_list = resources
-        else:
-            resource_list = [resources]
+        resource_list = self._normalize_resources(resources)
 
         # Get required configurations
-        sections_config = self.mappings.get("fhir_cda", {}).get("sections", {})
-        document_config = self.mappings.get("fhir_cda", {}).get("document", {})
+        section_configs = self.configs.get("section", {})
+        document_config = self.configs.get("document", {})
 
-        if not sections_config or not document_config:
-            raise ValueError("No section or document mappings found in fhir_cda.yaml")
+        if not section_configs or not document_config:
+            raise ValueError("No section or document configs found in configs/cda")
 
-        # Group resources by section
+        # Process resources and generate section entries
+        section_entries = self._process_resources_to_section_entries(
+            resource_list, section_configs
+        )
+
+        # Render sections
+        formatted_sections = self._render_sections(section_entries, section_configs)
+
+        # Generate final CDA document
+        return self._generate_cda_document(
+            resources, document_config, formatted_sections
+        )
+
+    def _normalize_resources(
+        self, resources: Union[Resource, List[Resource]]
+    ) -> List[Resource]:
+        """Convert input resources to a normalized list format"""
+        if isinstance(resources, Bundle):
+            return [entry.resource for entry in resources.entry if entry.resource]
+        elif isinstance(resources, list):
+            return resources
+        else:
+            return [resources]
+
+    def _process_resources_to_section_entries(
+        self, resources: List[Resource], section_configs: Dict
+    ) -> Dict:
+        """Process resources and group them by section with rendered entries"""
         section_entries = {}
-        for resource in resource_list:
+
+        for resource in resources:
             resource_type = resource.__class__.__name__
 
             # Find matching section for resource type
             section_key = next(
                 (
                     key
-                    for key, config in sections_config.items()
+                    for key, config in section_configs.items()
                     if config["resource"] == resource_type
                 ),
                 None,
@@ -308,50 +413,89 @@ class InteropEngine:
                 log.warning(f"Unsupported resource type: {resource_type}")
                 continue
 
-            # Render Entries
-            template_name = Path(sections_config[section_key]["template"]).stem
+            # Get template for this section
+            template_name = Path(section_configs[section_key]["entry_template"]).stem
             if template_name not in self.templates:
                 log.warning(
                     f"Template {template_name} not found, skipping section {section_key}"
                 )
                 continue
 
-            try:
-                timestamp = datetime.now().strftime(format="%Y%m%d")
-                reference_name = "#" + str(uuid.uuid4())[:8] + "name"
-                context = {
-                    "timestamp": timestamp,
-                    "text_reference_name": reference_name,
-                }
-                entry_json = self.templates[template_name].render(
-                    resource=resource.model_dump(), context=context
-                )
-                entry = clean_empty(json.loads(entry_json))
-
+            # Render entry using template
+            entry = self._render_entry(
+                resource, section_key, template_name, section_configs[section_key]
+            )
+            if entry:
                 section_entries.setdefault(section_key, []).append(entry)
-            except Exception as e:
-                log.error(f"Failed to render {section_key} entry: {str(e)}")
-                continue
 
-        # Render sections
+        return section_entries
+
+    def _render_entry(
+        self,
+        resource: Resource,
+        section_key: str,
+        template_name: str,
+        section_config: Dict,
+    ) -> Dict:
+        """Render a single entry for a resource"""
+        try:
+            # Create context with common values
+            timestamp = datetime.now().strftime(format="%Y%m%d")
+            reference_name = "#" + str(uuid.uuid4())[:8] + "name"
+            context = {
+                "timestamp": timestamp,
+                "text_reference_name": reference_name,
+            }
+
+            # Render template
+            entry_json = self.templates[template_name].render(
+                resource=resource.model_dump(),
+                config=section_config,
+                context=context,
+            )
+
+            # Parse and clean the rendered JSON
+            return clean_empty(json.loads(entry_json))
+
+        except Exception as e:
+            log.error(f"Failed to render {section_key} entry: {str(e)}")
+            return None
+
+    def _render_sections(
+        self, section_entries: Dict, section_configs: Dict
+    ) -> List[Dict]:
+        """Render all sections with their entries"""
         formatted_sections = []
         section_template = self.templates["cda_section"]
-        for section_key, section_config in sections_config.items():
-            if section_entries.get(section_key):
-                try:
-                    section_json = section_template.render(
-                        config=section_config, entries=section_entries[section_key]
-                    )
-                    formatted_sections.append(json.loads(section_json))
-                except Exception as e:
-                    log.error(f"Failed to render section {section_key}: {str(e)}")
-                    continue
 
+        for section_key, section_config in section_configs.items():
+            entries = section_entries.get(section_key, [])
+            if not entries:
+                continue
+
+            try:
+                section_json = section_template.render(
+                    entries=entries,
+                    config=section_config,
+                )
+                formatted_sections.append(json.loads(section_json))
+            except Exception as e:
+                log.error(f"Failed to render section {section_key}: {str(e)}")
+
+        return formatted_sections
+
+    def _generate_cda_document(
+        self,
+        resources: Union[Resource, List[Resource]],
+        document_config: Dict,
+        formatted_sections: List[Dict],
+    ) -> str:
+        """Generate the final CDA document"""
         # Create document context
         context = {
             "bundle": resources if isinstance(resources, Bundle) else None,
-            "document": document_config,
-            "formatted_sections": formatted_sections,
+            "config": document_config,
+            "sections": formatted_sections,
         }
 
         # Render document
