@@ -1,0 +1,76 @@
+# CDA Document Configuration
+# This file contains configuration for CDA documents
+
+# Basic document information
+code:
+  code: "34133-9"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Summarization of Episode Note"
+confidentiality_code:
+  code: "N"
+  code_system: "2.16.840.1.113883.5.25"
+language_code: "en-US"
+realm_code: "GB"
+type_id:
+  extension: "POCD_HD000040"
+  root: "2.16.840.1.113883.1.3"
+template_id:
+  root: "1.2.840.114350.1.72.1.51693"
+
+# Document structure
+structure:
+  # Header configuration
+  header:
+    include_patient: true
+    include_author: true
+    include_custodian: true
+    include_legal_authenticator: false
+
+  # Body configuration
+  body:
+    structured_body: true
+    non_xml_body: false
+
+# Default values
+defaults:
+  # Default patient information
+  patient:
+    id: "example"
+    id_root: "2.16.840.1.113883.19.5"
+    name:
+      given: "John"
+      family: "Doe"
+    gender: "M"
+    birth_date: "19700101"
+
+  # Default author information
+  author:
+    id: "author1"
+    id_root: "2.16.840.1.113883.19.5"
+    name:
+      given: "Jane"
+      family: "Smith"
+    organization:
+      id: "org1"
+      name: "HealthChain Organization"
+
+  # Default custodian information
+  custodian:
+    id: "custodian1"
+    id_root: "2.16.840.1.113883.19.5"
+    organization:
+      id: "org1"
+      name: "HealthChain Organization"
+
+# Rendering configuration
+rendering:
+  # XML formatting
+  xml:
+    pretty_print: true
+    encoding: "UTF-8"
+
+  # Narrative generation
+  narrative:
+    include: true
+    generate_if_missing: true
