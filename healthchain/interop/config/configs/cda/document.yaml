@@ -1,9 +1,0 @@
-# Document level configuration
-type:
-  code: "34133-9"
-  system: "2.16.840.1.113883.6.1"
-  display: "Summarization of Episode Note"
-confidentiality:
-  code: "N"
-  system: "2.16.840.1.113883.5.25"
-language: "en-US"

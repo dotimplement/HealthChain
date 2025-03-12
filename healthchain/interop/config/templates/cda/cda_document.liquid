@@ -5,22 +5,32 @@
     "id": {
       "@root": "{{ bundle.identifier.value | generate_id }}"
     },
+    "realmCode": {
+      "@code": "{{ config.realm_code }}"
+    },
+    "typeId": {
+      "@extension": "{{ config.type_id.extension}}",
+      "@root": "{{ config.type_id.root }}"
+    },
+    "templateId": {
+      "@root": "{{ config.template_id.root }}"
+    },
     "code": {
-      "@code": "{{ config.type.code }}",
-      "@codeSystem": "{{ config.type.system }}",
-      "@codeSystemName": "LOINC",
-      "@displayName": "{{ config.type.display }}"
+      "@code": "{{ config.code.code }}",
+      "@codeSystem": "{{ config.code.code_system }}",
+      "@codeSystemName": "{{ config.code.code_system_name }}",
+      "@displayName": "{{ config.code.display }}"
     },
     "title": "Clinical Document",
     "effectiveTime": {
       "@value": "{{ bundle.timestamp | format_timestamp }}"
     },
     "confidentialityCode": {
-      "@code": "{{ config.confidentiality.code }}",
-      "@codeSystem": "{{ config.confidentiality.system }}"
+      "@code": "{{ config.confidentiality_code.code }}",
+      "@codeSystem": "{{ config.confidentiality_code.code_system }}"
     },
     "languageCode": {
-      "@code": "{{ config.language }}"
+      "@code": "{{ config.language_code }}"
     },
     "component": {
       "structuredBody": {

@@ -35,6 +35,7 @@ class StructuredBody(BaseModel):
 class ClinicalDocument(BaseModel):
     """
     https://gazelle.ihe.net/CDAGenerator/cda/POCDMT000040ClinicalDocument.html
+    # TODO: Should be fully implemented
     """
 
     xmlns: str = Field("urn:hl7-org:v3", alias="@xmlns")
