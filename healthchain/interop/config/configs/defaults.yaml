@@ -46,7 +46,30 @@ defaults:
       type: "allergy"
       criticality: "low"
 
-# TODO: Implement
+# Template names and paths
+templates:
+  # Core templates
+  core:
+    section: "cda_section"
+    document: "cda_document"
+
+  # Resource templates
+  resources:
+    condition: "cda/condition"
+    medication_statement: "cda/medication_statement"
+    allergy_intolerance: "cda/allergy_intolerance"
+    observation: "cda/observation"
+    procedure: "cda/procedure"
+
+  # Entry templates
+  entries:
+    problem: "cda/cda_problem_entry"
+    medication: "cda/cda_medication_entry"
+    allergy: "cda/cda_allergy_entry"
+    observation: "cda/cda_observation_entry"
+    procedure: "cda/cda_procedure_entry"
+
+# Format settings
 formats:
   # Date and time formats
   date:

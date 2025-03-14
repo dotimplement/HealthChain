@@ -6,7 +6,7 @@
 resource: "AllergyIntolerance"
 resource_template: "cda/allergy_intolerance"
 entry_template: "cda/cda_allergy_entry"
-section_template_id: "2.16.840.1.113883.10.20.1.2"
+template_id: "2.16.840.1.113883.10.20.1.2"
 code: "48765-2"
 display: "Allergies"
 

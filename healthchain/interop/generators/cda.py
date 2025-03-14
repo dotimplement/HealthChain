@@ -10,48 +10,39 @@ import re
 import xmltodict
 import uuid
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 
-from healthchain.interop.filters import clean_empty
+from healthchain.interop.template_renderer import TemplateRenderer
 
 log = logging.getLogger(__name__)
 
 
-class CDAGenerator:
+class CDAGenerator(TemplateRenderer):
     """Handles generation of CDA documents"""
-
-    def __init__(self, config_manager, template_registry):
-        """Initialize the CDA generator
-
-        Args:
-            config_manager: Configuration manager instance
-            template_registry: Template registry instance
-        """
-        self.config_manager = config_manager
-        self.template_registry = template_registry
 
     def render_entry(
         self,
         resource: Resource,
         section_key: str,
         template_name: str,
-        section_config: Dict,
-    ) -> Dict:
+    ) -> Optional[Dict]:
         """Render a single entry for a resource
 
         Args:
             resource: FHIR resource
             section_key: Key identifying the section
             template_name: Name of the template to use
-            section_config: Configuration for the section
 
         Returns:
             Dictionary representation of the rendered entry
         """
         try:
+            # Get section configuration
+            section_config = self.get_section_config(section_key)
+
             # Create context with common values
             timestamp_format = self.config_manager.get_config_value(
                 "formats.date.timestamp", "%Y%m%d"
@@ -71,59 +62,56 @@ class CDAGenerator:
                 "rendering": self.config_manager.get_config_value(
                     f"sections.{section_key}.rendering", {}
                 ),
-                "formats": self.config_manager.get_config_value("formats", {}),
+                "resource": resource.model_dump(),
+                "config": section_config,
             }
 
             # Get template and render
-            template = self.template_registry.get_template(template_name)
-            entry_json = template.render(
-                resource=resource.model_dump(),
-                config=section_config,
-                context=context,
-            )
+            template = self.get_template(template_name)
+            if not template:
+                return None
 
-            # Parse and clean the rendered JSON
-            return clean_empty(json.loads(entry_json))
+            return self.render_template(template, context)
 
         except Exception as e:
             log.error(f"Failed to render {section_key} entry: {str(e)}")
             return None
 
-    def render_sections(
-        self, section_entries: Dict, section_configs: Dict
-    ) -> List[Dict]:
+    def render_sections(self, section_entries: Dict) -> List[Dict]:
         """Render all sections with their entries
 
         Args:
             section_entries: Dictionary mapping section keys to their entries
-            section_configs: Configuration for each section
 
         Returns:
             List of formatted section dictionaries
         """
         formatted_sections = []
 
+        # Get section configurations
+        section_configs = self.get_section_configs()
+
         # Get section template name from config or use default
         section_template_name = self.config_manager.get_config_value(
             "templates.core.section", "cda_section"
         )
 
-        try:
-            section_template = self.template_registry.get_template(
-                section_template_name
-            )
-        except KeyError:
+        # Get the section template
+        section_template = self.get_template(section_template_name)
+        if not section_template:
             raise ValueError(f"Required template '{section_template_name}' not found")
 
         for section_key, section_config in section_configs.items():
             entries = section_entries.get(section_key, [])
             if entries:
                 try:
-                    section_json = section_template.render(
-                        entries=entries,
-                        config=section_config,
-                    )
-                    formatted_sections.append(json.loads(section_json))
+                    context = {
+                        "entries": entries,
+                        "config": section_config,
+                    }
+                    rendered = self.render_template(section_template, context)
+                    if rendered:
+                        formatted_sections.append(rendered)
                 except Exception as e:
                     log.error(f"Failed to render section {section_key}: {str(e)}")
 
@@ -150,11 +138,9 @@ class CDAGenerator:
             "templates.core.document", "cda_document"
         )
 
-        try:
-            document_template = self.template_registry.get_template(
-                document_template_name
-            )
-        except KeyError:
+        # Get the document template
+        document_template = self.get_template(document_template_name)
+        if not document_template:
             raise ValueError(f"Required template '{document_template_name}' not found")
 
         # Create document context with additional configuration
@@ -178,8 +164,8 @@ class CDAGenerator:
         }
 
         # Render document
-        document_json = document_template.render(**context)
-        document_dict = json.loads(document_json)
+        rendered = document_template.render(**context)
+        document_dict = json.loads(rendered)
 
         # Get XML formatting options
         pretty_print = self.config_manager.get_config_value(
@@ -196,3 +182,37 @@ class CDAGenerator:
 
         # Fix self-closing tags
         return re.sub(r"(<(\w+)(\s+[^>]*?)?)></\2>", r"\1/>", xml_string)
+
+    def generate_document_from_resources(
+        self,
+        resources: Union[Resource, List[Resource], Bundle],
+        section_entries_map: Optional[Dict] = None,
+    ) -> str:
+        """Generate a complete CDA document from FHIR resources
+
+        This method handles the entire process of generating a CDA document:
+        1. Creating section entries from resources (if not provided)
+        2. Rendering sections
+        3. Generating the final document
+
+        Args:
+            resources: FHIR resources to include in the document
+            section_entries_map: Optional pre-populated section entries map
+
+        Returns:
+            CDA document as XML string
+        """
+        # Get document configuration
+        document_config = self.config_manager.get_document_config()
+        if not document_config:
+            raise ValueError("No document configuration found")
+
+        # If section entries weren't provided, we'll use an empty map
+        if section_entries_map is None:
+            section_entries_map = {}
+
+        # Render sections
+        formatted_sections = self.render_sections(section_entries_map)
+
+        # Generate final CDA document
+        return self.generate_document(resources, document_config, formatted_sections)

@@ -4,15 +4,13 @@ CDA Parser for HealthChain Interoperability Engine
 This module provides functionality for parsing CDA XML documents.
 """
 
-import json
 import xmltodict
 import logging
 from typing import Dict, List
 
-from healthchain.interop.filters import clean_empty
 from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.models.sections import Section, Entry
-
+from healthchain.interop.config_manager import ConfigManager
 
 log = logging.getLogger(__name__)
 
@@ -20,17 +18,21 @@ log = logging.getLogger(__name__)
 class CDAParser:
     """Parser for CDA XML documents"""
 
-    def __init__(self, mappings: Dict):
-        self.mappings = mappings
+    def __init__(self, config_manager: ConfigManager):
+        """Initialize the CDA parser
+
+        Args:
+            config_manager: ConfigManager instance for accessing configuration
+        """
+        self.config_manager = config_manager
         self.clinical_document = None
 
-    def parse_document(self, xml: str, section_configs: Dict) -> Dict[str, List[Dict]]:
+    def parse_document(self, xml: str) -> Dict[str, List[Dict]]:
         """
         Parse a complete CDA document and extract entries from all configured sections.
 
         Args:
             xml: The CDA XML document
-            section_configs: Configuration for all sections
 
         Returns:
             Dictionary mapping section keys to lists of entry dictionaries
@@ -45,10 +47,16 @@ class CDAParser:
             log.error(f"Error parsing CDA document: {str(e)}")
             return section_entries
 
-        # Process each section
-        for section_key, section_config in section_configs.items():
+        # Get section configurations
+        sections = self.config_manager.get_config_value("sections")
+        if not sections:
+            log.warning("No sections found in configuration")
+            return section_entries
+
+        # Process each section from the configuration
+        for section_key in sections.keys():
             try:
-                entries = self._parse_section_entries_from_document(section_config)
+                entries = self._parse_section_entries_from_document(section_key)
                 if entries:
                     section_entries[section_key] = entries
             except Exception as e:
@@ -57,18 +65,18 @@ class CDAParser:
 
         return section_entries
 
-    def _parse_section_entries_from_document(self, section_config: Dict) -> List[Dict]:
+    def _parse_section_entries_from_document(self, section_key: str) -> List[Dict]:
         """
         Extract entries from a CDA section using an already parsed document.
 
         Args:
-            section_config: Configuration for the section containing template ID/code
+            section_key: Key identifying the section in the configuration
 
         Returns:
             List of entry dictionaries from the section
         """
         if not self.clinical_document:
-            log.error("No document loaded. Call parse_document or parse_section first.")
+            log.error("No document loaded. Call parse_document first.")
             return []
 
         try:
@@ -82,22 +90,26 @@ class CDAParser:
             for component in components:
                 curr_section = component.section
 
-                if section_config.get(
-                    "template_id"
-                ) and self._find_section_by_template_id(
-                    curr_section, section_config["template_id"]
+                # Get template_id and code from config_manager
+                template_id = self.config_manager.get_config_value(
+                    f"sections.{section_key}.template_id", None
+                )
+                code = self.config_manager.get_config_value(
+                    f"sections.{section_key}.code", None
+                )
+
+                if template_id and self._find_section_by_template_id(
+                    curr_section, template_id
                 ):
                     section = curr_section
                     break
 
-                if section_config.get("code") and self._find_section_by_code(
-                    curr_section, section_config["code"]
-                ):
+                if code and self._find_section_by_code(curr_section, code):
                     section = curr_section
                     break
 
             if not section:
-                log.warning(f"Section not found for config: {section_config}")
+                log.warning(f"Section not found for key: {section_key}")
                 return []
 
             # Get entries and convert to dicts
@@ -108,33 +120,13 @@ class CDAParser:
                 if entry
             ]
 
-            log.debug(f"Found {len(entry_dicts)} entries in section")
+            log.debug(f"Found {len(entry_dicts)} entries in section {section_key}")
 
             return entry_dicts
 
         except Exception as e:
-            log.error(f"Error parsing section: {str(e)}")
+            log.error(f"Error parsing section {section_key}: {str(e)}")
             return []
-
-    def render_fhir_resource_from_cda_entry(
-        self, entry: Dict, template, section_config: Dict
-    ) -> Dict:
-        """
-        Process a CDA entry using a template and prepare it for FHIR conversion
-
-        Args:
-            entry: The entry data dictionary
-            template: The template to use for rendering
-            section_config: Configuration for the section
-
-        Returns:
-            Dict: Processed resource dictionary ready for FHIR conversion
-        """
-        # Render template with entry data and config
-        rendered = template.render({"entry": entry, "config": section_config})
-
-        # Parse rendered JSON and clean empty values
-        return clean_empty(json.loads(rendered))
 
     def _find_section_by_template_id(self, section: Section, template_id: str) -> bool:
         """Check if section matches template ID"""

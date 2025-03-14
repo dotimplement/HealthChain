@@ -25,9 +25,8 @@ class ConfigManager:
         "resource",
         "resource_template",
         "entry_template",
-        "section_template_id",
+        "template_id",
         "code",
-        "display",
     }
 
     REQUIRED_DOCUMENT_KEYS = {

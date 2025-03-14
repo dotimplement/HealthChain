@@ -4,6 +4,7 @@ HealthChain Interoperability Converters
 This package contains converters for various healthcare data formats.
 """
 
-from healthchain.interop.converters.fhir import FHIRConverter
+# Import utility functions from fhir module
+from healthchain.interop.converters import fhir
 
-__all__ = ["FHIRConverter"]
+__all__ = ["fhir"]

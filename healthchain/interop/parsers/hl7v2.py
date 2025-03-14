@@ -5,7 +5,8 @@ This module provides functionality for parsing HL7v2 messages.
 """
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Any
+from healthchain.interop.config_manager import ConfigManager
 
 log = logging.getLogger(__name__)
 
@@ -13,23 +14,20 @@ log = logging.getLogger(__name__)
 class HL7v2Parser:
     """Parser for HL7v2 messages"""
 
-    def __init__(self, mappings: Dict):
+    def __init__(self, config_manager: ConfigManager):
         """Initialize the HL7v2 parser
 
         Args:
-            mappings: Mappings for code systems and other conversions
+            config_manager: ConfigManager instance for accessing configuration
         """
-        self.mappings = mappings
+        self.config_manager = config_manager
 
-    def parse_message(
-        self, message: str, message_configs: Dict
-    ) -> Dict[str, List[Dict]]:
+    def parse_message(self, message: str) -> Dict[str, List[Dict]]:
         """
         Parse a complete HL7v2 message and extract segments based on configuration.
 
         Args:
             message: The HL7v2 message
-            message_configs: Configuration for message segments
 
         Returns:
             Dictionary mapping segment keys to lists of segment dictionaries
@@ -44,19 +42,25 @@ class HL7v2Parser:
 
         segment_entries = {}
 
-        # Example implementation would parse segments like PID, OBX, etc.
-        # and organize them into a structure similar to CDA sections
+        # Get segment configurations
+        segments = self.config_manager.get_config_value("segments", {})
+
+        # Process each segment from the configuration
+        for segment_key in segments.keys():
+            # Implementation would parse segments like PID, OBX, etc.
+            # and organize them into a structure similar to CDA sections
+            pass
 
         return segment_entries
 
-    def process_segment(self, segment: Dict, template, segment_config: Dict) -> Dict:
+    def process_segment(self, segment: Dict, template, segment_key: str) -> Dict:
         """
         Process an HL7v2 segment using a template and prepare it for FHIR conversion
 
         Args:
             segment: The segment data dictionary
             template: The template to use for rendering
-            segment_config: Configuration for the segment
+            segment_key: Key identifying the segment in the configuration
 
         Returns:
             Dict: Processed resource dictionary ready for FHIR conversion
@@ -68,5 +72,45 @@ class HL7v2Parser:
         # 1. Apply the template to the segment data
         # 2. Transform the data into a format suitable for FHIR conversion
 
+        # Get segment configuration
+        segment_config = self.config_manager.get_config_value(
+            f"segments.{segment_key}", {}
+        )
+
+        # Create context with segment data and config
+        context = {"segment": segment, "config": segment_config}
+
+        # Add rendering options to context if available
+        rendering = self.config_manager.get_config_value(
+            f"segments.{segment_key}.rendering", {}
+        )
+        if rendering:
+            context["rendering"] = rendering
+
         # Placeholder return
         return segment
+
+    def get_segment_config(self, segment_key: str) -> Dict:
+        """
+        Get configuration for a specific segment
+
+        Args:
+            segment_key: Key identifying the segment
+
+        Returns:
+            Segment configuration dictionary
+        """
+        return self.config_manager.get_config_value(f"segments.{segment_key}", {})
+
+    def get_config_value(self, path: str, default: Any = None) -> Any:
+        """
+        Get a configuration value using dot notation path
+
+        Args:
+            path: Dot notation path (e.g., "segment.pid.resource")
+            default: Default value if path not found
+
+        Returns:
+            Configuration value or default
+        """
+        return self.config_manager.get_config_value(path, default)

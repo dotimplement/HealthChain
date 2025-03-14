@@ -6,7 +6,7 @@
 resource: "MedicationStatement"
 resource_template: "cda/medication_statement"
 entry_template: "cda/cda_medication_entry"
-section_template_id: "2.16.840.1.113883.10.20.1.8"
+template_id: "2.16.840.1.113883.10.20.1.8"
 code: "10160-0"
 display: "Medications"
 

@@ -8,9 +8,9 @@ resource: "Condition"
 resource_template: "cda/condition"
 entry_template: "cda/cda_problem_entry"
 
-section_template_id: "2.16.840.1.113883.10.20.1.11"
+template_id: "2.16.840.1.113883.10.20.1.11"
 code: "11450-4"
-display: "Problem List"
+display: "Processed Problem List"
 
 # Entry act template IDs
 entry_act_template_ids:

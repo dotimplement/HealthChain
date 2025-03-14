@@ -13,7 +13,7 @@
       "@code": "{{ config.act_status_code | default: 'active' }}"
     },
     "effectiveTime": {
-      "low": {"@value": "{{ context.timestamp }}"}
+      "low": {"@value": "{{ timestamp }}"}
     },
     "entryRelationship": {
       "@typeCode": "{{ config.entry_relationship_type_code | default: 'SUBJ' }}",
@@ -34,7 +34,7 @@
           "@displayName": "{{ config.observation_display_name | default: 'Problem' }}"
         },
         "text": {
-          "reference": {"@value": "#{{ context.text_reference_name }}"}
+          "reference": {"@value": "#{{ text_reference_name }}"}
         },
         "statusCode": {"@code": "{{ config.observation_status_code | default: 'completed' }}"},
         "effectiveTime": {
@@ -52,7 +52,7 @@
           "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
           "@displayName": "{{ resource.code.coding[0].display }}",
           "originalText": {
-            "reference": {"@value": "#{{ context.text_reference_name }}"}
+            "reference": {"@value": "#{{ text_reference_name }}"}
           }
         },
         "entryRelationship": {
@@ -74,7 +74,7 @@
             },
             "statusCode": {"@code": "{{ config.status_observation_status_code | default: 'completed' }}"},
             "effectiveTime": {
-              "low": {"@value": "{{ context.timestamp }}"}
+              "low": {"@value": "{{ timestamp }}"}
             }
           }
         }
