@@ -3,40 +3,40 @@
     "@classCode": "ACT",
     "@moodCode": "EVN",
     "templateId": [
-    {% for template_id in config.entry_act_template_ids %}
+    {% for template_id in config.entry.act.template_ids %}
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
     "id": {"@root": "{{ resource.id | generate_id }}"},
     "code": {"@nullFlavor": "NA"},
     "statusCode": {
-      "@code": "{{ config.act_status_code | default: 'active' }}"
+      "@code": "{{ config.entry.act.status_code | default: 'active' }}"
     },
     "effectiveTime": {
       "low": {"@value": "{{ timestamp }}"}
     },
     "entryRelationship": {
-      "@typeCode": "{{ config.entry_relationship_type_code | default: 'SUBJ' }}",
-      "@inversionInd": {{ config.entry_relationship_inversion_ind | default: false }},
+      "@typeCode": "{{ config.entry.act.entry_relationship.type_code | default: 'SUBJ' }}",
+      "@inversionInd": {{ config.entry.act.entry_relationship.inversion_ind | default: false }},
       "observation": {
         "@classCode": "OBS",
         "@moodCode": "EVN",
         "templateId": [
-        {% for template_id in config.entry_act_entryRelationship_observation_template_ids %}
+        {% for template_id in config.entry.act.entry_relationship.observation.template_ids %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
         "id": {"@root": "{{ resource.id }}_obs"},
         "code": {
-          "@code": "{{ config.observation_code | default: '55607006' }}",
-          "@codeSystem": "{{ config.observation_code_system | default: '2.16.840.1.113883.6.96' }}",
-          "@codeSystemName": "{{ config.observation_code_system_name | default: 'SNOMED CT' }}",
-          "@displayName": "{{ config.observation_display_name | default: 'Problem' }}"
+          "@code": "{{ config.entry.act.entry_relationship.observation.code | default: '55607006' }}",
+          "@codeSystem": "{{ config.entry.act.entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.96' }}",
+          "@codeSystemName": "{{ config.entry.act.entry_relationship.observation.code_system_name | default: 'SNOMED CT' }}",
+          "@displayName": "{{ config.entry.act.entry_relationship.observation.display_name | default: 'Problem' }}"
         },
         "text": {
-          "reference": {"@value": "#{{ text_reference_name }}"}
+          "reference": {"@value": "{{ text_reference_name }}"}
         },
-        "statusCode": {"@code": "{{ config.observation_status_code | default: 'completed' }}"},
+        "statusCode": {"@code": "{{ config.entry.act.entry_relationship.observation.status_code | default: 'completed' }}"},
         "effectiveTime": {
           {% if resource.onsetDateTime %}
           "low": {"@value": "{{ resource.onsetDateTime }}"}
@@ -52,7 +52,7 @@
           "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
           "@displayName": "{{ resource.code.coding[0].display }}",
           "originalText": {
-            "reference": {"@value": "#{{ text_reference_name }}"}
+            "reference": {"@value": "{{ text_reference_name }}"}
           }
         },
         "entryRelationship": {
@@ -61,9 +61,10 @@
             "@classCode": "OBS",
             "@moodCode": "EVN",
             "code": {
-              "@code": "{{ config.status_loinc_code | default: '33999-4' }}",
-              "@codeSystem": "{{ config.status_code_system | default: '2.16.840.1.113883.6.1' }}",
-              "@displayName": "{{ config.status_display_name | default: 'Status' }}"
+              "@code": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.code | default: '33999-4' }}",
+              "@codeSystem": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.1' }}",
+              "@codeSystemName": "{{config.entry.act.entry_relationship.observation.entry_relationship.observation.code_system_name | default: 'LOINC'}}",
+              "@displayName": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.display_name | default: 'Status' }}"
             },
             "value": {
               "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
@@ -72,7 +73,7 @@
               "@displayName": "{{ resource.clinicalStatus.coding[0].display }}",
               "@xsi:type": "CE"
             },
-            "statusCode": {"@code": "{{ config.status_observation_status_code | default: 'completed' }}"},
+            "statusCode": {"@code": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.status_code | default: 'completed' }}"},
             "effectiveTime": {
               "low": {"@value": "{{ timestamp }}"}
             }

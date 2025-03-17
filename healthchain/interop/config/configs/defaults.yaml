@@ -6,6 +6,8 @@ defaults:
   # Common defaults for all resources
   common:
     id_prefix: "hc-"
+    timestamp: "%Y%m%d"
+    reference_name: "#{uuid}name"
     subject:
       reference: "Patient/example"
 
@@ -46,63 +48,29 @@ defaults:
       type: "allergy"
       criticality: "low"
 
-# Template names and paths
-templates:
-  # Core templates
-  core:
-    section: "cda_section"
-    document: "cda_document"
+# # Validation settings
+# validation:
+#   strict_mode: true
+#   warn_on_missing: true
+#   ignore_unknown_fields: true
 
-  # Resource templates
-  resources:
-    condition: "cda/condition"
-    medication_statement: "cda/medication_statement"
-    allergy_intolerance: "cda/allergy_intolerance"
+# # Parser settings
+# parser:
+#   max_entries: 1000
+#   skip_empty_sections: true
 
-  # Entry templates
-  entries:
-    problem: "cda/cda_problem_entry"
-    medication: "cda/cda_medication_entry"
-    allergy: "cda/cda_allergy_entry"
+# # Logging settings
+# logging:
+#   level: "INFO"
+#   include_timestamps: true
 
-# Format settings
-formats:
-  # Date and time formats
-  date:
-    timestamp: "%Y%m%d"
-    datetime: "%Y-%m-%dT%H:%M:%SZ"
-    date: "%Y-%m-%d"
-    time: "%H:%M:%S"
+# # Error handling
+# errors:
+#   retry_count: 3
+#   fail_on_critical: true
 
-  # ID and reference formats
-  ids:
-    resource: "hc-{uuid}"
-    reference_name: "#{uuid}name"
-    section: "section-{key}"
-
-# Validation settings
-validation:
-  strict_mode: true
-  warn_on_missing: true
-  ignore_unknown_fields: true
-
-# Parser settings
-parser:
-  max_entries: 1000
-  skip_empty_sections: true
-
-# Logging settings
-logging:
-  level: "INFO"
-  include_timestamps: true
-
-# Error handling
-errors:
-  retry_count: 3
-  fail_on_critical: true
-
-# Performance settings
-performance:
-  cache_templates: true
-  cache_mappings: true
-  batch_size: 100
+# # Performance settings
+# performance:
+#   cache_templates: true
+#   cache_mappings: true
+#   batch_size: 100

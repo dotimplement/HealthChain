@@ -43,12 +43,12 @@ class CDAGenerator(TemplateRenderer):
                 raise ValueError(f"No section configuration found for {config_key}")
 
             timestamp_format = self.config_manager.get_config_value(
-                "formats.date.timestamp", "%Y%m%d"
+                "defaults.common.timestamp", "%Y%m%d"
             )
             timestamp = datetime.now().strftime(format=timestamp_format)
 
             id_format = self.config_manager.get_config_value(
-                "formats.ids.reference_name", "#{uuid}name"
+                "defaults.common.reference_name", "#{uuid}name"
             )
             reference_name = id_format.replace("{uuid}", str(uuid.uuid4())[:8])
 
