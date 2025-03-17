@@ -1,14 +1,22 @@
 import logging
-from functools import cached_property
 
+from functools import cached_property
 from enum import Enum
 from typing import Dict, List, Union, Optional, Callable, Any, Set
 from pathlib import Path
 
 from fhir.resources.resource import Resource
+from fhir.resources.bundle import Bundle
 
 from .parsers.cda import CDAParser
 from .parsers.hl7v2 import HL7v2Parser
+
+from .config_manager import ConfigManager, ValidationLevel
+from .template_registry import TemplateRegistry
+
+from .generators.cda import CDAGenerator
+from .generators.fhir import FHIRGenerator
+from .generators.hl7v2 import HL7v2Generator
 from .filters import (
     format_date,
     map_system,
@@ -18,12 +26,7 @@ from .filters import (
     generate_id,
     to_json,
 )
-from .config_manager import ConfigManager, ValidationLevel
-from .template_registry import TemplateRegistry
-from .converters import fhir as fhir_utils
-from .generators.cda import CDAGenerator
-from .generators.fhir import FHIRGenerator
-from .generators.hl7v2 import HL7v2Generator
+from .utils import normalize_resource_list
 
 log = logging.getLogger(__name__)
 
@@ -365,11 +368,11 @@ class InteropEngine:
         else:
             raise ValueError(f"Unsupported format: {format_type}")
 
-    def _cda_to_fhir(self, source_data: str) -> List[Resource]:
+    def _cda_to_fhir(self, xml: str) -> List[Resource]:
         """Convert CDA XML to FHIR resources
 
         Args:
-            source_data: CDA document as XML string
+            xml: CDA document as XML string
 
         Returns:
             List[Resource]: List of FHIR resources
@@ -377,44 +380,24 @@ class InteropEngine:
         Raises:
             ValueError: If required mappings are missing or if sections are unsupported
         """
-        # Get required configurations
-        section_configs = self.config_manager.get_section_configs()
-
-        if not section_configs:
-            raise ValueError("No section configs found in configs/cda/section.yaml")
-
         # Get parser and generator (lazy loaded)
         parser = self.cda_parser
         generator = self.fhir_generator
 
         # Parse sections from CDA XML using the parser
-        section_entries = parser.parse_document(source_data)
+        section_entries = parser.parse_document_sections(xml)
 
         # Process each section and convert entries to FHIR resources
         resources = []
         for section_key, entries in section_entries.items():
-            # Get resource type from section config
-            resource_type = self.config_manager.get_config_value(
-                f"sections.{section_key}.resource", None
-            )
-            if not resource_type:
-                log.warning(f"No resource type specified for section {section_key}")
-                continue
-
-            # Convert entries to resource dictionaries using the generator
-            resource_dicts = generator.convert_entries_to_resources(
-                entries, section_key, resource_type
-            )
-
-            # Convert resource dictionaries to FHIR resources using the utility functions
-            section_resources = fhir_utils.convert_resource_dicts_to_resources(
-                resource_dicts, resource_type, self.config_manager
+            section_resources = generator.convert_cda_entries_to_resources(
+                entries, section_key
             )
             resources.extend(section_resources)
 
         return resources
 
-    def _fhir_to_cda(self, resources: Union[Resource, List[Resource]]) -> str:
+    def _fhir_to_cda(self, resources: Union[Resource, List[Resource], Bundle]) -> str:
         """Convert FHIR resources to CDA XML
 
         Args:
@@ -430,36 +413,9 @@ class InteropEngine:
         cda_generator = self.cda_generator
 
         # Normalize input to list of resources
-        resource_list = fhir_utils.normalize_resources(resources)
+        resource_list = normalize_resource_list(resources)
 
-        # Process resources and group by section
-        section_entries = {}
-        for resource in resource_list:
-            resource_type = resource.__class__.__name__
-
-            # Find matching section for resource type using utility function
-            section_key = fhir_utils.find_section_for_resource_type(
-                resource_type, self.config_manager
-            )
-            if not section_key:
-                continue
-
-            # Get template name for this section
-            template_name = cda_generator.get_section_template_name(
-                section_key, "entry"
-            )
-            if not template_name:
-                continue
-
-            # Render entry using template
-            entry = cda_generator.render_entry(resource, section_key, template_name)
-            if entry:
-                section_entries.setdefault(section_key, []).append(entry)
-
-        # Generate the complete CDA document using the simplified method
-        return cda_generator.generate_document_from_resources(
-            resources, section_entries
-        )
+        return cda_generator.generate_document_from_fhir_resources(resource_list)
 
     def _hl7v2_to_fhir(self, source_data: str) -> List[Resource]:
         """Convert HL7v2 to FHIR resources"""

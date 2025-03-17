@@ -9,6 +9,8 @@ import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 
+from healthchain.interop.config_manager import ConfigManager
+from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.filters import clean_empty
 
 log = logging.getLogger(__name__)
@@ -17,7 +19,9 @@ log = logging.getLogger(__name__)
 class TemplateRenderer:
     """Base class for template rendering functionality"""
 
-    def __init__(self, config_manager, template_registry):
+    def __init__(
+        self, config_manager: ConfigManager, template_registry: TemplateRegistry
+    ):
         """Initialize the template renderer
 
         Args:

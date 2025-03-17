@@ -3,7 +3,7 @@
 
 # TODO: Make code hierarchical
 
-# Basic section information
+# Basic required section information
 resource: "Condition"
 resource_template: "cda/condition"
 entry_template: "cda/cda_problem_entry"

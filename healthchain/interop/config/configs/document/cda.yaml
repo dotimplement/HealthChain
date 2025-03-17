@@ -18,6 +18,10 @@ type_id:
 template_id:
   root: "1.2.840.114350.1.72.1.51693"
 
+templates:
+  section: "cda_section"
+  entry: "cda_entry"
+
 # Document structure
 structure:
   # Header configuration

@@ -27,7 +27,7 @@ class CDAParser:
         self.config_manager = config_manager
         self.clinical_document = None
 
-    def parse_document(self, xml: str) -> Dict[str, List[Dict]]:
+    def parse_document_sections(self, xml: str) -> Dict[str, List[Dict]]:
         """
         Parse a complete CDA document and extract entries from all configured sections.
 
@@ -48,7 +48,7 @@ class CDAParser:
             return section_entries
 
         # Get section configurations
-        sections = self.config_manager.get_config_value("sections")
+        sections = self.config_manager.get_section_configs()
         if not sections:
             log.warning("No sections found in configuration")
             return section_entries
