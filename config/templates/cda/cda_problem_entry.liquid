@@ -16,27 +16,27 @@
       "low": {"@value": "{{ timestamp }}"}
     },
     "entryRelationship": {
-      "@typeCode": "{{ config.entry.act.entry_relationship.type_code | default: 'SUBJ' }}",
-      "@inversionInd": {{ config.entry.act.entry_relationship.inversion_ind | default: false }},
+      "@typeCode": "{{ config.main_entry_relationship.type_code | default: 'SUBJ' }}",
+      "@inversionInd": {{ config.main_entry_relationship.inversion_ind | default: false }},
       "observation": {
         "@classCode": "OBS",
         "@moodCode": "EVN",
         "templateId": [
-        {% for template_id in config.entry.act.entry_relationship.observation.template_ids %}
+        {% for template_id in config.main_entry_relationship.observation.template_ids %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
         "id": {"@root": "{{ resource.id }}_obs"},
         "code": {
-          "@code": "{{ config.entry.act.entry_relationship.observation.code | default: '55607006' }}",
-          "@codeSystem": "{{ config.entry.act.entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.96' }}",
-          "@codeSystemName": "{{ config.entry.act.entry_relationship.observation.code_system_name | default: 'SNOMED CT' }}",
-          "@displayName": "{{ config.entry.act.entry_relationship.observation.display_name | default: 'Problem' }}"
+          "@code": "{{ config.main_entry_relationship.observation.code | default: '55607006' }}",
+          "@codeSystem": "{{ config.main_entry.act.entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.96' }}",
+          "@codeSystemName": "{{ config.main_entry_relationship.observation.code_system_name | default: 'SNOMED CT' }}",
+          "@displayName": "{{ config.main_entry_relationship.observation.display_name | default: 'Problem' }}"
         },
         "text": {
           "reference": {"@value": "{{ text_reference_name }}"}
         },
-        "statusCode": {"@code": "{{ config.entry.act.entry_relationship.observation.status_code | default: 'completed' }}"},
+        "statusCode": {"@code": "{{ config.main_entry_relationship.observation.status_code | default: 'completed' }}"},
         "effectiveTime": {
           {% if resource.onsetDateTime %}
           "low": {"@value": "{{ resource.onsetDateTime }}"}
@@ -61,10 +61,10 @@
             "@classCode": "OBS",
             "@moodCode": "EVN",
             "code": {
-              "@code": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.code | default: '33999-4' }}",
-              "@codeSystem": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.1' }}",
-              "@codeSystemName": "{{config.entry.act.entry_relationship.observation.entry_relationship.observation.code_system_name | default: 'LOINC'}}",
-              "@displayName": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.display_name | default: 'Status' }}"
+              "@code": "{{ config.clinical_status_observation.code | default: '33999-4' }}",
+              "@codeSystem": "{{ config.clinical_status_observation.code_system | default: '2.16.840.1.113883.6.1' }}",
+              "@codeSystemName": "{{config.clinical_status_observation.code_system_name | default: 'LOINC'}}",
+              "@displayName": "{{ config.clinical_status_observation.display_name | default: 'Status' }}"
             },
             "value": {
               "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
@@ -73,7 +73,7 @@
               "@displayName": "{{ resource.clinicalStatus.coding[0].display }}",
               "@xsi:type": "CE"
             },
-            "statusCode": {"@code": "{{ config.entry.act.entry_relationship.observation.entry_relationship.observation.status_code | default: 'completed' }}"},
+            "statusCode": {"@code": "{{ config.main_entry_relationship.observation.entry_relationship.observation.status_code | default: 'completed' }}"},
             "effectiveTime": {
               "low": {"@value": "{{ timestamp }}"}
             }

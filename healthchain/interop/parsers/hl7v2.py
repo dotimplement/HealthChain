@@ -6,7 +6,7 @@ This module provides functionality for parsing HL7v2 messages.
 
 import logging
 from typing import Dict, List, Any
-from healthchain.interop.config_manager import ConfigManager
+from healthchain import ConfigManager
 
 log = logging.getLogger(__name__)
 

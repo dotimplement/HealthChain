@@ -8,16 +8,15 @@ from pathlib import Path
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 
-from .parsers.cda import CDAParser
-from .parsers.hl7v2 import HL7v2Parser
+from healthchain.config_manager import ConfigManager, ValidationLevel
 
-from .config_manager import ConfigManager, ValidationLevel
-from .template_registry import TemplateRegistry
-
-from .generators.cda import CDAGenerator
-from .generators.fhir import FHIRGenerator
-from .generators.hl7v2 import HL7v2Generator
-from .filters import (
+from healthchain.interop.parsers.cda import CDAParser
+from healthchain.interop.parsers.hl7v2 import HL7v2Parser
+from healthchain.interop.template_registry import TemplateRegistry
+from healthchain.interop.generators.cda import CDAGenerator
+from healthchain.interop.generators.fhir import FHIRGenerator
+from healthchain.interop.generators.hl7v2 import HL7v2Generator
+from healthchain.interop.filters import (
     format_date,
     map_system,
     map_status,
@@ -26,7 +25,7 @@ from .filters import (
     generate_id,
     to_json,
 )
-from .utils import normalize_resource_list
+from healthchain.interop.utils import normalize_resource_list
 
 log = logging.getLogger(__name__)
 
@@ -52,24 +51,26 @@ class InteropEngine:
 
     def __init__(
         self,
-        config_dir: Path,
+        config_dir: Optional[Path] = None,
         validation_level: str = ValidationLevel.STRICT,
         environment: Optional[str] = None,
     ):
         """Initialize the InteropEngine
 
         Args:
-            config_dir: Base directory containing configuration files
+            config_dir: Base directory containing configuration files. If None, will search standard locations.
             validation_level: Level of configuration validation (strict, warn, ignore)
             environment: Optional environment to use (development, testing, production)
         """
         # Initialize configuration manager
         self.config_dir = config_dir
-        self.config_manager = ConfigManager(config_dir, validation_level)
+        self.config_manager = ConfigManager(
+            self.config_dir, validation_level, module="interop"
+        )
         self.config_manager.load(environment)
 
         # Initialize template registry
-        template_dir = config_dir / "templates"
+        template_dir = self.config_dir / "templates"
         self.template_registry = TemplateRegistry(template_dir)
 
         # Create and register default filters

@@ -10,7 +10,7 @@ from typing import Dict, List
 
 from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.models.sections import Section, Entry
-from healthchain.interop.config_manager import ConfigManager
+from healthchain.config_manager import ConfigManager
 
 log = logging.getLogger(__name__)
 
