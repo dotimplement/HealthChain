@@ -22,6 +22,30 @@ log = logging.getLogger(__name__)
 class CDAGenerator(TemplateRenderer):
     """Handles generation of CDA documents"""
 
+    def generate_document_from_fhir_resources(
+        self,
+        resources: List[Resource],
+        document_type: str,
+    ) -> str:
+        """Generate a complete CDA document from FHIR resources
+
+        This method handles the entire process of generating a CDA document:
+        1. Creating section entries from resources (if not provided)
+        2. Rendering sections
+        3. Generating the final document
+
+        Args:
+            resources: FHIR resources to include in the document
+
+        Returns:
+            CDA document as XML string
+        """
+        mapped_entries = self._get_mapped_entries(resources)
+        sections = self._render_sections(mapped_entries)
+
+        # Generate final CDA document
+        return self._render_document(sections, document_type)
+
     def _render_entry(
         self,
         resource: Resource,
@@ -141,6 +165,7 @@ class CDAGenerator(TemplateRenderer):
     def _render_document(
         self,
         sections: List[Dict],
+        document_type: str,
     ) -> str:
         """Generate the final CDA document
 
@@ -150,9 +175,11 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        config = self.config_manager.get_document_config()
+        config = self.config_manager.get_document_config(document_type)
         if not config:
-            raise ValueError("No document configuration found in /document")
+            raise ValueError(
+                f"No document configuration found in /document/{document_type}"
+            )
 
         # Get document template name from config or use default
         document_template_name = self.config_manager.get_config_value(
@@ -183,26 +210,3 @@ class CDAGenerator(TemplateRenderer):
 
         # Fix self-closing tags
         return re.sub(r"(<(\w+)(\s+[^>]*?)?)></\2>", r"\1/>", xml_string)
-
-    def generate_document_from_fhir_resources(
-        self,
-        resources: List[Resource],
-    ) -> str:
-        """Generate a complete CDA document from FHIR resources
-
-        This method handles the entire process of generating a CDA document:
-        1. Creating section entries from resources (if not provided)
-        2. Rendering sections
-        3. Generating the final document
-
-        Args:
-            resources: FHIR resources to include in the document
-
-        Returns:
-            CDA document as XML string
-        """
-        mapped_entries = self._get_mapped_entries(resources)
-        sections = self._render_sections(mapped_entries)
-
-        # Generate final CDA document
-        return self._render_document(sections)

@@ -434,7 +434,7 @@ class ConfigManager:
         log.warning("No section configs found")
         return {}
 
-    def get_document_config(self) -> Dict:
+    def get_document_config(self, document_type: str) -> Dict:
         """Get document configuration
 
         Returns:
@@ -444,7 +444,9 @@ class ConfigManager:
         if self._module and self._module in self._module_configs:
             # First try to find document configs directly in the module configs
             module_document = (
-                self._module_configs[self._module].get("document", {}).get("cda", {})
+                self._module_configs[self._module]
+                .get("document", {})
+                .get(document_type, {})
             )
             if module_document:
                 return module_document
@@ -517,12 +519,34 @@ class ConfigManager:
         """
         self._custom_schemas[config_type] = required_keys
 
-    def validate(self) -> bool:
-        """Validate that all required configurations are present
+    def validate_document_config(self, document_type: str) -> bool:
+        """Validate document configuration
+
+        Args:
+            document_type: Type of document to validate
 
         Returns:
             True if valid, False otherwise
         """
+        document_config = self.get_document_config(document_type)
+        if not document_config:
+            self._handle_validation_error(
+                f"No document config found for document type: {document_type}"
+            )
+            return False
+
+        # Validate document config
+        missing_keys = self.REQUIRED_DOCUMENT_KEYS - set(document_config.keys())
+        if missing_keys:
+            self._handle_validation_error(
+                f"Document config for document type '{document_type}' is missing required keys: {missing_keys}"
+            )
+            return False
+
+        return True
+
+    def validate(self) -> bool:
+        """Validate that all required configurations are present"""
         is_valid = True
 
         # Validate section configs
@@ -537,19 +561,6 @@ class ConfigManager:
                     is_valid = self._handle_validation_error(
                         f"Section '{section_key}' is missing required keys: {missing_keys}"
                     )
-
-        # Validate document config
-        document_config = self.get_document_config()
-
-        if not document_config:
-            is_valid = self._handle_validation_error("No document config found")
-        else:
-            # Validate document config
-            missing_keys = self.REQUIRED_DOCUMENT_KEYS - set(document_config.keys())
-            if missing_keys:
-                is_valid = self._handle_validation_error(
-                    f"Document config is missing required keys: {missing_keys}"
-                )
 
         # Validate custom schemas
         for config_type, required_keys in self._custom_schemas.items():

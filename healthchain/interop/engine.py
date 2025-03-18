@@ -358,22 +358,24 @@ class InteropEngine:
         self,
         resources: List[Resource],
         format_type: Union[str, FormatType],
+        **kwargs,
     ) -> str:
         """Convert FHIR resources to HL7v2 or CDA"""
         format_type = validate_format(format_type)
 
         if format_type == FormatType.HL7V2:
-            return self._fhir_to_hl7v2(resources)
+            return self._fhir_to_hl7v2(resources, **kwargs)
         elif format_type == FormatType.CDA:
-            return self._fhir_to_cda(resources)
+            return self._fhir_to_cda(resources, **kwargs)
         else:
             raise ValueError(f"Unsupported format: {format_type}")
 
-    def _cda_to_fhir(self, xml: str) -> List[Resource]:
+    def _cda_to_fhir(self, xml: str, **kwargs) -> List[Resource]:
         """Convert CDA XML to FHIR resources
 
         Args:
             xml: CDA document as XML string
+            **kwargs: Additional arguments to pass to parser and generator.
 
         Returns:
             List[Resource]: List of FHIR resources
@@ -398,11 +400,16 @@ class InteropEngine:
 
         return resources
 
-    def _fhir_to_cda(self, resources: Union[Resource, List[Resource], Bundle]) -> str:
+    def _fhir_to_cda(
+        self, resources: Union[Resource, List[Resource], Bundle], **kwargs
+    ) -> str:
         """Convert FHIR resources to CDA XML
 
         Args:
             resources: A FHIR Bundle, list of resources, or single resource
+            **kwargs: Additional arguments to pass to generator.
+                     Supported arguments:
+                     - document_type: Type of CDA document (e.g. "CCD", "Discharge Summary")
 
         Returns:
             str: CDA document as XML string
@@ -413,10 +420,20 @@ class InteropEngine:
         # Get generators (lazy loaded)
         cda_generator = self.cda_generator
 
+        # Check for document type
+        document_type = kwargs.get("document_type", "ccd")
+        if document_type:
+            log.info(f"Processing CDA document of type: {document_type}")
+
+        # Validate document configuration for this specific document type
+        self.config_manager.validate_document_config(document_type)
+
         # Normalize input to list of resources
         resource_list = normalize_resource_list(resources)
 
-        return cda_generator.generate_document_from_fhir_resources(resource_list)
+        return cda_generator.generate_document_from_fhir_resources(
+            resource_list, document_type
+        )
 
     def _hl7v2_to_fhir(self, source_data: str) -> List[Resource]:
         """Convert HL7v2 to FHIR resources"""
