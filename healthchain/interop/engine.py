@@ -24,6 +24,8 @@ from healthchain.interop.filters import (
     format_timestamp,
     generate_id,
     to_json,
+    extract_effective_period,
+    extract_effective_timing,
 )
 from healthchain.interop.utils import normalize_resource_list
 
@@ -286,6 +288,12 @@ class InteropEngine:
         def clean_empty_filter(d):
             return clean_empty(d)
 
+        def extract_effective_period_filter(effective_times):
+            return extract_effective_period(effective_times)
+
+        def extract_effective_timing_filter(effective_times):
+            return extract_effective_timing(effective_times)
+
         # Return dictionary of filters
         return {
             "map_system": map_system_filter,
@@ -295,6 +303,8 @@ class InteropEngine:
             "generate_id": generate_id_filter,
             "json": json_filter,
             "clean_empty": clean_empty_filter,
+            "extract_effective_period": extract_effective_period_filter,
+            "extract_effective_timing": extract_effective_timing_filter,
         }
 
     def add_filter(self, name: str, filter_func: Callable) -> "InteropEngine":

@@ -107,7 +107,7 @@ class TemplateRenderer:
             rendered = template.render(context)
             return clean_empty(json.loads(rendered))
         except Exception as e:
-            log.error(f"Failed to render template: {str(e)}")
+            log.error(f"Failed to render template {template.name}: {str(e)}")
             return None
 
     def get_section_config(self, section_key: str) -> Dict:

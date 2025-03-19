@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from fhir.resources.resource import Resource
-
+from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.template_renderer import TemplateRenderer
 from healthchain.interop.utils import find_section_key_for_resource_type
 
@@ -26,6 +26,7 @@ class CDAGenerator(TemplateRenderer):
         self,
         resources: List[Resource],
         document_type: str,
+        validate: bool = True,
     ) -> str:
         """Generate a complete CDA document from FHIR resources
 
@@ -44,7 +45,7 @@ class CDAGenerator(TemplateRenderer):
         sections = self._render_sections(mapped_entries)
 
         # Generate final CDA document
-        return self._render_document(sections, document_type)
+        return self._render_document(sections, document_type, validate=validate)
 
     def _render_entry(
         self,
@@ -114,7 +115,8 @@ class CDAGenerator(TemplateRenderer):
 
             if not section_key:
                 continue
-
+            if resource_type == "MedicationStatement":
+                print("effectivePeriod", resource.effectivePeriod.end)
             entry = self._render_entry(resource, section_key)
             if entry:
                 section_entries.setdefault(section_key, []).append(entry)
@@ -166,11 +168,14 @@ class CDAGenerator(TemplateRenderer):
         self,
         sections: List[Dict],
         document_type: str,
+        validate: bool = True,
     ) -> str:
         """Generate the final CDA document
 
         Args:
             sections: List of formatted section dictionaries
+            document_type: Type of document to generate
+            validate: Whether to validate the CDA document
 
         Returns:
             CDA document as XML string
@@ -198,6 +203,9 @@ class CDAGenerator(TemplateRenderer):
 
         rendered = self.render_template(document_template, context)
 
+        if validate:
+            validated = ClinicalDocument(**rendered["ClinicalDocument"])
+
         # Get XML formatting options
         pretty_print = self.config_manager.get_config_value(
             "document.cda.rendering.xml.pretty_print", True
@@ -205,8 +213,21 @@ class CDAGenerator(TemplateRenderer):
         encoding = self.config_manager.get_config_value(
             "document.cda.rendering.xml.encoding", "UTF-8"
         )
+        if validate:
+            out_dict = {
+                "ClinicalDocument": validated.model_dump(
+                    exclude_none=True, exclude_unset=True, by_alias=True
+                )
+            }
+        else:
+            out_dict = rendered
+
         # Generate XML
-        xml_string = xmltodict.unparse(rendered, pretty=pretty_print, encoding=encoding)
+        xml_string = xmltodict.unparse(
+            out_dict,
+            pretty=pretty_print,
+            encoding=encoding,
+        )
 
         # Fix self-closing tags
         return re.sub(r"(<(\w+)(\s+[^>]*?)?)></\2>", r"\1/>", xml_string)

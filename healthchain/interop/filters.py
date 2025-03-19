@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union
 
 
 def map_system(
@@ -52,6 +52,7 @@ def map_status(
     return status_mappings.get(status, status)
 
 
+# TODO: Make this date formatter more complete
 def format_date(
     date_str: str, input_format: str = "%Y%m%d", output_format: str = "iso"
 ) -> Optional[str]:
@@ -118,6 +119,87 @@ def to_json(obj: Any) -> str:
     if obj is None:
         return "[]"
     return json.dumps(obj)
+
+
+def extract_effective_period(
+    effective_times: Union[Dict, List[Dict], None],
+) -> Optional[Dict]:
+    """Extract effective period data from CDA effectiveTime elements
+
+    Processes CDA effectiveTime elements of type IVL_TS to extract start/end dates
+    for a FHIR effectivePeriod.
+
+    Args:
+        effective_times: Single effectiveTime element or list of effectiveTime elements
+
+    Returns:
+        Dictionary with 'start' and/or 'end' fields, or None if no period found
+    """
+    if not effective_times:
+        return None
+
+    # Ensure we have a list to work with
+    if not isinstance(effective_times, list):
+        effective_times = [effective_times]
+
+    # Look for IVL_TS type effective times
+    for effective_time in effective_times:
+        if effective_time.get("@xsi:type") == "IVL_TS":
+            result = {}
+
+            # Extract low value (start date)
+            low_value = effective_time.get("low", {}).get("@value")
+            if low_value:
+                result["start"] = format_date(low_value)
+
+            # Extract high value (end date)
+            high_value = effective_time.get("high", {}).get("@value")
+            if high_value:
+                result["end"] = format_date(high_value)
+
+            # Return the period if we found start or end date
+            if result:
+                return result
+
+    # No period found
+    return None
+
+
+def extract_effective_timing(
+    effective_times: Union[Dict, List[Dict], None],
+) -> Optional[Dict]:
+    """Extract timing data from CDA effectiveTime elements
+
+    Processes CDA effectiveTime elements of type PIVL_TS to extract frequency/timing
+    for FHIR dosage.timing.
+
+    Args:
+        effective_times: Single effectiveTime element or list of effectiveTime elements
+
+    Returns:
+        Dictionary with 'period' and 'periodUnit' fields, or None if no timing found
+    """
+    if not effective_times:
+        return None
+
+    # Ensure we have a list to work with
+    if not isinstance(effective_times, list):
+        effective_times = [effective_times]
+
+    # Look for PIVL_TS type effective times with period
+    for effective_time in effective_times:
+        if effective_time.get("@xsi:type") == "PIVL_TS" and effective_time.get(
+            "period"
+        ):
+            period = effective_time.get("period")
+            if period and "@value" in period and "@unit" in period:
+                return {
+                    "period": float(period.get("@value")),
+                    "periodUnit": period.get("@unit"),
+                }
+
+    # No timing information found
+    return None
 
 
 def clean_empty(d: Any) -> Any:

@@ -55,6 +55,8 @@ class FHIRGenerator(TemplateRenderer):
                 if not resource_dict:
                     continue
 
+                log.debug(f"Generated FHIR resource: {resource_dict}")
+
                 resource = self._validate_fhir_resource(resource_dict, resource_type)
 
                 if resource:
