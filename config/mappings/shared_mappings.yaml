@@ -19,3 +19,13 @@ status_codes:
     "active": "55561003"
     "resolved": "413322009"
     "inactive": "73425007"
+
+severity_codes:
+  cda_to_fhir:
+    "H": "severe"
+    "M": "moderate"
+    "L": "mild"
+  fhir_to_cda:
+    "severe": "H"
+    "moderate": "M"
+    "mild": "L"

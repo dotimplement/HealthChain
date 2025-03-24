@@ -1,42 +1,75 @@
 # Allergies Section Configuration
 # This file contains configuration for the allergies section
-# TODO: Implement
 
 # Basic section information
 resource: "AllergyIntolerance"
-resource_template: "cda/allergy_intolerance"
-entry_template: "cda/cda_allergy_entry"
+resource_template: "cda_fhir/allergy_intolerance"
+entry_template: "cda_fhir/cda_allergy_entry"
 template_id: "2.16.840.1.113883.10.20.1.2"
 code: "48765-2"
 display: "Allergies"
 
-# Entry act template IDs
-entry_act_template_ids:
-  - "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"
-  - "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"
-  - "2.16.840.1.113883.3.88.11.32.6"
-  - "2.16.840.1.113883.3.88.11.83.6"
+# Entry configuration
+entry:
+  act:
+    template_ids:
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"
+      - "2.16.840.1.113883.3.88.11.32.6"
+      - "2.16.840.1.113883.3.88.11.83.6"
+    status_code: "active"
 
+# Main entry relationship configuration
+main_entry_relationship:
+  type_code: "SUBJ"
+  inversion_ind: false
+  observation:
+    template_ids:
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.6"
+      - "2.16.840.1.113883.10.20.1.18"
+      - "1.3.6.1.4.1.19376.1.5.3.1"
+      - "2.16.840.1.113883.10.20.1.28"
+    code: "420134006"
+    code_system: "2.16.840.1.113883.6.96"
+    code_system_name: "SNOMED CT"
+    display_name: "Propensity to adverse reactions"
+    status_code: "completed"
+
+# Reaction observation configuration
+reaction_observation:
+  template_ids:
+    - "2.16.840.1.113883.10.20.1.54"
+    - "1.3.6.1.4.1.19376.1.5.3.1.4.5"
+  code: "RXNASSESS"
+  status_code: "completed"
+
+# Severity observation configuration
+severity_observation:
+  template_ids:
+    - "2.16.840.1.113883.10.20.1.55"
+    - "1.3.6.1.4.1.19376.1.5.3.1.4.1"
+  code: "SEV"
+  code_system: "2.16.840.1.113883.5.4"
+  code_system_name: "ActCode"
+  display_name: "Severity"
+  status_code: "completed"
+  value:
+    code_system: "2.16.840.1.113883.5.1063"
+    code_system_name: "SeverityObservation"
+
+# Clinical status configuration
 clinical_status:
   template_id: "2.16.840.1.113883.10.20.1.39"
   code: "33999-4"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display_name: "Status"
+
 reaction:
   template_id: "1.3.6.1.4.1.19376.1.5.3.1.4.5"
 severity:
   template_id: "1.3.6.1.4.1.19376.1.5.3.1.4.1"
-
-# Status codes and other configurable options
-act_status_code: "active"
-entry_relationship_type_code: "SUBJ"
-entry_relationship_inversion_ind: false
-observation_code: "48765-2"
-observation_code_system: "2.16.840.1.113883.6.1"
-observation_code_system_name: "LOINC"
-observation_display_name: "Allergy"
-observation_status_code: "completed"
-status_code_system: "2.16.840.1.113883.6.1"
-status_display_name: "Status"
-status_observation_status_code: "completed"
 
 # Rendering configuration
 rendering:

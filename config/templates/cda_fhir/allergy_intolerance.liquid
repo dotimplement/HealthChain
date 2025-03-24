@@ -1,8 +1,6 @@
 {
   "resourceType": "AllergyIntolerance",
   "id": "{{ entry.id | generate_id }}",
-
-  {% comment %}Extract clinical status using the filter{% endcomment %}
   {% if entry.act.entryRelationship.size %}
     {% assign obs = entry.act.entryRelationship[0].observation %}
   {% else %}
@@ -17,8 +15,6 @@
     }]
   },
   {% endif %}
-
-  {% comment %}Extract allergy type directly from observation code{% endcomment %}
   {% if obs.code %}
   "type": {
     "coding": [{
@@ -28,8 +24,6 @@
     }]
   },
   {% endif %}
-
-  {% comment %}Extract allergy code/substance information directly{% endcomment %}
   {% if obs.participant.participantRole.playingEntity %}
     {% assign playing_entity = obs.participant.participantRole.playingEntity %}
     "code": {
@@ -53,14 +47,10 @@
     "reference": "Patient/{{ entry.subject_id | default: 'Foo' }}"
   },
 
-  {% comment %}Extract onset date directly{% endcomment %}
   {% if obs.effectiveTime.low['@value'] %}
   "onsetDateTime": "{{ obs.effectiveTime.low['@value'] | format_date }}",
   {% endif %}
-
-  {% comment %}Extract reactions using the reactions filter{% endcomment %}
   {% assign reactions = obs | extract_reactions: config %}
-
   {% if reactions.size > 0 %}
   "reaction": [
     {% for reaction in reactions %}
@@ -74,7 +64,7 @@
           }]
         }
       }]{% if reaction.severity != blank %},
-      "severity": "{{ reaction.severity | map_severity }}"{% endif %}
+      "severity": "{{ reaction.severity | map_severity: 'cda_to_fhir' }}"{% endif %}
     }{% unless forloop.last %},{% endunless %}
     {% endfor %}
   ]
