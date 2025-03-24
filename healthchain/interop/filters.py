@@ -52,6 +52,30 @@ def map_status(
     return status_mappings.get(status, status)
 
 
+def map_severity(
+    severity_code: str, mappings: Dict = None, direction: str = "cda_to_fhir"
+) -> Optional[str]:
+    """Maps between CDA and FHIR severity codes
+
+    Args:
+        severity_code: The severity code to map
+        mappings: Mappings dictionary (if None, returns severity code unchanged)
+        direction: Direction of mapping ('cda_to_fhir' or 'fhir_to_cda')
+
+    Returns:
+        Mapped severity code or original if no mapping found
+    """
+    if not severity_code:
+        return None
+
+    if not mappings:
+        return severity_code
+
+    shared_mappings = mappings.get("shared_mappings", {})
+    severity_mappings = shared_mappings.get("severity_codes", {}).get(direction, {})
+    return severity_mappings.get(severity_code, severity_code)
+
+
 # TODO: Make this date formatter more complete
 def format_date(
     date_str: str, input_format: str = "%Y%m%d", output_format: str = "iso"
@@ -220,3 +244,120 @@ def clean_empty(d: Any) -> Any:
     elif isinstance(d, list):
         return [v for v in (clean_empty(v) for v in d) if v not in (None, "", {}, [])]
     return d
+
+
+def _ensure_list(value: Any) -> List:
+    """Convert a value to a list if it isn't already one"""
+    if not isinstance(value, list):
+        return [value]
+    return value
+
+
+def _get_template_ids(section: Dict) -> List[Dict]:
+    """Get template IDs from a section, ensuring they are in list form"""
+    if not section.get("templateId"):
+        return []
+    return _ensure_list(section["templateId"])
+
+
+def _get_entry_relationships(observation: Dict) -> List[Dict]:
+    """Get entry relationships from an observation, ensuring they are in list form"""
+    relationships = observation.get("entryRelationship")
+    if not relationships:
+        return []
+    return _ensure_list(relationships)
+
+
+def extract_clinical_status(observation: Dict, config: Dict) -> Optional[str]:
+    """Extract clinical status from a CDA allergy entry.
+    Not sure how to do this in liquid, so doing it here for now.
+
+    Args:
+        observation: CDA observation containing allergy information
+        config: Config dictionary
+
+    Returns:
+        Clinical status code or None if not found
+    """
+    if not observation or not isinstance(observation, dict):
+        return None
+
+    # Look for clinical status in entry relationships
+    for rel in _get_entry_relationships(observation):
+        if not rel.get("observation", {}).get("templateId"):
+            continue
+
+        # Check each template ID
+        for template in _get_template_ids(rel["observation"]):
+            if template.get("@root") == config.get("clinical_status", {}).get(
+                "template_id"
+            ):
+                if rel.get("observation", {}).get("value", {}).get("@code"):
+                    return rel["observation"]["value"]["@code"]
+
+    return None
+
+
+def extract_reactions(observation: Dict, config: Dict) -> List[Dict]:
+    """Extract reaction information from a CDA allergy entry
+
+    Args:
+        observation: CDA observation containing allergy information
+        config: Config dictionary
+
+    Returns:
+        List of reaction dictionaries, each with system, code, display, and severity
+    """
+    if not observation or not isinstance(observation, dict):
+        return []
+
+    reactions = []
+
+    # Process each entry relationship
+    for rel in _get_entry_relationships(observation):
+        if not rel.get("observation", {}).get("templateId"):
+            continue
+
+        # Look for reaction template ID
+        for template in _get_template_ids(rel["observation"]):
+            if template.get("@root") == config.get("reaction", {}).get("template_id"):
+                # Found a reaction observation
+                reaction = {}
+
+                # Extract manifestation
+                if rel.get("observation", {}).get("value"):
+                    value = rel["observation"]["value"]
+                    reaction = {
+                        "system": value.get("@codeSystem"),
+                        "code": value.get("@code"),
+                        "display": value.get("@displayName"),
+                        "severity": None,
+                    }
+
+                    # Check for severity in nested entry relationship
+                    for sev in _get_entry_relationships(rel["observation"]):
+                        # Ensure observation and templateId exist
+                        if not sev.get("observation", {}).get("templateId"):
+                            continue
+
+                        # Look for severity template ID
+                        # This should match config.severity_observation.template_id in liquid template
+                        for sev_template in _get_template_ids(sev["observation"]):
+                            if sev_template.get("@root") == config.get(
+                                "severity", {}
+                            ).get("template_id"):
+                                if (
+                                    sev.get("observation", {})
+                                    .get("value", {})
+                                    .get("@code")
+                                ):
+                                    reaction["severity"] = sev["observation"]["value"][
+                                        "@code"
+                                    ]
+                                    break
+
+                if "system" in reaction and "code" in reaction:
+                    reactions.append(reaction)
+                break
+
+    return reactions

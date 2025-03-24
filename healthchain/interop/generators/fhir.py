@@ -149,11 +149,11 @@ class FHIRGenerator(TemplateRenderer):
             "defaults.common.subject", {"reference": "Patient/example"}
         )
 
-        if "subject" not in resource_dict:
-            resource_dict["subject"] = default_subject
-
         # Add resource-specific required fields
         if resource_type == "Condition":
+            if "subject" not in resource_dict:
+                resource_dict["subject"] = default_subject
+
             if "clinicalStatus" not in resource_dict:
                 default_status = self.config_manager.get_config_value(
                     "defaults.resources.Condition.clinicalStatus",
@@ -168,12 +168,16 @@ class FHIRGenerator(TemplateRenderer):
                 )
                 resource_dict["clinicalStatus"] = default_status
         elif resource_type == "MedicationStatement":
+            if "subject" not in resource_dict:
+                resource_dict["subject"] = default_subject
             if "status" not in resource_dict:
                 default_status = self.config_manager.get_config_value(
                     "defaults.resources.MedicationStatement.status", "unknown"
                 )
                 resource_dict["status"] = default_status
         elif resource_type == "AllergyIntolerance":
+            if "patient" not in resource_dict:
+                resource_dict["patient"] = default_subject
             if "clinicalStatus" not in resource_dict:
                 default_status = self.config_manager.get_config_value(
                     "defaults.resources.AllergyIntolerance.clinicalStatus",

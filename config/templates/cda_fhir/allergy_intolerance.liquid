@@ -1,39 +1,82 @@
 {
   "resourceType": "AllergyIntolerance",
   "id": "{{ entry.id | generate_id }}",
+
+  {% comment %}Extract clinical status using the filter{% endcomment %}
+  {% if entry.act.entryRelationship.size %}
+    {% assign obs = entry.act.entryRelationship[0].observation %}
+  {% else %}
+    {% assign obs = entry.act.entryRelationship.observation %}
+  {% endif %}
+  {% assign clinical_status = obs | extract_clinical_status: config %}
+  {% if clinical_status %}
   "clinicalStatus": {
     "coding": [{
       "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
-      "code": "{{ entry.status | map_status: 'cda_to_fhir' }}"
+      "code": "{{ clinical_status | map_status: 'cda_to_fhir' }}"
     }]
   },
-  "code": {
-    "coding": [{
-      "system": "{{ entry.observation.value.codeSystem | map_system: 'cda_to_fhir' }}",
-      "code": "{{ entry.observation.value.code }}",
-      "display": "{{ entry.observation.value.displayName }}"
-    }]
-  },
-  {% if entry.effectiveTime %}
-  "onsetDateTime": "{{ entry.effectiveTime.value | format_date }}",
   {% endif %}
-  "subject": {
-    "reference": "Patient/{{ entry.subject_id | default: 'example' }}"
+
+  {% comment %}Extract allergy type directly from observation code{% endcomment %}
+  {% if obs.code %}
+  "type": {
+    "coding": [{
+      "system": "{{ obs.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ obs.code['@code'] }}",
+      "display": "{{ obs.code['@displayName'] }}"
+    }]
   },
-  {% if entry.observation.entryRelationship %}
-  "reaction": [{
-    {% if entry.observation.entryRelationship.observation.value %}
-    "manifestation": [{
+  {% endif %}
+
+  {% comment %}Extract allergy code/substance information directly{% endcomment %}
+  {% if obs.participant.participantRole.playingEntity %}
+    {% assign playing_entity = obs.participant.participantRole.playingEntity %}
+    "code": {
       "coding": [{
-        "system": "{{ entry.observation.entryRelationship.observation.value.codeSystem | map_system }}",
-        "code": "{{ entry.observation.entryRelationship.observation.value.code }}",
-        "display": "{{ entry.observation.entryRelationship.observation.value.displayName }}"
+        "system": "{{ playing_entity.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+        "code": "{{ playing_entity.code['@code'] }}",
+        "display": "{{ playing_entity.name | default: playing_entity.code['@displayName'] }}"
       }]
-    }],
-    {% endif %}
-    {% if entry.observation.entryRelationship.observation.entryRelationship %}
-    "severity": "{{ entry.observation.entryRelationship.observation.entryRelationship.observation.value.code | map_severity }}"
-    {% endif %}
-  }]
+    },
+  {% elsif obs.value %}
+    "code": {
+      "coding": [{
+        "system": "{{ obs.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+        "code": "{{ obs.value['@code'] }}",
+        "display": "{{ obs.value['@displayName'] }}"
+      }]
+    },
+  {% endif %}
+
+  "patient": {
+    "reference": "Patient/{{ entry.subject_id | default: 'Foo' }}"
+  },
+
+  {% comment %}Extract onset date directly{% endcomment %}
+  {% if obs.effectiveTime.low['@value'] %}
+  "onsetDateTime": "{{ obs.effectiveTime.low['@value'] | format_date }}",
+  {% endif %}
+
+  {% comment %}Extract reactions using the reactions filter{% endcomment %}
+  {% assign reactions = obs | extract_reactions: config %}
+
+  {% if reactions.size > 0 %}
+  "reaction": [
+    {% for reaction in reactions %}
+    {
+      "manifestation": [{
+        "concept": {
+          "coding": [{
+            "system": "{{ reaction.system | map_system: 'cda_to_fhir' }}",
+            "code": "{{ reaction.code }}",
+            "display": "{{ reaction.display }}"
+          }]
+        }
+      }]{% if reaction.severity != blank %},
+      "severity": "{{ reaction.severity | map_severity }}"{% endif %}
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ]
   {% endif %}
 }

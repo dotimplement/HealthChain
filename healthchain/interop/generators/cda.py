@@ -115,8 +115,7 @@ class CDAGenerator(TemplateRenderer):
 
             if not section_key:
                 continue
-            if resource_type == "MedicationStatement":
-                print("effectivePeriod", resource.effectivePeriod.end)
+
             entry = self._render_entry(resource, section_key)
             if entry:
                 section_entries.setdefault(section_key, []).append(entry)

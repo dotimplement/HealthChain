@@ -26,6 +26,9 @@ from healthchain.interop.filters import (
     to_json,
     extract_effective_period,
     extract_effective_timing,
+    extract_clinical_status,
+    extract_reactions,
+    map_severity,
 )
 from healthchain.interop.utils import normalize_resource_list
 
@@ -294,6 +297,15 @@ class InteropEngine:
         def extract_effective_timing_filter(effective_times):
             return extract_effective_timing(effective_times)
 
+        def extract_clinical_status_filter(entry, config):
+            return extract_clinical_status(entry, config)
+
+        def extract_reactions_filter(observation, config):
+            return extract_reactions(observation, config)
+
+        def map_severity_filter(severity_code, direction="cda_to_fhir"):
+            return map_severity(severity_code, mappings, direction)
+
         # Return dictionary of filters
         return {
             "map_system": map_system_filter,
@@ -305,6 +317,9 @@ class InteropEngine:
             "clean_empty": clean_empty_filter,
             "extract_effective_period": extract_effective_period_filter,
             "extract_effective_timing": extract_effective_timing_filter,
+            "extract_clinical_status": extract_clinical_status_filter,
+            "extract_reactions": extract_reactions_filter,
+            "map_severity": map_severity_filter,
         }
 
     def add_filter(self, name: str, filter_func: Callable) -> "InteropEngine":
