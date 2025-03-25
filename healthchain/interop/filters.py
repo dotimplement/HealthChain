@@ -289,9 +289,9 @@ def extract_clinical_status(observation: Dict, config: Dict) -> Optional[str]:
 
         # Check each template ID
         for template in _get_template_ids(rel["observation"]):
-            if template.get("@root") == config.get("clinical_status", {}).get(
-                "template_id"
-            ):
+            if template.get("@root") == config.get("template", {}).get(
+                "clinical_status_obs", {}
+            ).get("template_id"):
                 if rel.get("observation", {}).get("value", {}).get("@code"):
                     return rel["observation"]["value"]["@code"]
 
@@ -320,7 +320,9 @@ def extract_reactions(observation: Dict, config: Dict) -> List[Dict]:
 
         # Look for reaction template ID
         for template in _get_template_ids(rel["observation"]):
-            if template.get("@root") == config.get("reaction", {}).get("template_id"):
+            if template.get("@root") == config.get("identifiers", {}).get(
+                "reaction", {}
+            ).get("template_id"):
                 # Found a reaction observation
                 reaction = {}
 
@@ -341,11 +343,10 @@ def extract_reactions(observation: Dict, config: Dict) -> List[Dict]:
                             continue
 
                         # Look for severity template ID
-                        # This should match config.severity_observation.template_id in liquid template
                         for sev_template in _get_template_ids(sev["observation"]):
                             if sev_template.get("@root") == config.get(
-                                "severity", {}
-                            ).get("template_id"):
+                                "identifiers", {}
+                            ).get("severity", {}).get("template_id"):
                                 if (
                                     sev.get("observation", {})
                                     .get("value", {})

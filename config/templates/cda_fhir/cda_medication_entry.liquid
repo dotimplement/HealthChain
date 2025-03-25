@@ -3,12 +3,12 @@
     "@classCode": "SBADM",
     "@moodCode": "INT",
     "templateId": [
-    {% for template_id in config.entry.substance_administration.template_ids %}
+    {% for template_id in config.template.substance_admin.template_ids %}
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
     "id": {"@root": "{{ resource.id | generate_id }}"},
-    "statusCode": {"@code": "{{ config.entry.substance_administration.status_code | default: 'completed' }}"},
+    "statusCode": {"@code": "{{ config.template.substance_admin.status_code | default: config.defaults.status_code }}"},
     {% if resource.dosage and resource.dosage[0].doseAndRate %}
     "doseQuantity": {
       "@value": "{{ resource.dosage[0].doseAndRate[0].doseQuantity.value }}",
@@ -63,7 +63,7 @@
       "manufacturedProduct": {
         "@classCode": "MANU",
         "templateId": [
-        {% for template_id in config.consumable.manufactured_product.template_ids %}
+        {% for template_id in config.template.manufactured_product.template_ids %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
@@ -84,22 +84,22 @@
       "observation": {
         "@classCode": "OBS",
         "@moodCode": "EVN",
-        "templateId": {"@root": "{{ config.clinical_status_observation.template_id | default: '2.16.840.1.113883.10.20.1.47' }}"},
+        "templateId": {"@root": "{{ config.template.clinical_status_obs.template_id | default: '2.16.840.1.113883.10.20.1.47' }}"},
         "code": {
-          "@code": "{{ config.clinical_status_observation.code.code | default: '33999-4' }}",
-          "@codeSystem": "{{ config.clinical_status_observation.code.code_system | default: '2.16.840.1.113883.6.1' }}",
-          "@codeSystemName": "{{ config.clinical_status_observation.code.code_system_name | default: 'LOINC' }}",
-          "@displayName": "{{ config.clinical_status_observation.code.display_name | default: 'Status' }}"
+          "@code": "{{ config.template.clinical_status_obs.code.code | default: '33999-4' }}",
+          "@codeSystem": "{{ config.template.clinical_status_obs.code.code_system | default: '2.16.840.1.113883.6.1' }}",
+          "@codeSystemName": "{{ config.template.clinical_status_obs.code.code_system_name | default: 'LOINC' }}",
+          "@displayName": "{{ config.template.clinical_status_obs.code.display_name | default: 'Status' }}"
         },
         "value": {
           "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-          "@code": "{{ config.clinical_status_observation.value.code | default: '755561003' }}",
-          "@codeSystem": "{{ config.clinical_status_observation.value.code_system | default: '2.16.840.1.113883.6.96' }}",
-          "@codeSystemName": "{{ config.clinical_status_observation.value.code_system_name | default: 'SNOMED CT' }}",
+          "@code": "{{ config.template.clinical_status_obs.value.code | default: config.defaults.medication_status_code }}",
+          "@codeSystem": "{{ config.template.clinical_status_obs.value.code_system | default: config.defaults.medication_status_system }}",
+          "@codeSystemName": "{{ config.template.clinical_status_obs.value.code_system_name | default: 'SNOMED CT' }}",
           "@xsi:type": "CE",
-          "@displayName": "{{ config.clinical_status_observation.value.display_name | default: 'Active' }}"
+          "@displayName": "{{ config.template.clinical_status_obs.value.display_name | default: config.defaults.medication_status_display }}"
         },
-        "statusCode": {"@code": "{{ config.clinical_status_observation.status_code | default: 'completed' }}"},
+        "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code | default: 'completed' }}"},
         "effectiveTime": {
           "low": {"@value": "{{ timestamp }}"}
         }

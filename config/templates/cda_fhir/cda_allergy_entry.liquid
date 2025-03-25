@@ -3,26 +3,26 @@
     "@classCode": "ACT",
     "@moodCode": "EVN",
     "templateId": [
-    {% for template_id in config.entry.act.template_ids %}
+    {% for template_id in config.template.act.template_ids %}
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
     "id": {"@root": "{{ resource.id | generate_id }}"},
     "code": {"@nullFlavor": "NA"},
     "statusCode": {
-      "@code": "{{ config.entry.act.status_code | default: 'active' }}"
+      "@code": "{{ config.template.act.status_code | default: config.defaults.status_code }}"
     },
     "effectiveTime": {
       "low": {"@value": "{{ timestamp }}"}
     },
     "entryRelationship": {
-      "@typeCode": "{{ config.main_entry_relationship.type_code | default: 'SUBJ' }}",
-      "@inversionInd": {{ config.main_entry_relationship.inversion_ind | default: false }},
+      "@typeCode": "{{ config.template.allergy_obs.type_code | default: config.defaults.type_code }}",
+      "@inversionInd": {{ config.template.allergy_obs.inversion_ind | default: config.defaults.inversion_ind }},
       "observation": {
         "@classCode": "OBS",
         "@moodCode": "EVN",
         "templateId": [
-        {% for template_id in config.main_entry_relationship.observation.template_ids %}
+        {% for template_id in config.template.allergy_obs.template_ids %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
@@ -30,7 +30,7 @@
         "text": {
           "reference": {"@value": "{{ text_reference_name }}"}
         },
-        "statusCode": {"@code": "{{ config.main_entry_relationship.observation.status_code | default: 'completed' }}"},
+        "statusCode": {"@code": "{{ config.template.allergy_obs.status_code | default: 'completed' }}"},
         "effectiveTime": {
           "low": {"@value": "{{ timestamp }}"}
         },
@@ -42,9 +42,10 @@
         },
         {% else %}
         "code": {
-          "@code": "{{ config.main_entry_relationship.observation.code | default: '420134006' }}",
-          "@codeSystem": "{{ config.main_entry_relationship.observation.code_system | default: '2.16.840.1.113883.6.96' }}",
-          "@displayName": "{{ config.main_entry_relationship.observation.display_name | default: 'Propensity to adverse reactions' }}"
+          "@code": "{{ config.template.allergy_obs.code | default: config.defaults.allergy_code }}",
+          "@codeSystem": "{{ config.template.allergy_obs.code_system | default: config.defaults.allergy_code_system }}",
+          "@codeSystemName": "{{ config.template.allergy_obs.code_system_name | default: config.defaults.allergy_code_system_name }}",
+          "@displayName": "{{ config.template.allergy_obs.display_name | default: config.defaults.allergy_display_name }}"
         },
         {% endif %}
         "value": {
@@ -81,16 +82,16 @@
             "@classCode": "OBS",
             "@moodCode": "EVN",
             "templateId": [
-            {% for template_id in config.reaction_observation.template_ids %}
+            {% for template_id in config.template.reaction_obs.template_ids %}
               {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
             {% endfor %}
             ],
             "id": {"@root": "{{ resource.id }}_reaction"},
-            "code": {"@code": "{{ config.reaction_observation.code | default: 'RXNASSESS' }}"},
+            "code": {"@code": "{{ config.template.reaction_obs.code | default: 'RXNASSESS' }}"},
             "text": {
               "reference": {"@value": "{{ text_reference_name }}reaction"}
             },
-            "statusCode": {"@code": "{{ config.reaction_observation.status_code | default: 'completed' }}"},
+            "statusCode": {"@code": "{{ config.template.reaction_obs.status_code | default: 'completed' }}"},
             "effectiveTime": {
               "low": {"@value": "{{ timestamp }}"}
             },
@@ -110,26 +111,26 @@
                 "@classCode": "OBS",
                 "@moodCode": "EVN",
                 "templateId": [
-                {% for template_id in config.severity_observation.template_ids %}
+                {% for template_id in config.template.severity_obs.template_ids %}
                   {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
                 {% endfor %}
                 ],
                 "code": {
-                  "@code": "{{ config.severity_observation.code | default: 'SEV' }}",
-                  "@codeSystem": "{{ config.severity_observation.code_system | default: '2.16.840.1.113883.5.4' }}",
-                  "@codeSystemName": "{{ config.severity_observation.code_system_name | default: 'ActCode' }}",
-                  "@displayName": "{{ config.severity_observation.display_name | default: 'Severity' }}"
+                  "@code": "{{ config.template.severity_obs.code | default: 'SEV' }}",
+                  "@codeSystem": "{{ config.template.severity_obs.code_system | default: '2.16.840.1.113883.5.4' }}",
+                  "@codeSystemName": "{{ config.template.severity_obs.code_system_name | default: 'ActCode' }}",
+                  "@displayName": "{{ config.template.severity_obs.display_name | default: 'Severity' }}"
                 },
                 "text": {
                   "reference": {"@value": "{{ text_reference_name }}severity"}
                 },
-                "statusCode": {"@code": "{{ config.severity_observation.status_code | default: 'completed' }}"},
+                "statusCode": {"@code": "{{ config.template.severity_obs.status_code | default: 'completed' }}"},
                 "value": {
                   "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
                   "@xsi:type": "CD",
                   "@code": "{{ resource.reaction[0].severity | map_severity: 'fhir_to_cda'}}",
-                  "@codeSystem": "{{ config.severity_observation.value.code_system }}",
-                  "@codeSystemName": "{{ config.severity_observation.value.code_system_name }}",
+                  "@codeSystem": "{{ config.template.severity_obs.value.code_system }}",
+                  "@codeSystemName": "{{ config.template.severity_obs.value.code_system_name }}",
                   "@displayName": "{{ resource.reaction[0].severity | map_severity: 'fhir_to_cda'}}"
                 }
               }

@@ -92,10 +92,10 @@ class CDAParser:
 
                 # Get template_id and code from config_manager
                 template_id = self.config_manager.get_config_value(
-                    f"sections.{section_key}.template_id", None
+                    f"sections.{section_key}.identifiers.template_id", None
                 )
                 code = self.config_manager.get_config_value(
-                    f"sections.{section_key}.code", None
+                    f"sections.{section_key}.identifiers.code", None
                 )
 
                 if template_id and self._find_section_by_template_id(

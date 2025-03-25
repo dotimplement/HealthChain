@@ -5,7 +5,7 @@
   {% else %}
     {% assign actEntryRelationship = entry.act.entryRelationship %}
   {% endif %}
-  {% if actEntryRelationship.observation.entryRelationship.observation.code['@code'] == config.clinical_status_observation.code %}
+  {% if actEntryRelationship.observation.entryRelationship.observation.code['@code'] == config.identifiers.clinical_status.code %}
     {% if actEntryRelationship.observation.entryRelationship.observation.value %}
     "clinicalStatus": {
       "coding": [
