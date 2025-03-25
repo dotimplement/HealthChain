@@ -3,7 +3,7 @@
     "@classCode": "SBADM",
     "@moodCode": "INT",
     "templateId": [
-    {% for template_id in config.template.substance_admin.template_ids %}
+    {% for template_id in config.template.substance_admin.template_id %}
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
@@ -63,7 +63,7 @@
       "manufacturedProduct": {
         "@classCode": "MANU",
         "templateId": [
-        {% for template_id in config.template.manufactured_product.template_ids %}
+        {% for template_id in config.template.manufactured_product.template_id %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],

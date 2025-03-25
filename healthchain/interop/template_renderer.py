@@ -19,16 +19,14 @@ log = logging.getLogger(__name__)
 class TemplateRenderer:
     """Base class for template rendering functionality"""
 
-    def __init__(
-        self, config_manager: ConfigManager, template_registry: TemplateRegistry
-    ):
+    def __init__(self, config: ConfigManager, template_registry: TemplateRegistry):
         """Initialize the template renderer
 
         Args:
-            config_manager: Configuration manager instance
+            config: Configuration manager instance
             template_registry: Template registry instance
         """
-        self.config_manager = config_manager
+        self.config = config
         self.template_registry = template_registry
 
     def get_template(self, template_name: str):
@@ -58,7 +56,7 @@ class TemplateRenderer:
         Returns:
             Template name or None if not found
         """
-        template_path = self.config_manager.get_config_value(
+        template_path = self.config.get_config_value(
             f"sections.{section_key}.{template_type}_template", ""
         )
 
@@ -110,21 +108,25 @@ class TemplateRenderer:
             log.error(f"Failed to render template {template.name}: {str(e)}")
             return None
 
-    def get_section_config(self, section_key: str) -> Dict:
-        """Get configuration for a specific section
+    def get_validated_section_config(self, section_key: str) -> Dict:
+        """Get a validated section configuration
 
         Args:
             section_key: Key identifying the section
 
         Returns:
-            Section configuration dictionary
-        """
-        return self.config_manager.get_config_value(f"sections.{section_key}", {})
+            A validated section configuration
 
-    def get_section_configs(self) -> Dict:
-        """Get configurations for all sections
-
-        Returns:
-            Dictionary of section configurations
+        Raises:
+            ValueError: If the section configuration doesn't exist or is invalid
         """
-        return self.config_manager.get_section_configs()
+        validated_sections = self.config.get_section_configs(validate=True)
+        if section_key not in validated_sections:
+            # Check if the section exists at all (might have failed validation)
+            all_sections = self.config.get_section_configs(validate=False)
+            if section_key not in all_sections:
+                raise ValueError(f"Section configuration not found: {section_key}")
+            else:
+                raise ValueError(f"Section configuration is invalid: {section_key}")
+
+        return validated_sections[section_key]

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable
 
 from liquid import Environment, FileSystemLoader
 
@@ -82,25 +82,6 @@ class TemplateRegistry:
 
         return self
 
-    def get_filter(self, name: str) -> Optional[Callable]:
-        """Get a registered filter function by name
-
-        Args:
-            name: Name of the filter
-
-        Returns:
-            The filter function or None if not found
-        """
-        return self._filters.get(name)
-
-    def get_filters(self) -> Dict[str, Callable]:
-        """Get all registered filter functions
-
-        Returns:
-            Dictionary of filter names to filter functions
-        """
-        return self._filters.copy()
-
     def _load_templates(self) -> None:
         """Load all template files"""
         if not self._env:
@@ -151,11 +132,3 @@ class TemplateRegistry:
             True if template exists, False otherwise
         """
         return template_key in self._templates
-
-    def get_all_templates(self) -> Dict:
-        """Get all templates
-
-        Returns:
-            Dict of template keys to template objects
-        """
-        return self._templates

@@ -3,40 +3,40 @@
     "@classCode": "ACT",
     "@moodCode": "EVN",
     "templateId": [
-    {% for template_id in config.template.act.template_ids %}
+    {% for template_id in config.template.act.template_id %}
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
     "id": {"@root": "{{ resource.id | generate_id }}"},
     "code": {"@nullFlavor": "NA"},
     "statusCode": {
-      "@code": "{{ config.template.act.status_code | default: config.defaults.status_code }}"
+      "@code": "{{ config.template.act.status_code }}"
     },
     "effectiveTime": {
       "low": {"@value": "{{ timestamp }}"}
     },
     "entryRelationship": {
-      "@typeCode": "{{ config.template.problem_obs.type_code | default: config.defaults.type_code }}",
-      "@inversionInd": {{ config.template.problem_obs.inversion_ind | default: config.defaults.inversion_ind }},
+      "@typeCode": "{{ config.template.problem_obs.type_code }}",
+      "@inversionInd": {{ config.template.problem_obs.inversion_ind }},
       "observation": {
         "@classCode": "OBS",
         "@moodCode": "EVN",
         "templateId": [
-        {% for template_id in config.template.problem_obs.template_ids %}
+        {% for template_id in config.template.problem_obs.template_id %}
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
         "id": {"@root": "{{ resource.id }}_obs"},
         "code": {
-          "@code": "{{ config.template.problem_obs.code | default: config.defaults.problem_code }}",
-          "@codeSystem": "{{ config.template.problem_obs.code_system | default: config.defaults.problem_code_system }}",
-          "@codeSystemName": "{{ config.template.problem_obs.code_system_name | default: config.defaults.problem_code_system_name }}",
-          "@displayName": "{{ config.template.problem_obs.display_name | default: config.defaults.problem_display_name }}"
+          "@code": "{{ config.template.problem_obs.code }}",
+          "@codeSystem": "{{ config.template.problem_obs.code_system }}",
+          "@codeSystemName": "{{ config.template.problem_obs.code_system_name }}",
+          "@displayName": "{{ config.template.problem_obs.display_name }}"
         },
         "text": {
           "reference": {"@value": "{{ text_reference_name }}"}
         },
-        "statusCode": {"@code": "{{ config.template.problem_obs.status_code | default: 'completed' }}"},
+        "statusCode": {"@code": "{{ config.template.problem_obs.status_code }}"},
         "effectiveTime": {
           {% if resource.onsetDateTime %}
           "low": {"@value": "{{ resource.onsetDateTime }}"}
@@ -60,11 +60,12 @@
           "observation": {
             "@classCode": "OBS",
             "@moodCode": "EVN",
+            "templateId": {"@root": "{{ config.template.clinical_status_obs.template_id }}"},
             "code": {
-              "@code": "{{ config.template.clinical_status_obs.code | default: '33999-4' }}",
-              "@codeSystem": "{{ config.template.clinical_status_obs.code_system | default: '2.16.840.1.113883.6.1' }}",
-              "@codeSystemName": "{{config.template.clinical_status_obs.code_system_name | default: 'LOINC'}}",
-              "@displayName": "{{ config.template.clinical_status_obs.display_name | default: 'Status' }}"
+              "@code": "{{ config.template.clinical_status_obs.code }}",
+              "@codeSystem": "{{ config.template.clinical_status_obs.code_system }}",
+              "@codeSystemName": "{{config.template.clinical_status_obs.code_system_name }}",
+              "@displayName": "{{ config.template.clinical_status_obs.display_name }}"
             },
             "value": {
               "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
@@ -73,7 +74,7 @@
               "@displayName": "{{ resource.clinicalStatus.coding[0].display }}",
               "@xsi:type": "CE"
             },
-            "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code | default: 'completed' }}"},
+            "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code }}"},
             "effectiveTime": {
               "low": {"@value": "{{ timestamp }}"}
             }

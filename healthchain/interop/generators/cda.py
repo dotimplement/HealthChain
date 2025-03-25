@@ -62,17 +62,15 @@ class CDAGenerator(TemplateRenderer):
             Dictionary representation of the rendered entry
         """
         try:
-            # Get section configuration and create context
-            section_config = self.get_section_config(config_key)
-            if not section_config:
-                raise ValueError(f"No section configuration found for {config_key}")
+            # Get validated section configuration
+            section_config = self.get_validated_section_config(config_key)
 
-            timestamp_format = self.config_manager.get_config_value(
+            timestamp_format = self.config.get_config_value(
                 "defaults.common.timestamp", "%Y%m%d"
             )
             timestamp = datetime.now().strftime(format=timestamp_format)
 
-            id_format = self.config_manager.get_config_value(
+            id_format = self.config.get_config_value(
                 "defaults.common.reference_name", "#{uuid}name"
             )
             reference_name = id_format.replace("{uuid}", str(uuid.uuid4())[:8])
@@ -110,7 +108,7 @@ class CDAGenerator(TemplateRenderer):
         for resource in resources:
             # Find matching section for resource type
             resource_type = resource.__class__.__name__
-            all_configs = self.get_section_configs()
+            all_configs = self.config.get_section_configs(validate=True)
             section_key = find_section_key_for_resource_type(resource_type, all_configs)
 
             if not section_key:
@@ -133,13 +131,13 @@ class CDAGenerator(TemplateRenderer):
         """
         sections = []
 
-        # Get section configurations
-        section_configs = self.get_section_configs()
+        # Get validated section configurations
+        section_configs = self.config.get_section_configs(validate=True)
         if not section_configs:
-            raise ValueError("No configurations found in /sections")
+            raise ValueError("No valid configurations found in /sections")
 
         # Get section template name from config or use default
-        section_template_name = self.config_manager.get_config_value(
+        section_template_name = self.config.get_config_value(
             "document.cda.templates.section", "cda_section"
         )
         # Get the section template
@@ -179,14 +177,14 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        config = self.config_manager.get_document_config(document_type)
+        config = self.config.get_document_config(document_type)
         if not config:
             raise ValueError(
                 f"No document configuration found in /document/{document_type}"
             )
 
         # Get document template name from config or use default
-        document_template_name = self.config_manager.get_config_value(
+        document_template_name = self.config.get_config_value(
             "document.cda.templates.document", "cda_document"
         )
         # Get the document template
@@ -206,10 +204,10 @@ class CDAGenerator(TemplateRenderer):
             validated = ClinicalDocument(**rendered["ClinicalDocument"])
 
         # Get XML formatting options
-        pretty_print = self.config_manager.get_config_value(
+        pretty_print = self.config.get_config_value(
             "document.cda.rendering.xml.pretty_print", True
         )
-        encoding = self.config_manager.get_config_value(
+        encoding = self.config.get_config_value(
             "document.cda.rendering.xml.encoding", "UTF-8"
         )
         if validate:

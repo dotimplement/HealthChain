@@ -39,7 +39,7 @@ class FHIRGenerator(TemplateRenderer):
             log.error(f"No resource template found for section {section_key}")
             return resources
 
-        resource_type = self.config_manager.get_config_value(
+        resource_type = self.config.get_config_value(
             f"sections.{section_key}.resource", None
         )
         if not resource_type:
@@ -71,16 +71,16 @@ class FHIRGenerator(TemplateRenderer):
     def _render_resource_from_entry(
         self, entry: Dict, section_key: str, template=None
     ) -> Optional[Dict]:
-        """
-        Process an entry using a template and prepare it for FHIR conversion
+        """Render a FHIR resource from a CDA entry
 
         Args:
-            entry: The entry data dictionary
-            section_key: Key identifying the section
-            template: Optional template to use (if not provided, will be retrieved from section config)
+            entry: The CDA entry to convert
+            section_key: The section key (e.g., "problems")
+            template: Optional template to use for rendering
+                (if None, the template will be determined from section_key)
 
         Returns:
-            Dict: Processed resource dictionary ready for FHIR conversion
+            Optional[Dict]: FHIR resource dictionary or None if rendering failed
         """
         try:
             # Get template if not provided
@@ -90,8 +90,12 @@ class FHIRGenerator(TemplateRenderer):
                     log.error(f"No resource template found for section {section_key}")
                     return None
 
-            # Get section configuration
-            section_config = self.get_section_config(section_key)
+            # Get validated section configuration
+            try:
+                section_config = self.get_validated_section_config(section_key)
+            except ValueError as e:
+                log.error(f"Failed to get section config: {str(e)}")
+                return None
 
             # Create context with entry data and config
             context = {"entry": entry, "config": section_config}
@@ -138,14 +142,12 @@ class FHIRGenerator(TemplateRenderer):
             Dict: The resource dictionary with required fields added
         """
         # Add common fields
-        id_prefix = self.config_manager.get_config_value(
-            "defaults.common.id_prefix", "hc-"
-        )
+        id_prefix = self.config.get_config_value("defaults.common.id_prefix", "hc-")
         if "id" not in resource_dict:
             resource_dict["id"] = f"{id_prefix}{str(uuid.uuid4())}"
 
         # Get default values from configuration if available
-        default_subject = self.config_manager.get_config_value(
+        default_subject = self.config.get_config_value(
             "defaults.common.subject", {"reference": "Patient/example"}
         )
 
@@ -155,7 +157,7 @@ class FHIRGenerator(TemplateRenderer):
                 resource_dict["subject"] = default_subject
 
             if "clinicalStatus" not in resource_dict:
-                default_status = self.config_manager.get_config_value(
+                default_status = self.config.get_config_value(
                     "defaults.resources.Condition.clinicalStatus",
                     {
                         "coding": [
@@ -171,7 +173,7 @@ class FHIRGenerator(TemplateRenderer):
             if "subject" not in resource_dict:
                 resource_dict["subject"] = default_subject
             if "status" not in resource_dict:
-                default_status = self.config_manager.get_config_value(
+                default_status = self.config.get_config_value(
                     "defaults.resources.MedicationStatement.status", "unknown"
                 )
                 resource_dict["status"] = default_status
@@ -179,7 +181,7 @@ class FHIRGenerator(TemplateRenderer):
             if "patient" not in resource_dict:
                 resource_dict["patient"] = default_subject
             if "clinicalStatus" not in resource_dict:
-                default_status = self.config_manager.get_config_value(
+                default_status = self.config.get_config_value(
                     "defaults.resources.AllergyIntolerance.clinicalStatus",
                     {
                         "coding": [

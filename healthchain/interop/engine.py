@@ -2,13 +2,14 @@ import logging
 
 from functools import cached_property
 from enum import Enum
-from typing import Dict, List, Union, Optional, Callable, Any, Set
+from typing import Dict, List, Union, Optional, Callable
 from pathlib import Path
 
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 
 from healthchain.config_manager import ConfigManager, ValidationLevel
+from healthchain.config.validators import register_template_model
 
 from healthchain.interop.parsers.cda import CDAParser
 from healthchain.interop.parsers.hl7v2 import HL7v2Parser
@@ -52,7 +53,23 @@ def validate_format(format_type: Union[str, FormatType]) -> FormatType:
 
 
 class InteropEngine:
-    """Generic interoperability engine for converting between healthcare formats"""
+    """Generic interoperability engine for converting between healthcare formats
+
+    The InteropEngine provides capabilities for converting between different
+    healthcare data format standards, such as HL7 FHIR, CDA, and HL7v2.
+
+    Configuration is handled through the `config` property, which provides
+    direct access to the underlying ConfigManager instance. This allows
+    for setting validation levels, changing environments, and accessing
+    configuration values.
+
+    Example:
+        engine = InteropEngine()
+        # Access config directly:
+        engine.config.set_environment("production")
+        engine.config.set_validation_level("warn")
+        value = engine.config.get_config_value("section.problems.resource")
+    """
 
     def __init__(
         self,
@@ -68,14 +85,11 @@ class InteropEngine:
             environment: Optional environment to use (development, testing, production)
         """
         # Initialize configuration manager
-        self.config_dir = config_dir
-        self.config_manager = ConfigManager(
-            self.config_dir, validation_level, module="interop"
-        )
-        self.config_manager.load(environment)
+        self.config = ConfigManager(config_dir, validation_level, module="interop")
+        self.config.load(environment)
 
         # Initialize template registry
-        template_dir = self.config_dir / "templates"
+        template_dir = config_dir / "templates"
         self.template_registry = TemplateRegistry(template_dir)
 
         # Create and register default filters
@@ -124,10 +138,10 @@ class InteropEngine:
         """
         if format_type not in self._parsers:
             if format_type == FormatType.CDA:
-                parser = CDAParser(self.config_manager)
+                parser = CDAParser(self.config)
                 self._parsers[format_type] = parser
             elif format_type == FormatType.HL7V2:
-                parser = HL7v2Parser(self.config_manager)
+                parser = HL7v2Parser(self.config)
                 self._parsers[format_type] = parser
             else:
                 raise ValueError(f"Unsupported parser format: {format_type}")
@@ -145,13 +159,13 @@ class InteropEngine:
         """
         if format_type not in self._generators:
             if format_type == FormatType.CDA:
-                generator = CDAGenerator(self.config_manager, self.template_registry)
+                generator = CDAGenerator(self.config, self.template_registry)
                 self._generators[format_type] = generator
             elif format_type == FormatType.HL7V2:
-                generator = HL7v2Generator(self.config_manager, self.template_registry)
+                generator = HL7v2Generator(self.config, self.template_registry)
                 self._generators[format_type] = generator
             elif format_type == FormatType.FHIR:
-                generator = FHIRGenerator(self.config_manager, self.template_registry)
+                generator = FHIRGenerator(self.config, self.template_registry)
                 self._generators[format_type] = generator
             else:
                 raise ValueError(f"Unsupported generator format: {format_type}")
@@ -184,82 +198,6 @@ class InteropEngine:
         self._generators[format_type] = generator_instance
         return self
 
-    def register_config_schema(
-        self, config_type: str, required_keys: Set[str]
-    ) -> "InteropEngine":
-        """Register a custom configuration schema for validation
-
-        Args:
-            config_type: Type of configuration (e.g., "section", "document")
-            required_keys: Set of required keys for this configuration type
-
-        Returns:
-            Self for method chaining
-        """
-        self.config_manager.register_schema(config_type, required_keys)
-        return self
-
-    def set_validation_level(self, level: str) -> "InteropEngine":
-        """Set the configuration validation level
-
-        Args:
-            level: Validation level (strict, warn, ignore)
-
-        Returns:
-            Self for method chaining
-        """
-        self.config_manager.set_validation_level(level)
-        return self
-
-    def get_environment(self) -> str:
-        """Get the current environment
-
-        Returns:
-            String representing the current environment
-        """
-        return self.config_manager.get_environment()
-
-    def set_environment(self, environment: str) -> "InteropEngine":
-        """Set the environment and reload environment-specific configuration
-
-        Args:
-            environment: Environment to set (development, testing, production)
-
-        Returns:
-            Self for method chaining
-        """
-        self.config_manager.set_environment(environment)
-        return self
-
-    def get_config_value(self, path: str, default: Any = None) -> Any:
-        """Get a configuration value using dot notation path
-
-        Args:
-            path: Dot notation path (e.g., "section.problems.resource")
-            default: Default value if path not found
-
-        Returns:
-            Configuration value or default
-        """
-        return self.config_manager.get_config_value(path, default)
-
-    def get_loaded_defaults(self) -> Dict:
-        """Get all loaded default values
-
-        Returns:
-            Dictionary of default values loaded from defaults.yaml
-        """
-        return self.config_manager.get_defaults()
-
-    def is_defaults_loaded(self) -> bool:
-        """Check if the defaults.yaml file is loaded
-
-        Returns:
-            True if defaults.yaml is loaded, False otherwise
-        """
-        defaults = self.get_loaded_defaults()
-        return bool(defaults)
-
     def _create_default_filters(self) -> Dict[str, Callable]:
         """Create and return default filter functions for templates
 
@@ -267,7 +205,7 @@ class InteropEngine:
             Dict of filter names to filter functions
         """
         # Get mappings for filter functions
-        mappings = self.config_manager.get_mappings()
+        mappings = self.config.get_mappings()
 
         # Create filter functions with access to mappings
         def map_system_filter(system, direction="fhir_to_cda"):
@@ -322,49 +260,35 @@ class InteropEngine:
             "map_severity": map_severity_filter,
         }
 
-    def add_filter(self, name: str, filter_func: Callable) -> "InteropEngine":
-        """Add a custom filter function to the template engine
+    def register_template_validator(
+        self, resource_type: str, template_model
+    ) -> "InteropEngine":
+        """Register a custom template validator model for a resource type
 
         Args:
-            name: Name of the filter to use in templates
-            filter_func: Filter function to register
+            resource_type: FHIR resource type (e.g., "Condition", "MedicationStatement")
+            template_model: Pydantic model for template validation
 
         Returns:
             Self for method chaining
         """
-        self.template_registry.add_filter(name, filter_func)
+        register_template_model(resource_type, template_model)
         return self
 
-    def add_filters(self, filters: Dict[str, Callable]) -> "InteropEngine":
-        """Add multiple custom filter functions to the template engine
+    def register_document_validator(
+        self, document_type: str, document_model
+    ) -> "InteropEngine":
+        """Register a custom document validator model for a document type
 
         Args:
-            filters: Dictionary of filter names to filter functions
+            document_type: Document type (e.g., "ccd", "discharge")
+            document_model: Pydantic model for document validation
 
         Returns:
             Self for method chaining
         """
-        self.template_registry.add_filters(filters)
+        self.config.register_document_model(document_type, document_model)
         return self
-
-    def get_filter(self, name: str) -> Optional[Callable]:
-        """Get a registered filter function by name
-
-        Args:
-            name: Name of the filter
-
-        Returns:
-            The filter function or None if not found
-        """
-        return self.template_registry.get_filter(name)
-
-    def get_filters(self) -> Dict[str, Callable]:
-        """Get all registered filter functions
-
-        Returns:
-            Dictionary of filter names to filter functions
-        """
-        return self.template_registry.get_filters()
 
     def to_fhir(
         self, source_data: str, source_format: Union[str, FormatType]
@@ -451,7 +375,7 @@ class InteropEngine:
             log.info(f"Processing CDA document of type: {document_type}")
 
         # Validate document configuration for this specific document type
-        self.config_manager.validate_document_config(document_type)
+        self.config.validate_document_config(document_type)
 
         # Normalize input to list of resources
         resource_list = normalize_resource_list(resources)

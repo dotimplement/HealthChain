@@ -2,7 +2,13 @@ import yaml
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Any, Set, Optional, List
+from typing import Dict, Any, Optional, List
+from healthchain.config.validators import (
+    validate_section_config,
+    register_template_model,
+    validate_document_config,
+    register_document_model,
+)
 
 log = logging.getLogger(__name__)
 
@@ -17,21 +23,6 @@ class ValidationLevel:
 
 class ConfigManager:
     """Manages loading and accessing configuration files for the HealthChain project"""
-
-    # TODO: Use Pydantic to validate config files
-
-    # Define required configuration schemas
-    REQUIRED_SECTION_KEYS = {
-        "resource",
-        "resource_template",
-        "entry_template",
-    }
-
-    REQUIRED_DOCUMENT_KEYS = {
-        "type_id",
-        "code",
-        "confidentiality_code",
-    }
 
     def __init__(
         self,
@@ -55,7 +46,6 @@ class ConfigManager:
         self._module_env_configs = {}
         self._loaded = False
         self._validation_level = validation_level
-        self._custom_schemas = {}
         self._environment = self._detect_environment()
         self._module = module
 
@@ -346,25 +336,6 @@ class ConfigManager:
 
         return merged_configs
 
-    def get_module_configs(self, module: Optional[str] = None) -> Dict:
-        """Get module-specific configurations
-
-        Args:
-            module: Module name to get configs for (defaults to initialized module)
-
-        Returns:
-            Dict of module-specific configurations
-        """
-        if not self._loaded:
-            self.load()
-
-        target_module = module or self._module
-        if not target_module:
-            return {}
-
-        # Return empty dict if module configs don't exist
-        return self._module_configs.get(target_module, {})
-
     def get_defaults(self) -> Dict:
         """Get all default values
 
@@ -411,26 +382,54 @@ class ConfigManager:
 
         return self
 
-    def get_section_configs(self) -> Dict:
+    def _find_module_sections(self) -> Dict:
+        """Find section configs in the module configs
+
+        Returns:
+            Dict of sections, or empty dict if none found
+        """
+        if not self._module or self._module not in self._module_configs:
+            return {}
+
+        # Look for sections directly in module configs
+        if "sections" in self._module_configs[self._module]:
+            return self._module_configs[self._module]["sections"]
+
+        # Look in subdirectories
+        for value in self._module_configs[self._module].values():
+            if isinstance(value, dict) and "sections" in value:
+                return value["sections"]
+
+        return {}
+
+    def get_section_configs(self, validate: bool = False) -> Dict:
         """Get section configurations
+
+        Args:
+            validate: Whether to validate the configurations
 
         Returns:
             Dict of section configurations
         """
-        # If we're using a module (like "interop"), look for sections in that module's config
-        if self._module and self._module in self._module_configs:
-            # First try to find sections directly in the module configs
-            module_sections = self._module_configs[self._module].get("sections", {})
-            if module_sections:
-                return module_sections
+        sections = self._find_module_sections()
 
-            # If no sections found directly, try to find it in a child directory
-            for value in self._module_configs[self._module].values():
-                if isinstance(value, dict) and "sections" in value:
-                    return value["sections"]
+        if not sections:
+            log.warning("No section configs found")
+            return {}
 
-        log.warning("No section configs found")
-        return {}
+        if not validate:
+            return sections
+
+        # Validate each section if requested
+        validated_sections = {}
+        for section_key, section_config in sections.items():
+            if self.validate_section_config(section_key, section_config):
+                validated_sections[section_key] = section_config
+            elif self._validation_level != ValidationLevel.STRICT:
+                # Include the section with warnings if not in STRICT mode
+                validated_sections[section_key] = section_config
+
+        return validated_sections
 
     def get_document_config(self, document_type: str) -> Dict:
         """Get document configuration
@@ -438,27 +437,26 @@ class ConfigManager:
         Returns:
             Document configuration dict
         """
-        # If we're using a module (like "interop"), look for document config in that module's config
-        if self._module and self._module in self._module_configs:
-            # First try to find document configs directly in the module configs
-            module_document = (
-                self._module_configs[self._module]
-                .get("document", {})
-                .get(document_type, {})
-            )
-            if module_document:
-                return module_document
+        if not self._module or self._module not in self._module_configs:
+            log.warning("No document config found")
+            return {}
 
-            # If no document config found directly, try to find it in a child directory
-            for value in self._module_configs[self._module].values():
-                if isinstance(value, dict) and "document" in value:
-                    if (
-                        isinstance(value["document"], dict)
-                        and "cda" in value["document"]
-                    ):
-                        return value["document"]["cda"]
+        # Look for document config directly
+        if "document" in self._module_configs[self._module]:
+            doc_section = self._module_configs[self._module]["document"]
+            if isinstance(doc_section, dict) and document_type in doc_section:
+                return doc_section[document_type]
 
-        log.warning("No document config found")
+        # Look in subdirectories
+        for value in self._module_configs[self._module].values():
+            if isinstance(value, dict) and "document" in value:
+                if (
+                    isinstance(value["document"], dict)
+                    and document_type in value["document"]
+                ):
+                    return value["document"][document_type]
+
+        log.warning(f"No document config found for type: {document_type}")
         return {}
 
     def get_config_value(self, path: str, default: Any = None) -> Any:
@@ -508,17 +506,8 @@ class ConfigManager:
 
         return current
 
-    def register_schema(self, config_type: str, required_keys: Set[str]) -> None:
-        """Register a custom validation schema
-
-        Args:
-            config_type: Type of configuration (e.g., "section", "document")
-            required_keys: Set of required keys for this configuration type
-        """
-        self._custom_schemas[config_type] = required_keys
-
     def validate_document_config(self, document_type: str) -> bool:
-        """Validate document configuration
+        """Validate document configuration using Pydantic models
 
         Args:
             document_type: Type of document to validate
@@ -533,14 +522,25 @@ class ConfigManager:
             )
             return False
 
-        # Validate document config
-        missing_keys = self.REQUIRED_DOCUMENT_KEYS - set(document_config.keys())
-        if missing_keys:
-            self._handle_validation_error(
-                f"Document config for document type '{document_type}' is missing required keys: {missing_keys}"
-            )
+        # Validate using Pydantic models
+        result = validate_document_config(document_type, document_config)
+        if not result and self._validation_level == ValidationLevel.STRICT:
             return False
+        return True
 
+    def validate_section_config(self, section_key: str, section_config: Dict) -> bool:
+        """Validate a section configuration using Pydantic models
+
+        Args:
+            section_key: Name of the section
+            section_config: Section configuration dict
+
+        Returns:
+            True if valid, False otherwise
+        """
+        result = validate_section_config(section_key, section_config)
+        if not result and self._validation_level == ValidationLevel.STRICT:
+            return False
         return True
 
     def validate(self) -> bool:
@@ -548,42 +548,9 @@ class ConfigManager:
         is_valid = True
 
         # Validate section configs
-        section_configs = self.get_section_configs()
+        section_configs = self.get_section_configs(validate=True)
         if not section_configs:
             is_valid = self._handle_validation_error("No section configs found")
-        else:
-            # Validate each section
-            for section_key, section_config in section_configs.items():
-                missing_keys = self.REQUIRED_SECTION_KEYS - set(section_config.keys())
-                if missing_keys:
-                    is_valid = self._handle_validation_error(
-                        f"Section '{section_key}' is missing required keys: {missing_keys}"
-                    )
-
-        # Validate custom schemas
-        for config_type, required_keys in self._custom_schemas.items():
-            config = self.get_configs().get(config_type, {})
-            if not config:
-                is_valid = self._handle_validation_error(
-                    f"No {config_type} config found"
-                )
-                continue
-
-            # If config is a dict of dicts (like sections), validate each sub-config
-            if all(isinstance(v, dict) for v in config.values()):
-                for key, sub_config in config.items():
-                    missing_keys = required_keys - set(sub_config.keys())
-                    if missing_keys:
-                        is_valid = self._handle_validation_error(
-                            f"{config_type.capitalize()} '{key}' is missing required keys: {missing_keys}"
-                        )
-            else:
-                # Validate the config directly
-                missing_keys = required_keys - set(config.keys())
-                if missing_keys:
-                    is_valid = self._handle_validation_error(
-                        f"{config_type.capitalize()} config is missing required keys: {missing_keys}"
-                    )
 
         return is_valid
 
@@ -621,3 +588,21 @@ class ConfigManager:
 
         self._validation_level = level
         return self
+
+    def register_template_model(self, resource_type: str, template_model) -> None:
+        """Register a custom template model
+
+        Args:
+            resource_type: FHIR resource type
+            template_model: Pydantic model for template validation
+        """
+        register_template_model(resource_type, template_model)
+
+    def register_document_model(self, document_type: str, document_model) -> None:
+        """Register a custom document model
+
+        Args:
+            document_type: Document type (e.g., "ccd", "discharge")
+            document_model: Pydantic model for document validation
+        """
+        register_document_model(document_type, document_model)
