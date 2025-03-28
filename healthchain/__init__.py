@@ -3,7 +3,7 @@ from .utils.logger import add_handlers
 
 from .decorators import api, sandbox
 from .clients import ehr
-from .config_manager import ConfigManager, ValidationLevel
+from .config.base import ConfigManager, ValidationLevel
 
 logger = logging.getLogger(__name__)
 add_handlers(logger)

@@ -177,10 +177,10 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        config = self.config.get_document_config(document_type)
+        config = self.config.get_document_config(document_type, validate=True)
         if not config:
             raise ValueError(
-                f"No document configuration found in /document/{document_type}"
+                f"No document configuration found or validation failed for document type: {document_type}"
             )
 
         # Get document template name from config or use default

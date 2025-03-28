@@ -4,6 +4,7 @@ HealthChain Interoperability Module
 This module provides functionality for interoperability between different healthcare data formats.
 """
 
+from .config_manager import InteropConfigManager
 from .engine import InteropEngine, FormatType
 from .template_registry import TemplateRegistry
 from .template_renderer import TemplateRenderer
@@ -41,6 +42,7 @@ def create_engine(
 
 __all__ = [
     "InteropEngine",
+    "InteropConfigManager",
     "FormatType",
     "TemplateRegistry",
     "TemplateRenderer",

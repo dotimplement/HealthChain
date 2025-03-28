@@ -142,14 +142,12 @@ class FHIRGenerator(TemplateRenderer):
             Dict: The resource dictionary with required fields added
         """
         # Add common fields
-        id_prefix = self.config.get_config_value("defaults.common.id_prefix", "hc-")
+        id_prefix = self.config.get_config_value("defaults.common.id_prefix")
         if "id" not in resource_dict:
             resource_dict["id"] = f"{id_prefix}{str(uuid.uuid4())}"
 
         # Get default values from configuration if available
-        default_subject = self.config.get_config_value(
-            "defaults.common.subject", {"reference": "Patient/example"}
-        )
+        default_subject = self.config.get_config_value("defaults.common.subject")
 
         # Add resource-specific required fields
         if resource_type == "Condition":
@@ -158,15 +156,7 @@ class FHIRGenerator(TemplateRenderer):
 
             if "clinicalStatus" not in resource_dict:
                 default_status = self.config.get_config_value(
-                    "defaults.resources.Condition.clinicalStatus",
-                    {
-                        "coding": [
-                            {
-                                "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                                "code": "unknown",
-                            }
-                        ]
-                    },
+                    "defaults.resources.Condition.clinicalStatus"
                 )
                 resource_dict["clinicalStatus"] = default_status
         elif resource_type == "MedicationStatement":
@@ -174,7 +164,7 @@ class FHIRGenerator(TemplateRenderer):
                 resource_dict["subject"] = default_subject
             if "status" not in resource_dict:
                 default_status = self.config.get_config_value(
-                    "defaults.resources.MedicationStatement.status", "unknown"
+                    "defaults.resources.MedicationStatement.status"
                 )
                 resource_dict["status"] = default_status
         elif resource_type == "AllergyIntolerance":
@@ -182,15 +172,7 @@ class FHIRGenerator(TemplateRenderer):
                 resource_dict["patient"] = default_subject
             if "clinicalStatus" not in resource_dict:
                 default_status = self.config.get_config_value(
-                    "defaults.resources.AllergyIntolerance.clinicalStatus",
-                    {
-                        "coding": [
-                            {
-                                "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
-                                "code": "unknown",
-                            }
-                        ]
-                    },
+                    "defaults.resources.AllergyIntolerance.clinicalStatus"
                 )
                 resource_dict["clinicalStatus"] = default_status
 

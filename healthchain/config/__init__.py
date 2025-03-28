@@ -1,14 +1,27 @@
-from healthchain.config.validators import (
-    validate_section_config,
-    register_template_model,
-    SECTION_VALIDATORS,
-)
-from pydantic import ValidationError
+"""
+HealthChain Configuration Module
 
+This module manages configuration for HealthChain components, providing
+functionality for loading, validating, and accessing configuration settings
+from various sources.
+"""
+
+from healthchain.config.base import (
+    ConfigManager,
+    ValidationLevel,
+)
+from healthchain.config.validators import (
+    validate_section_config_model,
+    validate_document_config_model,
+    register_template_config_model,
+    register_document_config_model,
+)
 
 __all__ = [
-    "validate_section_config",
-    "register_template_model",
-    "SECTION_VALIDATORS",
-    "ValidationError",
+    "ConfigManager",
+    "ValidationLevel",
+    "validate_section_config_model",
+    "validate_document_config_model",
+    "register_template_config_model",
+    "register_document_config_model",
 ]

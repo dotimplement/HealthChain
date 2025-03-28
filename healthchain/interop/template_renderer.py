@@ -9,7 +9,7 @@ import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 
-from healthchain.config_manager import ConfigManager
+from healthchain.config.base import ConfigManager
 from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.filters import clean_empty
 

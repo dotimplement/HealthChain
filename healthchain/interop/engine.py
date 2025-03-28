@@ -8,8 +8,8 @@ from pathlib import Path
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 
-from healthchain.config_manager import ConfigManager, ValidationLevel
-from healthchain.config.validators import register_template_model
+from healthchain.config.base import ValidationLevel
+from healthchain.interop.config_manager import InteropConfigManager
 
 from healthchain.interop.parsers.cda import CDAParser
 from healthchain.interop.parsers.hl7v2 import HL7v2Parser
@@ -85,8 +85,7 @@ class InteropEngine:
             environment: Optional environment to use (development, testing, production)
         """
         # Initialize configuration manager
-        self.config = ConfigManager(config_dir, validation_level, module="interop")
-        self.config.load(environment)
+        self.config = InteropConfigManager(config_dir, validation_level, environment)
 
         # Initialize template registry
         template_dir = config_dir / "templates"
@@ -272,7 +271,7 @@ class InteropEngine:
         Returns:
             Self for method chaining
         """
-        register_template_model(resource_type, template_model)
+        self.config.register_section_template_config(resource_type, template_model)
         return self
 
     def register_document_validator(
@@ -287,7 +286,7 @@ class InteropEngine:
         Returns:
             Self for method chaining
         """
-        self.config.register_document_model(document_type, document_model)
+        self.config.register_document_config(document_type, document_model)
         return self
 
     def to_fhir(
@@ -374,8 +373,12 @@ class InteropEngine:
         if document_type:
             log.info(f"Processing CDA document of type: {document_type}")
 
-        # Validate document configuration for this specific document type
-        self.config.validate_document_config(document_type)
+        # Get and validate document configuration for this specific document type
+        doc_config = self.config.get_document_config(document_type, validate=True)
+        if not doc_config:
+            raise ValueError(
+                f"Invalid or missing document configuration for type: {document_type}"
+            )
 
         # Normalize input to list of resources
         resource_list = normalize_resource_list(resources)

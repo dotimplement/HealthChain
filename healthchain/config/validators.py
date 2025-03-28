@@ -78,8 +78,8 @@ class SectionBaseConfig(BaseModel):
 #
 
 
-class ConditionTemplateConfig(BaseModel):
-    """Template configuration for Condition resource"""
+class ProblemSectionTemplateConfig(BaseModel):
+    """Template configuration for Problem Section"""
 
     act: ComponentTemplateConfig
     problem_obs: ComponentTemplateConfig
@@ -104,8 +104,8 @@ class ConditionTemplateConfig(BaseModel):
         return v
 
 
-class MedicationTemplateConfig(BaseModel):
-    """Template configuration for MedicationStatement resource"""
+class MedicationSectionTemplateConfig(BaseModel):
+    """Template configuration for SubstanceAdministration Section"""
 
     substance_admin: ComponentTemplateConfig
     manufactured_product: ComponentTemplateConfig
@@ -119,8 +119,8 @@ class MedicationTemplateConfig(BaseModel):
         return v
 
 
-class AllergyTemplateConfig(BaseModel):
-    """Template configuration for AllergyIntolerance resource"""
+class AllergySectionTemplateConfig(BaseModel):
+    """Template configuration for Allergy Section"""
 
     act: ComponentTemplateConfig
     allergy_obs: ComponentTemplateConfig
@@ -179,13 +179,13 @@ class DocumentConfig(BaseModel):
 # Registries and Factory Functions
 #
 
-TEMPLATE_REGISTRY = {
-    "Condition": ConditionTemplateConfig,
-    "MedicationStatement": MedicationTemplateConfig,
-    "AllergyIntolerance": AllergyTemplateConfig,
+TEMPLATE_CONFIG_REGISTRY = {
+    "Condition": ProblemSectionTemplateConfig,
+    "MedicationStatement": MedicationSectionTemplateConfig,
+    "AllergyIntolerance": AllergySectionTemplateConfig,
 }
 
-DOCUMENT_REGISTRY = {
+DOCUMENT_CONFIG_REGISTRY = {
     "ccd": DocumentConfig,
 }
 
@@ -213,7 +213,7 @@ def create_section_validator(
 
 SECTION_VALIDATORS = {
     resource_type: create_section_validator(resource_type, template_model)
-    for resource_type, template_model in TEMPLATE_REGISTRY.items()
+    for resource_type, template_model in TEMPLATE_CONFIG_REGISTRY.items()
 }
 
 #
@@ -221,7 +221,9 @@ SECTION_VALIDATORS = {
 #
 
 
-def validate_section_config(section_key: str, section_config: Dict[str, Any]) -> bool:
+def validate_section_config_model(
+    section_key: str, section_config: Dict[str, Any]
+) -> bool:
     """Validate a section configuration"""
     resource_type = section_config.get("resource")
     if not resource_type:
@@ -230,6 +232,7 @@ def validate_section_config(section_key: str, section_config: Dict[str, Any]) ->
 
     validator = SECTION_VALIDATORS.get(resource_type)
     if not validator:
+        # TODO: Pass validation level to this
         logger.warning(f"No specific validator for resource type: {resource_type}")
         return True
 
@@ -237,40 +240,24 @@ def validate_section_config(section_key: str, section_config: Dict[str, Any]) ->
         validator(**section_config)
         return True
     except ValidationError as e:
-        error_messages = []
-        for error in e.errors():
-            location = ".".join(str(loc) for loc in error["loc"])
-            message = error["msg"]
-            error_messages.append(f"  - {location}: {message}")
-
-        error_str = f"Validation failed for section '{section_key}':\n" + "\n".join(
-            error_messages
-        )
-        logger.error(error_str)
+        logger.error(f"Section validation failed for {resource_type}: {str(e)}")
         return False
 
 
-def validate_document_config(
+def validate_document_config_model(
     document_type: str, document_config: Dict[str, Any]
 ) -> bool:
     """Validate a document configuration"""
-    validator = DOCUMENT_REGISTRY.get(document_type.lower(), DocumentConfig)
+    validator = DOCUMENT_CONFIG_REGISTRY.get(document_type.lower())
+    if not validator:
+        logger.warning(f"No specific validator for document type: {document_type}")
+        return True
 
     try:
         validator(**document_config)
         return True
     except ValidationError as e:
-        error_messages = []
-        for error in e.errors():
-            location = ".".join(str(loc) for loc in error["loc"])
-            message = error["msg"]
-            error_messages.append(f"  - {location}: {message}")
-
-        error_str = (
-            f"Validation failed for document type '{document_type}':\n"
-            + "\n".join(error_messages)
-        )
-        logger.error(error_str)
+        logger.error(f"Document validation failed for {document_type}: {str(e)}")
         return False
 
 
@@ -279,20 +266,20 @@ def validate_document_config(
 #
 
 
-def register_template_model(
+def register_template_config_model(
     resource_type: str, template_model: Type[BaseModel]
 ) -> None:
-    """Register a custom template model for a resource type"""
-    TEMPLATE_REGISTRY[resource_type] = template_model
+    """Register a custom template model for a section"""
+    TEMPLATE_CONFIG_REGISTRY[resource_type] = template_model
     SECTION_VALIDATORS[resource_type] = create_section_validator(
         resource_type, template_model
     )
     logger.info(f"Registered custom template model for {resource_type}")
 
 
-def register_document_model(
+def register_document_config_model(
     document_type: str, document_model: Type[BaseModel]
 ) -> None:
     """Register a custom document model"""
-    DOCUMENT_REGISTRY[document_type.lower()] = document_model
+    DOCUMENT_CONFIG_REGISTRY[document_type.lower()] = document_model
     logger.info(f"Registered custom document model for {document_type}")

@@ -1,0 +1,15 @@
+{
+  "section": {
+    "templateId": {
+      "@root": "{{ config.identifiers.template_id }}"
+    },
+    "code": {
+      "@code": "{{ config.identifiers.code }}",
+      "@codeSystem": "{{ config.identifiers.code_system | default: '2.16.840.1.113883.6.1' }}",
+      "@codeSystemName": "{{ config.identifiers.code_system_name | default: 'LOINC' }}",
+      "@displayName": "{{ config.identifiers.display }}"
+    },
+    "title": "{{ config.identifiers.display }}",
+    "entry": {{ entries | json }}
+  }
+}

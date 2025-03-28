@@ -1,0 +1,31 @@
+# Shared mappings between CDA and FHIR formats
+code_systems:
+  cda_to_fhir:
+    "2.16.840.1.113883.6.96": "http://snomed.info/sct"
+    "2.16.840.1.113883.6.1": "http://loinc.org"
+    "2.16.840.1.113883.6.88": "http://www.nlm.nih.gov/research/umls/rxnorm"
+  fhir_to_cda:
+    "http://snomed.info/sct": "2.16.840.1.113883.6.96"
+    "http://loinc.org": "2.16.840.1.113883.6.1"
+    "http://www.nlm.nih.gov/research/umls/rxnorm": "2.16.840.1.113883.6.88"
+    "http://terminology.hl7.org/CodeSystem/condition-clinical": "2.16.840.1.113883.6.96"
+
+status_codes:
+  cda_to_fhir:
+    "55561003": "active"
+    "413322009": "resolved"
+    "73425007": "inactive"
+  fhir_to_cda:
+    "active": "55561003"
+    "resolved": "413322009"
+    "inactive": "73425007"
+
+severity_codes:
+  cda_to_fhir:
+    "H": "severe"
+    "M": "moderate"
+    "L": "mild"
+  fhir_to_cda:
+    "severe": "H"
+    "moderate": "M"
+    "mild": "L"
