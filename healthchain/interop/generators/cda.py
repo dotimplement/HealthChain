@@ -63,7 +63,7 @@ class CDAGenerator(TemplateRenderer):
         """
         try:
             # Get validated section configuration
-            section_config = self.get_validated_section_config(config_key)
+            section_config = self.get_cda_section_config(config_key)
 
             timestamp_format = self.config.get_config_value(
                 "defaults.common.timestamp", "%Y%m%d"
@@ -96,7 +96,7 @@ class CDAGenerator(TemplateRenderer):
             return None
 
     def _get_mapped_entries(self, resources: List[Resource]) -> Dict:
-        """Get mapped entries for resources
+        """Map FHIR resources to CDA section entries
 
         Args:
             resources: List of FHIR resources
@@ -108,7 +108,7 @@ class CDAGenerator(TemplateRenderer):
         for resource in resources:
             # Find matching section for resource type
             resource_type = resource.__class__.__name__
-            all_configs = self.config.get_section_configs(validate=True)
+            all_configs = self.config.get_section_configs()
             section_key = find_section_key_for_resource_type(resource_type, all_configs)
 
             if not section_key:
@@ -132,7 +132,7 @@ class CDAGenerator(TemplateRenderer):
         sections = []
 
         # Get validated section configurations
-        section_configs = self.config.get_section_configs(validate=True)
+        section_configs = self.config.get_section_configs()
         if not section_configs:
             raise ValueError("No valid configurations found in /sections")
 
@@ -177,10 +177,10 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        config = self.config.get_document_config(document_type, validate=True)
+        config = self.config.get_document_config(document_type)
         if not config:
             raise ValueError(
-                f"No document configuration found or validation failed for document type: {document_type}"
+                f"No document configuration found for document type: {document_type}"
             )
 
         # Get document template name from config or use default

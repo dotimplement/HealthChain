@@ -92,7 +92,7 @@ class FHIRGenerator(TemplateRenderer):
 
             # Get validated section configuration
             try:
-                section_config = self.get_validated_section_config(section_key)
+                section_config = self.get_cda_section_config(section_key)
             except ValueError as e:
                 log.error(f"Failed to get section config: {str(e)}")
                 return None

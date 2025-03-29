@@ -144,7 +144,9 @@ class ConfigManager:
         log.info(f"Detected environment: {env}")
         return env
 
-    def load(self, environment: Optional[str] = None) -> "ConfigManager":
+    def load(
+        self, environment: Optional[str] = None, skip_validation: bool = False
+    ) -> "ConfigManager":
         """Load configuration files in priority order: defaults, environment, module
 
         This method loads configuration files in the following order:
@@ -152,10 +154,11 @@ class ConfigManager:
         2. environments/{env}.yaml - Environment-specific configuration
         3. {module}/*.yaml - Module-specific configuration files (if module specified)
 
-        After loading, validates the configuration unless validation is ignored.
+        After loading, validates the configuration unless validation is skipped.
 
         Args:
             environment: Optional environment name to override detected environment
+            skip_validation: Skip validation (useful when subclasses handle validation)
 
         Returns:
             Self for method chaining
@@ -174,7 +177,7 @@ class ConfigManager:
 
         self._loaded = True
 
-        if self._validation_level != ValidationLevel.IGNORE:
+        if not skip_validation and self._validation_level != ValidationLevel.IGNORE:
             self.validate()
 
         return self
@@ -429,11 +432,13 @@ class ConfigManager:
             message: Error message
 
         Returns:
-            False if in STRICT mode, True otherwise
+            False for WARN mode with validation errors or STRICT mode (though STRICT raises),
+            True only for IGNORE mode
         """
         if self._validation_level == ValidationLevel.STRICT:
             raise ValueError(message)
         elif self._validation_level == ValidationLevel.WARN:
             log.warning(f"Configuration validation: {message}")
+            return False  # Return False for WARN mode with errors
 
-        return self._validation_level != ValidationLevel.STRICT
+        return True  # Return True only for IGNORE mode

@@ -108,25 +108,20 @@ class TemplateRenderer:
             log.error(f"Failed to render template {template.name}: {str(e)}")
             return None
 
-    def get_validated_section_config(self, section_key: str) -> Dict:
-        """Get a validated section configuration
+    def get_cda_section_config(self, section_key: str) -> Dict:
+        """Get validated configuration for a CDA section.
 
         Args:
-            section_key: Key identifying the section
+            section_key: Section identifier
 
         Returns:
-            A validated section configuration
+            Dict: Validated section configuration
 
         Raises:
-            ValueError: If the section configuration doesn't exist or is invalid
+            ValueError: If section configuration not found
         """
-        validated_sections = self.config.get_section_configs(validate=True)
+        validated_sections = self.config.get_section_configs()
         if section_key not in validated_sections:
-            # Check if the section exists at all (might have failed validation)
-            all_sections = self.config.get_section_configs(validate=False)
-            if section_key not in all_sections:
-                raise ValueError(f"Section configuration not found: {section_key}")
-            else:
-                raise ValueError(f"Section configuration is invalid: {section_key}")
+            raise ValueError(f"Section configuration not found: {section_key}")
 
         return validated_sections[section_key]

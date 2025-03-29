@@ -373,8 +373,8 @@ class InteropEngine:
         if document_type:
             log.info(f"Processing CDA document of type: {document_type}")
 
-        # Get and validate document configuration for this specific document type
-        doc_config = self.config.get_document_config(document_type, validate=True)
+        # Get document configuration for this specific document type
+        doc_config = self.config.get_document_config(document_type)
         if not doc_config:
             raise ValueError(
                 f"Invalid or missing document configuration for type: {document_type}"

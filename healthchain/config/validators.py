@@ -5,7 +5,7 @@ This module provides validation models and utilities for configuration files.
 """
 
 import logging
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, ValidationError, field_validator, ConfigDict
 from typing import Dict, List, Any, Optional, Type, Union
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,7 @@ class ComponentTemplateConfig(BaseModel):
     inversion_ind: Optional[bool] = None
     value: Optional[Dict[str, Any]] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class SectionIdentifiersConfig(BaseModel):
@@ -46,8 +45,7 @@ class SectionIdentifiersConfig(BaseModel):
     reaction: Optional[Dict[str, str]] = None
     severity: Optional[Dict[str, str]] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class RenderingConfig(BaseModel):
@@ -56,8 +54,7 @@ class RenderingConfig(BaseModel):
     narrative: Optional[Dict[str, Any]] = None
     entry: Optional[Dict[str, Any]] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class SectionBaseConfig(BaseModel):
@@ -69,8 +66,7 @@ class SectionBaseConfig(BaseModel):
     identifiers: SectionIdentifiersConfig
     rendering: Optional[RenderingConfig] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 #
@@ -171,8 +167,7 @@ class DocumentConfig(BaseModel):
             raise ValueError("confidentiality_code must contain 'code' field")
         return v
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 #
