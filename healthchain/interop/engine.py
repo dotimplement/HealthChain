@@ -203,8 +203,10 @@ class InteropEngine:
         Returns:
             Dict of filter names to filter functions
         """
+        # TODO: consider moving mappings to the generator
         # Get mappings for filter functions
         mappings = self.config.get_mappings()
+        id_prefix = self.config.get_config_value("defaults.common.id_prefix")
 
         # Create filter functions with access to mappings
         def map_system_filter(system, direction="fhir_to_cda"):
@@ -219,8 +221,8 @@ class InteropEngine:
         def format_timestamp_filter(value=None, format_str="%Y%m%d%H%M%S"):
             return format_timestamp(value, format_str)
 
-        def generate_id_filter(value=None, prefix="hc-"):
-            return generate_id(value, prefix)
+        def generate_id_filter(value=None):
+            return generate_id(value, id_prefix)
 
         def json_filter(obj):
             return to_json(obj)

@@ -88,7 +88,7 @@ def test_config_loading_and_access(config_fixtures):
         manager.get_config_value("nonexistent.key", "default") == "default"
     )  # Default value
 
-    # Test module configs - this was test_module_specific_configs
+    # Test module configs
     manager = ConfigManager(config_dir, module="interop")
     manager.load()
     configs = manager.get_configs()
@@ -129,7 +129,7 @@ def test_validation_and_error_handling(config_fixtures):
     with pytest.raises(ValueError):
         manager.set_validation_level("invalid_level")
 
-    # Test error handling with missing files (was test_missing_files)
+    # Test error handling with missing files
     config_dir = config_fixtures
 
     # Remove defaults file if it exists

@@ -80,7 +80,7 @@ def test_get_document_config(config_fixtures, mock_validators):
     assert ccd_config["code"]["display"] == "Summarization of Episode Note"
     assert ccd_config["templates"]["section"] == "cda_section"
 
-    # Also verify document types can be found (replaces test_find_document_types)
+    # Also verify document types can be found
     document_types = manager._find_document_types()
     assert "ccd" in document_types
 

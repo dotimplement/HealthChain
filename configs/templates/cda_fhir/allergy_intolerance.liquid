@@ -1,6 +1,5 @@
 {
   "resourceType": "AllergyIntolerance",
-  "id": "{{ entry.id | generate_id }}",
   {% if entry.act.entryRelationship.size %}
     {% assign obs = entry.act.entryRelationship[0].observation %}
   {% else %}
@@ -42,11 +41,6 @@
       }]
     },
   {% endif %}
-
-  "patient": {
-    "reference": "Patient/{{ entry.subject_id | default: 'Foo' }}"
-  },
-
   {% if obs.effectiveTime.low['@value'] %}
   "onsetDateTime": "{{ obs.effectiveTime.low['@value'] | format_date }}",
   {% endif %}

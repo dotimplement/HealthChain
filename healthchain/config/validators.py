@@ -167,6 +167,13 @@ class DocumentConfig(BaseModel):
             raise ValueError("confidentiality_code must contain 'code' field")
         return v
 
+    @field_validator("templates")
+    @classmethod
+    def validate_templates(cls, v):
+        if not isinstance(v, dict) or "section" not in v or "document" not in v:
+            raise ValueError("templates must contain 'section' and 'document' fields")
+        return v
+
     model_config = ConfigDict(extra="allow")
 
 

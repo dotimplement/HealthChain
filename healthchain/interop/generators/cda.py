@@ -37,12 +37,14 @@ class CDAGenerator(TemplateRenderer):
 
         Args:
             resources: FHIR resources to include in the document
+            document_type: Type of document to generate
+            validate: Whether to validate the CDA document
 
         Returns:
             CDA document as XML string
         """
         mapped_entries = self._get_mapped_entries(resources)
-        sections = self._render_sections(mapped_entries)
+        sections = self._render_sections(mapped_entries, document_type)
 
         # Generate final CDA document
         return self._render_document(sections, document_type, validate=validate)
@@ -120,7 +122,7 @@ class CDAGenerator(TemplateRenderer):
 
         return section_entries
 
-    def _render_sections(self, mapped_entries: Dict) -> List[Dict]:
+    def _render_sections(self, mapped_entries: Dict, document_type: str) -> List[Dict]:
         """Render all sections with their entries
 
         Args:
@@ -138,8 +140,13 @@ class CDAGenerator(TemplateRenderer):
 
         # Get section template name from config or use default
         section_template_name = self.config.get_config_value(
-            "document.cda.templates.section", "cda_section"
+            f"document.{document_type}.templates.section"
         )
+        if not section_template_name:
+            raise ValueError(
+                f"No section template found for document type: {document_type}"
+            )
+
         # Get the section template
         section_template = self.get_template(section_template_name)
         if not section_template:
@@ -183,16 +190,22 @@ class CDAGenerator(TemplateRenderer):
                 f"No document configuration found for document type: {document_type}"
             )
 
-        # Get document template name from config or use default
+        # Get document template name from config
         document_template_name = self.config.get_config_value(
-            "document.cda.templates.document", "cda_document"
+            f"document.{document_type}.templates.document"
         )
+        if not document_template_name:
+            raise ValueError(
+                f"No document template found for document type: {document_type}"
+            )
+
         # Get the document template
         document_template = self.get_template(document_template_name)
         if not document_template:
             raise ValueError(f"Required template '{document_template_name}' not found")
 
         # Create document context
+        # TODO: modify this as bundle metadata is not extracted
         context = {
             "config": config,
             "sections": sections,
@@ -205,10 +218,10 @@ class CDAGenerator(TemplateRenderer):
 
         # Get XML formatting options
         pretty_print = self.config.get_config_value(
-            "document.cda.rendering.xml.pretty_print", True
+            f"document.{document_type}.rendering.xml.pretty_print", True
         )
         encoding = self.config.get_config_value(
-            "document.cda.rendering.xml.encoding", "UTF-8"
+            f"document.{document_type}.rendering.xml.encoding", "UTF-8"
         )
         if validate:
             out_dict = {

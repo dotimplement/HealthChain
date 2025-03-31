@@ -26,7 +26,7 @@ defaults:
   common:
     id_prefix: "dev-"     # Development-specific ID prefix
     subject:
-      reference: "Patient/dev-example"
+      reference: "Patient/Foo"
 
 # Template settings for development
 templates:

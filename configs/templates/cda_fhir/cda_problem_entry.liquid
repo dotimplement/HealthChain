@@ -7,7 +7,9 @@
       {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
     {% endfor %}
     ],
-    "id": {"@root": "{{ resource.id | generate_id }}"},
+    {% if resource.id %}
+    "id": {"@root": "{{ resource.id }}"},
+    {% endif %}
     "code": {"@nullFlavor": "NA"},
     "statusCode": {
       "@code": "{{ config.template.act.status_code }}"
@@ -26,7 +28,9 @@
           {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
         {% endfor %}
         ],
+        {% if resource.id %}
         "id": {"@root": "{{ resource.id }}_obs"},
+        {% endif %}
         "code": {
           "@code": "{{ config.template.problem_obs.code }}",
           "@codeSystem": "{{ config.template.problem_obs.code_system }}",

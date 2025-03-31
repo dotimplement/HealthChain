@@ -1,55 +1,55 @@
 {
   "resourceType": "MedicationStatement",
-  "id": "{{ entry.id | generate_id }}",
-  "status": "{{ entry.statusCode | map_status: 'cda_to_fhir' | default: 'recorded' }}",
+  {% assign substance_admin = entry.substanceAdministration %}
+  "status": "{{ substance_admin.statusCode['@code'] | map_status: 'cda_to_fhir' }}",
   "medication": {
     "concept": {
       "coding": [{
-        "system": "{{ entry.substanceAdministration.consumable.manufacturedProduct.manufacturedMaterial.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
-        "code": "{{ entry.substanceAdministration.consumable.manufacturedProduct.manufacturedMaterial.code['@code'] }}",
-        "display": "{{ entry.substanceAdministration.consumable.manufacturedProduct.manufacturedMaterial.code['@displayName'] }}"
+        "system": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+        "code": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@code'] }}",
+        "display": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@displayName'] }}"
       }]
     }
   }
 
   {% comment %}Process effectiveTime and extract period/timing information if exists{% endcomment %}
-  {% if entry.substanceAdministration.effectiveTime %}
+  {% if substance_admin.effectiveTime %}
     ,
-    {% assign effective_period = entry.substanceAdministration.effectiveTime | extract_effective_period %}
+    {% assign effective_period = substance_admin.effectiveTime | extract_effective_period %}
     {% if effective_period %}
       "effectivePeriod": {
         {% if effective_period.start %}"start": "{{ effective_period.start }}"{% if effective_period.end %},{% endif %}{% endif %}
         {% if effective_period.end %}"end": "{{ effective_period.end }}"{% endif %}
       }
-      {% assign effective_timing = entry.substanceAdministration.effectiveTime | extract_effective_timing %}
-      {% if entry.substanceAdministration.doseQuantity or entry.substanceAdministration.routeCode or effective_timing %},{% endif %}
+      {% assign effective_timing = substance_admin.effectiveTime | extract_effective_timing %}
+      {% if substance_admin.doseQuantity or substance_admin.routeCode or effective_timing %},{% endif %}
     {% endif %}
   {% endif %}
 
   {% comment %}Add dosage if any dosage related fields are present{% endcomment %}
-  {% assign effective_timing = entry.substanceAdministration.effectiveTime | extract_effective_timing %}
-  {% if entry.substanceAdministration.doseQuantity or entry.substanceAdministration.routeCode or effective_timing %}
-    {% if entry.substanceAdministration.effectiveTime == nil %},{% endif %}
+  {% assign effective_timing = substance_admin.effectiveTime | extract_effective_timing %}
+  {% if substance_admin.doseQuantity or substance_admin.routeCode or effective_timing %}
+    {% if substance_admin.effectiveTime == nil %},{% endif %}
     "dosage": [
       {
-        {% if entry.substanceAdministration.doseQuantity %}
+        {% if substance_admin.doseQuantity %}
           "doseAndRate": [
             {
               "doseQuantity": {
-                "value": {{ entry.substanceAdministration.doseQuantity['@value'] }},
-                "unit": "{{ entry.substanceAdministration.doseQuantity['@unit'] }}"
+                "value": {{ substance_admin.doseQuantity['@value'] }},
+                "unit": "{{ substance_admin.doseQuantity['@unit'] }}"
               }
             }
-          ]{% if entry.substanceAdministration.routeCode or effective_timing %},{% endif %}
+          ]{% if substance_admin.routeCode or effective_timing %},{% endif %}
         {% endif %}
 
-        {% if entry.substanceAdministration.routeCode %}
+        {% if substance_admin.routeCode %}
           "route": {
             "coding": [
               {
-                "system": "{{ entry.substanceAdministration.routeCode['@codeSystem'] | map_system: 'cda_to_fhir' }}",
-                "code": "{{ entry.substanceAdministration.routeCode['@code'] }}",
-                "display": "{{ entry.substanceAdministration.routeCode['@displayName'] }}"
+                "system": "{{ substance_admin.routeCode['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+                "code": "{{ substance_admin.routeCode['@code'] }}",
+                "display": "{{ substance_admin.routeCode['@displayName'] }}"
               }
             ]
           }{% if effective_timing %},{% endif %}
@@ -66,9 +66,4 @@
       }
     ]
   {% endif %}
-
-  ,
-  "subject": {
-    "reference": "Patient/{{ entry.subject_id | default: '123' }}"
-  }
 }

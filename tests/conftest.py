@@ -749,7 +749,7 @@ def config_fixtures():
                 "code_system": "2.16.840.1.113883.5.25",
             },
             "language_code": "en-US",
-            "templates": {"section": "cda_section", "entry": "cda_entry"},
+            "templates": {"section": "cda_section", "document": "cda_document"},
             "structure": {
                 "header": {"include_patient": True, "include_author": True},
                 "body": {"structured_body": True},

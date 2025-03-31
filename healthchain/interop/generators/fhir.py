@@ -39,9 +39,7 @@ class FHIRGenerator(TemplateRenderer):
             log.error(f"No resource template found for section {section_key}")
             return resources
 
-        resource_type = self.config.get_config_value(
-            f"sections.{section_key}.resource", None
-        )
+        resource_type = self.config.get_config_value(f"sections.{section_key}.resource")
         if not resource_type:
             log.warning(f"No resource type specified for section {section_key}")
             return resources
@@ -142,7 +140,7 @@ class FHIRGenerator(TemplateRenderer):
             Dict: The resource dictionary with required fields added
         """
         # Add common fields
-        id_prefix = self.config.get_config_value("defaults.common.id_prefix")
+        id_prefix = self.config.get_config_value("defaults.common.id_prefix", "hc-")
         if "id" not in resource_dict:
             resource_dict["id"] = f"{id_prefix}{str(uuid.uuid4())}"
 

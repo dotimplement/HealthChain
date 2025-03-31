@@ -1,5 +1,5 @@
-# CDA Document Configuration
-# This file contains configuration for CDA documents
+# CCD Document Configuration
+# This file contains configuration for CCD documents
 
 # Basic document information
 code:
@@ -19,8 +19,8 @@ template_id:
   root: "1.2.840.114350.1.72.1.51693"
 
 templates:
+  document: "cda_document"
   section: "cda_section"
-  entry: "cda_entry"
 
 # Document structure
 structure:
@@ -35,37 +35,6 @@ structure:
   body:
     structured_body: true
     non_xml_body: false
-
-# Default values
-defaults:
-  # Default patient information
-  patient:
-    id: "example"
-    id_root: "2.16.840.1.113883.19.5"
-    name:
-      given: "John"
-      family: "Doe"
-    gender: "M"
-    birth_date: "19700101"
-
-  # Default author information
-  author:
-    id: "author1"
-    id_root: "2.16.840.1.113883.19.5"
-    name:
-      given: "Jane"
-      family: "Smith"
-    organization:
-      id: "org1"
-      name: "HealthChain Organization"
-
-  # Default custodian information
-  custodian:
-    id: "custodian1"
-    id_root: "2.16.840.1.113883.19.5"
-    organization:
-      id: "org1"
-      name: "HealthChain Organization"
 
 # Rendering configuration
 rendering:
