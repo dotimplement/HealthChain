@@ -9,34 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Needed for git describe
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-    - name: Debug workspace
-      run: |
-        pwd
-        ls -la
-        echo "Git tag info:"
-        git describe --tags --abbrev=0 || echo "No tags found"
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-    - name: Extract version from tag
-      id: get_version
-      run: echo "VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-    - name: Bump version
-      run: poetry version ${{ steps.get_version.outputs.VERSION }}
-    - name: Build a binary wheel and a source tarball
-      run: poetry build
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package-distributions-test
-        path: dist/
-        overwrite: true  # v4 requires explicit overwrite
+        - uses: actions/checkout@v4
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.x"
+        - name: Install Poetry
+          uses: snok/install-poetry@v1
+          with:
+            version: 1.8.2  # Match local version
+        - name: Bump version
+          run: poetry version $(git describe --tags --abbrev=0)
+        - name: Build a binary wheel and a source tarball
+          run: poetry build
+        - name: Store the distribution packages
+          uses: actions/upload-artifact@v4
+          with:
+            name: python-package-distributions
+            path: dist/
 
   # This step simulates the PyPI publish step without actually publishing
   simulate-publish:
