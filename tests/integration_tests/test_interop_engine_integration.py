@@ -214,10 +214,23 @@ def test_round_trip_equivalence(interop_engine, test_cda_xml):
 
     assert original_resource_types == result_resource_types
 
-    assert resources_result[0].code.coding[0].code == resources[0].code.coding[0].code
+    # Get conditions and medication statements from both resource sets
+    original_conditions = [r for r in resources if isinstance(r, Condition)]
+    result_conditions = [r for r in resources_result if isinstance(r, Condition)]
+
+    original_medications = [r for r in resources if isinstance(r, MedicationStatement)]
+    result_medications = [
+        r for r in resources_result if isinstance(r, MedicationStatement)
+    ]
+
+    # Compare the first condition and medication statement
     assert (
-        resources_result[1].medication.concept.coding[0].code
-        == resources[1].medication.concept.coding[0].code
+        result_conditions[0].code.coding[0].code
+        == original_conditions[0].code.coding[0].code
+    )
+    assert (
+        result_medications[0].medication.concept.coding[0].code
+        == original_medications[0].medication.concept.coding[0].code
     )
 
     # TODO: allergy intolerance reverse parsing isn't quite right look into this
