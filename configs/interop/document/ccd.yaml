@@ -1,0 +1,49 @@
+# CCD Document Configuration
+# This file contains configuration for CCD documents
+
+# Basic document information
+code:
+  code: "34133-9"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Summarization of Episode Note"
+confidentiality_code:
+  code: "N"
+  code_system: "2.16.840.1.113883.5.25"
+language_code: "en-US"
+realm_code: "GB"
+type_id:
+  extension: "POCD_HD000040"
+  root: "2.16.840.1.113883.1.3"
+template_id:
+  root: "1.2.840.114350.1.72.1.51693"
+
+templates:
+  document: "cda_document"
+  section: "cda_section"
+
+# Document structure
+structure:
+  # Header configuration
+  header:
+    include_patient: true
+    include_author: true
+    include_custodian: true
+    include_legal_authenticator: false
+
+  # Body configuration
+  body:
+    structured_body: true
+    non_xml_body: false
+
+# Rendering configuration
+rendering:
+  # XML formatting
+  xml:
+    pretty_print: true
+    encoding: "UTF-8"
+
+  # Narrative generation
+  narrative:
+    include: true
+    generate_if_missing: true
