@@ -11,17 +11,17 @@ from healthchain.config.base import (
     ValidationLevel,
 )
 from healthchain.config.validators import (
-    validate_section_config_model,
-    validate_document_config_model,
-    register_template_config_model,
-    register_document_config_model,
+    validate_cda_section_config_model,
+    validate_cda_document_config_model,
+    register_cda_section_template_config_model,
+    register_cda_document_template_config_model,
 )
 
 __all__ = [
     "ConfigManager",
     "ValidationLevel",
-    "validate_section_config_model",
-    "validate_document_config_model",
-    "register_template_config_model",
-    "register_document_config_model",
+    "validate_cda_section_config_model",
+    "validate_cda_document_config_model",
+    "register_cda_section_template_config_model",
+    "register_cda_document_template_config_model",
 ]

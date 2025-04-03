@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, Callable
 
 
 def map_system(
@@ -362,3 +362,68 @@ def extract_reactions(observation: Dict, config: Dict) -> List[Dict]:
                 break
 
     return reactions
+
+
+def create_default_filters(mappings, id_prefix) -> Dict[str, Callable]:
+    """Create and return default filter functions for templates
+
+    Args:
+        mappings: Mapping configurations for various transformations
+        id_prefix: Prefix to use for ID generation
+
+    Returns:
+        Dict of filter names to filter functions
+    """
+
+    # Create filter functions with access to mappings
+    def map_system_filter(system, direction="fhir_to_cda"):
+        return map_system(system, mappings, direction)
+
+    def map_status_filter(status, direction="fhir_to_cda"):
+        return map_status(status, mappings, direction)
+
+    def format_date_filter(date_str, input_format="%Y%m%d", output_format="iso"):
+        return format_date(date_str, input_format, output_format)
+
+    def format_timestamp_filter(value=None, format_str="%Y%m%d%H%M%S"):
+        return format_timestamp(value, format_str)
+
+    def generate_id_filter(value=None):
+        return generate_id(value, id_prefix)
+
+    def json_filter(obj):
+        return to_json(obj)
+
+    def clean_empty_filter(d):
+        return clean_empty(d)
+
+    def extract_effective_period_filter(effective_times):
+        return extract_effective_period(effective_times)
+
+    def extract_effective_timing_filter(effective_times):
+        return extract_effective_timing(effective_times)
+
+    def extract_clinical_status_filter(entry, config):
+        return extract_clinical_status(entry, config)
+
+    def extract_reactions_filter(observation, config):
+        return extract_reactions(observation, config)
+
+    def map_severity_filter(severity_code, direction="cda_to_fhir"):
+        return map_severity(severity_code, mappings, direction)
+
+    # Return dictionary of filters
+    return {
+        "map_system": map_system_filter,
+        "map_status": map_status_filter,
+        "format_date": format_date_filter,
+        "format_timestamp": format_timestamp_filter,
+        "generate_id": generate_id_filter,
+        "json": json_filter,
+        "clean_empty": clean_empty_filter,
+        "extract_effective_period": extract_effective_period_filter,
+        "extract_effective_timing": extract_effective_timing_filter,
+        "extract_clinical_status": extract_clinical_status_filter,
+        "extract_reactions": extract_reactions_filter,
+        "map_severity": map_severity_filter,
+    }

@@ -4,6 +4,7 @@ import logging
 import base64
 import datetime
 import uuid
+import importlib
 
 from typing import Optional, List, Dict, Any
 from fhir.resources.condition import Condition
@@ -14,7 +15,7 @@ from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.codeablereference import CodeableReference
 from fhir.resources.coding import Coding
 from fhir.resources.attachment import Attachment
-
+from fhir.resources.resource import Resource
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,29 @@ def _generate_id() -> str:
         str: A unique ID string prefixed with 'hc-'
     """
     return f"hc-{str(uuid.uuid4())}"
+
+
+def create_resource_from_dict(
+    resource_dict: Dict, resource_type: str
+) -> Optional[Resource]:
+    """Create a FHIR resource instance from a dictionary
+
+    Args:
+        resource_dict: Dictionary representation of the resource
+        resource_type: Type of FHIR resource to create
+
+    Returns:
+        Optional[Resource]: FHIR resource instance or None if creation failed
+    """
+    try:
+        resource_module = importlib.import_module(
+            f"fhir.resources.{resource_type.lower()}"
+        )
+        resource_class = getattr(resource_module, resource_type)
+        return resource_class(**resource_dict)
+    except Exception as e:
+        logger.error(f"Failed to create FHIR resource: {str(e)}")
+        return None
 
 
 def create_single_codeable_concept(

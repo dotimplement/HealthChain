@@ -14,9 +14,32 @@ from typing import Dict, List, Optional
 from fhir.resources.resource import Resource
 from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.template_renderer import TemplateRenderer
-from healthchain.interop.utils import find_section_key_for_resource_type
 
 log = logging.getLogger(__name__)
+
+
+def _find_section_key_for_resource_type(
+    resource_type: str, section_configs: Dict
+) -> Optional[str]:
+    """Find the appropriate section key for a given resource type
+
+    Args:
+        resource_type: FHIR resource type
+        section_configs: Dictionary of section configurations
+
+    Returns:
+        Section key or None if no matching section found
+    """
+    # Find matching section for resource type
+    section_key = next(
+        (
+            key
+            for key, config in section_configs.items()
+            if config.get("resource") == resource_type
+        ),
+        None,
+    )
+    return section_key
 
 
 class CDAGenerator(TemplateRenderer):
@@ -31,14 +54,14 @@ class CDAGenerator(TemplateRenderer):
         """Generate a complete CDA document from FHIR resources
 
         This method handles the entire process of generating a CDA document:
-        1. Creating section entries from resources (if not provided)
-        2. Rendering sections
-        3. Generating the final document
+        1. Mapping FHIR resources to CDA sections (config)
+        2. Rendering sections (template)
+        3. Generating the final document (template)
 
         Args:
             resources: FHIR resources to include in the document
             document_type: Type of document to generate
-            validate: Whether to validate the CDA document
+            validate: Whether to validate the CDA document (default: True)
 
         Returns:
             CDA document as XML string
@@ -61,11 +84,11 @@ class CDAGenerator(TemplateRenderer):
             config_key: Key identifying the section
 
         Returns:
-            Dictionary representation of the rendered entry
+            Dictionary representation of the rendered entry (xmltodict)
         """
         try:
             # Get validated section configuration
-            section_config = self.get_cda_section_config(config_key)
+            section_config = self.config.get_cda_section_configs(config_key)
 
             timestamp_format = self.config.get_config_value(
                 "defaults.common.timestamp", "%Y%m%d"
@@ -86,10 +109,10 @@ class CDAGenerator(TemplateRenderer):
             }
 
             # Get template and render
-            template_name = self.get_section_template_name(config_key, "entry")
-            template = self.get_template(template_name)
-            if not template:
-                raise ValueError(f"Required template '{template_name}' not found")
+            template = self.get_template_from_section_config(config_key, "entry")
+            if template is None:
+                log.error(f"Required entry template for '{config_key}' not found")
+                return None
 
             return self.render_template(template, context)
 
@@ -98,22 +121,29 @@ class CDAGenerator(TemplateRenderer):
             return None
 
     def _get_mapped_entries(self, resources: List[Resource]) -> Dict:
-        """Map FHIR resources to CDA section entries
+        """Map FHIR resources to CDA section entries by resource type.
 
         Args:
-            resources: List of FHIR resources
+            resources: List of FHIR resources to map to CDA entries
 
         Returns:
-            Dictionary mapping section keys to their entries
+            Dictionary mapping section keys (e.g. 'problems', 'medications') to lists of
+            their rendered CDA entries. For example:
+            {
+                'problems': [<rendered condition entry>, ...],
+                'medications': [<rendered medication entry>, ...]
+            }
         """
         section_entries = {}
         for resource in resources:
             # Find matching section for resource type
             resource_type = resource.__class__.__name__
-            all_configs = self.config.get_section_configs()
-            section_key = find_section_key_for_resource_type(resource_type, all_configs)
-
+            all_configs = self.config.get_cda_section_configs()
+            section_key = _find_section_key_for_resource_type(
+                resource_type, all_configs
+            )
             if not section_key:
+                log.error(f"No section config found for resource type: {resource_type}")
                 continue
 
             entry = self._render_entry(resource, section_key)
@@ -134,7 +164,7 @@ class CDAGenerator(TemplateRenderer):
         sections = []
 
         # Get validated section configurations
-        section_configs = self.config.get_section_configs()
+        section_configs = self.config.get_cda_section_configs()
         if not section_configs:
             raise ValueError("No valid configurations found in /sections")
 
@@ -184,7 +214,7 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        config = self.config.get_document_config(document_type)
+        config = self.config.get_cda_document_config(document_type)
         if not config:
             raise ValueError(
                 f"No document configuration found for document type: {document_type}"
@@ -214,7 +244,20 @@ class CDAGenerator(TemplateRenderer):
         rendered = self.render_template(document_template, context)
 
         if validate:
-            validated = ClinicalDocument(**rendered["ClinicalDocument"])
+            if "ClinicalDocument" not in rendered:
+                log.error(
+                    "Unable to validate document structure: missing ClinicalDocument"
+                )
+                out_dict = rendered
+            else:
+                validated = ClinicalDocument(**rendered["ClinicalDocument"])
+                out_dict = {
+                    "ClinicalDocument": validated.model_dump(
+                        exclude_none=True, exclude_unset=True, by_alias=True
+                    )
+                }
+        else:
+            out_dict = rendered
 
         # Get XML formatting options
         pretty_print = self.config.get_config_value(
@@ -223,14 +266,6 @@ class CDAGenerator(TemplateRenderer):
         encoding = self.config.get_config_value(
             f"document.{document_type}.rendering.xml.encoding", "UTF-8"
         )
-        if validate:
-            out_dict = {
-                "ClinicalDocument": validated.model_dump(
-                    exclude_none=True, exclude_unset=True, by_alias=True
-                )
-            }
-        else:
-            out_dict = rendered
 
         # Generate XML
         xml_string = xmltodict.unparse(

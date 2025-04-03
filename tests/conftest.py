@@ -55,6 +55,15 @@ def test_condition():
 
 
 @pytest.fixture
+def test_condition_list():
+    """Create a list of test conditions."""
+    return [
+        create_condition(subject="Patient/123", code="123", display="Test Condition"),
+        create_condition(subject="Patient/123", code="456", display="Test Condition 2"),
+    ]
+
+
+@pytest.fixture
 def test_medication():
     """Create a test medication statement."""
     return create_medication_statement(
@@ -148,6 +157,25 @@ def doc_ref_without_content():
             {"attachment": {"contentType": "text/plain"}}
         ],  # Missing required data
     )
+
+
+@pytest.fixture
+def test_bundle():
+    """Create a test bundle."""
+    bundle = create_bundle()
+    bundle.entry = [
+        {
+            "resource": create_condition(
+                subject="Patient/123", code="38341003", display="Hypertension"
+            )
+        },
+        {
+            "resource": create_medication_statement(
+                subject="Patient/123", code="123454", display="Aspirin"
+            )
+        },
+    ]
+    return bundle
 
 
 @pytest.fixture

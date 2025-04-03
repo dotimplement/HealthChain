@@ -11,29 +11,61 @@ from typing import Dict, List, Optional
 from fhir.resources.resource import Resource
 
 from healthchain.interop.template_renderer import TemplateRenderer
-from healthchain.interop.utils import create_resource
+from healthchain.fhir import create_resource_from_dict
+from healthchain.interop.template_renderer import Template
 
 log = logging.getLogger(__name__)
 
 
 class FHIRGenerator(TemplateRenderer):
-    """Handles generation of FHIR resources from templates"""
+    """Handles generation of FHIR resources from templates.
 
-    def convert_cda_entries_to_resources(
+    This class provides functionality to convert CDA section entries into FHIR resources
+    using configurable templates. It handles validation, required field population, and
+    error handling during the conversion process.
+
+    Key features:
+    - Template-based conversion of CDA entries (xmltodict format) to FHIR resources
+    - Automatic population of required FHIR fields based on configuration for
+        common resource types like Condition, MedicationStatement, AllergyIntolerance
+    - Validation of generated FHIR resources
+
+    Example:
+        generator = FHIRGenerator(config_manager, template_registry)
+
+        # Convert CDA problem entries to FHIR Condition resources
+        problems = generator.generate_resources_from_cda_section_entries(
+            entries=problem_entries,
+            section_key="problems"  # from configs
+        )
+    """
+
+    def generate_resources_from_cda_section_entries(
         self, entries: List[Dict], section_key: str
     ) -> List[Dict]:
         """
-        Convert entries from a section to FHIR resource dictionaries
+        Convert CDA section entries into FHIR resources using configured templates.
+
+        This method processes entries from a CDA section and generates corresponding FHIR
+        resources based on templates and configuration. It handles validation and error
+        checking during the conversion process.
 
         Args:
-            entries: List of entries from a section
-            section_key: Key identifying the section
+            entries: List of CDA section entries in xmltodict format to convert
+            section_key: Configuration key identifying the section (e.g. "problems", "medications")
+                Used to look up templates and resource type mappings
 
         Returns:
-            List of FHIR resource dictionaries
+            List of validated FHIR resource dictionaries. Empty list if conversion fails.
+
+        Example:
+            # Convert problem list entries to FHIR Condition resources
+            conditions = generator.generate_resources_from_cda_section_entries(
+                problem_entries, "problems"
+            )
         """
         resources = []
-        template = self.get_section_template(section_key, "resource")
+        template = self.get_template_from_section_config(section_key, "resource")
 
         if not template:
             log.error(f"No resource template found for section {section_key}")
@@ -41,7 +73,7 @@ class FHIRGenerator(TemplateRenderer):
 
         resource_type = self.config.get_config_value(f"sections.{section_key}.resource")
         if not resource_type:
-            log.warning(f"No resource type specified for section {section_key}")
+            log.error(f"No resource type specified for section {section_key}")
             return resources
 
         for entry in entries:
@@ -53,7 +85,7 @@ class FHIRGenerator(TemplateRenderer):
                 if not resource_dict:
                     continue
 
-                log.debug(f"Generated FHIR resource: {resource_dict}")
+                log.debug(f"Rendered FHIR resource: {resource_dict}")
 
                 resource = self._validate_fhir_resource(resource_dict, resource_type)
 
@@ -67,32 +99,26 @@ class FHIRGenerator(TemplateRenderer):
         return resources
 
     def _render_resource_from_entry(
-        self, entry: Dict, section_key: str, template=None
+        self, entry: Dict, section_key: str, template: Template
     ) -> Optional[Dict]:
-        """Render a FHIR resource from a CDA entry
+        """Renders a FHIR resource dictionary from a CDA entry using templates.
 
         Args:
-            entry: The CDA entry to convert
-            section_key: The section key (e.g., "problems")
-            template: Optional template to use for rendering
-                (if None, the template will be determined from section_key)
+            entry: CDA entry dictionary
+            section_key: Section identifier (e.g. "problems")
+            template: Template to use for rendering
 
         Returns:
-            Optional[Dict]: FHIR resource dictionary or None if rendering failed
+            FHIR resource dictionary or None if rendering fails
         """
         try:
-            # Get template if not provided
-            if template is None:
-                template = self.get_section_template(section_key, "resource")
-                if not template:
-                    log.error(f"No resource template found for section {section_key}")
-                    return None
-
             # Get validated section configuration
             try:
-                section_config = self.get_cda_section_config(section_key)
+                section_config = self.config.get_cda_section_configs(section_key)
             except ValueError as e:
-                log.error(f"Failed to get section config: {str(e)}")
+                log.error(
+                    f"Failed to get CDA section config for {section_key}: {str(e)}"
+                )
                 return None
 
             # Create context with entry data and config
@@ -108,20 +134,20 @@ class FHIRGenerator(TemplateRenderer):
     def _validate_fhir_resource(
         self, resource_dict: Dict, resource_type: str
     ) -> Optional[Resource]:
-        """Validate a FHIR resource dictionary
+        """Validates and creates a FHIR resource from a dictionary.
+        Adds required fields.
 
         Args:
-            resource_dict: Dictionary representation of the resource
-            resource_type: Type of FHIR resource to create
-            config_manager: Configuration manager instance
+            resource_dict: FHIR resource dictionary
+            resource_type: FHIR resource type
 
         Returns:
-            Optional[Resource]: FHIR resource instance or None if validation failed
+            FHIR resource or None if validation fails
         """
 
         try:
             resource_dict = self._add_required_fields(resource_dict, resource_type)
-            resource = create_resource(resource_dict, resource_type)
+            resource = create_resource_from_dict(resource_dict, resource_type)
             if resource:
                 return resource
         except Exception as e:
@@ -129,15 +155,15 @@ class FHIRGenerator(TemplateRenderer):
             return None
 
     def _add_required_fields(self, resource_dict: Dict, resource_type: str) -> Dict:
-        """Add required fields to resource dictionary based on type
+        """Add required fields to FHIR resource dictionary based on resource type.
+        Currently only supports Condition, MedicationStatement, and AllergyIntolerance.
 
         Args:
             resource_dict: Dictionary representation of the resource
             resource_type: Type of FHIR resource
-            config_manager: Configuration manager instance
 
         Returns:
-            Dict: The resource dictionary with required fields added
+            Dict: Resource dictionary with required fields added
         """
         # Add common fields
         id_prefix = self.config.get_config_value("defaults.common.id_prefix", "hc-")

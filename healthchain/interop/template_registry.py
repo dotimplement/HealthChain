@@ -8,7 +8,25 @@ log = logging.getLogger(__name__)
 
 
 class TemplateRegistry:
-    """Manages loading and accessing Liquid templates for the InteropEngine"""
+    """Manages loading and accessing Liquid templates for the InteropEngine.
+
+    The TemplateRegistry handles loading Liquid template files from a directory and making them
+    available for rendering. It supports custom filter functions that can be used within templates.
+
+    Key features:
+    - Loads .liquid template files recursively from a directory
+    - Supports adding custom filter functions
+    - Provides template lookup by name
+    - Validates template existence
+
+    Example:
+        registry = TemplateRegistry(Path("templates"))
+        registry.initialize({
+            "uppercase": str.upper,
+            "lowercase": str.lower
+        })
+        template = registry.get_template("my_template")
+    """
 
     def __init__(self, template_dir: Path):
         """Initialize the TemplateRegistry
@@ -25,13 +43,24 @@ class TemplateRegistry:
             raise ValueError(f"Template directory not found: {template_dir}")
 
     def initialize(self, filters: Dict[str, Callable] = None) -> "TemplateRegistry":
-        """Initialize the Liquid environment and load templates
+        """Initialize the Liquid environment and load templates.
+
+        This method sets up the Liquid template environment by:
+        1. Storing any provided filter functions
+        2. Creating the Liquid environment with the template directory
+        3. Loading all template files from the directory
+
+        The environment must be initialized before templates can be loaded or rendered.
 
         Args:
-            filters: Dictionary of filter names to filter functions
+            filters: Optional dictionary mapping filter names to filter functions that can be used
+                    in templates. For example: {"uppercase": str.upper}
 
         Returns:
-            Self for method chaining
+            TemplateRegistry: Returns self for method chaining
+
+        Raises:
+            ValueError: If template directory does not exist or environment initialization fails
         """
         # Store initial filters
         if filters:
@@ -83,7 +112,12 @@ class TemplateRegistry:
         return self
 
     def _load_templates(self) -> None:
-        """Load all template files"""
+        """Load all Liquid template files from the template directory.
+
+        This method recursively walks through the template directory and its subdirectories
+        to find all .liquid template files. Each template is loaded into the environment
+        and stored in the internal template registry with its stem name as the key.
+        """
         if not self._env:
             raise ValueError("Environment not initialized. Call initialize() first.")
 

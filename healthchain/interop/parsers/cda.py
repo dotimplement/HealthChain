@@ -9,33 +9,67 @@ import logging
 from typing import Dict, List
 
 from healthchain.interop.models.cda import ClinicalDocument
-from healthchain.interop.models.sections import Section, Entry
-from healthchain.config.base import ConfigManager
+from healthchain.interop.models.sections import Section
+from healthchain.interop.config_manager import InteropConfigManager
 
 log = logging.getLogger(__name__)
 
 
 class CDAParser:
-    """Parser for CDA XML documents"""
+    """Parser for CDA XML documents.
 
-    def __init__(self, config_manager: ConfigManager):
-        """Initialize the CDA parser
+    The CDAParser class provides functionality to parse Clinical Document Architecture (CDA)
+    XML documents and extract structured data from their sections. It works in conjunction with
+    the InteropConfigManager to identify and process sections based on configuration.
+
+    Key capabilities:
+    - Parse complete CDA XML documents
+    - Extract entries from configured sections based on template IDs or codes
+    - Convert and validate section entries into structured dictionaries (xmltodict)
+
+    The parser uses configuration from InteropConfigManager to:
+    - Identify sections by template ID or code
+    - Map section contents to the appropriate data structures
+    - Apply any configured transformations
+
+    Attributes:
+        config (InteropConfigManager): Configuration manager instance
+        clinical_document (ClinicalDocument): Currently loaded CDA document
+    """
+
+    def __init__(self, config: InteropConfigManager):
+        """Initialize the CDA parser.
 
         Args:
-            config_manager: ConfigManager instance for accessing configuration
+            config: InteropConfigManager instance containing section configurations,
+                   templates, and mapping rules for CDA document parsing
         """
-        self.config_manager = config_manager
+        self.config = config
         self.clinical_document = None
 
     def parse_document_sections(self, xml: str) -> Dict[str, List[Dict]]:
-        """
-        Parse a complete CDA document and extract entries from all configured sections.
+        """Parse a complete CDA document and extract entries from all configured sections.
+
+        This method parses a CDA XML document and extracts entries from each section that is
+        defined in the configuration. It uses xmltodict to parse the XML into a dictionary
+        and then processes each configured section to extract its entries.
 
         Args:
-            xml: The CDA XML document
+            xml: The CDA XML document string to parse
 
         Returns:
-            Dictionary mapping section keys to lists of entry dictionaries
+            Dict[str, List[Dict]]: Dictionary mapping section keys (e.g. "problems",
+                "medications") to lists of entry dictionaries containing the parsed data
+                from that section
+
+        Raises:
+            ValueError: If the XML string is empty or invalid
+            Exception: If there is an error parsing the document or any section
+
+        Example:
+            >>> parser = CDAParser(config)
+            >>> sections = parser.parse_document_sections(cda_xml)
+            >>> problems = sections.get("problems", [])
         """
         section_entries = {}
 
@@ -48,7 +82,7 @@ class CDAParser:
             return section_entries
 
         # Get section configurations
-        sections = self.config_manager.get_section_configs()
+        sections = self.config.get_cda_section_configs()
         if not sections:
             log.warning("No sections found in configuration")
             return section_entries
@@ -66,18 +100,26 @@ class CDAParser:
         return section_entries
 
     def _parse_section_entries_from_document(self, section_key: str) -> List[Dict]:
-        """
-        Extract entries from a CDA section using an already parsed document.
+        """Extract entries from a CDA section using an already parsed document.
 
         Args:
-            section_key: Key identifying the section in the configuration
+            section_key: Key identifying the section in the configuration (e.g. "problems",
+                "medications"). Must match a section defined in the configuration.
 
         Returns:
-            List of entry dictionaries from the section
+            List[Dict]: List of entry dictionaries from the matched section. Each dictionary
+                contains the parsed data from a single entry in the section. Returns an empty
+                list if no entries are found or if an error occurs.
+
+        Raises:
+            ValueError: If no template_id or code is configured for the section_key, or if
+                no matching section is found in the document.
+            Exception: If there is an error parsing the section or its entries.
         """
+        entries_dicts = []
         if not self.clinical_document:
             log.error("No document loaded. Call parse_document first.")
-            return []
+            return entries_dicts
 
         try:
             # Get all components
@@ -91,12 +133,20 @@ class CDAParser:
                 curr_section = component.section
 
                 # Get template_id and code from config_manager
-                template_id = self.config_manager.get_config_value(
+                template_id = self.config.get_config_value(
                     f"sections.{section_key}.identifiers.template_id"
                 )
-                code = self.config_manager.get_config_value(
+                code = self.config.get_config_value(
                     f"sections.{section_key}.identifiers.code"
                 )
+
+                if not template_id and not code:
+                    raise ValueError(
+                        f"No template_id or code found for section {section_key}: \
+                            configure one of the following: \
+                            sections.{section_key}.identifiers.template_id \
+                            or sections.{section_key}.identifiers.code"
+                    )
 
                 if template_id and self._find_section_by_template_id(
                     curr_section, template_id
@@ -109,14 +159,26 @@ class CDAParser:
                     break
 
             if not section:
-                log.warning(f"Section not found for key: {section_key}")
-                return []
+                log.warning(
+                    f"Section with template_id: {template_id} or code: {code} not found in CDA document for key: {section_key}"
+                )
+                return entries_dicts
 
-            # Get entries and convert to dicts
-            entries = self._get_section_entries(section)
+            # Get entries from section
+            if section.entry:
+                entries_dicts = (
+                    section.entry
+                    if isinstance(section.entry, list)
+                    else [section.entry]
+                )
+            else:
+                log.warning(f"No entries found for section {section_key}")
+                return entries_dicts
+
+            # Convert entries to dictionaries
             entry_dicts = [
                 entry.model_dump(exclude_none=True, by_alias=True)
-                for entry in entries
+                for entry in entries_dicts
                 if entry
             ]
 
@@ -126,10 +188,10 @@ class CDAParser:
 
         except Exception as e:
             log.error(f"Error parsing section {section_key}: {str(e)}")
-            return []
+            return entries_dicts
 
     def _find_section_by_template_id(self, section: Section, template_id: str) -> bool:
-        """Check if section matches template ID"""
+        """Returns True if section has matching template ID"""
         if not section.templateId:
             return False
 
@@ -141,11 +203,5 @@ class CDAParser:
         return any(tid.root == template_id for tid in template_ids)
 
     def _find_section_by_code(self, section: Section, code: str) -> bool:
-        """Check if section matches code"""
-        return section.code and section.code.code == code
-
-    def _get_section_entries(self, section: Section) -> List[Entry]:
-        """Get list of entries from section"""
-        if not section.entry:
-            return []
-        return section.entry if isinstance(section.entry, list) else [section.entry]
+        """Returns True if section has matching code"""
+        return bool(section.code and section.code.code == code)

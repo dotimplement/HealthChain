@@ -2,9 +2,9 @@ import pytest
 from pydantic import ValidationError
 from healthchain.config.validators import (
     ProblemSectionTemplateConfig,
-    validate_document_config_model,
-    register_template_config_model,
-    TEMPLATE_CONFIG_REGISTRY,
+    validate_cda_document_config_model,
+    register_cda_section_template_config_model,
+    CDA_SECTION_CONFIG_REGISTRY,
     SECTION_VALIDATORS,
 )
 
@@ -40,7 +40,7 @@ def test_core_functionality():
         "confidentiality_code": {"code": "N"},
         # Missing code field
     }
-    assert validate_document_config_model("ccd", invalid_document) is False
+    assert validate_cda_document_config_model("ccd", invalid_document) is False
 
     # Test template registration
     from pydantic import BaseModel
@@ -49,12 +49,12 @@ def test_core_functionality():
         test_field: str
 
     # Record original state and register model
-    register_template_config_model("TestResource", TestModel)
+    register_cda_section_template_config_model("TestResource", TestModel)
 
     # Verify registration
-    assert "TestResource" in TEMPLATE_CONFIG_REGISTRY
+    assert "TestResource" in CDA_SECTION_CONFIG_REGISTRY
     assert "TestResource" in SECTION_VALIDATORS
 
     # Clean up
-    TEMPLATE_CONFIG_REGISTRY.pop("TestResource")
+    CDA_SECTION_CONFIG_REGISTRY.pop("TestResource")
     SECTION_VALIDATORS.pop("TestResource")

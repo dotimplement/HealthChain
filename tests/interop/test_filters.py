@@ -1,0 +1,189 @@
+import pytest
+
+from healthchain.interop.filters import (
+    map_system,
+    map_status,
+    map_severity,
+    format_date,
+    generate_id,
+    clean_empty,
+    extract_effective_period,
+    create_default_filters,
+)
+
+
+@pytest.fixture
+def test_mappings():
+    return {
+        "shared_mappings": {
+            "code_systems": {
+                "fhir_to_cda": {
+                    "http://loinc.org": "2.16.840.1.113883.6.1",
+                    "http://snomed.info/sct": "2.16.840.1.113883.6.96",
+                },
+                "cda_to_fhir": {
+                    "2.16.840.1.113883.6.1": "http://loinc.org",
+                    "2.16.840.1.113883.6.96": "http://snomed.info/sct",
+                },
+            },
+            "status_codes": {
+                "fhir_to_cda": {"active": "completed", "inactive": "cancelled"},
+                "cda_to_fhir": {"completed": "active", "cancelled": "inactive"},
+            },
+            "severity_codes": {
+                "cda_to_fhir": {"H": "high", "M": "moderate", "L": "low"},
+                "fhir_to_cda": {"high": "H", "moderate": "M", "low": "L"},
+            },
+        }
+    }
+
+
+def test_map_system(test_mappings):
+    # Test FHIR to CDA mapping
+    assert map_system("http://loinc.org", test_mappings) == "2.16.840.1.113883.6.1"
+
+    # Test CDA to FHIR mapping
+    assert (
+        map_system("2.16.840.1.113883.6.1", test_mappings, "cda_to_fhir")
+        == "http://loinc.org"
+    )
+
+    # Test unknown system (should return original)
+    assert map_system("unknown", test_mappings) == "unknown"
+
+    # Test no mappings provided
+    assert map_system("http://loinc.org", None) == "http://loinc.org"
+
+    # Test empty input
+    assert map_system(None, test_mappings) is None
+
+
+def test_map_status(test_mappings):
+    # Test FHIR to CDA mapping
+    assert map_status("active", test_mappings) == "completed"
+
+    # Test CDA to FHIR mapping
+    assert map_status("completed", test_mappings, "cda_to_fhir") == "active"
+
+    # Test unknown status (should return original)
+    assert map_status("unknown", test_mappings) == "unknown"
+
+
+def test_map_severity(test_mappings):
+    # Test CDA to FHIR mapping
+    assert map_severity("H", test_mappings) == "high"
+
+    # Test FHIR to CDA mapping
+    assert map_severity("high", test_mappings, "fhir_to_cda") == "H"
+
+    # Test unknown severity (should return original)
+    assert map_severity("unknown", test_mappings) == "unknown"
+
+
+def test_format_date():
+    # Test ISO format output
+    assert format_date("20230405") == "2023-04-05T00:00:00Z"
+
+    # Test custom output format
+    assert format_date("20230405", output_format="%m/%d/%Y") == "04/05/2023"
+
+    # Test custom input format
+    assert (
+        format_date("04-05-2023", input_format="%m-%d-%Y", output_format="%Y%m%d")
+        == "20230405"
+    )
+
+    # Test invalid date
+    assert format_date("invalid") is None
+
+    # Test empty input
+    assert format_date("") is None
+    assert format_date(None) is None
+
+
+def test_generate_id():
+    # Test with provided value
+    assert generate_id("test-id") == "test-id"
+
+    # Test with default prefix
+    id1 = generate_id()
+    assert id1.startswith("hc-")
+    assert len(id1) > 3  # Should have content after prefix
+
+    # Test with custom prefix
+    id2 = generate_id(prefix="custom-")
+    assert id2.startswith("custom-")
+
+    # Test uniqueness
+    assert generate_id() != generate_id()
+
+
+def test_clean_empty():
+    # Test cleaning a dictionary
+    data = {
+        "a": 1,
+        "b": "",
+        "c": None,
+        "d": [],
+        "e": {},
+        "f": [1, "", None, {}, []],
+        "g": {"x": 1, "y": "", "z": None},
+    }
+
+    cleaned = clean_empty(data)
+    assert cleaned == {"a": 1, "f": [1], "g": {"x": 1}}
+
+    # Test with list
+    assert clean_empty([1, "", None, {}, []]) == [1]
+
+    # Test with scalar values
+    assert clean_empty(1) == 1
+    assert clean_empty("test") == "test"
+
+
+def test_extract_effective_period():
+    # Test with IVL_TS type
+    effective_time = {
+        "@xsi:type": "IVL_TS",
+        "low": {"@value": "20230101"},
+        "high": {"@value": "20231231"},
+    }
+
+    period = extract_effective_period(effective_time)
+    assert period == {"start": "2023-01-01T00:00:00Z", "end": "2023-12-31T00:00:00Z"}
+
+    # Test with only start date
+    effective_time = {"@xsi:type": "IVL_TS", "low": {"@value": "20230101"}}
+
+    period = extract_effective_period(effective_time)
+    assert period == {"start": "2023-01-01T00:00:00Z"}
+
+    # Test with only end date
+    effective_time = {"@xsi:type": "IVL_TS", "high": {"@value": "20231231"}}
+
+    period = extract_effective_period(effective_time)
+    assert period == {"end": "2023-12-31T00:00:00Z"}
+
+    # Test with non-IVL_TS type
+    effective_time = {"@value": "20230101"}
+    assert extract_effective_period(effective_time) is None
+
+    # Test with empty input
+    assert extract_effective_period(None) is None
+    assert extract_effective_period([]) is None
+
+
+def test_create_default_filters():
+    # Test creating default filters
+    filters = create_default_filters({}, "test-")
+
+    # Check that all expected filters are present
+    assert "map_system" in filters
+    assert "map_status" in filters
+    assert "format_date" in filters
+    assert "generate_id" in filters
+    assert "json" in filters
+    assert "clean_empty" in filters
+
+    # Test a filter function
+    assert filters["generate_id"]().startswith("test-")

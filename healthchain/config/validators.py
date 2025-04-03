@@ -181,18 +181,18 @@ class DocumentConfig(BaseModel):
 # Registries and Factory Functions
 #
 
-TEMPLATE_CONFIG_REGISTRY = {
+CDA_SECTION_CONFIG_REGISTRY = {
     "Condition": ProblemSectionTemplateConfig,
     "MedicationStatement": MedicationSectionTemplateConfig,
     "AllergyIntolerance": AllergySectionTemplateConfig,
 }
 
-DOCUMENT_CONFIG_REGISTRY = {
+CDA_DOCUMENT_CONFIG_REGISTRY = {
     "ccd": DocumentConfig,
 }
 
 
-def create_section_validator(
+def create_cda_section_validator(
     resource_type: str, template_model: Type[BaseModel]
 ) -> Type[BaseModel]:
     """Create a section validator for a specific resource type"""
@@ -214,8 +214,8 @@ def create_section_validator(
 
 
 SECTION_VALIDATORS = {
-    resource_type: create_section_validator(resource_type, template_model)
-    for resource_type, template_model in TEMPLATE_CONFIG_REGISTRY.items()
+    resource_type: create_cda_section_validator(resource_type, template_model)
+    for resource_type, template_model in CDA_SECTION_CONFIG_REGISTRY.items()
 }
 
 #
@@ -223,7 +223,7 @@ SECTION_VALIDATORS = {
 #
 
 
-def validate_section_config_model(
+def validate_cda_section_config_model(
     section_key: str, section_config: Dict[str, Any]
 ) -> bool:
     """Validate a section configuration"""
@@ -246,11 +246,11 @@ def validate_section_config_model(
         return False
 
 
-def validate_document_config_model(
+def validate_cda_document_config_model(
     document_type: str, document_config: Dict[str, Any]
 ) -> bool:
     """Validate a document configuration"""
-    validator = DOCUMENT_CONFIG_REGISTRY.get(document_type.lower())
+    validator = CDA_DOCUMENT_CONFIG_REGISTRY.get(document_type.lower())
     if not validator:
         logger.warning(f"No specific validator for document type: {document_type}")
         return True
@@ -268,20 +268,20 @@ def validate_document_config_model(
 #
 
 
-def register_template_config_model(
+def register_cda_section_template_config_model(
     resource_type: str, template_model: Type[BaseModel]
 ) -> None:
     """Register a custom template model for a section"""
-    TEMPLATE_CONFIG_REGISTRY[resource_type] = template_model
-    SECTION_VALIDATORS[resource_type] = create_section_validator(
+    CDA_SECTION_CONFIG_REGISTRY[resource_type] = template_model
+    SECTION_VALIDATORS[resource_type] = create_cda_section_validator(
         resource_type, template_model
     )
     logger.info(f"Registered custom template model for {resource_type}")
 
 
-def register_document_config_model(
+def register_cda_document_template_config_model(
     document_type: str, document_model: Type[BaseModel]
 ) -> None:
     """Register a custom document model"""
-    DOCUMENT_CONFIG_REGISTRY[document_type.lower()] = document_model
+    CDA_DOCUMENT_CONFIG_REGISTRY[document_type.lower()] = document_model
     logger.info(f"Registered custom document model for {document_type}")

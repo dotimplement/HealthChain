@@ -13,9 +13,9 @@ from healthchain.interop.config_manager import InteropConfigManager
 def mock_validators():
     """Mock the validation functions."""
     with patch(
-        "healthchain.interop.config_manager.validate_section_config_model"
+        "healthchain.interop.config_manager.validate_cda_section_config_model"
     ) as mock_section_validator, patch(
-        "healthchain.interop.config_manager.validate_document_config_model"
+        "healthchain.interop.config_manager.validate_cda_document_config_model"
     ) as mock_doc_validator:
         # Configure mocks to return True by default
         mock_section_validator.return_value = True
@@ -42,7 +42,7 @@ def test_interop_config_manager_initialization(config_fixtures):
     assert manager._environment == "production"
 
 
-def test_get_section_configs(config_fixtures):
+def test_get_cda_section_configs(config_fixtures):
     """Test getting section configurations."""
     config_dir = config_fixtures
 
@@ -50,7 +50,7 @@ def test_get_section_configs(config_fixtures):
     manager = InteropConfigManager(config_dir)
 
     # Get section configs
-    sections = manager.get_section_configs()
+    sections = manager.get_cda_section_configs()
 
     # Check if sections were loaded correctly
     assert "problems" in sections
@@ -73,15 +73,15 @@ def test_get_document_config(config_fixtures, mock_validators):
     manager = InteropConfigManager(config_dir)
 
     # Get document config
-    ccd_config = manager.get_document_config("ccd")
+    ccd_config = manager.get_cda_document_config("ccd")
 
     # Check if document config was loaded correctly
     assert ccd_config["code"]["code"] == "34133-9"
     assert ccd_config["code"]["display"] == "Summarization of Episode Note"
     assert ccd_config["templates"]["section"] == "cda_section"
 
-    # Also verify document types can be found
-    document_types = manager._find_document_types()
+    # Also verify document types can be found (replaces test_find_document_types)
+    document_types = manager._find_cda_document_types()
     assert "ccd" in document_types
 
 
@@ -135,21 +135,21 @@ def test_registration_methods():
 
         # Create manager with IGNORE validation to simplify test
         with patch(
-            "healthchain.interop.config_manager.register_template_config_model"
-        ) as mock_register_template, patch(
-            "healthchain.interop.config_manager.register_document_config_model"
-        ) as mock_register_document:
+            "healthchain.interop.config_manager.register_cda_section_template_config_model"
+        ) as mock_register_section_config, patch(
+            "healthchain.interop.config_manager.register_cda_document_template_config_model"
+        ) as mock_register_document_config:
             manager = InteropConfigManager(
                 config_dir, validation_level=ValidationLevel.IGNORE
             )
 
             # Register models and verify registration calls
             model = MagicMock()
-            manager.register_section_template_config("Condition", model)
-            manager.register_document_config("ccd", model)
+            manager.register_cda_section_config("Condition", model)
+            manager.register_cda_document_config("ccd", model)
 
-            mock_register_template.assert_called_once_with("Condition", model)
-            mock_register_document.assert_called_once_with("ccd", model)
+            mock_register_section_config.assert_called_once_with("Condition", model)
+            mock_register_document_config.assert_called_once_with("ccd", model)
 
 
 def test_with_real_configs(real_config_dir, mock_validators):
@@ -164,7 +164,7 @@ def test_with_real_configs(real_config_dir, mock_validators):
     )
 
     # Test 1: Check section configs
-    sections = manager.get_section_configs()
+    sections = manager.get_cda_section_configs()
     assert len(sections) > 0
 
     # Check at least one section has expected structure
@@ -174,10 +174,10 @@ def test_with_real_configs(real_config_dir, mock_validators):
         break
 
     # Test 2: Check document configs
-    document_types = manager._find_document_types()
+    document_types = manager._find_cda_document_types()
     assert len(document_types) > 0
 
     if "ccd" in document_types:
-        ccd_config = manager.get_document_config("ccd")
+        ccd_config = manager.get_cda_document_config("ccd")
         assert "code" in ccd_config
         assert "code" in ccd_config["code"]
