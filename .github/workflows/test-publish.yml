@@ -25,7 +25,7 @@ jobs:
         - name: Store the distribution packages
           uses: actions/upload-artifact@v4
           with:
-            name: python-package-distributions
+            name: python-package-distributions-test
             path: dist/
 
   # This step simulates the PyPI publish step without actually publishing
