@@ -10,6 +10,9 @@ code_systems:
     "http://loinc.org": "2.16.840.1.113883.6.1"
     "http://www.nlm.nih.gov/research/umls/rxnorm": "2.16.840.1.113883.6.88"
     "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl": "2.16.840.1.113883.3.26.1.1"
+    "http://terminology.hl7.org/CodeSystem/condition-clinical": "2.16.840.1.113883.6.96"
+    "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical": "2.16.840.1.113883.6.96"
+
 
 status_codes:
   cda_to_fhir:
