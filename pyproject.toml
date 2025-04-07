@@ -42,6 +42,7 @@ spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
 fhir-resources = "^8.0.0"
+python-liquid = "^1.13.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"

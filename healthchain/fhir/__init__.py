@@ -10,6 +10,7 @@ from healthchain.fhir.helpers import (
     read_content_attachment,
     create_document_reference,
     create_single_attachment,
+    create_resource_from_dict,
 )
 
 from healthchain.fhir.bundle_helpers import (
@@ -30,6 +31,7 @@ __all__ = [
     "read_content_attachment",
     "create_document_reference",
     "create_single_attachment",
+    "create_resource_from_dict",
     # Bundle operations
     "create_bundle",
     "add_resource",
