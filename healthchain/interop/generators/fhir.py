@@ -6,18 +6,20 @@ This module provides functionality for generating FHIR resources from templates.
 
 import uuid
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 
 from fhir.resources.resource import Resource
+from liquid import Template
 
-from healthchain.interop.template_renderer import TemplateRenderer
+from healthchain.interop.generators.base import BaseGenerator
 from healthchain.fhir import create_resource_from_dict
-from healthchain.interop.template_renderer import Template
+from healthchain.interop.types import FormatType
+
 
 log = logging.getLogger(__name__)
 
 
-class FHIRGenerator(TemplateRenderer):
+class FHIRGenerator(BaseGenerator):
     """Handles generation of FHIR resources from templates.
 
     This class provides functionality to convert CDA section entries into FHIR resources
@@ -39,6 +41,31 @@ class FHIRGenerator(TemplateRenderer):
             section_key="problems"  # from configs
         )
     """
+
+    def transform(self, data, **kwargs) -> str:
+        """Transform input data to FHIR resources.
+
+        Args:
+            data: List of entries from source format
+            **kwargs:
+                src_format: The source format type (FormatType.CDA or FormatType.HL7V2)
+                section_key: For CDA, the section key
+                message_key: For HL7v2, the message key
+
+        Returns:
+            List[Resource]: FHIR resources
+        """
+        src_format = kwargs.get("src_format")
+        if src_format == FormatType.CDA:
+            return self.generate_resources_from_cda_section_entries(
+                data, kwargs.get("section_key")
+            )
+        elif src_format == FormatType.HL7V2:
+            return self.generate_resources_from_hl7v2_entries(
+                data, kwargs.get("message_key")
+            )
+        else:
+            raise ValueError(f"Unsupported source format: {src_format}")
 
     def generate_resources_from_cda_section_entries(
         self, entries: List[Dict], section_key: str
@@ -64,6 +91,13 @@ class FHIRGenerator(TemplateRenderer):
                 problem_entries, "problems"
             )
         """
+        if not section_key:
+            log.error(
+                "No section key provided for CDA section entries: data needs to be in the format \
+                      '{<section_key>}: {<section_entries>}'"
+            )
+            return []
+
         resources = []
         template = self.get_template_from_section_config(section_key, "resource")
 
@@ -71,7 +105,9 @@ class FHIRGenerator(TemplateRenderer):
             log.error(f"No resource template found for section {section_key}")
             return resources
 
-        resource_type = self.config.get_config_value(f"sections.{section_key}.resource")
+        resource_type = self.config.get_config_value(
+            f"cda.sections.{section_key}.resource"
+        )
         if not resource_type:
             log.error(f"No resource type specified for section {section_key}")
             return resources
@@ -99,7 +135,7 @@ class FHIRGenerator(TemplateRenderer):
         return resources
 
     def _render_resource_from_entry(
-        self, entry: Dict, section_key: str, template: Template
+        self, entry: Dict, section_key: str, template: Type[Template]
     ) -> Optional[Dict]:
         """Renders a FHIR resource dictionary from a CDA entry using templates.
 
@@ -201,3 +237,22 @@ class FHIRGenerator(TemplateRenderer):
                 resource_dict["clinicalStatus"] = default_status
 
         return resource_dict
+
+    def generate_resources_from_hl7v2_entries(
+        self, entries: List[Dict], message_key: str
+    ) -> List[Dict]:
+        """
+        Convert HL7v2 message entries into FHIR resources.
+        This is a placeholder implementation.
+
+        Args:
+            entries: List of HL7v2 message entries to convert
+            message_key: Key identifying the message type
+
+        Returns:
+            List of FHIR resources
+        """
+        log.warning(
+            "FHIR resource generation from HL7v2 is a placeholder implementation"
+        )
+        return []

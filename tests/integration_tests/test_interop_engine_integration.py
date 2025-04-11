@@ -132,6 +132,8 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
     """
     # First convert CDA to FHIR
     resources = interop_engine.to_fhir(test_cda_xml, "CDA")
+    for resource in resources:
+        print(resource.model_dump_json(indent=2))
 
     # Then convert back to CDA
     cda = interop_engine.from_fhir(resources, "CDA")

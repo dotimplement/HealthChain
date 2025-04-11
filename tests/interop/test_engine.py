@@ -4,10 +4,9 @@ from unittest.mock import Mock, patch
 
 from healthchain.interop.engine import (
     InteropEngine,
-    FormatType,
-    validate_format,
     normalize_resource_list,
 )
+from healthchain.interop.types import FormatType, validate_format
 from healthchain.config.base import ValidationLevel
 
 from fhir.resources.condition import Condition
@@ -167,14 +166,12 @@ def test_to_fhir_from_cda(interop_engine, mock_cda_document, mock_fhir_resources
     """Test converting from CDA to FHIR."""
     # Mock the CDA parser
     mock_cda_parser = Mock()
-    mock_cda_parser.parse_document_sections.return_value = {"problems": ["test_entry"]}
+    mock_cda_parser.from_string.return_value = {"problems": ["test_entry"]}
     interop_engine._parsers[FormatType.CDA] = mock_cda_parser
 
     # Mock the FHIR generator
     mock_fhir_generator = Mock()
-    mock_fhir_generator.generate_resources_from_cda_section_entries.return_value = (
-        mock_fhir_resources
-    )
+    mock_fhir_generator.transform.return_value = mock_fhir_resources
     interop_engine._generators[FormatType.FHIR] = mock_fhir_generator
 
     # Mock the cached property access
@@ -185,7 +182,12 @@ def test_to_fhir_from_cda(interop_engine, mock_cda_document, mock_fhir_resources
     result = interop_engine._cda_to_fhir(mock_cda_document)
 
     # Verify parser was called with correct input
-    mock_cda_parser.parse_document_sections.assert_called_once_with(mock_cda_document)
+    mock_cda_parser.from_string.assert_called_once_with(mock_cda_document)
+
+    # Verify generator was called with transform
+    mock_fhir_generator.transform.assert_called_with(
+        ["test_entry"], src_format=FormatType.CDA, section_key="problems"
+    )
 
     # Verify result matches expected output
     assert result == mock_fhir_resources
@@ -195,9 +197,7 @@ def test_from_fhir_to_cda(interop_engine, mock_fhir_resources, mock_cda_document
     """Test converting from FHIR to CDA."""
     # Mock the CDA generator
     mock_cda_generator = Mock()
-    mock_cda_generator.generate_document_from_fhir_resources.return_value = (
-        mock_cda_document
-    )
+    mock_cda_generator.transform.return_value = mock_cda_document
     interop_engine._generators[FormatType.CDA] = mock_cda_generator
 
     # Mock cached property access
@@ -215,9 +215,9 @@ def test_from_fhir_to_cda(interop_engine, mock_fhir_resources, mock_cda_document
     # Verify config was called to get document config
     interop_engine.config.get_cda_document_config.assert_called_with("ccd")
 
-    # Verify generator was called with correct input
-    mock_cda_generator.generate_document_from_fhir_resources.assert_called_once_with(
-        mock_fhir_resources, "ccd"
+    # Verify generator was called with transform method
+    mock_cda_generator.transform.assert_called_once_with(
+        mock_fhir_resources, document_type="ccd"
     )
 
     # Verify result matches expected output
@@ -227,7 +227,7 @@ def test_from_fhir_to_cda(interop_engine, mock_fhir_resources, mock_cda_document
 def test_to_fhir_with_unsupported_format(interop_engine, mock_cda_document):
     """Test to_fhir with unsupported format."""
     with pytest.raises(ValueError):
-        interop_engine.to_fhir(mock_cda_document, source_format="invalid")
+        interop_engine.to_fhir(mock_cda_document, src_format="invalid")
 
 
 def test_from_fhir_with_unsupported_format(interop_engine, mock_fhir_resources):
@@ -236,12 +236,55 @@ def test_from_fhir_with_unsupported_format(interop_engine, mock_fhir_resources):
         interop_engine.from_fhir(mock_fhir_resources, dest_format="invalid")
 
 
-def test_hl7v2_not_implemented(interop_engine, mock_fhir_resources, mock_cda_document):
-    """Test that HL7v2 methods raise NotImplementedError."""
-    # Test _hl7v2_to_fhir directly since to_fhir depends on it
-    with pytest.raises(NotImplementedError):
-        interop_engine._hl7v2_to_fhir(mock_cda_document)
+# def test_fhir_to_hl7v2(interop_engine, mock_fhir_resources):
+#     """Test converting from FHIR to HL7v2."""
+#     # Mock the HL7v2 generator
+#     mock_hl7v2_generator = Mock()
+#     mock_hl7v2_generator.transform.return_value = "MSH|^~\\&|SENDER|RECEIVER|"
+#     interop_engine._generators[FormatType.HL7V2] = mock_hl7v2_generator
 
-    # Test _fhir_to_hl7v2 directly since from_fhir depends on it
-    with pytest.raises(NotImplementedError):
-        interop_engine._fhir_to_hl7v2(mock_fhir_resources)
+#     # Mock cached property access
+#     interop_engine.hl7v2_generator = mock_hl7v2_generator
+
+#     # Test conversion
+#     result = interop_engine._fhir_to_hl7v2(mock_fhir_resources)
+
+#     # Verify generator was called with transform method
+#     assert mock_hl7v2_generator.transform.call_count == len(mock_fhir_resources)
+
+#     # Verify result is a list of messages
+#     assert isinstance(result, list)
+#     assert all(isinstance(msg, str) for msg in result)
+
+
+# def test_hl7v2_to_fhir(interop_engine, mock_fhir_resources):
+#     """Test converting from HL7v2 to FHIR."""
+#     # Mock the HL7v2 parser
+#     mock_hl7v2_parser = Mock()
+#     mock_hl7v2_parser.from_string.return_value = {"observations": ["test_entry"]}
+#     interop_engine._parsers[FormatType.HL7V2] = mock_hl7v2_parser
+
+#     # Mock the FHIR generator
+#     mock_fhir_generator = Mock()
+#     mock_fhir_generator.transform.return_value = mock_fhir_resources
+#     interop_engine._generators[FormatType.FHIR] = mock_fhir_generator
+
+#     # Mock the cached property access
+#     interop_engine.hl7v2_parser = mock_hl7v2_parser
+#     interop_engine.fhir_generator = mock_fhir_generator
+
+#     # Test conversion
+#     result = interop_engine._hl7v2_to_fhir("MSH|^~\\&|SENDER|RECEIVER|")
+
+#     # Verify parser was called with correct input
+#     mock_hl7v2_parser.from_string.assert_called_once_with("MSH|^~\\&|SENDER|RECEIVER|")
+
+#     # Verify generator was called with transform
+#     mock_fhir_generator.transform.assert_called_with(
+#         ["test_entry"],
+#         src_format=FormatType.HL7V2,
+#         message_key="observations"
+#     )
+
+#     # Verify result matches expected output
+#     assert result == mock_fhir_resources

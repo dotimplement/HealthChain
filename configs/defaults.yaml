@@ -1,7 +1,6 @@
 # HealthChain Interoperability Engine Default Configuration
 # This file contains default values used throughout the engine
 
-# Default resource fields
 defaults:
   # Common defaults for all resources
   common:
@@ -11,6 +10,9 @@ defaults:
     subject:
       reference: "Patient/example"
 
+  # Mapping directory configuration
+  mappings_dir: "cda_default"
+
   # Resource-specific defaults
   resources:
     Condition:
@@ -19,35 +21,16 @@ defaults:
           - system: "http://terminology.hl7.org/CodeSystem/condition-clinical"
             code: "unknown"
             display: "Unknown"
-      verificationStatus:
-        coding:
-          - system: "http://terminology.hl7.org/CodeSystem/condition-ver-status"
-            code: "unconfirmed"
-            display: "Unconfirmed"
-
     MedicationStatement:
       status: "unknown"
-      effectiveDateTime: "{{ now | date: '%Y-%m-%d' }}"
-      medicationCodeableConcept:
-        coding:
-          - system: "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
-            code: "UNK"
-            display: "Unknown"
+      medication:
+        concept:
+          coding:
+            - system: "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
+              code: "UNK"
+              display: "Unknown"
 
-    AllergyIntolerance:
-      clinicalStatus:
-        coding:
-          - system: "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"
-            code: "unknown"
-            display: "Unknown"
-      verificationStatus:
-        coding:
-          - system: "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification"
-            code: "unconfirmed"
-            display: "Unconfirmed"
-      type: "allergy"
-      criticality: "low"
-
+# TODO: More control over settings
 # # Validation settings
 # validation:
 #   strict_mode: true

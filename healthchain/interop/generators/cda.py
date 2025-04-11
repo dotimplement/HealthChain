@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 from fhir.resources.resource import Resource
 from healthchain.interop.models.cda import ClinicalDocument
-from healthchain.interop.template_renderer import TemplateRenderer
+from healthchain.interop.generators.base import BaseGenerator
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +42,37 @@ def _find_section_key_for_resource_type(
     return section_key
 
 
-class CDAGenerator(TemplateRenderer):
-    """Handles generation of CDA documents"""
+class CDAGenerator(BaseGenerator):
+    """Handles generation of CDA documents from FHIR resources.
+
+    This class provides functionality to convert FHIR resources into CDA (Clinical Document Architecture)
+    documents using configurable templates. It handles the mapping of resources to appropriate CDA sections,
+    rendering of entries and sections, and generation of the final XML document.
+
+    Example:
+        generator = CDAGenerator(config_manager, template_registry)
+
+        # Convert FHIR resources to CDA XML document
+        cda_xml = generator.transform(
+            resources=fhir_resources,
+            document_type="ccd"
+        )
+    """
+
+    def transform(self, resources, **kwargs) -> str:
+        """Transform FHIR resources to CDA format.
+
+        Args:
+            resources: List of FHIR resources
+            **kwargs:
+                document_type: Type of CDA document
+
+        Returns:
+            str: CDA document as XML string
+        """
+        # TODO: add validation
+        document_type = kwargs.get("document_type", "ccd")
+        return self.generate_document_from_fhir_resources(resources, document_type)
 
     def generate_document_from_fhir_resources(
         self,
@@ -66,7 +95,7 @@ class CDAGenerator(TemplateRenderer):
         Returns:
             CDA document as XML string
         """
-        mapped_entries = self._get_mapped_entries(resources)
+        mapped_entries = self._get_mapped_entries(resources, document_type)
         sections = self._render_sections(mapped_entries, document_type)
 
         # Generate final CDA document
@@ -120,11 +149,14 @@ class CDAGenerator(TemplateRenderer):
             log.error(f"Failed to render {config_key} entry: {str(e)}")
             return None
 
-    def _get_mapped_entries(self, resources: List[Resource]) -> Dict:
+    def _get_mapped_entries(
+        self, resources: List[Resource], document_type: str = None
+    ) -> Dict:
         """Map FHIR resources to CDA section entries by resource type.
 
         Args:
             resources: List of FHIR resources to map to CDA entries
+            document_type: Optional document type to determine which sections to include
 
         Returns:
             Dictionary mapping section keys (e.g. 'problems', 'medications') to lists of
@@ -134,6 +166,17 @@ class CDAGenerator(TemplateRenderer):
                 'medications': [<rendered medication entry>, ...]
             }
         """
+        # Get included sections from document config if document_type is provided
+        include_sections = None
+        if document_type:
+            include_sections = self.config.get_config_value(
+                f"cda.document.{document_type}.structure.body.include_sections"
+            )
+            if include_sections:
+                log.info(
+                    f"Generating sections: {include_sections} for document type {document_type}"
+                )
+
         section_entries = {}
         for resource in resources:
             # Find matching section for resource type
@@ -146,6 +189,13 @@ class CDAGenerator(TemplateRenderer):
                 log.error(f"No section config found for resource type: {resource_type}")
                 continue
 
+            # Skip if section is not included in the document config
+            if include_sections and section_key not in include_sections:
+                log.info(
+                    f"Skipping section {section_key} as it's not in include_sections"
+                )
+                continue
+
             entry = self._render_entry(resource, section_key)
             if entry:
                 section_entries.setdefault(section_key, []).append(entry)
@@ -156,21 +206,27 @@ class CDAGenerator(TemplateRenderer):
         """Render all sections with their entries
 
         Args:
-            section_entries: Dictionary mapping section keys to their entries
+            mapped_entries: Dictionary mapping section keys to their entries
+            document_type: Type of document to generate
 
         Returns:
             List of formatted section dictionaries
+
+        Raises:
+            ValueError: If section configurations or templates are not found
         """
         sections = []
 
-        # Get validated section configurations
-        section_configs = self.config.get_cda_section_configs()
-        if not section_configs:
-            raise ValueError("No valid configurations found in /sections")
+        try:
+            # Get validated section configurations
+            section_configs = self.config.get_cda_section_configs()
+        except ValueError as e:
+            log.error(f"Error getting section configs: {str(e)}")
+            raise ValueError(f"Failed to load section configurations: {str(e)}")
 
-        # Get section template name from config or use default
+        # Get section template name from config
         section_template_name = self.config.get_config_value(
-            f"document.{document_type}.templates.section"
+            f"cda.document.{document_type}.templates.section"
         )
         if not section_template_name:
             raise ValueError(
@@ -182,6 +238,7 @@ class CDAGenerator(TemplateRenderer):
         if not section_template:
             raise ValueError(f"Required template '{section_template_name}' not found")
 
+        # Render each section that has entries
         for section_key, section_config in section_configs.items():
             entries = mapped_entries.get(section_key, [])
             if entries:
@@ -213,16 +270,20 @@ class CDAGenerator(TemplateRenderer):
 
         Returns:
             CDA document as XML string
+
+        Raises:
+            ValueError: If document configuration or template is not found
         """
-        config = self.config.get_cda_document_config(document_type)
-        if not config:
-            raise ValueError(
-                f"No document configuration found for document type: {document_type}"
-            )
+        try:
+            # Get validated document configuration
+            config = self.config.get_cda_document_config(document_type)
+        except ValueError as e:
+            log.error(f"Error getting document config: {str(e)}")
+            raise ValueError(f"Failed to load document configuration: {str(e)}")
 
         # Get document template name from config
         document_template_name = self.config.get_config_value(
-            f"document.{document_type}.templates.document"
+            f"cda.document.{document_type}.templates.document"
         )
         if not document_template_name:
             raise ValueError(
@@ -261,10 +322,10 @@ class CDAGenerator(TemplateRenderer):
 
         # Get XML formatting options
         pretty_print = self.config.get_config_value(
-            f"document.{document_type}.rendering.xml.pretty_print", True
+            f"cda.document.{document_type}.rendering.xml.pretty_print", True
         )
         encoding = self.config.get_config_value(
-            f"document.{document_type}.rendering.xml.encoding", "UTF-8"
+            f"cda.document.{document_type}.rendering.xml.encoding", "UTF-8"
         )
 
         # Generate XML

@@ -71,8 +71,13 @@ def mock_config_manager():
             },
             "templates": {"document": "cda_document", "section": "cda_section"},
             "sections": ["problems", "medications"],
+            "structure": {
+                "body": {
+                    "include_sections": ["problems", "medications"],
+                }
+            },
         }
-    }.get(doc_type)
+    }.get(doc_type, {})
 
     # Configure section configs method
     section_configs = {
@@ -106,10 +111,10 @@ def mock_config_manager():
         "defaults.common.subject": {"reference": "Patient/123"},
         "defaults.common.timestamp": "%Y%m%d",
         "defaults.common.reference_name": "#{uuid}name",
-        "document.ccd.templates.document": "cda_document",
-        "document.ccd.templates.section": "cda_section",
-        "document.ccd.rendering.xml.pretty_print": True,
-        "document.ccd.rendering.xml.encoding": "UTF-8",
+        "cda.document.ccd.templates.document": "cda_document",
+        "cda.document.ccd.templates.section": "cda_section",
+        "cda.document.ccd.rendering.xml.pretty_print": True,
+        "cda.document.ccd.rendering.xml.encoding": "UTF-8",
     }.get(key, default)
 
     return config
@@ -204,8 +209,8 @@ def test_generate_document_from_fhir_resources(cda_generator, mock_fhir_resource
                     mock_fhir_resources, "ccd"
                 )
 
-                # Verify _get_mapped_entries was called
-                mock_get_mapped.assert_called_once_with(mock_fhir_resources)
+                # Verify _get_mapped_entries was called with document_type
+                mock_get_mapped.assert_called_once_with(mock_fhir_resources, "ccd")
 
                 # Verify _render_sections was called
                 mock_render_sections.assert_called_once()
@@ -234,8 +239,13 @@ def test_get_mapped_entries(cda_generator, mock_fhir_resources):
         ) as mock_find:
             mock_find.side_effect = ["problems", "medications", None]
 
-            # Call the method
-            result = cda_generator._get_mapped_entries(mock_fhir_resources)
+            # Mock the config manager's get_cda_document_config method
+            cda_generator.config.get_cda_document_config.return_value = {
+                "structure": {"body": {"include_sections": ["problems", "medications"]}}
+            }
+
+            # Call the method with document_type
+            result = cda_generator._get_mapped_entries(mock_fhir_resources, "ccd")
 
             # Verify result contains expected sections
             assert "problems" in result
@@ -318,7 +328,10 @@ def test_render_sections(cda_generator):
 
 def test_render_sections_with_missing_template(cda_generator):
     """Test rendering sections with missing template."""
-    # Set up the mock to return None for template
+    # First set up the get_config_value to return a template name
+    cda_generator.config.get_config_value.return_value = "some_template"
+
+    # Then set up the mock to return None for template
     cda_generator.get_template.return_value = None
 
     # Verify an error is raised
@@ -391,7 +404,15 @@ def test_render_document_without_validation(cda_generator):
 
 def test_render_document_with_missing_template(cda_generator):
     """Test rendering a document with missing template."""
-    # Set up the mock to return None for template
+    # Mock document config to return a valid config
+    cda_generator.config.get_cda_document_config.return_value = {
+        "templates": {"document": "test_template"}
+    }
+
+    # First set up the get_config_value to return a template name
+    cda_generator.config.get_config_value.return_value = "some_template"
+
+    # Then set up the mock to return None for template
     cda_generator.get_template.return_value = None
 
     # Verify an error is raised
@@ -399,24 +420,39 @@ def test_render_document_with_missing_template(cda_generator):
         cda_generator._render_document([], "ccd")
 
 
-def test_generate_document_with_invalid_type(cda_generator, mock_fhir_resources):
+def test_generate_document_with_invalid_type(cda_generator):
     """Test generating a document with an invalid document type."""
-    # Mock _get_mapped_entries to avoid that part of the flow
-    with patch.object(cda_generator, "_get_mapped_entries") as mock_get_mapped:
-        mock_get_mapped.return_value = {}
+    # Test the _render_document method directly since that's where the first error should be raised
+    # Mock the config to return empty dict for the invalid document type
+    cda_generator.config.get_cda_document_config.side_effect = ValueError(
+        "Document configuration not found for type: invalid_type"
+    )
 
-        # Mock config.get_config_value to return None for section template
-        cda_generator.config.get_config_value.side_effect = (
-            lambda key, default=None: None
-            if key.startswith("document.invalid_type")
-            else "default"
-        )
+    # Verify that a ValueError is raised with the expected message
+    with pytest.raises(
+        ValueError,
+        match="Failed to load document configuration: Document configuration not found for type: invalid_type",
+    ):
+        cda_generator._render_document([], "invalid_type")
 
-        # Verify that an error is raised
-        with pytest.raises(
-            ValueError,
-            match="No section template found for document type: invalid_type",
-        ):
-            cda_generator.generate_document_from_fhir_resources(
-                mock_fhir_resources, "invalid_type"
-            )
+
+def test_transform_method(cda_generator, mock_fhir_resources):
+    """Test the transform method that implements the BaseGenerator abstract method."""
+    # Mock the generate_document_from_fhir_resources method
+    with patch.object(
+        cda_generator, "generate_document_from_fhir_resources"
+    ) as mock_generate:
+        mock_generate.return_value = "<ClinicalDocument>Transformed</ClinicalDocument>"
+
+        # Call the transform method
+        result = cda_generator.transform(mock_fhir_resources, document_type="ccd")
+
+        # Verify the correct method was called with parameters
+        mock_generate.assert_called_once_with(mock_fhir_resources, "ccd")
+
+        # Verify the result
+        assert result == "<ClinicalDocument>Transformed</ClinicalDocument>"
+
+        # Test with default document type
+        cda_generator.transform(mock_fhir_resources)
+        mock_generate.assert_called_with(mock_fhir_resources, "ccd")

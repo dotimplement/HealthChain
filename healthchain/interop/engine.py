@@ -1,7 +1,6 @@
 import logging
 
 from functools import cached_property
-from enum import Enum
 from typing import List, Union, Optional
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from pydantic import BaseModel
 
 from healthchain.config.base import ValidationLevel
 from healthchain.interop.config_manager import InteropConfigManager
+from healthchain.interop.types import FormatType, validate_format
 
 from healthchain.interop.parsers.cda import CDAParser
 from healthchain.interop.parsers.hl7v2 import HL7v2Parser
@@ -21,23 +21,6 @@ from healthchain.interop.generators.hl7v2 import HL7v2Generator
 from healthchain.interop.filters import create_default_filters
 
 log = logging.getLogger(__name__)
-
-
-class FormatType(Enum):
-    HL7V2 = "hl7v2"
-    CDA = "cda"
-    FHIR = "fhir"
-
-
-def validate_format(format_type: Union[str, FormatType]) -> FormatType:
-    """Validate and convert format type to enum"""
-    if isinstance(format_type, str):
-        try:
-            return FormatType[format_type.upper()]
-        except KeyError:
-            raise ValueError(f"Unsupported format: {format_type}")
-    else:
-        return format_type
 
 
 def normalize_resource_list(
@@ -74,7 +57,7 @@ class InteropEngine:
         engine = InteropEngine()
 
         # Convert CDA to FHIR
-        fhir_resources = engine.to_fhir(cda_xml, source_format="cda")
+        fhir_resources = engine.to_fhir(cda_xml, src_format="cda")
 
         # Convert FHIR to CDA
         cda_xml = engine.from_fhir(fhir_resources, dest_format="cda")
@@ -82,12 +65,19 @@ class InteropEngine:
         # Access config directly:
         engine.config.set_environment("production")
         engine.config.set_validation_level("warn")
-        value = engine.config.get_config_value("section.problems.resource")
+        value = engine.config.get_config_value("cda.sections.problems.resource")
+
+        # Access the template registry:
+        template = engine.template_registry.get_template("cda_fhir/condition")
+        engine.template_registry.add_filter()
 
         # Register custom components:
         engine.register_parser(FormatType.CDA, custom_parser)
         engine.register_generator(FormatType.FHIR, custom_generator)
-        engine.register_template_validator("Condition", condition_model)
+
+        # Register custom configuration validators:
+        engine.register_cda_section_config_validator("Procedure", ProcedureSectionConfig)
+        engine.register_cda_document_config_validator("CCD", CCDDocumentConfig)
     """
 
     def __init__(
@@ -112,7 +102,11 @@ class InteropEngine:
 
         # Create and register default filters
         # Get required configuration for filters
-        mappings = self.config.get_mappings()
+        mappings_dir = self.config.get_config_value("defaults.mappings_dir")
+        if not mappings_dir:
+            log.warning("No mappings directory configured, using default mappings")
+            mappings_dir = "cda_default"
+        mappings = self.config.get_mappings(mappings_dir)
         id_prefix = self.config.get_config_value("defaults.common.id_prefix")
 
         # Get default filters from the filters module
@@ -202,7 +196,7 @@ class InteropEngine:
         return self._generators[format_type]
 
     def register_parser(self, format_type: FormatType, parser_instance):
-        """Register a custom parser for a format type.
+        """Register a custom parser for a format type. This will replace the default parser for the format type.
 
         Args:
             format_type: The format type (CDA, HL7v2) to register the parser for
@@ -218,7 +212,7 @@ class InteropEngine:
         return self
 
     def register_generator(self, format_type: FormatType, generator_instance):
-        """Register a custom generator for a format type.
+        """Register a custom generator for a format type. This will replace the default generator for the format type.
 
         Args:
             format_type: The format type (CDA, HL7v2, FHIR) to register the generator for
@@ -233,6 +227,7 @@ class InteropEngine:
         self._generators[format_type] = generator_instance
         return self
 
+    # TODO: make the config validator functions more generic
     def register_cda_section_config_validator(
         self, resource_type: str, template_model: BaseModel
     ) -> "InteropEngine":
@@ -276,33 +271,33 @@ class InteropEngine:
         return self
 
     def to_fhir(
-        self, source_data: str, source_format: Union[str, FormatType]
+        self, src_data: str, src_format: Union[str, FormatType]
     ) -> List[Resource]:
         """Convert source data to FHIR resources
 
         Args:
-            source_data: Input data as string (CDA XML or HL7v2 message)
-            source_format: Source format type, either as string ("cda", "hl7v2")
+            src_data: Input data as string (CDA XML or HL7v2 message)
+            src_format: Source format type, either as string ("cda", "hl7v2")
                          or FormatType enum
 
         Returns:
             List[Resource]: List of FHIR resources generated from the source data
 
         Raises:
-            ValueError: If source_format is not supported
+            ValueError: If src_format is not supported
 
         Example:
             # Convert CDA XML to FHIR resources
-            fhir_resources = engine.to_fhir(cda_xml, source_format="cda")
+            fhir_resources = engine.to_fhir(cda_xml, src_format="cda")
         """
-        source_format = validate_format(source_format)
+        src_format = validate_format(src_format)
 
-        if source_format == FormatType.CDA:
-            return self._cda_to_fhir(source_data)
-        elif source_format == FormatType.HL7V2:
-            return self._hl7v2_to_fhir(source_data)
+        if src_format == FormatType.CDA:
+            return self._cda_to_fhir(src_data)
+        elif src_format == FormatType.HL7V2:
+            return self._hl7v2_to_fhir(src_data)
         else:
-            raise ValueError(f"Unsupported format: {source_format}")
+            raise ValueError(f"Unsupported format: {src_format}")
 
     def from_fhir(
         self,
@@ -357,13 +352,13 @@ class InteropEngine:
         generator = self.fhir_generator
 
         # Parse sections from CDA XML using the parser
-        section_entries = parser.parse_document_sections(xml)
+        section_entries = parser.from_string(xml)
 
         # Process each section and convert entries to FHIR resources
         resources = []
         for section_key, entries in section_entries.items():
-            section_resources = generator.generate_resources_from_cda_section_entries(
-                entries, section_key
+            section_resources = generator.transform(
+                entries, src_format=FormatType.CDA, section_key=section_key
             )
             resources.extend(section_resources)
 
@@ -399,14 +394,34 @@ class InteropEngine:
                 f"Invalid or missing document configuration for type: {document_type}"
             )
 
-        return cda_generator.generate_document_from_fhir_resources(
-            resources, document_type
-        )
+        return cda_generator.transform(resources, document_type=document_type)
 
     def _hl7v2_to_fhir(self, source_data: str) -> List[Resource]:
         """Convert HL7v2 to FHIR resources"""
-        raise NotImplementedError("HL7v2 to FHIR conversion not implemented")
+        parser = self.hl7v2_parser
+        generator = self.fhir_generator
+
+        # Parse HL7v2 message using the parser
+        message_entries = parser.from_string(source_data)
+
+        # Process each message entry and convert to FHIR resources
+        resources = []
+        for message_key, entries in message_entries.items():
+            resource_entries = generator.transform(
+                entries, src_format=FormatType.HL7V2, message_key=message_key
+            )
+            resources.extend(resource_entries)
+
+        return resources
 
     def _fhir_to_hl7v2(self, resources: List[Resource]) -> str:
         """Convert FHIR resources to HL7v2"""
-        raise NotImplementedError("FHIR to HL7v2 conversion not implemented")
+        generator = self.hl7v2_generator
+
+        # Process each resource and convert to HL7v2 message
+        messages = []
+        for resource in resources:
+            message = generator.transform(resource)
+            messages.append(message)
+
+        return messages

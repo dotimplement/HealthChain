@@ -25,7 +25,7 @@ class TemplateRegistry:
             "uppercase": str.upper,
             "lowercase": str.lower
         })
-        template = registry.get_template("my_template")
+        template = registry.get_template("cda_fhir/condition")
     """
 
     def __init__(self, template_dir: Path):
@@ -116,7 +116,8 @@ class TemplateRegistry:
 
         This method recursively walks through the template directory and its subdirectories
         to find all .liquid template files. Each template is loaded into the environment
-        and stored in the internal template registry with its stem name as the key.
+        and stored in the internal template registry using its full relative path (without extension)
+        as the key (e.g., "cda_fhir/document"). This is not required but recommended for clarity.
         """
         if not self._env:
             raise ValueError("Environment not initialized. Call initialize() first.")
@@ -124,7 +125,8 @@ class TemplateRegistry:
         # Walk through all subdirectories to find template files
         for template_file in self.template_dir.rglob("*.liquid"):
             rel_path = template_file.relative_to(self.template_dir)
-            template_key = rel_path.stem
+            # Use full path without extension as the key (e.g., "cda_fhir/document")
+            template_key = str(rel_path.with_suffix(""))
 
             try:
                 template = self._env.get_template(str(rel_path))
@@ -143,7 +145,8 @@ class TemplateRegistry:
         """Get a template by key
 
         Args:
-            template_key: Template identifier
+            template_key: Template identifier. Can be a full path (e.g., 'cda_fhir/document')
+                or just a filename (e.g., 'document').
 
         Returns:
             The template object
@@ -160,7 +163,8 @@ class TemplateRegistry:
         """Check if a template exists
 
         Args:
-            template_key: Template identifier
+            template_key: Template identifier. Can be a full path (e.g., 'cda_fhir/document')
+                or just a filename (e.g., 'document').
 
         Returns:
             True if template exists, False otherwise

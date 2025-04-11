@@ -74,7 +74,20 @@ class SectionBaseConfig(BaseModel):
 #
 
 
-class ProblemSectionTemplateConfig(BaseModel):
+class SectionTemplateConfigBase(BaseModel):
+    """Base class for section template configurations"""
+
+    def validate_component_fields(self, component, required_fields):
+        """Helper method to validate required fields in a component"""
+        missing = required_fields - set(component.model_dump(exclude_unset=True).keys())
+        if missing:
+            raise ValueError(
+                f"{component.__class__.__name__} missing required fields: {missing}"
+            )
+        return component
+
+
+class ProblemSectionTemplateConfig(SectionTemplateConfigBase):
     """Template configuration for Problem Section"""
 
     act: ComponentTemplateConfig
@@ -100,7 +113,7 @@ class ProblemSectionTemplateConfig(BaseModel):
         return v
 
 
-class MedicationSectionTemplateConfig(BaseModel):
+class MedicationSectionTemplateConfig(SectionTemplateConfigBase):
     """Template configuration for SubstanceAdministration Section"""
 
     substance_admin: ComponentTemplateConfig
@@ -115,7 +128,7 @@ class MedicationSectionTemplateConfig(BaseModel):
         return v
 
 
-class AllergySectionTemplateConfig(BaseModel):
+class AllergySectionTemplateConfig(SectionTemplateConfigBase):
     """Template configuration for Allergy Section"""
 
     act: ComponentTemplateConfig
@@ -134,7 +147,7 @@ class AllergySectionTemplateConfig(BaseModel):
         return v
 
 
-class DocumentConfig(BaseModel):
+class DocumentConfigBase(BaseModel):
     """Generic document configuration model"""
 
     type_id: Dict[str, Any]
@@ -177,6 +190,12 @@ class DocumentConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class CcdDocumentConfig(DocumentConfigBase):
+    """Configuration model specific to CCD documents"""
+
+    allowed_sections: List[str] = ["problems", "medications", "allergies"]
+
+
 #
 # Registries and Factory Functions
 #
@@ -188,7 +207,7 @@ CDA_SECTION_CONFIG_REGISTRY = {
 }
 
 CDA_DOCUMENT_CONFIG_REGISTRY = {
-    "ccd": DocumentConfig,
+    "ccd": CcdDocumentConfig,
 }
 
 

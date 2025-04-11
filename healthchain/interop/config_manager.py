@@ -74,53 +74,23 @@ class InteropConfigManager(ConfigManager):
 
         self.validate()
 
-    def _find_cda_sections_config(self) -> Dict:
-        """Find CDA section configs in the module configs
-
-        Returns:
-            Dict of sections, or empty dict if none found
-        """
-        return self._find_config_section(module_name="interop", section_name="sections")
-
-    def _find_cda_document_config(self, document_type: str) -> Dict:
-        """Find CDA document configuration for a specific document type
-
-        Args:
-            document_type: Type of document (e.g., "ccd", "discharge")
-
-        Returns:
-            CDA document configuration dict or empty dict if not found
-        """
-        return self._find_config_section(
-            module_name="interop", section_name="document", subsection=document_type
-        )
-
     def _find_cda_document_types(self) -> List[str]:
         """Find available CDA document types in the configs
 
         Returns:
             List of CDA document type strings
         """
-        document_types = []
-
-        # Get top level document section using _find_config_section
+        # Get document types from cda/document path
         doc_section = self._find_config_section(
-            module_name="interop", section_name="document"
+            module_name="interop", section_path="cda/document"
         )
-        if doc_section:
-            document_types.extend(doc_section.keys())
 
-        # Check in subdirectories for additional document types
-        # We still need this part as _find_config_section only returns one section/subsection
-        for value in self._module_configs["interop"].values():
-            if isinstance(value, dict) and "document" in value:
-                if (
-                    isinstance(value["document"], dict)
-                    and value["document"] != doc_section
-                ):
-                    document_types.extend(value["document"].keys())
+        # If no document section exists, return empty list
+        if not doc_section:
+            return []
 
-        return document_types
+        # Return the keys from the document section
+        return list(doc_section.keys())
 
     def get_cda_section_configs(self, section_key: Optional[str] = None) -> Dict:
         """Get CDA section configuration(s).
@@ -140,17 +110,29 @@ class InteropConfigManager(ConfigManager):
 
         Raises:
             ValueError: If section_key is provided but not found in configurations
+                       or if no sections are configured
         """
-        sections = self._find_cda_sections_config()
+        # Get all sections
+        sections = self._find_config_section(
+            module_name="interop", section_path="cda/sections"
+        )
 
         if not sections:
-            log.warning("No section configs found")
-            return {}
+            raise ValueError("No CDA section configurations found")
 
+        # If section_key is provided, return just that section
         if section_key is not None:
             if section_key not in sections:
                 raise ValueError(f"Section configuration not found: {section_key}")
-            return sections[section_key]
+
+            # Basic validation that required fields exist
+            section_config = sections[section_key]
+            if "resource" not in section_config:
+                raise ValueError(
+                    f"Invalid section configuration for {section_key}: missing 'resource' field"
+                )
+
+            return section_config
 
         return sections
 
@@ -164,14 +146,27 @@ class InteropConfigManager(ConfigManager):
             document_type: Type of document (e.g., "ccd", "discharge") to get config for
 
         Returns:
-            Dict containing the document configuration if found, empty dict if not found
-            or if document_type is invalid
+            Dict containing the document configuration
+
+        Raises:
+            ValueError: If document_type is not found or the configuration is invalid
         """
-        document_config = self._find_cda_document_config(document_type)
+        document_config = self._find_config_section(
+            module_name="interop", section_path=f"cda/document/{document_type}"
+        )
 
         if not document_config:
-            return {}
+            raise ValueError(
+                f"Document configuration not found for type: {document_type}"
+            )
 
+        # Basic validation that required sections exist
+        if "templates" not in document_config:
+            raise ValueError(
+                f"Invalid document configuration for {document_type}: missing 'templates' section"
+            )
+
+        # Return the validated config
         return document_config
 
     def validate(self) -> bool:
@@ -196,29 +191,45 @@ class InteropConfigManager(ConfigManager):
         is_valid = super().validate()
 
         # Validate section configs
-        section_configs = self._find_cda_sections_config()
-        if not section_configs:
-            is_valid = self._handle_validation_error("No section configs found")
-        else:
-            # Validate each section config
-            for section_key, section_config in section_configs.items():
-                result = validate_cda_section_config_model(section_key, section_config)
-                if not result:
-                    is_valid = self._handle_validation_error(
-                        f"Section config validation failed for key: {section_key}"
+        try:
+            section_configs = self._find_config_section(
+                module_name="interop", section_path="cda/sections"
+            )
+            if not section_configs:
+                is_valid = self._handle_validation_error("No section configs found")
+            else:
+                # Validate each section config
+                for section_key, section_config in section_configs.items():
+                    result = validate_cda_section_config_model(
+                        section_key, section_config
                     )
+                    if not result:
+                        is_valid = self._handle_validation_error(
+                            f"Section config validation failed for key: {section_key}"
+                        )
+        except Exception as e:
+            is_valid = self._handle_validation_error(
+                f"Error validating section configs: {str(e)}"
+            )
 
         # Validate document configs - but don't fail if no documents are configured
         # since some use cases might not require documents
         document_types = self._find_cda_document_types()
         for doc_type in document_types:
-            doc_config = self._find_cda_document_config(doc_type)
-            if doc_config:
-                result = validate_cda_document_config_model(doc_type, doc_config)
-                if not result:
-                    is_valid = self._handle_validation_error(
-                        f"Document config validation failed for type: {doc_type}"
-                    )
+            try:
+                doc_config = self._find_config_section(
+                    module_name="interop", section_path=f"cda/document/{doc_type}"
+                )
+                if doc_config:
+                    result = validate_cda_document_config_model(doc_type, doc_config)
+                    if not result:
+                        is_valid = self._handle_validation_error(
+                            f"Document config validation failed for type: {doc_type}"
+                        )
+            except Exception as e:
+                is_valid = self._handle_validation_error(
+                    f"Error validating document config for {doc_type}: {str(e)}"
+                )
 
         return is_valid
 

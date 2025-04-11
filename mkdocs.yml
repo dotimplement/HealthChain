@@ -33,6 +33,15 @@ nav:
           - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md
       - Integrations:
         - Overview: reference/pipeline/integrations/integrations.md
+      - Interoperability:
+        - Overview: reference/interop/interop.md
+        - Engine: reference/interop/engine.md
+        - Configuration: reference/interop/configuration.md
+        - Templates: reference/interop/templates.md
+        - Mappings: reference/interop/mappings.md
+        - Parsers: reference/interop/parsers.md
+        - Generators: reference/interop/generators.md
+        - Working with xmltodict: reference/interop/xmltodict.md
       - Sandbox:
         - Overview: reference/sandbox/sandbox.md
         - Client: reference/sandbox/client.md

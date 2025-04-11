@@ -23,9 +23,23 @@ def map_system(
     if not mappings:
         return system
 
-    shared_mappings = mappings.get("shared_mappings", {})
-    system_mappings = shared_mappings.get("code_systems", {}).get(direction, {})
-    return system_mappings.get(system, system)
+    # TODO: can refactor
+    # TODO: can get name from config
+    # Get systems mapping from the cda_fhir subfolder
+    systems_mapping = mappings.get("systems", {})
+
+    if direction == "fhir_to_cda":
+        # For FHIR to CDA, map the URL to OID
+        if system in systems_mapping:
+            return systems_mapping[system].get("oid", system)
+    else:
+        # For CDA to FHIR, map OID to URL
+        # We need to find a system with the given OID
+        for url, info in systems_mapping.items():
+            if info.get("oid") == system:
+                return url
+
+    return system
 
 
 def map_status(
@@ -47,9 +61,20 @@ def map_status(
     if not mappings:
         return status
 
-    shared_mappings = mappings.get("shared_mappings", {})
-    status_mappings = shared_mappings.get("status_codes", {}).get(direction, {})
-    return status_mappings.get(status, status)
+    # Get the status codes mapping from the cda_fhir subfolder
+    status_codes = mappings.get("status_codes", {})
+
+    if direction == "fhir_to_cda":
+        # For FHIR to CDA, get the value directly
+        if status in status_codes:
+            return status_codes[status].get("code", status)
+    else:
+        # For CDA to FHIR, find FHIR code by CDA value
+        for fhir_code, info in status_codes.items():
+            if info.get("code") == status:
+                return fhir_code
+
+    return status
 
 
 def map_severity(
@@ -60,7 +85,7 @@ def map_severity(
     Args:
         severity_code: The severity code to map
         mappings: Mappings dictionary (if None, returns severity code unchanged)
-        direction: Direction of mapping ('cda_to_fhir' or 'fhir_to_cda')
+        direction: Direction of mapping ('fhir_to_cda' or 'cda_to_fhir')
 
     Returns:
         Mapped severity code or original if no mapping found
@@ -71,9 +96,20 @@ def map_severity(
     if not mappings:
         return severity_code
 
-    shared_mappings = mappings.get("shared_mappings", {})
-    severity_mappings = shared_mappings.get("severity_codes", {}).get(direction, {})
-    return severity_mappings.get(severity_code, severity_code)
+    # Get the severity codes mapping from the cda_fhir subfolder
+    severity_codes = mappings.get("severity_codes", {})
+
+    if direction == "fhir_to_cda":
+        # For FHIR to CDA, get the value directly
+        if severity_code in severity_codes:
+            return severity_codes[severity_code].get("code", severity_code)
+    else:
+        # For CDA to FHIR, find FHIR code by CDA value
+        for fhir_code, info in severity_codes.items():
+            if info.get("code") == severity_code:
+                return fhir_code
+
+    return severity_code
 
 
 # TODO: Make this date formatter more complete

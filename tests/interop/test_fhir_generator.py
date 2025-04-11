@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch
 
 from healthchain.interop.generators.fhir import FHIRGenerator
+from healthchain.interop.types import FormatType
 
 
 @pytest.fixture
@@ -9,9 +10,9 @@ def mock_config_manager():
     """Create a mock configuration manager."""
     config = Mock()
     config.get_config_value.side_effect = lambda key, default=None: {
-        "sections.problems.resource": "Condition",
-        "sections.medications.resource": "MedicationStatement",
-        "sections.allergies.resource": "AllergyIntolerance",
+        "cda.sections.problems.resource": "Condition",
+        "cda.sections.medications.resource": "MedicationStatement",
+        "cda.sections.allergies.resource": "AllergyIntolerance",
         "defaults.common.id_prefix": "test-",
         "defaults.common.subject": {"reference": "Patient/123"},
         "defaults.resources.Condition.clinicalStatus": {"coding": [{"code": "active"}]},
@@ -301,3 +302,44 @@ def test_add_required_fields_unknown_resource_type(fhir_generator):
     assert "id" in result
     assert result["id"].startswith("test-")
     assert "subject" not in result  # Not added for unknown types
+
+
+def test_transform_method(fhir_generator):
+    """Test the transform method that implements the BaseGenerator abstract method."""
+    # Mock the generate_resources_from_cda_section_entries method
+    with patch.object(
+        fhir_generator, "generate_resources_from_cda_section_entries"
+    ) as mock_cda_generate:
+        mock_cda_generate.return_value = [{"resourceType": "Condition", "id": "test-1"}]
+
+        # Mock the generate_resources_from_hl7v2_entries method
+        with patch.object(
+            fhir_generator, "generate_resources_from_hl7v2_entries"
+        ) as mock_hl7v2_generate:
+            mock_hl7v2_generate.return_value = [
+                {"resourceType": "Observation", "id": "test-2"}
+            ]
+
+            # Test CDA transformation
+            entries = [{"id": "entry1", "data": "value1"}]
+            result = fhir_generator.transform(
+                entries, src_format=FormatType.CDA, section_key="problems"
+            )
+
+            # Verify correct method was called
+            mock_cda_generate.assert_called_once_with(entries, "problems")
+            assert result == [{"resourceType": "Condition", "id": "test-1"}]
+
+            # Test HL7v2 transformation
+            entries = [{"id": "entry2", "data": "value2"}]
+            result = fhir_generator.transform(
+                entries, src_format=FormatType.HL7V2, message_key="observations"
+            )
+
+            # Verify correct method was called
+            mock_hl7v2_generate.assert_called_once_with(entries, "observations")
+            assert result == [{"resourceType": "Observation", "id": "test-2"}]
+
+            # Test with invalid format
+            with pytest.raises(ValueError):
+                fhir_generator.transform(entries, src_format="invalid")

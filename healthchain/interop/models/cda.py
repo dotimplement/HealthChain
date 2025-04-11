@@ -29,7 +29,7 @@ class StructuredBody(BaseModel):
     https://gazelle.ihe.net/CDAGenerator/cda/POCDMT000040StructuredBody.html
     """
 
-    component: List[Component3]
+    component: Union[Component3, List[Component3]]
 
 
 class ClinicalDocument(BaseModel):

@@ -1,13 +1,13 @@
 """
-Template Renderer for HealthChain Interoperability Engine
+Base Generator for HealthChain Interoperability Engine
 
-This module provides a base class for template rendering functionality.
+This module provides the abstract base class for all generators.
 """
 
 import logging
 import json
+from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-from pathlib import Path
 
 from liquid import Template
 
@@ -18,19 +18,15 @@ from healthchain.interop.filters import clean_empty
 log = logging.getLogger(__name__)
 
 
-class TemplateRenderer:
-    """Base class for template rendering functionality.
+class BaseGenerator(ABC):
+    """Abstract base class for healthcare data format generators.
 
     This class provides core template rendering capabilities using Liquid templates.
     It works with a ConfigManager to look up template configurations and a
     TemplateRegistry to store and retrieve templates.
 
-    The renderer supports:
-    - Loading templates by name from the registry
-    - Looking up templates based on section configurations
-    - Rendering templates with context data
-    - Cleaning empty values from rendered output
-    - JSON parsing of rendered templates
+    All generators must implement the transform method to convert
+    input data to their specific format.
 
     Attributes:
         config (ConfigManager): Configuration manager instance for looking up template paths
@@ -38,7 +34,7 @@ class TemplateRenderer:
     """
 
     def __init__(self, config: ConfigManager, template_registry: TemplateRegistry):
-        """Initialize the template renderer
+        """Initialize the generator
 
         Args:
             config: Configuration manager instance
@@ -51,7 +47,8 @@ class TemplateRenderer:
         """Get a template by name
 
         Args:
-            template_name: Name of the template to retrieve
+            template_name: Name of the template to retrieve. Can be a full path
+                (e.g., 'cda_fhir/document') or just a filename (e.g., 'document').
 
         Returns:
             The template instance or None if not found
@@ -68,8 +65,8 @@ class TemplateRenderer:
         """Get the template for a given section and template type from configuration.
 
         Looks up the template path from configuration using section_key and template_type,
-        extracts the template name (stem) from the path, and retrieves the template from
-        the registry if it exists.
+        and retrieves the template from the registry if it exists. The template path in
+        configuration should include the directory structure (e.g., 'cda_fhir/document').
 
         Args:
             section_key: Key identifying the section (e.g. 'problems', 'medications')
@@ -80,21 +77,18 @@ class TemplateRenderer:
             or template not found in registry
 
         Example:
-            >>> renderer.get_template_from_section_config('problems', 'entry')
-            <Template 'problem_entry'>
+            >>> generator.get_template_from_section_config('problems', 'entry')
+            <Template 'cda_fhir/problem_entry'>
         """
         # Get template path from configuration
-        template_path = self.config.get_config_value(
-            f"sections.{section_key}.{template_type}_template"
+        template_name = self.config.get_config_value(
+            f"cda.sections.{section_key}.{template_type}_template"
         )
-        if not template_path:
+        if not template_name:
             log.warning(
                 f"No {template_type} template specified for section: {section_key}"
             )
             return None
-
-        # Extract template name (stem) from path
-        template_name = Path(template_path).stem
 
         # Check if template exists in registry
         if not self.template_registry.has_template(template_name):
@@ -122,7 +116,7 @@ class TemplateRenderer:
 
         Example:
             >>> context = {"patient": {"name": "John Doe"}}
-            >>> result = renderer.render_template(template, context)
+            >>> result = generator.render_template(template, context)
             >>> print(result)
             {'patient': {'name': 'John Doe'}}
         """
@@ -132,3 +126,16 @@ class TemplateRenderer:
         except Exception as e:
             log.error(f"Failed to render template {template.name}: {str(e)}")
             return None
+
+    @abstractmethod
+    def transform(self, data, **kwargs):
+        """Transform input data to this generator's format.
+
+        Args:
+            data: The input data to transform
+            **kwargs: Format-specific parameters
+
+        Returns:
+            The transformed data in the generator's format
+        """
+        pass

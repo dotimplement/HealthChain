@@ -15,26 +15,22 @@ from healthchain.interop.filters import (
 @pytest.fixture
 def test_mappings():
     return {
-        "shared_mappings": {
-            "code_systems": {
-                "fhir_to_cda": {
-                    "http://loinc.org": "2.16.840.1.113883.6.1",
-                    "http://snomed.info/sct": "2.16.840.1.113883.6.96",
-                },
-                "cda_to_fhir": {
-                    "2.16.840.1.113883.6.1": "http://loinc.org",
-                    "2.16.840.1.113883.6.96": "http://snomed.info/sct",
-                },
+        "systems": {
+            "http://loinc.org": {"oid": "2.16.840.1.113883.6.1", "name": "LOINC"},
+            "http://snomed.info/sct": {
+                "oid": "2.16.840.1.113883.6.96",
+                "name": "SNOMED CT",
             },
-            "status_codes": {
-                "fhir_to_cda": {"active": "completed", "inactive": "cancelled"},
-                "cda_to_fhir": {"completed": "active", "cancelled": "inactive"},
-            },
-            "severity_codes": {
-                "cda_to_fhir": {"H": "high", "M": "moderate", "L": "low"},
-                "fhir_to_cda": {"high": "H", "moderate": "M", "low": "L"},
-            },
-        }
+        },
+        "status_codes": {
+            "active": {"code": "completed", "display": "Active"},
+            "inactive": {"code": "cancelled", "display": "Inactive"},
+        },
+        "severity_codes": {
+            "high": {"code": "H", "display": "High"},
+            "moderate": {"code": "M", "display": "Moderate"},
+            "low": {"code": "L", "display": "Low"},
+        },
     }
 
 

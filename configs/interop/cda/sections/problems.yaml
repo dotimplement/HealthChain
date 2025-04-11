@@ -4,7 +4,7 @@
 # Metadata for both extraction and rendering processes
 resource: "Condition"
 resource_template: "cda_fhir/condition"
-entry_template: "cda_fhir/cda_problem_entry"
+entry_template: "fhir_cda/problem_entry"
 
 # Section identifiers (used for extraction)
 identifiers:

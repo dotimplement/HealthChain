@@ -94,12 +94,13 @@ def test_config_loading_and_access(config_fixtures):
     configs = manager.get_configs()
 
     # Check sections are available
-    assert "sections" in configs
-    assert configs["sections"]["problems"]["resource"] == "Condition"
+    assert "cda" in configs
+    assert "sections" in configs["cda"]
+    assert configs["cda"]["sections"]["problems"]["resource"] == "Condition"
 
     # Check document configs are nested properly
-    assert "document" in configs
-    assert configs["document"]["ccd"]["code"]["code"] == "34133-9"
+    assert "document" in configs["cda"]
+    assert configs["cda"]["document"]["ccd"]["code"]["code"] == "34133-9"
 
     # Test mappings access - was test_load_mappings
     mappings = manager.get_mappings()
@@ -174,4 +175,51 @@ def test_with_real_configs(real_config_dir):
         configs = manager.get_configs()
 
         # Verify expected structure exists
-        assert "sections" in configs or "document" in configs
+        assert "cda" in configs
+
+
+def test_runtime_configuration_overrides(config_fixtures):
+    """Test setting and getting runtime configuration overrides."""
+    config_dir = config_fixtures
+
+    # Initialize config manager and load defaults
+    manager = ConfigManager(config_dir)
+    manager.load()
+
+    # Test 1: Basic setting and getting of runtime value
+    manager.set_config_value("test.key", "test_value")
+    assert manager.get_config_value("test.key") == "test_value"
+
+    # Test 2: Override an existing value from defaults
+    original_id_prefix = manager.get_config_value("defaults.common.id_prefix")
+    assert original_id_prefix == "hc-"  # Verify original value
+
+    manager.set_config_value("defaults.common.id_prefix", "override-")
+    assert manager.get_config_value("defaults.common.id_prefix") == "override-"
+
+    # Test 3: Setting nested configuration values
+    manager.set_config_value("nested.config.test", {"key1": "value1", "key2": "value2"})
+    nested_value = manager.get_config_value("nested.config.test")
+    assert nested_value["key1"] == "value1"
+    assert nested_value["key2"] == "value2"
+
+    # Test 4: Verify runtime overrides in merged configs
+    manager.set_config_value("database.name", "runtime_db")
+    configs = manager.get_configs()
+    assert configs["database"]["name"] == "runtime_db"
+
+    # Test 5: Verify precedence (runtime override > environment > defaults)
+    # First set the environment to production
+    manager.set_environment("production")
+    # Environment config should have database.name = "healthchain_prod"
+    assert manager._env_configs["database"]["name"] == "healthchain_prod"
+    # But runtime override should take precedence
+    assert manager.get_config_value("database.name") == "runtime_db"
+
+    # Test 6: Test method chaining
+    result = manager.set_config_value("chain.test", "value1").set_config_value(
+        "chain.test2", "value2"
+    )
+    assert result is manager  # Should return self
+    assert manager.get_config_value("chain.test") == "value1"
+    assert manager.get_config_value("chain.test2") == "value2"

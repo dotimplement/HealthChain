@@ -1,6 +1,11 @@
 # CCD Document Configuration
 # This file contains configuration for CCD documents
 
+# Document templates (required)
+templates:
+  document: "fhir_cda/document"
+  section: "fhir_cda/section"
+
 # Basic document information
 code:
   code: "34133-9"
@@ -18,23 +23,23 @@ type_id:
 template_id:
   root: "1.2.840.114350.1.72.1.51693"
 
-templates:
-  document: "cda_document"
-  section: "cda_section"
-
 # Document structure
 structure:
   # Header configuration
   header:
-    include_patient: true
-    include_author: true
-    include_custodian: true
+    include_patient: false
+    include_author: false
+    include_custodian: false
     include_legal_authenticator: false
 
   # Body configuration
   body:
     structured_body: true
     non_xml_body: false
+    include_sections:
+      - "allergies"
+      - "medications"
+      - "problems"
 
 # Rendering configuration
 rendering:

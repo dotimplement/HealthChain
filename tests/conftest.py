@@ -642,9 +642,13 @@ def config_fixtures():
         interop_dir = config_dir / "interop"
         interop_dir.mkdir()
 
+        # Create cda directory
+        cda_dir = interop_dir / "cda"
+        cda_dir.mkdir()
+
         # Create sections directory and files
-        sections_dir = interop_dir / "sections"
-        sections_dir.mkdir()
+        sections_dir = cda_dir / "sections"
+        sections_dir.mkdir(parents=True)
 
         # Problems section - needs to comply with ProblemSectionTemplateConfig
         problems_file = sections_dir / "problems.yaml"
@@ -759,7 +763,7 @@ def config_fixtures():
         }
 
         # Create document directory and file
-        document_dir = interop_dir / "document"
+        document_dir = cda_dir / "document"
         document_dir.mkdir()
 
         # Document config - needs to comply with DocumentConfig

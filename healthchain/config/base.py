@@ -101,7 +101,20 @@ class ValidationLevel:
 
 
 class ConfigManager:
-    """Manages loading and accessing configuration files for the HealthChain project"""
+    """Manages loading and accessing configuration files for the HealthChain project
+
+    The ConfigManager handles loading configuration from multiple sources with a defined
+    precedence order:
+
+    1. Default configuration (lowest precedence)
+    2. Environment-specific configuration (medium precedence)
+    3. Module-specific configuration (higher precedence)
+    4. Runtime overrides (highest precedence)
+
+    Configuration can be accessed using dot notation paths, and runtime overrides
+    can be set programmatically. The manager supports different validation levels
+    to control how configuration errors are handled.
+    """
 
     def __init__(
         self,
@@ -244,60 +257,77 @@ class ConfigManager:
                 self._mappings = {}
                 return self._mappings
 
-            # Load each YAML file in the mappings directory
-            for config_file in mappings_dir.rglob("*.yaml"):
-                try:
-                    with open(config_file) as f:
-                        self._mappings[config_file.stem] = yaml.safe_load(f)
-                    log.debug(f"Loaded mapping file: {config_file}")
-                except Exception as e:
-                    log.error(f"Failed to load mapping file {config_file}: {str(e)}")
+            # Use the existing recursive loader that already handles directory structures
+            self._mappings = _load_yaml_files_recursively(mappings_dir)
+
+            # Log summary information
+            # Only consider directories as folders, not top-level yaml files
+            folders = []
+            for dir_path in mappings_dir.iterdir():
+                if dir_path.is_dir() and dir_path.name in self._mappings:
+                    folders.append(dir_path.name)
+
+            total_files = sum(1 for _ in mappings_dir.rglob("*.yaml"))
+
+            # Log summary of loaded mappings
+            log.info(
+                f"Loaded {total_files} mapping files from {mappings_dir}: {', '.join(folders)}"
+            )
+            log.debug(f"Mapping structure: {list(self._mappings.keys())}")
 
         return self._mappings
 
-    def _find_config_section(
-        self, module_name: str, section_name: str, subsection: Optional[str] = None
-    ) -> Dict:
-        """Find a configuration section in the module configs,
-        searching first at top-level then in subdirectories.
+    def _find_config_section(self, module_name: str, section_path: str) -> Dict:
+        """Find a configuration section in the module configs.
 
         Args:
             module_name: Name of the module to search in (e.g. "interop")
-            section_name: Name of the section to find (e.g. "sections", "document")
-            subsection: Optional subsection key to look for within the section
+            section_path: Path to the config section, with segments separated by slashes
+                         (e.g. "sections", "document/ccd", "cda/document/ccd")
 
         Returns:
-            Configuration dict or empty dict if not found. If subsection is specified,
-            returns that subsection's config or empty dict if not found.
+            Configuration dict or empty dict if not found
         """
-        # Look directly in module configs
-        if section_name in self._module_configs[module_name]:
-            section = self._module_configs[module_name][section_name]
-            if isinstance(section, dict):
-                if subsection:
-                    return section.get(subsection, {})
-                return section
+        # Start with the module config
+        if module_name not in self._module_configs:
+            return {}
 
-        # Look in subdirectories
-        for value in self._module_configs[module_name].values():
-            if isinstance(value, dict) and section_name in value:
-                if isinstance(value[section_name], dict):
-                    if subsection:
-                        return value[section_name].get(subsection, {})
-                    return value[section_name]
+        config = self._module_configs[module_name]
 
-        if subsection:
-            log.warning(f"No {section_name} config found for: {subsection}")
+        # Empty path returns the whole module config
+        if not section_path:
+            return config
 
-        return {}
+        # Split path into segments and navigate
+        path_segments = section_path.split("/")
 
-    def get_mappings(self) -> Dict:
+        # Navigate through the config structure
+        current_config = config
+
+        for segment in path_segments:
+            if segment in current_config and isinstance(current_config[segment], dict):
+                current_config = current_config[segment]
+            else:
+                # Path segment not found or not a dict
+                if len(path_segments) > 1:
+                    log.warning(f"Config section not found: {section_path}")
+                return {}
+
+        return current_config
+
+    def get_mappings(self, mapping_key: Optional[str] = None) -> Dict:
         """Get all mappings, loading them first if needed
 
+        Args:
+            mapping_key: Optional key to get a specific mapping subset
+
         Returns:
-            Dict of mappings
+            Dict of mappings or specific mapping subset if mapping_key is provided
         """
-        return self._load_mappings()
+        mappings = self._load_mappings()
+        if mapping_key and mapping_key in mappings:
+            return mappings[mapping_key]
+        return mappings
 
     def get_defaults(self) -> Dict:
         """Get all default values
@@ -344,11 +374,12 @@ class ConfigManager:
         """Get all configuration values merged according to precedence order.
 
         This method merges configuration values from different sources in a simplified
-        three-layer precedence order:
+        four-layer precedence order:
 
-        1. Module-specific configs (highest priority, if a module is specified)
-        2. Environment-specific configs (middle priority)
-        3. Default configs (lowest priority)
+        1. Runtime overrides (highest priority, set via set_config_value)
+        2. Module-specific configs (if a module is specified)
+        3. Environment-specific configs
+        4. Default configs (lowest priority)
 
         The configurations are deep merged, meaning nested dictionary values are
         recursively combined rather than overwritten.
@@ -368,11 +399,50 @@ class ConfigManager:
         # Apply environment-specific configs (middle priority)
         _deep_merge(merged_configs, self._env_configs)
 
-        # Apply module-specific configs if a module is specified (highest priority)
+        # Apply module-specific configs if a module is specified (high priority)
         if self._module and self._module in self._module_configs:
             _deep_merge(merged_configs, self._module_configs[self._module])
 
+        # Apply runtime overrides (highest priority)
+        if hasattr(self, "_runtime_overrides"):
+            _deep_merge(merged_configs, self._runtime_overrides)
+
         return merged_configs
+
+    def set_config_value(self, path: str, value: Any) -> "ConfigManager":
+        """Set a configuration value using dot notation path
+
+        This method allows setting configuration values at runtime. The value will
+        override any values from files when get_config_value is called. Values are
+        stored in a runtime_overrides dictionary that takes precedence over all
+        other configuration sources.
+
+        Args:
+            path: Dot notation path (e.g. "defaults.common.id_prefix")
+            value: The value to set
+
+        Returns:
+            Self for method chaining
+        """
+        # TODO: validate path
+        if not hasattr(self, "_runtime_overrides"):
+            self._runtime_overrides = {}
+
+        # Split the path into parts
+        parts = path.split(".")
+
+        # Navigate to the correct nested dictionary
+        current = self._runtime_overrides
+        for part in parts[:-1]:
+            if part not in current:
+                current[part] = {}
+            current = current[part]
+
+        # Set the value
+        current[parts[-1]] = value
+
+        log.debug(f"Set runtime config override: {path} = {value}")
+        return self
 
     def get_config_value(self, path: str, default: Any = None) -> Any:
         """Get a configuration value using dot notation path
@@ -424,6 +494,14 @@ class ConfigManager:
 
         self._validation_level = level
         return self
+
+    def get_validation_level(self) -> str:
+        """Get the current validation level
+
+        Returns:
+            String representing the current validation level
+        """
+        return self._validation_level
 
     def _handle_validation_error(self, message: str) -> bool:
         """Handle validation error based on validation level

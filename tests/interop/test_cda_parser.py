@@ -46,13 +46,13 @@ def mock_config():
 
     # Set up dynamic config_value returns based on input
     def get_config_value(path):
-        if path == "sections.problems.identifiers.template_id":
+        if path == "cda.sections.problems.identifiers.template_id":
             return "2.16.840.1.113883.10.20.1.11"
-        elif path == "sections.problems.identifiers.code":
+        elif path == "cda.sections.problems.identifiers.code":
             return "11450-4"
-        elif path == "sections.medications.identifiers.template_id":
+        elif path == "cda.sections.medications.identifiers.template_id":
             return None
-        elif path == "sections.medications.identifiers.code":
+        elif path == "cda.sections.medications.identifiers.code":
             return "10160-0"
         return None
 
@@ -84,10 +84,10 @@ def test_initialization(mock_config):
     assert parser.clinical_document is None
 
 
-def test_parse_document_sections(cda_parser, sample_cda_document, mock_config):
+def test_parse_document(cda_parser, sample_cda_document, mock_config):
     """Test parsing sections from a CDA document."""
     # Parse the document
-    sections = cda_parser.parse_document_sections(sample_cda_document)
+    sections = cda_parser.parse_document(sample_cda_document)
 
     # Verify that the problems section was found
     assert "problems" in sections
@@ -103,11 +103,11 @@ def test_parse_document_sections(cda_parser, sample_cda_document, mock_config):
 def test_parse_document_empty(cda_parser):
     """Test parsing an empty or invalid document."""
     # Test with empty document
-    sections = cda_parser.parse_document_sections("")
+    sections = cda_parser.parse_document("")
     assert sections == {}
 
     # Test with invalid XML
-    sections = cda_parser.parse_document_sections("<invalid>XML</not-closed>")
+    sections = cda_parser.parse_document("<invalid>XML</not-closed>")
     assert sections == {}
 
 
@@ -159,7 +159,7 @@ def test_no_section_found(cda_parser, sample_cda_document, mock_config):
     mock_config.get_cda_section_configs.return_value = {}
 
     # Parse the document
-    sections = cda_parser.parse_document_sections(sample_cda_document)
+    sections = cda_parser.parse_document(sample_cda_document)
 
     # Verify no sections were found
     assert sections == {}
@@ -186,7 +186,7 @@ def test_section_defined_but_not_found(cda_parser, sample_cda_document, mock_con
     mock_config.get_cda_section_configs.return_value = section_config
 
     # Parse the document
-    sections = cda_parser.parse_document_sections(sample_cda_document)
+    sections = cda_parser.parse_document(sample_cda_document)
 
     # Verify no sections were found
     assert sections == {}

@@ -4,7 +4,7 @@
 # Metadata for both extraction and rendering processes
 resource: "MedicationStatement"
 resource_template: "cda_fhir/medication_statement"
-entry_template: "cda_fhir/cda_medication_entry"
+entry_template: "fhir_cda/medication_entry"
 
 # Section identifiers (used for extraction)
 identifiers:

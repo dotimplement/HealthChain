@@ -4,7 +4,7 @@
 # Metadata for both extraction and rendering processes
 resource: "AllergyIntolerance"
 resource_template: "cda_fhir/allergy_intolerance"
-entry_template: "cda_fhir/cda_allergy_entry"
+entry_template: "fhir_cda/allergy_entry"
 
 # Section identifiers (used for extraction)
 identifiers:

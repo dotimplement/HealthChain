@@ -11,11 +11,12 @@ from typing import Dict, List
 from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.models.sections import Section
 from healthchain.interop.config_manager import InteropConfigManager
+from healthchain.interop.parsers.base import BaseParser
 
 log = logging.getLogger(__name__)
 
 
-class CDAParser:
+class CDAParser(BaseParser):
     """Parser for CDA XML documents.
 
     The CDAParser class provides functionality to parse Clinical Document Architecture (CDA)
@@ -44,10 +45,22 @@ class CDAParser:
             config: InteropConfigManager instance containing section configurations,
                    templates, and mapping rules for CDA document parsing
         """
-        self.config = config
+        super().__init__(config)
         self.clinical_document = None
 
-    def parse_document_sections(self, xml: str) -> Dict[str, List[Dict]]:
+    def from_string(self, data: str) -> dict:
+        """
+        Parse input data and convert it to a structured format.
+
+        Args:
+            data: The CDA XML document string to parse
+
+        Returns:
+            A dictionary containing the parsed data structure with sections
+        """
+        return self.parse_document(data)
+
+    def parse_document(self, xml: str) -> Dict[str, List[Dict]]:
         """Parse a complete CDA document and extract entries from all configured sections.
 
         This method parses a CDA XML document and extracts entries from each section that is
@@ -60,7 +73,7 @@ class CDAParser:
         Returns:
             Dict[str, List[Dict]]: Dictionary mapping section keys (e.g. "problems",
                 "medications") to lists of entry dictionaries containing the parsed data
-                from that section
+                from that section (xmltodict format).
 
         Raises:
             ValueError: If the XML string is empty or invalid
@@ -68,7 +81,7 @@ class CDAParser:
 
         Example:
             >>> parser = CDAParser(config)
-            >>> sections = parser.parse_document_sections(cda_xml)
+            >>> sections = parser.from_string(cda_xml)
             >>> problems = sections.get("problems", [])
         """
         section_entries = {}
@@ -134,18 +147,18 @@ class CDAParser:
 
                 # Get template_id and code from config_manager
                 template_id = self.config.get_config_value(
-                    f"sections.{section_key}.identifiers.template_id"
+                    f"cda.sections.{section_key}.identifiers.template_id"
                 )
                 code = self.config.get_config_value(
-                    f"sections.{section_key}.identifiers.code"
+                    f"cda.sections.{section_key}.identifiers.code"
                 )
 
                 if not template_id and not code:
                     raise ValueError(
                         f"No template_id or code found for section {section_key}: \
                             configure one of the following: \
-                            sections.{section_key}.identifiers.template_id \
-                            or sections.{section_key}.identifiers.code"
+                            cda.sections.{section_key}.identifiers.template_id \
+                            or cda.sections.{section_key}.identifiers.code"
                     )
 
                 if template_id and self._find_section_by_template_id(
