@@ -75,7 +75,7 @@ class Section(BaseModel):
     templateId: Optional[Union[II, List[II]]] = None
     code: Optional[CE] = None
     title: Optional[str] = None
-    text: Optional[Dict] = None
+    text: Optional[Union[str, Dict]] = None
     entry: Optional[Union[Entry, List[Entry]]] = None
 
 

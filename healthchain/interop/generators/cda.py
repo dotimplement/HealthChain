@@ -243,6 +243,21 @@ class CDAGenerator(BaseGenerator):
             entries = mapped_entries.get(section_key, [])
             if entries:
                 try:
+                    # Special handling for notes section, bit of a hack for now
+                    if section_key == "notes":
+                        # For DocumentReference, the generated entries already contain the full
+                        # section structure, so we need to extract the section directly
+                        if (
+                            len(entries) > 0
+                            and "component" in entries[0]
+                            and "section" in entries[0]["component"]
+                        ):
+                            # Just extract the first section (we don't support multiple notes sections yet)
+                            section_data = entries[0]["component"]["section"]
+                            sections.append({"section": section_data})
+                            continue
+
+                    # Regular handling for other resource types
                     context = {
                         "entries": entries,
                         "config": section_config,
@@ -303,7 +318,6 @@ class CDAGenerator(BaseGenerator):
         }
 
         rendered = self.render_template(document_template, context)
-
         if validate:
             if "ClinicalDocument" not in rendered:
                 log.error(
@@ -328,11 +342,24 @@ class CDAGenerator(BaseGenerator):
             f"cda.document.{document_type}.rendering.xml.encoding", "UTF-8"
         )
 
-        # Generate XML
-        xml_string = xmltodict.unparse(
-            out_dict,
-            pretty=pretty_print,
-            encoding=encoding,
+        # Generate XML without preprocessor
+        xml_string = xmltodict.unparse(out_dict, pretty=pretty_print, encoding=encoding)
+
+        # Replace text elements containing < or > with CDATA sections
+        # This regex matches <text>...</text> tags where content has HTML entities
+        def replace_with_cdata(match):
+            content = match.group(1)
+            # Only process if it contains HTML entities
+            if "&lt;" in content or "&gt;" in content:
+                # Convert HTML entities back to characters
+                import html
+
+                decoded = html.unescape(content)
+                return f"<text><![CDATA[{decoded}]]></text>"
+            return f"<text>{content}</text>"
+
+        xml_string = re.sub(
+            r"<text>(.*?)</text>", replace_with_cdata, xml_string, flags=re.DOTALL
         )
 
         # Fix self-closing tags

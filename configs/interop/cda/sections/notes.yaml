@@ -1,0 +1,34 @@
+# Notes Section Configuration
+# =====================
+
+# Metadata for both extraction and rendering processes
+resource: "DocumentReference"
+resource_template: "cda_fhir/document_reference"
+entry_template: "fhir_cda/note_entry"
+
+# Section identifiers (used for extraction)
+identifiers:
+  template_id: "1.2.840.114350.1.72.1.200001"
+  code: "51847-2"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Progress Notes"
+
+# Template configuration (used for rendering/generation)
+template:
+  # Note section configuration
+  note_section:
+    template_id:
+      - "1.2.840.114350.1.72.1.200001"
+    code: "51847-2"
+    code_system: "2.16.840.1.113883.6.1"
+    code_system_name: "LOINC"
+    display_name: "Progress Notes"
+    status_code: "completed"
+
+# Rendering configuration
+rendering:
+  narrative:
+    include: true
+    template: "narratives/note_narrative"
+    description: "Progress Notes extracted from CDA notes section"

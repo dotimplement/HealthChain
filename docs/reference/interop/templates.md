@@ -43,6 +43,7 @@ HealthChain provides default templates for the transformation of Problems, Medic
 | **Problems** | [**Condition**](https://www.hl7.org/fhir/condition.html) |
 | **Medications** | [**MedicationStatement**](https://www.hl7.org/fhir/medicationstatement.html) |
 | **Allergies** | [**AllergyIntolerance**](https://www.hl7.org/fhir/allergyintolerance.html) |
+| **Notes** | [**DocumentReference**](https://www.hl7.org/fhir/documentreference.html) |
 
 CDA to FHIR templates:
 
@@ -51,6 +52,7 @@ CDA to FHIR templates:
 | **Problems** | `fhir_cda/problem_entry.liquid` |
 | **Medications** | `fhir_cda/medication_entry.liquid` |
 | **Allergies** | `fhir_cda/allergy_entry.liquid` |
+| **Notes** | `fhir_cda/note_entry.liquid` |
 
 FHIR to CDA templates:
 
@@ -59,6 +61,7 @@ FHIR to CDA templates:
 | **Condition** | `cda_fhir/condition.liquid` |
 | **MedicationStatement** | `cda_fhir/medication_statement.liquid` |
 | **AllergyIntolerance** | `cda_fhir/allergy_intolerance.liquid` |
+| **DocumentReference** | `cda_fhir/document_reference.liquid` |
 
 ## Template Format
 
@@ -197,6 +200,9 @@ The template system provides several custom filters for common healthcare docume
 | `extract_clinical_status` | Extracts clinical status from an observation |
 | `extract_reactions` | Extracts reactions from an observation |
 | `clean_empty` | Recursively removes empty values from dictionaries and lists |
+| `to_base64` | Encodes text to base64 |
+| `from_base64` | Decodes base64 to text |
+| `xmldict_to_html` | Converts xmltodict format to HTML string |
 
 ### Using Filters
 
@@ -206,6 +212,18 @@ The template system provides several custom filters for common healthcare docume
 {{ resource.effectiveDateTime | format_date }}
 
 {{ resource.id | generate_id }}
+
+<!-- Base64 encoding and decoding -->
+{{ "Hello World" | to_base64 }}
+<!-- Outputs: SGVsbG8gV29ybGQ= -->
+
+{{ "SGVsbG8gV29ybGQ=" | from_base64 }}
+<!-- Outputs: Hello World -->
+
+<!-- Convert XML dictionary to HTML -->
+{% assign xml_dict = {'div': {'p': 'Hello', '@class': 'note'}} %}
+{{ xml_dict | xmldict_to_html }}
+<!-- Outputs: <div><p class="note">Hello</p></div> -->
 ```
 For more information on using filters, see Liquid's [official documentation](https://shopify.github.io/liquid/basics/introduction/).
 

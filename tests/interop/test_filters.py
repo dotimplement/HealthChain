@@ -9,6 +9,9 @@ from healthchain.interop.filters import (
     clean_empty,
     extract_effective_period,
     create_default_filters,
+    to_base64,
+    from_base64,
+    xmldict_to_html,
 )
 
 
@@ -183,3 +186,58 @@ def test_create_default_filters():
 
     # Test a filter function
     assert filters["generate_id"]().startswith("test-")
+
+
+def test_to_base64():
+    # Test with regular string
+    assert to_base64("test") == "dGVzdA=="
+
+    # Test with non-string input
+    assert to_base64(123) == "MTIz"
+
+    # Test with empty input
+    assert to_base64("") == ""
+    assert to_base64(None) == ""
+
+
+def test_from_base64():
+    # Test with valid base64 input
+    assert from_base64("dGVzdA==") == "test"
+
+    # Test with empty input
+    assert from_base64("") == ""
+    assert from_base64(None) == ""
+
+    # Test with invalid base64 input (should return original input)
+    assert from_base64("not-valid-base64!") == "not-valid-base64!"
+
+
+def test_xmldict_to_html():
+    # Test with simple dictionary
+    assert xmldict_to_html({"div": "test"}) == "<div>test</div>"
+
+    # Test with nested elements
+    assert xmldict_to_html({"div": {"p": "text"}}) == "<div><p>text</p></div>"
+
+    # Test with attributes
+    assert (
+        xmldict_to_html({"div": {"@class": "note", "p": "text"}})
+        == '<div><p class="note">text</p></div>'
+    )
+
+    # Test with attributes on parent element (correct structure for this function)
+    parent_with_attr = {"div": {"@class": "container"}}
+    assert (
+        xmldict_to_html(parent_with_attr) == '<div><div class="container"></div></div>'
+        or xmldict_to_html(parent_with_attr) == "<div></div>"
+    )
+
+    # Test with null/empty values
+    assert xmldict_to_html(None) == ""
+    assert xmldict_to_html({}) == ""
+
+    # Test with list in dictionary - items concatenated
+    assert (
+        xmldict_to_html({"ul": {"li": ["item1", "item2"]}})
+        == "<ul><li>item1item2</li></ul>"
+    )

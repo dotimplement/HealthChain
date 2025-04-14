@@ -177,7 +177,17 @@ class CDAParser(BaseParser):
                 )
                 return entries_dicts
 
-            # Get entries from section
+            # Check if this is a notes section (which doesn't have entries but has text) - temporary workaround
+            if section_key == "notes":
+                # For notes section, create a synthetic entry with the section's text content
+                section_dict = section.model_dump(exclude_none=True, by_alias=True)
+                log.debug(
+                    f"Created synthetic entry for notes section with text: {type(section.text)}"
+                )
+                # Return the entire section as the entry for DocumentReference
+                return [section_dict]
+
+            # Get entries from section (normal case for other sections)
             if section.entry:
                 entries_dicts = (
                     section.entry

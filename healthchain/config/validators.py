@@ -193,7 +193,22 @@ class DocumentConfigBase(BaseModel):
 class CcdDocumentConfig(DocumentConfigBase):
     """Configuration model specific to CCD documents"""
 
-    allowed_sections: List[str] = ["problems", "medications", "allergies"]
+    allowed_sections: List[str] = ["problems", "medications", "allergies", "notes"]
+
+
+class NoteSectionTemplateConfig(SectionTemplateConfigBase):
+    """Template configuration for Notes Section"""
+
+    note_section: ComponentTemplateConfig
+
+    @field_validator("note_section")
+    @classmethod
+    def validate_note_section(cls, v):
+        required_fields = {"template_id", "code", "code_system", "status_code"}
+        missing = required_fields - set(v.model_dump(exclude_unset=True).keys())
+        if missing:
+            raise ValueError(f"note_section missing required fields: {missing}")
+        return v
 
 
 #
@@ -204,6 +219,7 @@ CDA_SECTION_CONFIG_REGISTRY = {
     "Condition": ProblemSectionTemplateConfig,
     "MedicationStatement": MedicationSectionTemplateConfig,
     "AllergyIntolerance": AllergySectionTemplateConfig,
+    "DocumentReference": NoteSectionTemplateConfig,
 }
 
 CDA_DOCUMENT_CONFIG_REGISTRY = {

@@ -5,6 +5,7 @@ from pathlib import Path
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.documentreference import DocumentReference
 
 from healthchain.interop.engine import InteropEngine
 
@@ -48,10 +49,12 @@ def test_cda_to_fhir_conversion(interop_engine, test_cda_xml):
     conditions = [r for r in resources if isinstance(r, Condition)]
     medications = [r for r in resources if isinstance(r, MedicationStatement)]
     allergies = [r for r in resources if isinstance(r, AllergyIntolerance)]
+    notes = [r for r in resources if isinstance(r, DocumentReference)]
 
     assert len(conditions) > 0
     assert len(medications) > 0
     assert len(allergies) > 0
+    assert len(notes) > 0
 
     # Verify specific data in the resources
     # Condition
@@ -121,6 +124,17 @@ def test_cda_to_fhir_conversion(interop_engine, test_cda_xml):
     assert allergy.reaction[0].severity == "severe"
     assert allergy.onsetDateTime
 
+    # Note
+    note = notes[0]
+    assert "dev-" in note.id
+    assert note.status == "current"
+    assert note.type.coding[0].code == "51847-2"
+    assert note.type.coding[0].display == "ASSESSMENT AND PLAN"
+    assert note.type.coding[0].system == "http://loinc.org"
+    assert note.content[0].attachment.title == "Progress Notes"
+    assert note.content[0].attachment.contentType == "text/plain"
+    assert isinstance(note.content[0].attachment.data, bytes)
+
 
 def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
     """Test FHIR to CDA conversion with real data.
@@ -151,6 +165,7 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
     assert "Problem List" in cda
     assert "Medications" in cda
     assert "Allergies" in cda
+    assert "Progress Notes" in cda
 
     assert '<templateId root="2.16.840.1.113883.10.20.1.27"/>' in cda
     assert '<templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1"/>' in cda
@@ -158,9 +173,14 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
     assert '<templateId root="2.16.840.1.113883.3.88.11.83.7"/>' in cda
     assert '<templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5"/>' in cda
     assert '<templateId root="2.16.840.1.113883.10.20.1.28"/>' in cda
+    assert '<templateId root="1.2.840.114350.1.72.1.200001"/>' in cda
 
     assert 'code="38341003" codeSystem="2.16.840.1.113883.6.96"' in cda
     assert 'code="55561003" codeSystem="2.16.840.1.113883.6.96"' in cda
+    assert 'code="51847-2" codeSystem="2.16.840.1.113883.6.1"' in cda
+
+    assert 'code="38341003" codeSystem="2.16.840.1.113883.6.96"' in cda
+
     assert '<period unit="d" value="0.5"/>' in cda
     assert (
         '<routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" displayName="Oral"/>'
@@ -195,6 +215,8 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
         'code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" displayName="H"'
         in cda
     )
+    assert "CDATA" in cda
+    assert "<paragraph>test</paragraph>" in cda
 
 
 def test_round_trip_equivalence(interop_engine, test_cda_xml):

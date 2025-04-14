@@ -1,5 +1,6 @@
 import json
 import uuid
+import base64
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Union, Callable
 
@@ -400,6 +401,107 @@ def extract_reactions(observation: Dict, config: Dict) -> List[Dict]:
     return reactions
 
 
+def to_base64(text: str) -> str:
+    """Encodes text to base64
+
+    Args:
+        text: The text to encode
+
+    Returns:
+        Base64 encoded string
+    """
+    if not text:
+        return ""
+    text = str(text)
+    return base64.b64encode(text.encode("utf-8")).decode("utf-8")
+
+
+def from_base64(encoded_text: str) -> str:
+    """Decodes base64 to text
+
+    Args:
+        encoded_text: The base64 encoded text to decode
+
+    Returns:
+        Decoded string
+    """
+    if not encoded_text:
+        return ""
+    try:
+        return base64.b64decode(encoded_text).decode("utf-8")
+    except Exception:
+        return encoded_text
+
+
+def xmldict_to_html(xml_dict: Dict) -> str:
+    """Converts xmltodict format to HTML string
+
+    Args:
+        xml_dict: Dictionary in xmltodict format
+
+    Returns:
+        HTML string representation
+
+    Examples:
+        >>> xmldict_to_html({'paragraph': 'test'})
+        '<paragraph>test</paragraph>'
+
+        >>> xmldict_to_html({'div': {'p': 'Hello', '@class': 'note'}})
+        '<div class="note"><p>Hello</p></div>'
+    """
+    if not xml_dict:
+        return ""  # Return empty string for empty dictionary
+
+    if not isinstance(xml_dict, dict):
+        return str(xml_dict)
+
+    result = []
+
+    # Process each element in the dictionary
+    for tag_name, content in xml_dict.items():
+        # Skip XML namespace attributes
+        if tag_name.startswith("@xmlns"):
+            continue
+
+        # Skip attribute keys as they're handled separately
+        if tag_name.startswith("@"):
+            continue
+
+        # Handle text content directly
+        if tag_name == "#text":
+            return str(content)
+
+        # Start building the tag
+        opening_tag = f"<{tag_name}"
+
+        # Add any attributes for this tag
+        attrs = {
+            k[1:]: v for k, v in xml_dict.items() if k.startswith("@") and k != "@xmlns"
+        }
+        for attr_name, attr_value in attrs.items():
+            opening_tag += f' {attr_name}="{attr_value}"'
+
+        opening_tag += ">"
+        result.append(opening_tag)
+
+        # Process the content based on its type
+        if isinstance(content, dict):
+            result.append(xmldict_to_html(content))
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict):
+                    result.append(xmldict_to_html(item))
+                else:
+                    result.append(str(item))
+        else:
+            result.append(str(content))
+
+        # Close the tag
+        result.append(f"</{tag_name}>")
+
+    return "".join(result)
+
+
 def create_default_filters(mappings, id_prefix) -> Dict[str, Callable]:
     """Create and return default filter functions for templates
 
@@ -462,4 +564,7 @@ def create_default_filters(mappings, id_prefix) -> Dict[str, Callable]:
         "extract_clinical_status": extract_clinical_status_filter,
         "extract_reactions": extract_reactions_filter,
         "map_severity": map_severity_filter,
+        "to_base64": to_base64,
+        "from_base64": from_base64,
+        "xmldict_to_html": xmldict_to_html,
     }
