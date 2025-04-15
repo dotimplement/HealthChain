@@ -194,7 +194,7 @@ The template system provides several custom filters for common healthcare docume
 | `format_date` | Formats a date in the correct format for the output document |
 | `format_timestamp` | Formats a timestamp or uses current time |
 | `generate_id` | Generates an ID or uses provided value |
-| to_json | Converts object to JSON string |
+| `to_json` | Converts object to JSON string |
 | `extract_effective_period` | Extracts effective period data from CDA effectiveTime elements |
 | `extract_effective_timing` | Extracts timing data from effectiveTime elements |
 | `extract_clinical_status` | Extracts clinical status from an observation |
@@ -207,11 +207,8 @@ The template system provides several custom filters for common healthcare docume
 ### Using Filters
 
 ```liquid
+<!-- Map a system -->
 {{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}
-
-{{ resource.effectiveDateTime | format_date }}
-
-{{ resource.id | generate_id }}
 
 <!-- Base64 encoding and decoding -->
 {{ "Hello World" | to_base64 }}

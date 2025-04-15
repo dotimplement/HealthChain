@@ -6,7 +6,6 @@ This connector is particularly useful for clinical documentation improvement (CD
 
 [(Full Documentation on Clinical Documentation)](../../sandbox/use_cases/clindoc.md)
 
-[(Full Documentation on CDA Parser)](../../utilities/cda_parser.md)
 
 ## Input and Output
 
@@ -59,8 +58,9 @@ Note | [DocumentReference](https://www.hl7.org/fhir/documentreference.html) | `D
 
 ## Configuration
 
-The `overwrite` parameter in the `CdaConnector` constructor determines whether existing data in the document should be overwritten. This can be useful for readability with very long CDA documents when the receiving system does not require the full document.
+Configure the directory of the CDA templates and configuration files through the `config_dir` parameter in the `CdaConnector` constructor.
 
 ```python
-cda_connector = CdaConnector(overwrite=True)
+cda_connector = CdaConnector(config_dir="path/to/config/dir")
 ```
+([Full Documentation on InteropEngine](../../interop/interop.md))

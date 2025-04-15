@@ -53,7 +53,6 @@ nav:
       - Utilities:
         - FHIR Helpers: reference/utilities/fhir_helpers.md
         - Data Generator: reference/utilities/data_generator.md
-        - CDA Parser: reference/utilities/cda_parser.md
   - API Reference:
       - api/index.md
       - api/pipeline.md
@@ -64,7 +63,7 @@ nav:
       - api/cds_hooks.md
       - api/service.md
       - api/clients.md
-      - api/cda_parser.md
+      - api/interop.md
       - api/data_generators.md
       - api/fhir_helpers.md
   - Community:

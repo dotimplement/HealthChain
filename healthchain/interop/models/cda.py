@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Union
 
-from healthchain.cda_parser.model.datatypes import CE, CS, II, TS
+from healthchain.interop.models.datatypes import CE, CS, II, TS
 
 from .sections import Section
 

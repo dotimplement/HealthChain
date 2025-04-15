@@ -33,11 +33,11 @@ The interoperability module is built around a central `InteropEngine` that coord
 | Component | Description |
 |-----------|-------------|
 | [**InteropEngine**](engine.md) | Core engine that manages the conversion process |
-| [**Parsers**](parsers.md) | Components for parsing different healthcare formats |
-| [**Generators**](generators.md) | Components for generating output in different formats |
 | [**Templates**](templates.md) | Liquid-based template system for customizing output syntactic generation |
 | [**Mappings**](mappings.md) | Mappings between different terminology systems |
 | [**Configuration**](configuration.md) | Configuration system for controlling engine behavior and template variations|
+| [**Parsers**](parsers.md) | Components for parsing different healthcare formats |
+| [**Generators**](generators.md) | Components for generating output in different formats |
 
 ## Basic Usage
 

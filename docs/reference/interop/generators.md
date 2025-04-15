@@ -10,7 +10,7 @@ The generators are largely configuration-driven, with rendering done using Liqui
 |-----------|-------------|
 | `CDAGenerator` | Generates CDA XML documents from FHIR resources |
 | `FHIRGenerator` | Generates FHIR JSON/XML from FHIR resources |
-| `HL7v2Generator` | Generates HL7v2 messages from FHIR resources |
+<!-- | `HL7v2Generator` | Generates HL7v2 messages from FHIR resources | -->
 
 
 ## CDA Generator
@@ -193,9 +193,9 @@ The FHIR generator transforms this structure into a FHIR Condition resource by:
 The result is a properly structured FHIR Condition resource with all required fields populated.
 </details>
 
-## HL7v2 Generator
+<!-- ## HL7v2 Generator
 
-The HL7v2 Generator produces HL7 version 2 messages from FHIR resources (Coming soon!)
+The HL7v2 Generator produces HL7 version 2 messages from FHIR resources (Coming soon!) -->
 
 
 ## Creating a Custom Generator
@@ -224,5 +224,3 @@ class CustomGenerator(BaseGenerator):
 engine = create_engine()
 engine.register_generator(FormatType.CDA, CustomGenerator(engine.config, engine.template_registry))
 ```
-
-[BaseGenerator API Docs](/docs/api/interop/generators/base.md)  # TODO: Add link to BaseGenerator API docs

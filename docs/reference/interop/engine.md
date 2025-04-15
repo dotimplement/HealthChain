@@ -92,6 +92,7 @@ engine.register_parser(FormatType.CDA, custom_parser)
 # Register a custom generator
 engine.register_generator(FormatType.FHIR, custom_generator)
 ```
+<!--  This bit is a big confusing, maybe put it in a cookbook example to add custom stuff
 ### Custom Configuration Validation
 
 You can also register Pydantic models to the engine for custom configuration validation.
@@ -126,8 +127,8 @@ class DischargeSummaryDocumentConfig(DocumentConfigBase):
 engine.register_cda_document_config_validator("DischargeSummary", DischargeSummaryDocumentConfig)
 ```
 
-For more information see the [Validators API](validators.md). # TODO: Update me
+For more information see the [Validators API](../../api/interop.md). -->
 
 ## Advanced Configuration
 
-For more information on the configuration options, see the [Configuration](configuration.md) page (Recommended).
+For more information on the configuration options, see the [Configuration](configuration.md) page.

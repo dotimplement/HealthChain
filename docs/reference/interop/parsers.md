@@ -13,7 +13,7 @@ Parsers are responsible for extracting structured data from various healthcare d
 
 The CDA Parser extracts data from Clinical Document Architecture (CDA) XML documents based on configured section identifiers.
 
-Internally, it uses [**xmltodict**](https://github.com/martinblech/xmltodict) to parse the XML into a dictionary, validates the dictionary with [Pydantic](https://docs.pydantic.dev/), and then maps each entry to the section keys. See [Working with xmltodict in HealthChain](./xmltodict.md) for more details.
+Internally, it uses [xmltodict](https://github.com/martinblech/xmltodict) to parse the XML into a dictionary, validates the dictionary with [Pydantic](https://docs.pydantic.dev/), and then maps each entry to the section keys. See [Working with xmltodict in HealthChain](./xmltodict.md) for more details.
 
 Each extracted entry should be mapped to the name of the corresponding configuration file, which will be used as the `section_key`. The configuration file contains information about the section identifiers that are used to extract the correct section entries.
 
@@ -186,28 +186,6 @@ cda:
         template_id: "2.16.840.1.113883.10.20.1.11"
         code: "11450-4"
       resource: "Condition"
-```
-
-## HL7v2 Parser
-
-The HL7v2 Parser extracts data from HL7 version 2 messages. This is currently not fully implemented in HealthChain (Coming Soon), but you can register a custom parser yourself to support basic conversions.
-
-### Usage Examples
-
-```python
-from healthchain.interop import create_engine, FormatType
-
-# Create an engine
-engine = create_engine()
-
-# Parse an HL7v2 message directly to FHIR
-with open("hl7_message.txt", "r") as f:
-    hl7_message = f.read()
-
-fhir_resources = engine.to_fhir(hl7_message, src_format=FormatType.HL7V2)
-
-# Access the HL7v2 parser directly (advanced use case)
-hl7v2_parser = engine.hl7v2_parser
 ```
 
 ## Creating a Custom Parser

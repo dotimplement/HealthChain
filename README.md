@@ -26,6 +26,7 @@ Came here from NHS RPySOC 2024 ✨?
 ## Features
 - [x] 🔥 Build FHIR-native pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
 - [x] 🔌 Connect pipelines to any EHR system with built-in [CDA and FHIR Connectors](https://dotimplement.github.io/HealthChain/reference/pipeline/connectors/connectors/)
+- [x] 🔄 Convert between FHIR, CDA, and HL7v2 with the [InteropEngine](https://dotimplement.github.io/HealthChain/reference/interop/interop/)
 - [x] 🧪 Test your pipelines in full healthcare-context aware [sandbox](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) environments
 - [x] 🗃️ Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) for testing and development
 - [x] 🚀 Deploy sandbox servers locally with [FastAPI](https://fastapi.tiangolo.com/)
@@ -117,6 +118,24 @@ cda_data = CdaRequest(document="<CDA XML content>")
 output = pipeline(cda_data)
 ```
 
+## Interoperability
+
+The InteropEngine is a template-based system that allows you to convert between FHIR, CDA, and HL7v2.
+
+```python
+from healthchain.interop import create_engine, FormatType
+
+engine = create_engine()
+
+with open("tests/data/test_cda.xml", "r") as f:
+    cda_data = f.read()
+
+# Convert CDA to FHIR
+fhir_resources = engine.to_fhir(cda_data, src_format=FormatType.CDA)
+
+# Convert FHIR to CDA
+cda_data = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
+```
 
 ## Sandbox
 
@@ -219,7 +238,7 @@ healthchain run mycds.py
 By default, the server runs at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`.
 
 ## Road Map
-- [ ] 🔄 Transform and validate healthcare HL7v2, CDA to FHIR with template-based interop engine
+- [x] 🔄 Transform and validate healthcare HL7v2, CDA to FHIR with template-based interop engine
 - [ ] 🏥 Runtime connection health and EHR integration management - connect to FHIR APIs and legacy systems
 - [ ] 📊 Track configurations, data provenance, and monitor model performance with MLFlow integration
 - [ ] 🚀 Compliance monitoring, auditing at deployment as a sidecar service

@@ -214,6 +214,25 @@ healthchain run my_sandbox.py
 This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
 ## Utilities ⚙️
+
+### FHIR Helpers
+
+The `fhir` module provides a set of helper functions for working with FHIR resources.
+
+```python
+from healthchain.fhir import create_condition
+
+condition = create_condition(
+    code="38341003",
+    display="Hypertension",
+    system="http://snomed.info/sct",
+    subject="Patient/Foo",
+    clinical_status="active"
+)
+```
+
+[(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
+
 ### Data Generator
 
 You can use the data generator to generate synthetic data for your sandbox runs.

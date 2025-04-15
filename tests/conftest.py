@@ -3,10 +3,9 @@ import pytest
 import yaml
 import tempfile
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from healthchain.base import BaseStrategy, BaseUseCase
-from healthchain.cda_parser.cdaannotator import CdaAnnotator
 from healthchain.io.cdaconnector import CdaConnector
 from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests.cdarequest import CdaRequest
@@ -556,71 +555,6 @@ def test_soap_request():
         test_soap = file.read()
 
     return CdaRequest(document=test_soap)
-
-
-@pytest.fixture
-def cda_annotator_with_data():
-    """
-    DEPRECATED: This fixture returns the CdaAnnotator which is being deprecated.
-    For new tests, use InteropEngine instead.
-    """
-    import warnings
-
-    warnings.warn(
-        "CdaAnnotator is deprecated. Use InteropEngine for new code.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    with open("./tests/data/test_cda.xml", "r") as file:
-        test_cda = file.read()
-
-    return CdaAnnotator.from_xml(test_cda)
-
-
-@pytest.fixture
-def cda_annotator_without_template_id():
-    """
-    DEPRECATED: This fixture returns the CdaAnnotator which is being deprecated.
-    For new tests, use InteropEngine instead.
-    """
-    import warnings
-
-    warnings.warn(
-        "CdaAnnotator is deprecated. Use InteropEngine for new code.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    with open("./tests/data/test_cda_without_template_id.xml", "r") as file:
-        test_cda_without_template_id = file.read()
-    return CdaAnnotator.from_xml(test_cda_without_template_id)
-
-
-@pytest.fixture
-def interop_engine_with_test_cda():
-    """
-    Returns an InteropEngine initialized with test CDA data.
-    This should be used for new tests instead of cda_annotator_with_data.
-    """
-    from healthchain.interop import create_engine
-
-    with open("./tests/data/test_cda.xml", "r") as file:
-        test_cda = file.read()
-
-    engine = create_engine()
-
-    # Create a mock to avoid actual file system operations in tests
-    with patch.object(engine, "to_fhir") as mock_to_fhir:
-        condition = Mock(
-            resource_type="Condition", code=Mock(coding=[Mock(code="38341003")])
-        )
-        medication = Mock(resource_type="MedicationStatement")
-        allergy = Mock(resource_type="AllergyIntolerance")
-        mock_to_fhir.return_value = [condition, medication, allergy]
-
-        # Return the engine and the test CDA as a tuple for easy access to both
-        yield engine, test_cda
 
 
 @pytest.fixture

@@ -27,21 +27,21 @@ HealthChain 💫🏥 is an open-source Python framework designed to streamline t
 
     [:octicons-arrow-right-24: Sandbox](reference/sandbox/sandbox.md)
 
--   :material-database:{ .lg .middle } __Generate synthetic data__
+-   :material-database:{ .lg .middle } __Interoperability__
 
     ---
 
-    Use the data generator to create synthetic healthcare data for testing and development
+    Configuration-driven InteropEngine to convert between FHIR, CDA, and HL7v2
 
-    [:octicons-arrow-right-24: Data Generator](reference/utilities/data_generator.md)
+    [:octicons-arrow-right-24: Interoperability](reference/interop/interop.md)
 
--   :material-lightbulb-on-outline:{ .lg .middle } __Contribute__
+-   :material-fire:{ .lg .middle } __Utilities__
 
     ---
 
-    If you have an idea or suggestions, we'd love to hear from you!
+    FHIR data model utilities and helpers to make development easier
 
-    [:octicons-arrow-right-24: Community](community/index.md)
+    [:octicons-arrow-right-24: Utilities](reference/utilities/fhir_helpers.md)
 
 
 
