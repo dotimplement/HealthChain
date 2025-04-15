@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from healthchain.io.cdaconnector import CdaConnector
 from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import (
@@ -15,11 +14,6 @@ from healthchain.pipeline.modelrouter import ModelRouter
 
 
 # Basic object fixtures
-
-
-@pytest.fixture
-def cda_connector():
-    return CdaConnector()
 
 
 @pytest.fixture

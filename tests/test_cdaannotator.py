@@ -1,3 +1,9 @@
+"""
+DEPRECATED: These tests are for the CdaAnnotator class which is being deprecated.
+The new InteropEngine should be used for CDA processing instead.
+These tests are kept for reference and backward compatibility during the transition period.
+"""
+
 from healthchain.cda_parser.cdaannotator import (
     SectionId,
     SectionCode,

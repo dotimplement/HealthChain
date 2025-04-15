@@ -268,6 +268,7 @@ class FhirData:
 
     @problem_list.setter
     def problem_list(self, conditions: List[Condition]) -> None:
+        # TODO: should make this behaviour more explicit whether it's adding or replacing
         """Set problem list in the bundle."""
         self.add_resources(conditions, "Condition")
 
