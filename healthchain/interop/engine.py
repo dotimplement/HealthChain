@@ -13,11 +13,9 @@ from healthchain.interop.config_manager import InteropConfigManager
 from healthchain.interop.types import FormatType, validate_format
 
 from healthchain.interop.parsers.cda import CDAParser
-from healthchain.interop.parsers.hl7v2 import HL7v2Parser
 from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.generators.cda import CDAGenerator
 from healthchain.interop.generators.fhir import FHIRGenerator
-from healthchain.interop.generators.hl7v2 import HL7v2Generator
 from healthchain.interop.filters import create_default_filters
 
 log = logging.getLogger(__name__)
@@ -161,8 +159,7 @@ class InteropEngine:
                 parser = CDAParser(self.config)
                 self._parsers[format_type] = parser
             elif format_type == FormatType.HL7V2:
-                parser = HL7v2Parser(self.config)
-                self._parsers[format_type] = parser
+                raise NotImplementedError("HL7v2 parser not implemented")
             else:
                 raise ValueError(f"Unsupported parser format: {format_type}")
 
@@ -185,8 +182,7 @@ class InteropEngine:
                 generator = CDAGenerator(self.config, self.template_registry)
                 self._generators[format_type] = generator
             elif format_type == FormatType.HL7V2:
-                generator = HL7v2Generator(self.config, self.template_registry)
-                self._generators[format_type] = generator
+                raise NotImplementedError("HL7v2 generator not implemented")
             elif format_type == FormatType.FHIR:
                 generator = FHIRGenerator(self.config, self.template_registry)
                 self._generators[format_type] = generator

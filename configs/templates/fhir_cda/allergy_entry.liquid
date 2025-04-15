@@ -169,6 +169,7 @@
           }
         ]
         {% else %}
+        {% if resource.clinicalStatus %}
         "entryRelationship": {
           "@typeCode": "REFR",
           "@inversionInd": true,
@@ -195,6 +196,7 @@
             }
           }
         }
+        {% endif %}
         {% endif %}
       }
     }
