@@ -1,9 +1,12 @@
+from pathlib import Path
 import pytest
+import yaml
+import tempfile
 
 from unittest.mock import Mock
 
 from healthchain.base import BaseStrategy, BaseUseCase
-from healthchain.cda_parser.cdaannotator import CdaAnnotator
+from healthchain.io.cdaconnector import CdaConnector
 from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
@@ -36,6 +39,11 @@ from fhir.resources.documentreference import DocumentReference, DocumentReferenc
 # TODO: Tidy up fixtures
 
 
+@pytest.fixture
+def cda_connector():
+    return CdaConnector()
+
+
 # FHIR resource fixtures
 
 
@@ -49,6 +57,15 @@ def empty_bundle():
 def test_condition():
     """Create a test condition."""
     return create_condition(subject="Patient/123", code="123", display="Test Condition")
+
+
+@pytest.fixture
+def test_condition_list():
+    """Create a list of test conditions."""
+    return [
+        create_condition(subject="Patient/123", code="123", display="Test Condition"),
+        create_condition(subject="Patient/123", code="456", display="Test Condition 2"),
+    ]
 
 
 @pytest.fixture
@@ -145,6 +162,25 @@ def doc_ref_without_content():
             {"attachment": {"contentType": "text/plain"}}
         ],  # Missing required data
     )
+
+
+@pytest.fixture
+def test_bundle():
+    """Create a test bundle."""
+    bundle = create_bundle()
+    bundle.entry = [
+        {
+            "resource": create_condition(
+                subject="Patient/123", code="38341003", display="Hypertension"
+            )
+        },
+        {
+            "resource": create_medication_statement(
+                subject="Patient/123", code="123454", display="Aspirin"
+            )
+        },
+    ]
+    return bundle
 
 
 @pytest.fixture
@@ -522,15 +558,265 @@ def test_soap_request():
 
 
 @pytest.fixture
-def cda_annotator_with_data():
-    with open("./tests/data/test_cda.xml", "r") as file:
-        test_cda = file.read()
+def real_config_dir():
+    """Use the actual config directory for testing"""
+    project_root = Path(__file__).parent.parent
+    config_dir = project_root / "configs"
 
-    return CdaAnnotator.from_xml(test_cda)
+    if not config_dir.exists():
+        pytest.skip("Actual config directory not found. Skipping ConfigManager tests.")
+
+    return config_dir
 
 
 @pytest.fixture
-def cda_annotator_without_template_id():
-    with open("./tests/data/test_cda_without_template_id.xml", "r") as file:
-        test_cda_without_template_id = file.read()
-    return CdaAnnotator.from_xml(test_cda_without_template_id)
+def config_fixtures():
+    """Create temporary directory with config files for testing both ConfigManager and InteropConfigManager."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        config_dir = Path(temp_dir)
+
+        # Create defaults.yaml
+        defaults_file = config_dir / "defaults.yaml"
+        defaults_content = {
+            # Based on the actual defaults.yaml structure
+            "defaults": {
+                "common": {
+                    "id_prefix": "hc-",
+                    "timestamp": "%Y%m%d",
+                    "reference_name": "#{uuid}name",
+                    "subject": {"reference": "Patient/example"},
+                },
+                "resources": {
+                    "Condition": {
+                        "clinicalStatus": {
+                            "coding": [
+                                {
+                                    "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                                    "code": "unknown",
+                                    "display": "Unknown",
+                                }
+                            ]
+                        }
+                    },
+                    "MedicationStatement": {
+                        "status": "unknown",
+                        "effectiveDateTime": "{{ now | date: '%Y-%m-%d' }}",
+                    },
+                },
+            },
+            # Add interop-specific configs for InteropConfigManager tests
+            "interop": {"base_url": "https://api.example.com", "timeout": 30},
+        }
+
+        # Create environments directory and files
+        env_dir = config_dir / "environments"
+        env_dir.mkdir()
+
+        dev_file = env_dir / "development.yaml"
+        dev_content = {
+            "database": {"name": "healthchain_dev"},
+            "debug": True,
+            "interop": {"base_url": "https://dev-api.example.com"},
+        }
+
+        test_file = env_dir / "testing.yaml"
+        test_content = {"database": {"name": "healthchain_test"}, "debug": True}
+
+        prod_file = env_dir / "production.yaml"
+        prod_content = {
+            "database": {"host": "db.example.com", "name": "healthchain_prod"},
+            "debug": False,
+        }
+
+        # Create module directory with config files
+        interop_dir = config_dir / "interop"
+        interop_dir.mkdir()
+
+        # Create cda directory
+        cda_dir = interop_dir / "cda"
+        cda_dir.mkdir()
+
+        # Create sections directory and files
+        sections_dir = cda_dir / "sections"
+        sections_dir.mkdir(parents=True)
+
+        # Problems section - needs to comply with ProblemSectionTemplateConfig
+        problems_file = sections_dir / "problems.yaml"
+        problems_content = {
+            "resource": "Condition",
+            "resource_template": "cda_fhir/condition",
+            "entry_template": "cda_fhir/problem_entry",
+            "identifiers": {
+                "template_id": "2.16.840.1.113883.10.20.1.11",
+                "code": "11450-4",
+                "code_system": "2.16.840.1.113883.6.1",
+                "code_system_name": "LOINC",
+                "display": "Problem List",
+            },
+            "template": {
+                "act": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.27"],
+                    "status_code": "completed",
+                },
+                "problem_obs": {
+                    "type_code": "SUBJ",
+                    "inversion_ind": False,
+                    "template_id": ["1.3.6.1.4.1.19376.1.5.3.1.4.5"],
+                    "code": "55607006",
+                    "code_system": "2.16.840.1.113883.6.96",
+                    "status_code": "completed",
+                },
+                "clinical_status_obs": {
+                    "template_id": "2.16.840.1.113883.10.20.1.50",
+                    "code": "33999-4",
+                    "code_system": "2.16.840.1.113883.6.1",
+                    "status_code": "completed",
+                },
+            },
+        }
+
+        # Medications section - needs to comply with MedicationSectionTemplateConfig
+        medications_file = sections_dir / "medications.yaml"
+        medications_content = {
+            "resource": "MedicationStatement",
+            "resource_template": "cda_fhir/medication",
+            "entry_template": "cda_fhir/medication_entry",
+            "identifiers": {
+                "template_id": "2.16.840.1.113883.10.20.1.8",
+                "code": "10160-0",
+                "code_system": "2.16.840.1.113883.6.1",
+                "code_system_name": "LOINC",
+                "display": "Medications",
+            },
+            "template": {
+                "substance_admin": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.24"],
+                    "status_code": "completed",
+                    "class_code": "SBADM",
+                    "mood_code": "EVN",
+                },
+                "manufactured_product": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.53"],
+                    "code": "200000",
+                    "code_system": "2.16.840.1.113883.6.88",
+                },
+                "clinical_status_obs": {
+                    "template_id": "2.16.840.1.113883.10.20.1.47",
+                    "code": "33999-4",
+                    "code_system": "2.16.840.1.113883.6.1",
+                    "status_code": "completed",
+                },
+            },
+        }
+
+        # Allergies section - needs to comply with AllergySectionTemplateConfig
+        allergies_file = sections_dir / "allergies.yaml"
+        allergies_content = {
+            "resource": "AllergyIntolerance",
+            "resource_template": "cda_fhir/allergy",
+            "entry_template": "cda_fhir/allergy_entry",
+            "identifiers": {
+                "template_id": "2.16.840.1.113883.10.20.1.2",
+                "code": "48765-2",
+                "code_system": "2.16.840.1.113883.6.1",
+                "code_system_name": "LOINC",
+                "display": "Allergies",
+            },
+            "template": {
+                "act": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.27"],
+                    "status_code": "completed",
+                },
+                "allergy_obs": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.18"],
+                    "code": "416098002",
+                    "code_system": "2.16.840.1.113883.6.96",
+                    "status_code": "completed",
+                },
+                "reaction_obs": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.54"],
+                    "code": "59037007",
+                    "code_system": "2.16.840.1.113883.6.96",
+                },
+                "severity_obs": {
+                    "template_id": ["2.16.840.1.113883.10.20.1.55"],
+                    "code": "39579001",
+                    "code_system": "2.16.840.1.113883.6.96",
+                },
+                "clinical_status_obs": {
+                    "template_id": "2.16.840.1.113883.10.20.1.39",
+                    "code": "33999-4",
+                    "code_system": "2.16.840.1.113883.6.1",
+                    "status_code": "completed",
+                },
+            },
+        }
+
+        # Create document directory and file
+        document_dir = cda_dir / "document"
+        document_dir.mkdir()
+
+        # Document config - needs to comply with DocumentConfig
+        ccd_file = document_dir / "ccd.yaml"
+        ccd_content = {
+            "type_id": {"root": "2.16.840.1.113883.1.3", "extension": "POCD_HD000040"},
+            "code": {
+                "code": "34133-9",
+                "code_system": "2.16.840.1.113883.6.1",
+                "code_system_name": "LOINC",
+                "display": "Summarization of Episode Note",
+            },
+            "confidentiality_code": {
+                "code": "N",
+                "code_system": "2.16.840.1.113883.5.25",
+            },
+            "language_code": "en-US",
+            "templates": {"section": "cda_section", "document": "cda_document"},
+            "structure": {
+                "header": {"include_patient": True, "include_author": True},
+                "body": {"structured_body": True},
+            },
+        }
+
+        # Create mappings directory
+        mappings_dir = config_dir / "mappings"
+        mappings_dir.mkdir()
+
+        mapping_file = mappings_dir / "snomed_loinc.yaml"
+        mapping_content = {
+            "snomed_to_loinc": {"55607006": "11450-4", "73211009": "10160-0"}
+        }
+
+        # Create templates directory
+        templates_dir = config_dir / "templates"
+        templates_dir.mkdir()
+
+        # Write all the files
+        with open(defaults_file, "w") as f:
+            yaml.dump(defaults_content, f)
+
+        with open(dev_file, "w") as f:
+            yaml.dump(dev_content, f)
+
+        with open(test_file, "w") as f:
+            yaml.dump(test_content, f)
+
+        with open(prod_file, "w") as f:
+            yaml.dump(prod_content, f)
+
+        with open(problems_file, "w") as f:
+            yaml.dump(problems_content, f)
+
+        with open(medications_file, "w") as f:
+            yaml.dump(medications_content, f)
+
+        with open(allergies_file, "w") as f:
+            yaml.dump(allergies_content, f)
+
+        with open(ccd_file, "w") as f:
+            yaml.dump(ccd_content, f)
+
+        with open(mapping_file, "w") as f:
+            yaml.dump(mapping_content, f)
+
+        yield config_dir

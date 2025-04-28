@@ -27,7 +27,7 @@ class ColorFormatter(logging.Formatter):
 def add_handlers(log):
     if len(log.handlers) == 0:
         formatter = ColorFormatter(
-            "%(levelname)s: %(asctime)-10s [%(module)s]: %(message)s"
+            "%(levelname)s: %(asctime)-10s [%(name)s]: %(message)s"
         )
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)

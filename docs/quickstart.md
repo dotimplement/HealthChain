@@ -114,6 +114,41 @@ cda_data = CdaRequest(document="<CDA XML content>")
 output = pipeline(cda_data)
 ```
 
+### Interoperability 🔄
+
+The HealthChain Interoperability module provides tools for converting between different healthcare data formats, including HL7 FHIR, HL7 CDA, and HL7v2 messages.
+
+[(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
+
+```python
+from healthchain.interop import create_engine, FormatType
+
+# Create an interoperability engine
+engine = create_engine()
+
+# Load a CDA document
+with open("tests/data/test_cda.xml", "r") as f:
+    cda_xml = f.read()
+
+# Convert CDA XML to FHIR resources
+fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
+
+# Convert FHIR resources back to CDA
+cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
+```
+
+The interop module provides a flexible, template-based approach to healthcare format conversion:
+
+| Feature | Description |
+|---------|-------------|
+| Format conversion | Convert legacy formats (CDA, HL7v2) to FHIR resources and back |
+| Template-based generation | Customize syntactic output using [Liquid](https://shopify.github.io/liquid/) templates |
+| Configuration | Configure terminology mappings, validation rules, and environments |
+| Extension | Register custom parsers, generators, and validators |
+
+For more details, see the [conversion examples](cookbook/interop/basic_conversion.md).
+
+
 ### Sandbox 🧪
 Once you've built your pipeline, you might want to experiment with how it interacts with different healthcare systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
 
@@ -168,7 +203,7 @@ if __name__ == "__main__":
     clindoc.start_sandbox()
 ```
 
-## Deploy sandbox locally with FastAPI 🚀
+#### Deploy sandbox locally with FastAPI 🚀
 
 To run your sandbox:
 
@@ -179,6 +214,25 @@ healthchain run my_sandbox.py
 This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
 ## Utilities ⚙️
+
+### FHIR Helpers
+
+The `fhir` module provides a set of helper functions for working with FHIR resources.
+
+```python
+from healthchain.fhir import create_condition
+
+condition = create_condition(
+    code="38341003",
+    display="Hypertension",
+    system="http://snomed.info/sct",
+    subject="Patient/Foo",
+    clinical_status="active"
+)
+```
+
+[(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
+
 ### Data Generator
 
 You can use the data generator to generate synthetic data for your sandbox runs.

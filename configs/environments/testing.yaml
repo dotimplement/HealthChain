@@ -1,0 +1,39 @@
+# Testing Environment Configuration
+# This file contains settings specific to the testing environment
+# TODO: Implement
+# Logging settings for testing
+logging:
+  level: "INFO"
+  include_timestamps: true
+  console_output: true
+  file_output: true
+  file_path: "./logs/test-interop.log"
+
+# Error handling for testing
+errors:
+  retry_count: 2
+  fail_on_critical: true
+  verbose_errors: true
+
+# Performance settings for testing
+performance:
+  cache_templates: true   # Enable caching for realistic testing
+  cache_mappings: true    # Enable caching for realistic testing
+  batch_size: 50          # Medium batch size for testing
+
+# Default resource fields for testing
+defaults:
+  common:
+    id_prefix: "test-"    # Testing-specific ID prefix
+    subject:
+      reference: "Patient/test-example"
+
+# Template settings for testing
+templates:
+  reload_on_change: false  # Don't reload templates in testing
+
+# Validation settings for testing
+validation:
+  strict_mode: true
+  warn_on_missing: true
+  ignore_unknown_fields: false  # Stricter validation for testing

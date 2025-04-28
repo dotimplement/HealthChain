@@ -33,6 +33,15 @@ nav:
           - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md
       - Integrations:
         - Overview: reference/pipeline/integrations/integrations.md
+      - Interoperability:
+        - Overview: reference/interop/interop.md
+        - Engine: reference/interop/engine.md
+        - Configuration: reference/interop/configuration.md
+        - Templates: reference/interop/templates.md
+        - Mappings: reference/interop/mappings.md
+        - Parsers: reference/interop/parsers.md
+        - Generators: reference/interop/generators.md
+        - Working with xmltodict: reference/interop/xmltodict.md
       - Sandbox:
         - Overview: reference/sandbox/sandbox.md
         - Client: reference/sandbox/client.md
@@ -44,7 +53,6 @@ nav:
       - Utilities:
         - FHIR Helpers: reference/utilities/fhir_helpers.md
         - Data Generator: reference/utilities/data_generator.md
-        - CDA Parser: reference/utilities/cda_parser.md
   - API Reference:
       - api/index.md
       - api/pipeline.md
@@ -55,7 +63,7 @@ nav:
       - api/cds_hooks.md
       - api/service.md
       - api/clients.md
-      - api/cda_parser.md
+      - api/interop.md
       - api/data_generators.md
       - api/fhir_helpers.md
   - Community:

@@ -1,0 +1,79 @@
+{
+  {% if entry.act.entryRelationship.size %}
+    {% assign obs = entry.act.entryRelationship[0].observation %}
+  {% else %}
+    {% assign obs = entry.act.entryRelationship.observation %}
+  {% endif %}
+
+  {% assign clinical_status = obs | extract_clinical_status: config %}
+  {% assign reactions = obs | extract_reactions: config %}
+
+  "resourceType": "AllergyIntolerance"
+
+  {% if clinical_status != blank %}
+  ,
+  "clinicalStatus": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+      "code": "{{ clinical_status | map_status: 'cda_to_fhir' }}"
+    }]
+  }
+  {% endif %}
+
+  {% if obs.code %}
+  ,
+  "type": {
+    "coding": [{
+      "system": "{{ obs.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ obs.code['@code'] }}",
+      "display": "{{ obs.code['@displayName'] }}"
+    }]
+  }
+  {% endif %}
+
+  {% if obs.participant.participantRole.playingEntity %}
+  ,
+    {% assign playing_entity = obs.participant.participantRole.playingEntity %}
+  "code": {
+    "coding": [{
+      "system": "{{ playing_entity.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ playing_entity.code['@code'] }}",
+      "display": "{{ playing_entity.name | default: playing_entity.code['@displayName'] }}"
+    }]
+  }
+  {% elsif obs.value %}
+  ,
+  "code": {
+    "coding": [{
+      "system": "{{ obs.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ obs.value['@code'] }}",
+      "display": "{{ obs.value['@displayName'] }}"
+    }]
+  }
+  {% endif %}
+
+  {% if obs.effectiveTime.low['@value'] %}
+  ,
+  "onsetDateTime": "{{ obs.effectiveTime.low['@value'] | format_date }}"
+  {% endif %}
+
+  {% if reactions.size > 0 %}
+  ,
+  "reaction": [
+    {% for reaction in reactions %}
+    {
+      "manifestation": [{
+        "concept": {
+          "coding": [{
+            "system": "{{ reaction.system | map_system: 'cda_to_fhir' }}",
+            "code": "{{ reaction.code }}",
+            "display": "{{ reaction.display }}"
+          }]
+        }
+      }]{% if reaction.severity != blank %},
+      "severity": "{{ reaction.severity | map_severity: 'cda_to_fhir' }}"{% endif %}
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ]
+  {% endif %}
+}

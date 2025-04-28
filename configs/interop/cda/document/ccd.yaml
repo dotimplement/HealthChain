@@ -1,0 +1,55 @@
+# CCD Document Configuration
+# This file contains configuration for CCD documents
+
+# Document templates (required)
+templates:
+  document: "fhir_cda/document"
+  section: "fhir_cda/section"
+
+# Basic document information
+code:
+  code: "34133-9"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Summarization of Episode Note"
+confidentiality_code:
+  code: "N"
+  code_system: "2.16.840.1.113883.5.25"
+language_code: "en-US"
+realm_code: "GB"
+type_id:
+  extension: "POCD_HD000040"
+  root: "2.16.840.1.113883.1.3"
+template_id:
+  root: "1.2.840.114350.1.72.1.51693"
+
+# Document structure
+structure:
+  # Header configuration
+  header:
+    include_patient: false
+    include_author: false
+    include_custodian: false
+    include_legal_authenticator: false
+
+  # Body configuration
+  body:
+    structured_body: true
+    non_xml_body: false
+    include_sections:
+      - "allergies"
+      - "medications"
+      - "problems"
+      - "notes"
+
+# Rendering configuration
+rendering:
+  # XML formatting
+  xml:
+    pretty_print: true
+    encoding: "UTF-8"
+
+  # Narrative generation
+  narrative:
+    include: true
+    generate_if_missing: true
