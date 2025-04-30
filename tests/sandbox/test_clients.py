@@ -18,8 +18,9 @@ def test_generate_request(ehr_client, mock_strategy):
 
 
 @pytest.mark.anyio
-@patch(
-    "healthchain.sandbox.clients.ehr.httpx.AsyncClient.post",
+@patch.object(
+    httpx.AsyncClient,
+    "post",
     return_value=httpx.Response(200, json={"response": "test successful"}),
 )
 async def test_send_request(ehr_client):
@@ -30,7 +31,7 @@ async def test_send_request(ehr_client):
 
 @pytest.mark.anyio
 async def test_logging_on_send_request_error(caplog, ehr_client):
-    with patch("healthchain.sandbox.clients.ehr.httpx.AsyncClient.post") as mock_post:
+    with patch.object(httpx.AsyncClient, "post") as mock_post:
         mock_post.return_value = Mock()
         mock_post.return_value.response.status_code = 400
         mock_post.return_value.raise_for_status.side_effect = httpx.HTTPStatusError(

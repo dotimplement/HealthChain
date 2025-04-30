@@ -28,9 +28,7 @@ def test_cds_service(test_cds_request):
     assert response.json() == {"cards": []}
 
 
-@patch(
-    "healthchain.sandbox.use_cases.ClinicalDocumentation.process_notereader_document"
-)
+@patch.object(ClinicalDocumentation, "process_notereader_document")
 def test_clindoc_process_document(mock_process, test_cda_response, test_soap_request):
     mock_process.return_value = test_cda_response
 
