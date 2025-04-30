@@ -1,8 +1,8 @@
-from healthchain.apimethod import APIMethod
 import pytest
 
-from healthchain.clients import ehr
-from healthchain.decorators import api, find_attributes_of_type, assign_to_attribute
+from healthchain.sandbox.decorator import api, ehr
+from healthchain.sandbox.utils import find_attributes_of_type, assign_to_attribute
+from healthchain.sandbox.apimethod import APIMethod
 
 from .conftest import MockDataGenerator
 

@@ -6,7 +6,7 @@ from fhir.resources.procedure import Procedure
 from fhir.resources.patient import Patient
 
 from healthchain.data_generators import CdsDataGenerator
-from healthchain.workflows import Workflow
+from healthchain.sandbox.workflows import Workflow
 
 
 def test_generator_orchestrator_encounter_discharge():

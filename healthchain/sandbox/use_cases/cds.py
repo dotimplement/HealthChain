@@ -7,9 +7,9 @@ from fhir.resources.resource import Resource
 
 from healthchain.service import Service
 from healthchain.service.endpoints import Endpoint, ApiProtocol
-from healthchain.base import BaseUseCase, BaseStrategy, BaseClient
-from healthchain.apimethod import APIMethod
-from healthchain.workflows import (
+from healthchain.sandbox.base import BaseUseCase, BaseRequestConstructor, BaseClient
+from healthchain.sandbox.apimethod import APIMethod
+from healthchain.sandbox.workflows import (
     UseCaseMapping,
     UseCaseType,
     Workflow,
@@ -33,7 +33,7 @@ from healthchain.models.hooks import (
 log = logging.getLogger(__name__)
 
 
-class ClinicalDecisionSupportStrategy(BaseStrategy):
+class CdsRequestConstructor(BaseRequestConstructor):
     """
     Handles the request construction and validation
     """
@@ -117,7 +117,7 @@ class ClinicalDecisionSupport(BaseUseCase):
             client=client,
         )
         self._type = UseCaseType.cds
-        self._strategy = ClinicalDecisionSupportStrategy()
+        self._strategy = CdsRequestConstructor()
         # do we need keys? just in case
         # TODO make configurable
         self._endpoints = {
@@ -144,7 +144,7 @@ class ClinicalDecisionSupport(BaseUseCase):
         return self._type
 
     @property
-    def strategy(self) -> BaseStrategy:
+    def strategy(self) -> BaseRequestConstructor:
         return self._strategy
 
     @property

@@ -1,7 +1,7 @@
 import pytest
 
 from unittest.mock import patch, MagicMock
-from healthchain.workflows import Workflow
+
 from healthchain.models import CDSRequest
 from healthchain.models.hooks import (
     PatientViewContext,
@@ -10,7 +10,8 @@ from healthchain.models.hooks import (
     EncounterDischargeContext,
 )
 from healthchain.models import CdaRequest
-from healthchain.use_cases.clindoc import ClinicalDocumentationStrategy
+from healthchain.sandbox.use_cases import ClinDocRequestConstructor
+from healthchain.sandbox.workflows import Workflow
 from healthchain.service.endpoints import ApiProtocol
 
 
@@ -146,7 +147,7 @@ def test_cda_request_construction(
     doc_ref_with_cda_xml, doc_ref_with_multiple_content, caplog
 ):
     """Test CDA-specific request construction."""
-    strategy = ClinicalDocumentationStrategy()
+    strategy = ClinDocRequestConstructor()
     workflow = Workflow.sign_note_inpatient
 
     # Test with valid CDA XML

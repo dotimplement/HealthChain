@@ -1,6 +1,6 @@
 import pytest
 
-from healthchain.decorators import sandbox
+from healthchain.sandbox.decorator import sandbox
 
 
 def test_sandbox_init(correct_sandbox_class):

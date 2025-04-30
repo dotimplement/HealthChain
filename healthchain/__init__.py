@@ -1,13 +1,19 @@
 import logging
-from .utils.logger import add_handlers
+import warnings
 
-from .decorators import api, sandbox
-from .clients import ehr
+from .utils.logger import add_handlers
 from .config.base import ConfigManager, ValidationLevel
 
+# Sandbox imports for backwards compatibility
+from .sandbox import sandbox, api, ehr
+
+# Enable deprecation warnings
+warnings.filterwarnings("always", category=DeprecationWarning, module="healthchain")
+
 logger = logging.getLogger(__name__)
+
 add_handlers(logger)
 logger.setLevel(logging.INFO)
 
 # Export them at the top level
-__all__ = ["ehr", "api", "sandbox", "ConfigManager", "ValidationLevel"]
+__all__ = ["ConfigManager", "ValidationLevel", "sandbox", "api", "ehr"]

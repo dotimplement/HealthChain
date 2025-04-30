@@ -8,24 +8,24 @@ from typing import Dict, Optional
 
 from fhir.resources.documentreference import DocumentReference
 
-from healthchain.base import BaseClient, BaseUseCase, BaseStrategy
 from healthchain.service import Service
 from healthchain.service.endpoints import Endpoint, ApiProtocol
 from healthchain.utils.utils import insert_at_key
-from healthchain.workflows import (
+from healthchain.sandbox.base import BaseClient, BaseUseCase, BaseRequestConstructor
+from healthchain.sandbox.apimethod import APIMethod
+from healthchain.sandbox.workflows import (
     UseCaseMapping,
     UseCaseType,
     Workflow,
     validate_workflow,
 )
 from healthchain.models import CdaRequest, CdaResponse
-from healthchain.apimethod import APIMethod
 
 
 log = logging.getLogger(__name__)
 
 
-class ClinicalDocumentationStrategy(BaseStrategy):
+class ClinDocRequestConstructor(BaseRequestConstructor):
     """
     Handles the request construction and validation of a NoteReader CDA file
     """
@@ -116,7 +116,7 @@ class ClinicalDocumentation(BaseUseCase):
             client=client,
         )
         self._type = UseCaseType.clindoc
-        self._strategy = ClinicalDocumentationStrategy()
+        self._strategy = ClinDocRequestConstructor()
         self._endpoints = {
             "service_mount": Endpoint(
                 path="/notereader/",
@@ -135,7 +135,7 @@ class ClinicalDocumentation(BaseUseCase):
         return self._type
 
     @property
-    def strategy(self) -> BaseStrategy:
+    def strategy(self) -> BaseRequestConstructor:
         return self._strategy
 
     @property

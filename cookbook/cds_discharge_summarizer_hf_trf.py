@@ -1,7 +1,7 @@
 import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.models import Prefetch, CDSRequest, CDSResponse
 from healthchain.data_generators import CdsDataGenerator
 

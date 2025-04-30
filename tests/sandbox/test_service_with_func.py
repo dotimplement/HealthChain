@@ -1,14 +1,22 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 
-from healthchain.clients import ehr
-from healthchain.decorators import sandbox, api
+from healthchain.fhir.bundle_helpers import create_bundle
+from healthchain.models.hooks.prefetch import Prefetch
+from healthchain.sandbox.decorator import sandbox, api, ehr
+from healthchain.sandbox.use_cases.cds import ClinicalDecisionSupport
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
-from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.models import Card
 
-from .conftest import MockDataGenerator
+
+class MockDataGenerator:
+    def __init__(self) -> None:
+        self.generated_data = Prefetch(prefetch={"document": create_bundle()})
+        self.workflow = None
+
+    def set_workflow(self, workflow):
+        self.workflow = workflow
 
 
 @sandbox

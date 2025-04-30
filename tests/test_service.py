@@ -3,8 +3,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.testclient import TestClient
 
 from healthchain.service import Service
-from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.use_cases.clindoc import ClinicalDocumentation
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport, ClinicalDocumentation
 
 cds = ClinicalDecisionSupport()
 cds_service = Service(endpoints=cds.endpoints)
@@ -30,7 +29,7 @@ def test_cds_service(test_cds_request):
 
 
 @patch(
-    "healthchain.use_cases.clindoc.ClinicalDocumentation.process_notereader_document"
+    "healthchain.sandbox.use_cases.ClinicalDocumentation.process_notereader_document"
 )
 def test_clindoc_process_document(mock_process, test_cda_response, test_soap_request):
     mock_process.return_value = test_cda_response

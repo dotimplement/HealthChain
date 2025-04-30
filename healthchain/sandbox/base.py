@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 from healthchain.service.service import Service
 from healthchain.service.endpoints import Endpoint
 
-from .workflows import UseCaseType, Workflow
-from .apimethod import APIMethod
+from healthchain.sandbox.workflows import UseCaseType, Workflow
+from healthchain.sandbox.apimethod import APIMethod
 
 
 class BaseClient(ABC):
@@ -21,7 +21,7 @@ class BaseClient(ABC):
         """
 
 
-class BaseStrategy(ABC):
+class BaseRequestConstructor(ABC):
     """
     Abstract class for the strategy for validating and constructing a request
     Use cases will differ by:
@@ -65,7 +65,7 @@ class BaseUseCase(ABC):
 
     @property
     @abstractmethod
-    def strategy(self) -> BaseStrategy:
+    def strategy(self) -> BaseRequestConstructor:
         pass
 
     @property
