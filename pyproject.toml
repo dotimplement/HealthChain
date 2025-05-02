@@ -43,6 +43,7 @@ lxml = "^5.2.2"
 xmltodict = "^0.13.0"
 fhir-resources = "^8.0.0"
 python-liquid = "^1.13.0"
+regex = "!=2019.12.17"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
