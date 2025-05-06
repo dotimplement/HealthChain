@@ -2,7 +2,7 @@ import asyncio
 
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Any
 from datetime import datetime
 
 
@@ -31,18 +31,32 @@ class EventDispatcher:
         }
         self._default_handlers: List[Callable] = []
 
-    def register_handler(self, event_type: EHREventType, handler: Callable):
+    def register_handler(
+        self, event_type: EHREventType, handler: Callable
+    ) -> "EventDispatcher":
         """Register a handler for a specific event type"""
         self._handlers[event_type].append(handler)
+        return self
 
-    def register_default_handler(self, handler: Callable):
+    def register_default_handler(self, handler: Callable) -> "EventDispatcher":
         """Register a handler for all event types"""
         self._default_handlers.append(handler)
+        return self
 
-    async def dispatch_event(self, event: EHREvent):
-        """Dispatch event to all registered handlers"""
+    async def dispatch_event(self, event: EHREvent) -> List[Any]:
+        """
+        Dispatch event to all registered handlers
+
+        Args:
+            event: The event to dispatch
+
+        Returns:
+            List of results from all handlers
+        """
         handlers = self._handlers[event.event_type] + self._default_handlers
 
-        tasks = [handler(event) for handler in handlers]
+        if not handlers:
+            return []
 
-        await asyncio.gather(*tasks)
+        tasks = [handler(event) for handler in handlers]
+        return await asyncio.gather(*tasks)

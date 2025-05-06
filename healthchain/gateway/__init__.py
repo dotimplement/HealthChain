@@ -6,34 +6,38 @@ between healthcare systems with a focus on maintainable, compliant integration p
 """
 
 # Core components
-from .core.base import BaseGateway, ProtocolHandler
-from .core.manager import GatewayManager
+from healthchain.gateway.core.base import ProtocolService, ClientConnector
+from healthchain.gateway.core.manager import GatewayManager
+
+# Protocol services (inbound)
+from healthchain.gateway.protocols.cdshooks import CDSHooksService
+from healthchain.gateway.protocols.soap import SOAPService
+
+# Client connectors (outbound)
+from healthchain.gateway.clients.fhir import FHIRClient
+
+# Event dispatcher
+from healthchain.gateway.events.ehr import EHREventPublisher
+from healthchain.gateway.events.soap import SOAPEventPublisher
+from healthchain.gateway.events.dispatcher import EventDispatcher
 
 # Security
-from .security.proxy import SecurityProxy
-
-# API
-from .api import create_app
-
-# Protocols
-from .protocols.fhir import FhirAPIGateway
-
-# Events
-from .events.dispatcher import EventDispatcher, EHREventType
-from .events.ehr import EHREvent, EHREventGateway
-from .events.soap import SOAPEvent, SOAPEventGateway
+from healthchain.gateway.security import SecurityProxy
 
 __all__ = [
-    "create_app",
-    "BaseGateway",
-    "ProtocolHandler",
+    # Core classes
+    "ProtocolService",
+    "ClientConnector",
     "GatewayManager",
-    "SecurityProxy",
+    # Protocol services
+    "CDSHooksService",
+    "SOAPService",
+    # Client connectors
+    "FHIRClient",
+    # Event dispatcher
+    "EHREventPublisher",
+    "SOAPEventPublisher",
     "EventDispatcher",
-    "EHREventType",
-    "EHREvent",
-    "EHREventGateway",
-    "SOAPEvent",
-    "SOAPEventGateway",
-    "FhirAPIGateway",
+    # Security
+    "SecurityProxy",
 ]

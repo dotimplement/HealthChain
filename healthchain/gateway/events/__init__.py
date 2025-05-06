@@ -1,11 +1,19 @@
-from .dispatcher import EventDispatcher, EHREvent
-from .ehr import EHREventGateway
-from .soap import SOAPEvent, SOAPEventGateway
+"""
+Event handling system for the HealthChain Gateway.
+
+This module provides event dispatching and handling functionality for
+asynchronous communication between healthcare systems.
+"""
+
+from .dispatcher import EventDispatcher, EHREvent, EHREventType
+from .ehr import EHREventPublisher
+from .soap import SOAPEvent, SOAPEventPublisher
 
 __all__ = [
     "EventDispatcher",
     "EHREvent",
-    "EHREventGateway",
+    "EHREventType",
+    "EHREventPublisher",
     "SOAPEvent",
-    "SOAPEventGateway",
+    "SOAPEventPublisher",
 ]
