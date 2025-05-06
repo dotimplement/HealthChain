@@ -23,7 +23,7 @@ include = ["healthchain/templates/*"]
 "Repository" = "https://github.com/dotimplement/HealthChain"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.9,<3.12"
 pydantic = "^2.7.1"
 eval_type_backport = "^0.1.0"
 pandas = ">=1.0.0,<3.0.0"
@@ -44,6 +44,7 @@ xmltodict = "^0.13.0"
 fhir-resources = "^8.0.0"
 python-liquid = "^1.13.0"
 regex = "!=2019.12.17"
+fhirclient = "^4.3.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
