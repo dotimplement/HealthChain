@@ -15,7 +15,7 @@ On the synthetic data spectrum defined by [this UK ONS methodology working paper
 
 ## CDS Data Generator
 
-The `.generate()` method will return a `CdsFhirData` model with the `prefetch` field populated with a [Bundle](https://build.fhir.org/bundle.html) of generated structural synthetic FHIR data.
+The `.generate_prefetch()` method will return a `Prefetch` model with the `prefetch` field populated with a dictionary of FHIR resources. Each key in the dictionary corresponds to a FHIR resource type, and the value is a list of FHIR resources of that type. For more information, check out the [CDS Hooks documentation](https://cds-hooks.org/specification/current/#providing-fhir-resources-to-a-cds-service).
 
 For each workflow, a pre-configured list of FHIR resources is randomly generated and placed in the `prefetch` field of a `CDSRequest`.
 
@@ -36,7 +36,7 @@ You can use the data generator within a client function or on its own.
     ```python
     import healthchain as hc
     from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.models import CdsFhirData
+    from healthchain.models import Prefetch
     from healthchain.data_generators import CdsDataGenerator
 
     @hc.sandbox
@@ -45,9 +45,9 @@ You can use the data generator within a client function or on its own.
             self.data_generator = CdsDataGenerator()
 
         @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
-            return data
+        def load_data_in_client(self) -> Prefetch:
+            prefetch = self.data_generator.generate_prefetch()
+            return prefetch
 
         @hc.api
         def my_server(self, request) -> None:
@@ -58,24 +58,23 @@ You can use the data generator within a client function or on its own.
 === "On its own"
     ```python
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.workflow import Workflow
+    from healthchain.workflows import Workflow
 
-    # Initialise data generator
+    # Initialize data generator
     data_generator = CdsDataGenerator()
 
     # Generate FHIR resources for use case workflow
     data_generator.set_workflow(Workflow.encounter_discharge)
-    data = data_generator.generate()
+    prefetch = data_generator.generate_prefetch()
 
-    print(data.model_dump())
+    print(prefetch.model_dump())
 
     # {
     #    "prefetch": {
-    #        "entry": [
+    #        "encounter":
     #            {
-    #                "resource": ...
+    #              "resourceType": ...
     #            }
-    #        ]
     #    }
     #}
     ```
@@ -97,11 +96,11 @@ If you are looking for realistic datasets, you are also free to load your own da
 
 ## Loading free-text
 
-You can specify the `free_text_csv` field of the `.generate()` method to load in free-text sources into the data generator, e.g. discharge summaries. This will wrap the text into a FHIR [DocumentReference](https://build.fhir.org/documentreference.html) resource (N.B. currently we place the text directly in the resource attachment, although it is technically supposed to be base64 encoded).
+You can specify the `free_text_csv` field of the `.generate_prefetch()` method to load in free-text sources into the data generator, e.g. discharge summaries. This will wrap the text into a FHIR [DocumentReference](https://build.fhir.org/documentreference.html) resource (N.B. currently we place the text directly in the resource attachment, although it is technically supposed to be base64 encoded).
 
 A random text document from the `csv` file will be picked for each generation.
 
 ```python
 # Load free text into a DocumentResource FHIR resource
-data = data_generator.generate(free_text_csv="./dir/to/csv/file")
+data = data_generator.generate_prefetch(free_text_csv="./dir/to/csv/file")
 ```

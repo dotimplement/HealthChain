@@ -1,5 +1,5 @@
 # Clinical Documentation
-The `ClinicalDocumentation` use case implements a real-time Clinical Documentation Improvement (CDI) service. It currently implements the Epic-integrated NoteReader CDI specification, which communicates with a third-party NLP engine to analyse clinical notes and extract structured data. It helps convert free-text medical documentation into coded information that can be used for billing, quality reporting, and clinical decision support.
+The `ClinicalDocumentation` use case implements a real-time Clinical Documentation Improvement (CDI) service. It currently implements the Epic-integrated NoteReader CDI specification, which communicates with a third-party NLP engine to analyse clinical notes and extract structured data. It helps convert free-text medical documentation into coded information that can be used for billing, quality reporting, continuity of care, and clinical decision support  ([case study](https://www.researchsquare.com/article/rs-4925228/v1)).
 
 `ClinicalDocumentation` communicates using [CDA (Clinical Document Architecture)](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/). CDAs are standardized electronic documents for exchanging clinical information. They provide a common structure for capturing and sharing patient data like medical history, medications, and care plans between different healthcare systems and providers. Think of it as a collaborative Google Doc that you can add, amend, and remove entries from.
 
@@ -10,22 +10,14 @@ The `ClinicalDocumentation` use case implements a real-time Clinical Documentati
 
 ## Data Flow
 
-| Stage | Input | Internal Data Representation | Output |
-|-------|-------|------------------------------|--------|
-| Client | N/A | N/A | `CcdData` |
-| Service | `CdaRequest` | `CcdData` | `CdaResponse` |
+| Stage | Input | Output |
+|-------|-------|--------|
+| Client | N/A | `DocumentReference` |
+| Service | `CdaRequest` | `CdaResponse` |
 
 
-[CdaConnector](../../pipeline/connectors/cdaconnector.md) handles the conversion of `CdaRequests` :material-swap-horizontal: `CcdData` :material-swap-horizontal: `CdaResponse` in a HealthChain pipeline.
+[CdaConnector](../../pipeline/connectors/cdaconnector.md) handles the conversion of `CdaRequests` :material-swap-horizontal: `DocumentReference` :material-swap-horizontal: `CdaResponse` in a HealthChain pipeline.
 
-Attributes of `CcdData` are:
-
-- `problems`
-- `allergies`
-- `medications`
-- `note`
-
-[(CcdData API Reference)](../../../api/data_models.md/#healthchain.models.data.ccddata.CcdData)
 
 ## Supported Workflows
 

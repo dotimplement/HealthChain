@@ -9,6 +9,7 @@ def test_summarization_pipeline(
     mock_hf_transformer,
     mock_cds_card_creator,
     test_cds_request,
+    test_condition,
 ):
     with patch(
         "healthchain.pipeline.summarizationpipeline.CdsFhirConnector",
@@ -66,24 +67,8 @@ def test_summarization_pipeline(
 
         # Verify the pipeline used the mocked input and output
         input_data = mock_cds_fhir_connector.return_value.input.return_value
-        assert input_data.hl7._fhir_data.context == {
-            "patientId": "123",
-            "encounterId": "456",
-        }
-        assert input_data.hl7._fhir_data.model_dump_prefetch() == {
-            "resourceType": "Bundle",
-            "entry": [
-                {
-                    "resource": {
-                        "resourceType": "Patient",
-                        "id": "123",
-                        "name": [{"family": "Doe", "given": ["John"]}],
-                        "gender": "male",
-                        "birthDate": "1970-01-01",
-                    }
-                },
-            ],
-        }
+
+        assert input_data.fhir.get_prefetch_resources("problem") == test_condition
 
         # Verify stages are set correctly
         assert len(pipeline._stages) == 2

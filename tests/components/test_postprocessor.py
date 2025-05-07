@@ -28,8 +28,8 @@ def test_text_postprocessor_initialization_and_processing():
     ]
 
 
-def test_text_postprocessor_with_entities(sample_lookup):
-    processor = TextPostProcessor(postcoordination_lookup=sample_lookup)
+def test_text_postprocessor_with_entities(test_lookup):
+    processor = TextPostProcessor(postcoordination_lookup=test_lookup)
 
     # Test with matching entities
     doc = Document(data="")
@@ -64,8 +64,8 @@ def test_text_postprocessor_with_entities(sample_lookup):
     ]
 
 
-def test_text_postprocessor_edge_cases(sample_lookup):
-    processor = TextPostProcessor(postcoordination_lookup=sample_lookup)
+def test_text_postprocessor_edge_cases(test_lookup):
+    processor = TextPostProcessor(postcoordination_lookup=test_lookup)
 
     # Test with document without entities
     doc = Document(data="This is a test document")

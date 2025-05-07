@@ -2,10 +2,19 @@ import logging
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseConnector
-from healthchain.cda_parser import CdaAnnotator
-from healthchain.models.data import CcdData, ConceptLists
+from healthchain.interop import create_engine, FormatType
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.fhir import (
+    create_bundle,
+    set_problem_list_item_category,
+    create_document_reference,
+    read_content_attachment,
+)
+from fhir.resources.condition import Condition
+from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.allergyintolerance import AllergyIntolerance
+from fhir.resources.documentreference import DocumentReference
 
 log = logging.getLogger(__name__)
 
@@ -18,111 +27,151 @@ class CdaConnector(BaseConnector):
     clinical data, and updating the document with new information. It serves as
     both an input and output connector in the pipeline.
 
+    The connector uses the InteropEngine to convert between CDA and FHIR formats,
+    preserving the clinical content while allowing for manipulation of the data
+    within the HealthChain pipeline.
+
     Attributes:
-        overwrite (bool): Flag to determine if existing data should be overwritten
-                          when updating the CDA document.
-        cda_doc (CdaAnnotator): The parsed CDA document.
+        engine (InteropEngine): The interoperability engine for CDA conversions.
+        original_cda (str): The original CDA document for use in output.
+        note_document_reference (DocumentReference): Reference to the note document
+                                                    extracted from the CDA.
 
     Methods:
         input: Parses the input CDA document and extracts clinical data.
         output: Updates the CDA document with new data and returns the response.
     """
 
-    def __init__(self, overwrite: bool = False):
-        self.overwrite = overwrite
-        self.cda_doc = None
+    def __init__(self, config_dir: str = None):
+        self.engine = create_engine(config_dir=config_dir)
+        self.original_cda = None
+        self.note_document_reference = None
 
-    def input(self, in_data: CdaRequest) -> Document:
+    def input(self, cda_request: CdaRequest) -> Document:
         """
-        Parse the input CDA document and extract clinical data.
+        Parse the input CDA document and extract clinical data into a HealthChain Document object.
 
-        This method takes a CdaRequest object containing the CDA document as input,
-        parses it using the CdaAnnotator, and extracts relevant clinical data.
-        The extracted data is then used to create a CcdData object and a healthchain
-        Document object, which is returned.
+        This method takes a CdaRequest object as input, parses it using the InteropEngine to convert
+        CDA to FHIR resources, and creates a Document object with the extracted data. It creates a
+        DocumentReference for the original CDA XML and extracts clinical data (problems, medications,
+        allergies) into FHIR resources.
 
         Args:
-            in_data (CdaRequest): The input request containing the CDA document.
+            cda_request (CdaRequest): Request object containing the CDA XML document to process.
 
         Returns:
-            Document: A Document object containing the extracted clinical data
-                      and the original note text.
+            Document: A Document object containing:
+                - The extracted note text as the document data
+                - FHIR resources organized into appropriate lists:
+                  - problem_list: List of Condition resources
+                  - medication_list: List of MedicationStatement resources
+                  - allergy_list: List of AllergyIntolerance resources
+                - DocumentReference resources for the original CDA and extracted notes with a parent-child relationship
 
+        Note:
+            If a DocumentReference resource is found in the converted FHIR resources,
+            it is assumed to contain the note text and is stored for later use.
         """
-        self.cda_doc = CdaAnnotator.from_xml(in_data.document)
+        # Store original CDA for later use
+        self.original_cda = cda_request.document
 
-        # TODO: Temporary fix for the note section, this might be more of a concern for the Annotator class
-        if isinstance(self.cda_doc.note, dict):
-            note_text = " ".join(str(value) for value in self.cda_doc.note.values())
-        elif isinstance(self.cda_doc.note, str):
-            note_text = self.cda_doc.note
-        else:
-            log.warning("Note section is not a string or dictionary")
-            note_text = ""
-
-        ccd_data = CcdData(
-            concepts=ConceptLists(
-                problems=self.cda_doc.problem_list,
-                medications=self.cda_doc.medication_list,
-                allergies=self.cda_doc.allergy_list,
-            ),
-            note=note_text,
+        # Convert CDA to FHIR using the InteropEngine
+        fhir_resources = self.engine.to_fhir(
+            self.original_cda, src_format=FormatType.CDA
         )
 
-        doc = Document(data=ccd_data.note)
-        doc.hl7.set_ccd_data(ccd_data)
+        # Create a FHIR DocumentReference for the original CDA document
+        cda_document_reference = create_document_reference(
+            data=self.original_cda,
+            content_type="text/xml",
+            description="Original CDA Document processed by HealthChain",
+            attachment_title="Original CDA document in XML format",
+        )
+
+        # Extract any DocumentReference resources for notes
+        note_text = ""
+        doc = Document(data=note_text)  # Create document with empty text initially
+
+        # Create FHIR Bundle and add documents
+        doc.fhir.bundle = create_bundle()
+        doc.fhir.add_document_reference(cda_document_reference)
+
+        problem_list = []
+        medication_list = []
+        allergy_list = []
+
+        for resource in fhir_resources:
+            if isinstance(resource, Condition):
+                problem_list.append(resource)
+                set_problem_list_item_category(resource)
+            elif isinstance(resource, MedicationStatement):
+                medication_list.append(resource)
+            elif isinstance(resource, AllergyIntolerance):
+                allergy_list.append(resource)
+            elif isinstance(resource, DocumentReference):
+                if (
+                    resource.content
+                    and resource.content[0].attachment
+                    and resource.content[0].attachment.data is not None
+                ):
+                    content = read_content_attachment(resource)
+                    if content is not None:
+                        note_text = content[0]["data"]
+                        self.note_document_reference = resource
+                    else:
+                        log.warning(
+                            f"No content found in DocumentReference: {resource.id}"
+                        )
+
+        doc.fhir.problem_list = problem_list
+        doc.fhir.medication_list = medication_list
+        doc.fhir.allergy_list = allergy_list
+
+        # Update document text
+        doc.data = note_text
+
+        # Add the note document reference
+        if self.note_document_reference is not None:
+            doc.fhir.add_document_reference(
+                self.note_document_reference, parent_id=cda_document_reference.id
+            )
 
         return doc
 
-    def output(self, out_data: Document) -> CdaResponse:
+    def output(self, document: Document) -> CdaResponse:
         """
-        Update the CDA document with new data and return the response.
+        Convert FHIR resources back to CDA format and return the response.
 
-        This method takes a Document object containing updated clinical data,
-        updates the CDA document with this new information, and returns a
-        CdaResponse object with the updated CDA document.
+        This method takes a Document object containing FHIR resources (problems,
+        medications, allergies) and converts them back to CDA format using the
+        InteropEngine. It combines all resources from the document's FHIR lists
+        and includes the note document reference if available.
 
         Args:
-            out_data (Document): A Document object containing the updated
-                                 clinical data (problems, allergies, medications).
+            document (Document): A Document object containing FHIR resources
+                                 in problem_list, medication_list, and allergy_list.
 
         Returns:
-            CdaResponse: A response object containing the updated CDA document.
-
-        Note:
-            The method updates the CDA document with new problems, allergies,
-            and medications if they are present in the input Document object.
-            The update behavior (overwrite or append) is determined by the
-            `overwrite` attribute of the CdaConnector instance.
+            CdaResponse: A response object containing the CDA document generated
+                        from the FHIR resources.
         """
-        # TODO: check what to do with overwrite
-        updated_ccd_data = out_data.generate_ccd(overwrite=self.overwrite)
+        # Collect all FHIR resources to convert to CDA
+        resources = []
 
-        # Update the CDA document with the results
+        if document.fhir.problem_list:
+            resources.extend(document.fhir.problem_list)
 
-        if updated_ccd_data.concepts.problems:
-            log.debug(
-                f"Updating CDA document with {len(updated_ccd_data.concepts.problems)} problem(s)."
-            )
-            self.cda_doc.add_to_problem_list(
-                updated_ccd_data.concepts.problems, overwrite=self.overwrite
-            )
-        if updated_ccd_data.concepts.allergies:
-            log.debug(
-                f"Updating CDA document with {len(updated_ccd_data.concepts.allergies)} allergy(ies)."
-            )
-            self.cda_doc.add_to_allergy_list(
-                updated_ccd_data.concepts.allergies, overwrite=self.overwrite
-            )
-        if updated_ccd_data.concepts.medications:
-            log.debug(
-                f"Updating CDA document with {len(updated_ccd_data.concepts.medications)} medication(s)."
-            )
-            self.cda_doc.add_to_medication_list(
-                updated_ccd_data.concepts.medications, overwrite=self.overwrite
-            )
+        if document.fhir.allergy_list:
+            resources.extend(document.fhir.allergy_list)
 
-        # Export the updated CDA document
-        response_document = self.cda_doc.export()
+        if document.fhir.medication_list:
+            resources.extend(document.fhir.medication_list)
+
+        # Add the note document reference
+        if self.note_document_reference is not None:
+            resources.append(self.note_document_reference)
+
+        # Convert FHIR resources to CDA using InteropEngine
+        response_document = self.engine.from_fhir(resources, dest_format=FormatType.CDA)
 
         return CdaResponse(document=response_document)

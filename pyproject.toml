@@ -25,6 +25,7 @@ include = ["healthchain/templates/*"]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 pydantic = "^2.7.1"
+eval_type_backport = "^0.1.0"
 pandas = ">=1.0.0,<3.0.0"
 spacy = ">=3.0.0,<4.0.0"
 numpy = "<2.0.0"
@@ -40,8 +41,9 @@ httpx = "^0.27.0"
 spyne = "^2.14.0"
 lxml = "^5.2.2"
 xmltodict = "^0.13.0"
-
 fhir-resources = "^8.0.0"
+python-liquid = "^1.13.0"
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.2"
 pytest = "^8.2.0"

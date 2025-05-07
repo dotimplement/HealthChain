@@ -33,8 +33,9 @@ class CdaRequest(BaseModel):
         xml_dict = xmltodict.parse(self.document)
         document = search_key(xml_dict, "urn:Document")
         if document is None:
-            log.warning("Coudln't find document under namespace 'urn:Document")
+            log.warning("Couldn't find document under namespace 'urn:Document")
             return ""
+
         cda = base64.b64decode(document).decode("UTF-8")
 
         return cda

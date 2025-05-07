@@ -54,13 +54,13 @@ Add components to your pipeline with the `.add_node()` method and compile with `
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import TextPreProcessor, Model, TextPostProcessor
+from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
 from healthchain.io import Document
 
 pipeline = Pipeline[Document]()
 
 pipeline.add_node(TextPreProcessor())
-pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
 pipeline.add_node(TextPostProcessor())
 
 pipe = pipeline.build()
@@ -73,7 +73,7 @@ Let's go one step further! You can use [Connectors](./reference/pipeline/connect
 
 ```python
 from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import Model
+from healthchain.pipeline.components import SpacyNLP
 from healthchain.io import CdaConnector
 from healthchain.models import CdaRequest
 
@@ -81,7 +81,7 @@ pipeline = Pipeline()
 cda_connector = CdaConnector()
 
 pipeline.add_input(cda_connector)
-pipeline.add_node(Model(model_path="path/to/model"))
+pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
 pipeline.add_output(cda_connector)
 
 pipe = pipeline.build()
@@ -114,6 +114,41 @@ cda_data = CdaRequest(document="<CDA XML content>")
 output = pipeline(cda_data)
 ```
 
+### Interoperability 🔄
+
+The HealthChain Interoperability module provides tools for converting between different healthcare data formats, including HL7 FHIR, HL7 CDA, and HL7v2 messages.
+
+[(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
+
+```python
+from healthchain.interop import create_engine, FormatType
+
+# Create an interoperability engine
+engine = create_engine()
+
+# Load a CDA document
+with open("tests/data/test_cda.xml", "r") as f:
+    cda_xml = f.read()
+
+# Convert CDA XML to FHIR resources
+fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
+
+# Convert FHIR resources back to CDA
+cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
+```
+
+The interop module provides a flexible, template-based approach to healthcare format conversion:
+
+| Feature | Description |
+|---------|-------------|
+| Format conversion | Convert legacy formats (CDA, HL7v2) to FHIR resources and back |
+| Template-based generation | Customize syntactic output using [Liquid](https://shopify.github.io/liquid/) templates |
+| Configuration | Configure terminology mappings, validation rules, and environments |
+| Extension | Register custom parsers, generators, and validators |
+
+For more details, see the [conversion examples](cookbook/interop/basic_conversion.md).
+
+
 ### Sandbox 🧪
 Once you've built your pipeline, you might want to experiment with how it interacts with different healthcare systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
 
@@ -130,7 +165,10 @@ import healthchain as hc
 
 from healthchain.use_cases import ClinicalDocumentation
 from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.models import CdaRequest, CdaResponse, CcdData
+from healthchain.models import CdaRequest, CdaResponse
+from healthchain.fhir import create_document_reference
+
+from fhir.resources.documentreference import DocumentReference
 
 @hc.sandbox
 class MyCoolSandbox(ClinicalDocumentation):
@@ -141,12 +179,18 @@ class MyCoolSandbox(ClinicalDocumentation):
         )
 
     @hc.ehr(workflow="sign-note-inpatient")
-    def load_data_in_client(self) -> CcdData:
+    def load_data_in_client(self) -> DocumentReference:
         # Load your data
         with open('/path/to/data.xml', "r") as file:
           xml_string = file.read()
 
-        return CcdData(cda_xml=xml_string)
+        cda_document_reference = create_document_reference(
+            data=xml_string,
+            content_type="text/xml",
+            description="Original CDA Document loaded from my sandbox",
+        )
+
+        return cda_document_reference
 
     @hc.api
     def my_service(self, request: CdaRequest) -> CdaResponse:
@@ -159,7 +203,7 @@ if __name__ == "__main__":
     clindoc.start_sandbox()
 ```
 
-## Deploy sandbox locally with FastAPI 🚀
+#### Deploy sandbox locally with FastAPI 🚀
 
 To run your sandbox:
 
@@ -170,13 +214,30 @@ healthchain run my_sandbox.py
 This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
 
 ## Utilities ⚙️
+
+### FHIR Helpers
+
+The `fhir` module provides a set of helper functions for working with FHIR resources.
+
+```python
+from healthchain.fhir import create_condition
+
+condition = create_condition(
+    code="38341003",
+    display="Hypertension",
+    system="http://snomed.info/sct",
+    subject="Patient/Foo",
+    clinical_status="active"
+)
+```
+
+[(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
+
 ### Data Generator
 
 You can use the data generator to generate synthetic data for your sandbox runs.
 
-The `.generate()` is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data suitable for the workflow specified by the use case.
-
-We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) data. If you're interested in contributing, please [reach out](https://discord.gg/UQC6uAepUz)!
+The `.generate_prefetch()` method is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data as [Pydantic](https://docs.pydantic.dev/) models suitable for the workflow specified by the use case.
 
 [(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
 
@@ -185,7 +246,7 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
     import healthchain as hc
 
     from healthchain.use_cases import ClinicalDecisionSupport
-    from healthchain.models import CdsFhirData
+    from healthchain.models import Prefetch
     from healthchain.data_generators import CdsDataGenerator
 
     @hc.sandbox
@@ -194,8 +255,8 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
             self.data_generator = CdsDataGenerator()
 
         @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
-            data = self.data_generator.generate()
+        def load_data_in_client(self) -> Prefetch:
+            data = self.data_generator.generate_prefetch()
             return data
 
         @hc.api
@@ -207,24 +268,23 @@ We're working on generating synthetic [CDA](https://www.hl7.org.uk/standards/hl7
 === "On its own"
     ```python
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.workflow import Workflow
+    from healthchain.workflows import Workflow
 
-    # Initialise data generator
+    # Initialize data generator
     data_generator = CdsDataGenerator()
 
     # Generate FHIR resources for use case workflow
     data_generator.set_workflow(Workflow.encounter_discharge)
-    data = data_generator.generate()
+    data = data_generator.generate_prefetch()
 
     print(data.model_dump())
 
     # {
     #    "prefetch": {
-    #        "entry": [
+    #        "encounter":
     #            {
-    #                "resource": ...
+    #              "resourceType": ...
     #            }
-    #        ]
     #    }
     #}
     ```

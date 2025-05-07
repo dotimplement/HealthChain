@@ -13,7 +13,7 @@ transformers_installed = importlib.util.find_spec("transformers") is not None
 langchain_installed = importlib.util.find_spec("langchain_core") is not None
 
 
-def test_spacy_component(sample_document):
+def test_spacy_component(test_empty_document):
     with patch("spacy.load") as mock_load:
         mock_instance = MagicMock(items=[])
         mock_instance.__iter__.return_value = []
@@ -27,7 +27,7 @@ def test_spacy_component(sample_document):
 
         for kwargs, case in test_cases:
             component = SpacyNLP.from_model_id("en_core_web_sm", **kwargs)
-            result = component(sample_document)
+            result = component(test_empty_document)
 
             # Verify kwargs were passed correctly
             expected_args = {"disable": ["ner", "parser"]} if kwargs else {}
@@ -40,7 +40,7 @@ def test_spacy_component(sample_document):
 @pytest.mark.skipif(
     not transformers_installed, reason="transformers package not installed"
 )
-def test_huggingface_component(sample_document):
+def test_huggingface_component(test_empty_document):
     from transformers.pipelines.base import Pipeline
 
     with patch("transformers.pipeline", autospec=True) as mock_pipeline:
@@ -62,7 +62,7 @@ def test_huggingface_component(sample_document):
             task="sentiment-analysis",
             **kwargs,
         )
-        result = component(sample_document)
+        result = component(test_empty_document)
 
         mock_pipeline.assert_called_once_with(
             task="sentiment-analysis",
@@ -79,7 +79,7 @@ def test_huggingface_component(sample_document):
 @pytest.mark.skipif(
     not langchain_installed, reason="langchain-core package not installed"
 )
-def test_langchain_component(sample_document):
+def test_langchain_component(test_empty_document):
     from langchain_core.runnables import Runnable
 
     mock_chain = Mock(spec=Runnable)
@@ -97,10 +97,10 @@ def test_langchain_component(sample_document):
 
     for kwargs, case in test_cases:
         component = LangChainLLM(chain=mock_chain, task="dummy_task", **kwargs)
-        result = component(sample_document)
+        result = component(test_empty_document)
 
         # Verify kwargs were passed correctly
-        mock_chain.invoke.assert_called_once_with(sample_document.data, **kwargs)
+        mock_chain.invoke.assert_called_once_with(test_empty_document.data, **kwargs)
         assert (
             result.models.get_output("langchain", "dummy_task") == "mocked chain output"
         ), f"LangChainLLM failed {case}"
@@ -182,42 +182,6 @@ def test_component_invalid_kwargs(
             component(Document("test"))
 
     assert expected_message in str(exc_info.value)
-
-
-def test_spacy_add_concepts(mock_spacy_nlp, sample_document):
-    """Test adding concepts from spaCy entities to HealthChain document"""
-    # Get the mock spaCy doc from the fixture
-    mock_instance = mock_spacy_nlp.return_value
-    mock_doc = mock_instance.return_value._nlp._spacy_doc
-
-    # Create a fresh SpacyNLP component instance
-    with patch("spacy.load") as mock_load:
-        mock_nlp = Mock()
-        mock_load.return_value = mock_nlp
-        component = SpacyNLP("en_core_web_sm")
-        component._nlp = mock_nlp
-
-        # Process document using the mock entities
-        component._add_concepts_to_hc_doc(mock_doc, sample_document)
-
-        # Verify concepts were added correctly
-        concepts = sample_document.concepts
-        assert (
-            len(concepts.problems) == 3
-        )  # All entities are treated as problems by default
-
-        # Check each concept was added with correct attributes
-        expected_concepts = [
-            ("Hypertension", "38341003"),
-            ("Aspirin", "123454"),
-            ("Allergy to peanuts", "70618"),
-        ]
-
-        for i, (text, cui) in enumerate(expected_concepts):
-            assert concepts.problems[i].display_name == text
-            assert concepts.problems[i].code == cui
-            assert concepts.problems[i].code_system == "2.16.840.1.113883.6.96"
-            assert concepts.problems[i].code_system_name == "SNOMED CT"
 
 
 def test_requires_package_decorator():

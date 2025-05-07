@@ -127,7 +127,7 @@ print(data.model_dump())
 # }
 ```
 
-The data generator returns a `CdsFhirData` object, which ensures that the data is parsed correctly inside the sandbox.
+The data generator returns a `Prefetch` object, which ensures that the data is parsed correctly inside the sandbox.
 
 ## Define client workflow
 
@@ -137,7 +137,7 @@ To finish our sandbox, we'll define a client function that loads the data genera
 import healthchain as hc
 
 from healthchain.use_cases import ClinicalDecisionSupport
-from healthchain.models import CDSRequest, CDSResponse, CdsFhirData
+from healthchain.models import CDSRequest, CDSResponse, Prefetch
 
 @hc.sandbox
 class DischargeNoteSummarizer(ClinicalDecisionSupport):
@@ -151,8 +151,8 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
     return result
 
   @hc.ehr(workflow="encounter-discharge")
-  def load_data_in_client(self) -> CdsFhirData:
-    data = self.data_generator.generate()
+  def load_data_in_client(self) -> Prefetch:
+    data = self.data_generator.generate_prefetch()
     return data
 ```
 

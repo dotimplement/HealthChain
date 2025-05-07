@@ -60,13 +60,7 @@ Choose the appropriate model based on your specific needs - standard models for 
 spacy_component = SpacyNLP.from_model_id("en_core_sci_sm")
 ```
 
-The component will process documents using spaCy and:
-
-- Store the spaCy Doc object in the document's `nlp` annotations
-
-- Extract entities if the spacy pipeline has an `ner` component and add them as `ProblemConcepts` (defaulting to SNOMED CT coding)
-
-The spacy Doc object can be accessed using the `Document.nlp.get_spacy_doc()` method.
+The component will process documents using spaCy and store the spaCy Doc object in the document's `nlp` annotations. It can be accessed using the `Document.nlp.get_spacy_doc()` method.
 
 ### Example
 

@@ -50,8 +50,11 @@ class MedicationRequestGenerator(BaseGenerator):
             resourceType="MedicationRequest",
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
+            intent=generator_registry.get("IntentGenerator").generate(),
             medication=CodeableReference(
-                reference=Reference(reference="Medication/123")
+                concept=generator_registry.get(
+                    "MedicationRequestContainedGenerator"
+                ).generate()
             ),
             subject=Reference(reference=subject_reference),
             encounter=Reference(reference=encounter_reference),

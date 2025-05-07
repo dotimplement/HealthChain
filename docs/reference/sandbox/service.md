@@ -16,7 +16,9 @@ Here are minimal examples for each use case:
 
     from healthchain.use_cases import ClinicalDocumentation
     from healthchain.pipeline import MedicalCodingPipeline
-    from healthchain.models import CcdData, CdaRequest, CdaResponse
+    from healthchain.models import CdaRequest, CdaResponse
+    from healthchain.fhir import create_document_reference
+    from fhir.resources.documentreference import DocumentReference
 
     @hc.sandbox
     class MyCoolSandbox(ClinicalDocumentation):
@@ -24,11 +26,11 @@ Here are minimal examples for each use case:
             self.pipeline = MedicalCodingPipeline.load("./path/to/model")
 
         @hc.ehr(workflow="sign-note-inpatient")
-        def load_data_in_client(self) -> CcdData:
+        def load_data_in_client(self) -> DocumentReference:
             with open('/path/to/data.xml', "r") as file:
                 xml_string = file.read()
 
-            return CcdData(cda_xml=xml_string)
+            return create_document_reference(data=xml_string, content_type="text/xml")
 
         @hc.api
         def my_service(self, request: CdaRequest) -> CdaResponse:
@@ -42,19 +44,20 @@ Here are minimal examples for each use case:
 
     from healthchain.use_cases import ClinicalDecisionSupport
     from healthchain.pipeline import SummarizationPipeline
-    from healthchain.models import CDSRequest, CDSResponse, CdsFhirData
+    from healthchain.models import CDSRequest, CDSResponse, Prefetch
+    from fhir.resources.patient import Patient
 
     @hc.sandbox
     class MyCoolSandbox(ClinicalDecisionSupport):
         def __init__(self):
-            self.pipeline = SummarizationPipeline.load("mode-name")
+            self.pipeline = SummarizationPipeline.load("model-name")
 
         @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> CdsFhirData:
+        def load_data_in_client(self) -> Prefetch:
             with open('/path/to/data.json', "r") as file:
                 fhir_json = file.read()
 
-            return CdsFhirData(**fhir_json)
+            return Prefetch(prefetch={"patient": Patient(**fhir_json)})
 
         @hc.api
         def my_service(self, request: CDSRequest) -> CDSResponse:

@@ -1,0 +1,49 @@
+{
+  "resourceType": "Condition",
+  {% if entry.act.entryRelationship.is_array %}
+    {% assign obs = entry.act.entryRelationship[0].observation %}
+  {% else %}
+    {% assign obs = entry.act.entryRelationship.observation %}
+  {% endif %}
+  {% if obs.entryRelationship.observation.code['@code'] == config.identifiers.clinical_status.code %}
+    {% if obs.entryRelationship.observation.value %}
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "{{ obs.entryRelationship.observation.value['@code'] | map_status: 'cda_to_fhir' }}"
+        },
+        {
+          "system": "{{ obs.entryRelationship.observation.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+          "code": "{{ obs.entryRelationship.observation.value['@code'] }}",
+          "display": "{{ obs.entryRelationship.observation.value['@displayName'] }}"
+        }
+      ]
+    }{% if true %},{% endif %}
+    {% endif %}
+  {% endif %}
+  "category": [{
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+      "code": "problem-list-item",
+      "display": "Problem List Item"
+    }]
+  }]{% if obs.value or obs.effectiveTime %},{% endif %}
+  {% if obs.value %}
+  "code": {
+    "coding": [{
+      "system": "{{ obs.value['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ obs.value['@code'] }}",
+      "display": "{{ obs.value['@displayName'] }}"
+    }]
+  }{% if obs.effectiveTime %},{% endif %}
+  {% endif %}
+  {% if obs.effectiveTime %}
+    {% if obs.effectiveTime.low %}
+    "onsetDateTime": "{{ obs.effectiveTime.low['@value'] | format_date }}"{% if obs.effectiveTime.high %},{% endif %}
+    {% endif %}
+    {% if obs.effectiveTime.high %}
+    "abatementDateTime": "{{ obs.effectiveTime.high['@value'] | format_date }}"
+    {% endif %}
+  {% endif %}
+}
