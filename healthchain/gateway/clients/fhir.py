@@ -9,7 +9,7 @@ from typing import List, Any
 import logging
 import aiohttp
 
-from healthchain.gateway.core.base import ClientConnector
+from healthchain.gateway.core.base import OutboundAdapter
 
 try:
     import fhirclient.client as fhir_client
@@ -19,7 +19,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class FHIRClient(ClientConnector):
+class FHIRClient(OutboundAdapter):
     """
     FHIR client implementation using the decorator pattern.
 

@@ -1,11 +1,11 @@
-from .base import BaseGateway
-from .protocol import ProtocolHandler
+from .base import StandardAdapter, InboundAdapter, OutboundAdapter
 from .manager import GatewayManager
 from .models import EHREvent, SOAPEvent, EHREventType, RequestModel, ResponseModel
 
 __all__ = [
-    "BaseGateway",
-    "ProtocolHandler",
+    "StandardAdapter",
+    "InboundAdapter",
+    "OutboundAdapter",
     "GatewayManager",
     "EHREvent",
     "SOAPEvent",

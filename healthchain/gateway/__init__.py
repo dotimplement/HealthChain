@@ -6,12 +6,16 @@ between healthcare systems with a focus on maintainable, compliant integration p
 """
 
 # Core components
-from healthchain.gateway.core.base import ProtocolService, ClientConnector
+from healthchain.gateway.core.base import (
+    StandardAdapter,
+    InboundAdapter,
+    OutboundAdapter,
+)
 from healthchain.gateway.core.manager import GatewayManager
 
 # Protocol services (inbound)
-from healthchain.gateway.protocols.cdshooks import CDSHooksService
-from healthchain.gateway.protocols.soap import SOAPService
+from healthchain.gateway.services.cdshooks import CDSHooksService
+from healthchain.gateway.services.notereader import NoteReaderService
 
 # Client connectors (outbound)
 from healthchain.gateway.clients.fhir import FHIRClient
@@ -26,12 +30,13 @@ from healthchain.gateway.security import SecurityProxy
 
 __all__ = [
     # Core classes
-    "ProtocolService",
-    "ClientConnector",
+    "StandardAdapter",
+    "InboundAdapter",
+    "OutboundAdapter",
     "GatewayManager",
     # Protocol services
     "CDSHooksService",
-    "SOAPService",
+    "NoteReaderService",
     # Client connectors
     "FHIRClient",
     # Event dispatcher

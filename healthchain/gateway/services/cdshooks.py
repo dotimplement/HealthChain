@@ -7,12 +7,12 @@ integration with EHR systems.
 
 from typing import Dict, List, Callable
 import logging
-from healthchain.gateway.core.base import ProtocolService
+from healthchain.gateway.core.base import InboundAdapter
 
 logger = logging.getLogger(__name__)
 
 
-class CDSHooksService(ProtocolService):
+class CDSHooksService(InboundAdapter):
     """
     CDS Hooks service implementation using the decorator pattern.
 
