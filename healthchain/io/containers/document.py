@@ -11,6 +11,8 @@ from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.bundle import Bundle
 from fhir.resources.documentreference import DocumentReference
 from fhir.resources.resource import Resource
+from fhir.resources.reference import Reference
+from fhir.resources.documentreference import DocumentReferenceRelatesTo
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
@@ -351,14 +353,14 @@ class FhirData:
             if not hasattr(document, "relatesTo") or not document.relatesTo:
                 document.relatesTo = []
             document.relatesTo.append(
-                {
-                    "target": {"reference": f"DocumentReference/{parent_id}"},
-                    "code": create_single_codeable_concept(
+                DocumentReferenceRelatesTo(
+                    target=Reference(reference=f"DocumentReference/{parent_id}"),
+                    code=create_single_codeable_concept(
                         code=relationship_type,
                         display=relationship_type.capitalize(),
                         system="http://hl7.org/fhir/ValueSet/document-relationship-type",
                     ),
-                }
+                )
             )
 
         self.add_resources([document], "DocumentReference", replace=False)
