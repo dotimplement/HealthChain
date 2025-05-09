@@ -21,8 +21,6 @@ from healthchain.gateway.services.notereader import NoteReaderService
 from healthchain.gateway.clients.fhir import FHIRClient
 
 # Event dispatcher
-from healthchain.gateway.events.ehr import EHREventPublisher
-from healthchain.gateway.events.soap import SOAPEventPublisher
 from healthchain.gateway.events.dispatcher import EventDispatcher
 
 # Security
@@ -40,8 +38,6 @@ __all__ = [
     # Client connectors
     "FHIRClient",
     # Event dispatcher
-    "EHREventPublisher",
-    "SOAPEventPublisher",
     "EventDispatcher",
     # Security
     "SecurityProxy",

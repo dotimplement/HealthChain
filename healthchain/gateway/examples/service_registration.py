@@ -10,8 +10,9 @@ from typing import Dict
 
 from healthchain.gateway.core.manager import GatewayManager
 from healthchain.gateway.clients.fhir import FHIRClient
-from healthchain.gateway.protocols.cdshooks import CDSHooksService
-from healthchain.gateway.protocols.soap import SOAPService
+from healthchain.gateway.services.cdshooks import CDSHooksService
+from healthchain.gateway.services.notereader import NoteReaderService
+
 
 # Create FastAPI app
 app = FastAPI(title="HealthChain Gateway API")
@@ -25,8 +26,10 @@ cds_hooks_service = CDSHooksService(
     description="Provides clinical guidance for clinical notes",
 )
 
-soap_service = SOAPService(
-    service_name="ICDSServices", namespace="urn:epic-com:Common.2013.Services"
+# Set up soap service with event dispatcher for event publishing
+soap_service = NoteReaderService(
+    service_name="ICDSServices",
+    namespace="urn:epic-com:Common.2013.Services",
 )
 
 # Create FHIR client
@@ -116,7 +119,17 @@ async def soap_endpoint(
 ):
     """SOAP endpoint"""
     soap_service = manager.get_service("soap")
-    return soap_service.handle(method, **request_data)
+    result = soap_service.handle(method, **request_data)
+
+    # After handling the SOAP request, also process through event publisher
+    # This demonstrates the integration between SOAPService and SOAPEventPublisher
+    if method == "ProcessDocument" and "document" in request_data:
+        soap_event_publisher = manager.get_service("soap_events")
+        await soap_event_publisher.handle_cda_document(
+            {"ClinicalDocument": request_data["document"]}
+        )
+
+    return result
 
 
 @app.get("/api/fhir/{resource_type}")

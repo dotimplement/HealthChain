@@ -1,7 +1,6 @@
 from typing import Callable, Dict, Optional, List
 
 from healthchain.gateway.clients.fhir import FHIRClient
-from healthchain.gateway.events.ehr import EHREventPublisher
 from healthchain.gateway.security.proxy import SecurityProxy
 from healthchain.gateway.events.dispatcher import EventDispatcher, EHREventType
 
@@ -13,6 +12,7 @@ class GatewayManager:
         self, fhir_config: Optional[Dict] = None, ehr_config: Optional[Dict] = None
     ):
         self.security = SecurityProxy()
+        self.event_dispatcher = EventDispatcher()
         self.services = {}
 
         # Initialize FHIR handler if config provided (legacy support)
@@ -20,16 +20,6 @@ class GatewayManager:
             self.fhir_service = FHIRClient(**fhir_config)
         else:
             self.fhir_service = None
-
-        # Initialize event system if EHR config provided
-        if ehr_config:
-            self.event_dispatcher = EventDispatcher()
-            self.ehr_gateway = EHREventPublisher(
-                system_type=ehr_config["system_type"], dispatcher=self.event_dispatcher
-            )
-        else:
-            self.ehr_gateway = None
-            self.event_dispatcher = None
 
     def register_service(self, service_id: str, service_provider):
         """

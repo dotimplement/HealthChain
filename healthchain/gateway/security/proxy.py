@@ -4,7 +4,8 @@ import time
 import uuid
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+
+# from jose import JWTError, jwt
 from pydantic import BaseModel
 
 
@@ -42,24 +43,24 @@ class SecurityProxy:
 
     async def validate_token(self, token: str) -> TokenData:
         """Validate JWT token and extract user info"""
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            username: str = payload.get("sub")
-            if username is None:
-                raise credentials_exception
-            token_data = TokenData(
-                username=username,
-                scopes=payload.get("scopes", []),
-                user_id=payload.get("user_id"),
-            )
-        except JWTError:
-            raise credentials_exception
-        return token_data
+        # credentials_exception = HTTPException(
+        #     status_code=status.HTTP_401_UNAUTHORIZED,
+        #     detail="Could not validate credentials",
+        #     headers={"WWW-Authenticate": "Bearer"},
+        # )
+        # try:
+        #     payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+        #     username: str = payload.get("sub")
+        #     if username is None:
+        #         raise credentials_exception
+        #     token_data = TokenData(
+        #         username=username,
+        #         scopes=payload.get("scopes", []),
+        #         user_id=payload.get("user_id"),
+        #     )
+        # except JWTError:
+        #     raise credentials_exception
+        pass
 
     async def validate_access(
         self, resource: str, action: str, token_data: TokenData
