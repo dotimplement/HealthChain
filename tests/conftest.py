@@ -23,8 +23,6 @@ from healthchain.fhir import (
 
 from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
 
-from healthchain.service.soap.epiccdsservice import CDSServices
-
 
 # TODO: Tidy up fixtures
 
@@ -565,8 +563,3 @@ def config_fixtures():
             yaml.dump(mapping_content, f)
 
         yield config_dir
-
-
-@pytest.fixture
-def cdsservices():
-    return CDSServices()
