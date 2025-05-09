@@ -456,7 +456,7 @@ class FhirData:
         if hasattr(target_doc, "relatesTo") and target_doc.relatesTo:
             # Find parents from target's relationships
             for relation in target_doc.relatesTo:
-                parent_ref = relation.get("target", {}).get("reference")
+                parent_ref = relation.target.reference
                 parent_id = parent_ref.split("/")[-1]
                 parent = next((doc for doc in documents if doc.id == parent_id), None)
                 if parent:
@@ -468,7 +468,7 @@ class FhirData:
                 continue
 
             for relation in doc.relatesTo:
-                target_ref = relation.get("target", {}).get("reference")
+                target_ref = relation.target.reference
                 related_id = target_ref.split("/")[-1]
 
                 # Check if this doc is a child of our target
