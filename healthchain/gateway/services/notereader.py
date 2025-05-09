@@ -281,7 +281,9 @@ class NoteReaderService(BaseService):
         Raises:
             ValueError: If no ProcessDocument handler is registered
         """
-        # Get the registered handler for ProcessDocument
+        # TODO: Maybe you want to be more explicit that you only need to register a handler for ProcessDocument
+        # Can you register multiple services in the same app? Who knows?? Let's find out!!
+
         if "ProcessDocument" not in self.adapter._handlers:
             raise ValueError(
                 "No ProcessDocument handler registered. "

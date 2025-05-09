@@ -5,9 +5,9 @@ This module implements the CDS Hooks standard for clinical decision support
 integration with EHR systems.
 """
 
-from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
 import logging
-import asyncio
+
+from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -42,8 +42,8 @@ class CDSHooksAdapter(InboundAdapter):
     Adapter for CDS Hooks protocol integration.
 
     The adapter manages the lifecycle of CDS hook requests, from receiving the initial
-    request to executing the appropriate handler and formatting the response. It supports
-    both synchronous and asynchronous handler functions.
+    request to executing the appropriate handler and formatting the response.
+    Note CDS Hooks are synchronous by design.
     """
 
     def __init__(self, config: Optional[CDSHooksConfig] = None, **options):
@@ -96,7 +96,7 @@ class CDSHooksAdapter(InboundAdapter):
 
         return self
 
-    async def handle(self, operation: str, **params) -> Union[CDSResponse, Dict]:
+    def handle(self, operation: str, **params) -> Union[CDSResponse, Dict]:
         """
         Process a CDS Hooks request using registered handlers.
 
@@ -117,7 +117,7 @@ class CDSHooksAdapter(InboundAdapter):
             return CDSResponse(cards=[])
 
         # Execute the handler with the request
-        return await self._execute_handler(request)
+        return self._execute_handler(request)
 
     def _extract_request(self, operation: str, params: Dict) -> Optional[CDSRequest]:
         """
@@ -152,7 +152,7 @@ class CDSHooksAdapter(InboundAdapter):
             logger.warning(f"Error constructing CDSRequest: {str(e)}", exc_info=True)
             return None
 
-    async def _execute_handler(self, request: CDSRequest) -> CDSResponse:
+    def _execute_handler(self, request: CDSRequest) -> CDSResponse:
         """
         Execute a registered CDS hook with the given request.
 
@@ -169,11 +169,7 @@ class CDSHooksAdapter(InboundAdapter):
             logger.debug(f"Calling handler for hook type: {hook_type}")
             handler = self._handlers[hook_type]
 
-            # Support both async and non-async handlers
-            if asyncio.iscoroutinefunction(handler):
-                result = await handler(request)
-            else:
-                result = handler(request)
+            result = handler(request)
 
             # Process the result
             return self._process_result(result)
@@ -262,7 +258,7 @@ class CDSHooksService(BaseService):
 
         # Register a hook handler with decorator
         @cds_service.hook("patient-view", id="patient-summary")
-        async def handle_patient_view(request: CDSRequest) -> CDSResponse:
+        def handle_patient_view(request: CDSRequest) -> CDSResponse:
             # Generate cards based on patient context
             return CDSResponse(cards=[
                 {
@@ -335,7 +331,7 @@ class CDSHooksService(BaseService):
 
         return decorator
 
-    async def handle_discovery(self) -> CDSServiceInformation:
+    def handle_discovery(self) -> CDSServiceInformation:
         """
         Get the CDS Hooks service definition for discovery.
 
@@ -357,7 +353,7 @@ class CDSHooksService(BaseService):
 
         return CDSServiceInformation(services=services)
 
-    async def handle_request(self, request: CDSRequest) -> CDSResponse:
+    def handle_request(self, request: CDSRequest) -> CDSResponse:
         """
         CDS service endpoint handler.
 
@@ -367,7 +363,7 @@ class CDSHooksService(BaseService):
         Returns:
             CDSResponse object
         """
-        return await self.adapter.handle(request.hook, request=request)
+        return self.adapter.handle(request.hook, request=request)
 
     # TODO: Should be delegated to the HealthChainAPI wrapper
     def add_to_app(self, app: FastAPI, path: Optional[str] = None) -> None:
