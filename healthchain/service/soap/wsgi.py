@@ -4,10 +4,8 @@ from spyne.server.wsgi import WsgiApplication
 
 from typing import Callable
 
-from .epiccdsservice import CDSServices
-from .model import ClientFault, ServerFault
-
-# TODO: make namespace configurable
+from healthchain.service.soap.epiccdsservice import CDSServices
+from healthchain.service.soap.model import ClientFault, ServerFault
 
 
 def start_wsgi(
@@ -25,6 +23,8 @@ def start_wsgi(
 
     Returns:
         WsgiApplication: The WSGI application for the SOAP service.
+
+    # TODO: Add support for custom document interfaces
     """
     CDSServices._service = service
 

@@ -1,3 +1,3 @@
 # Clients
 
-::: healthchain.clients.ehrclient
+::: healthchain.sandbox.clients.ehr.EHRClient

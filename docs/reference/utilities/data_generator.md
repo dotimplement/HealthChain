@@ -35,7 +35,7 @@ You can use the data generator within a client function or on its own.
 === "Within client"
     ```python
     import healthchain as hc
-    from healthchain.use_cases import ClinicalDecisionSupport
+    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
     from healthchain.models import Prefetch
     from healthchain.data_generators import CdsDataGenerator
 
@@ -58,7 +58,7 @@ You can use the data generator within a client function or on its own.
 === "On its own"
     ```python
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.workflows import Workflow
+    from healthchain.sandbox.workflows import Workflow
 
     # Initialize data generator
     data_generator = CdsDataGenerator()

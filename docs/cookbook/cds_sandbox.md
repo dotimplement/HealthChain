@@ -86,7 +86,7 @@ We'll also need to implement the service method, which will process the request 
 ```python
 import healthchain as hc
 
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.models import CDSRequest, CDSResponse
 
 @hc.sandbox
@@ -136,7 +136,7 @@ To finish our sandbox, we'll define a client function that loads the data genera
 ```python
 import healthchain as hc
 
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.models import CDSRequest, CDSResponse, Prefetch
 
 @hc.sandbox

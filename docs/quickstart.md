@@ -163,7 +163,7 @@ Every sandbox also requires a **client** function marked by `@hc.ehr` and a **se
 ```python
 import healthchain as hc
 
-from healthchain.use_cases import ClinicalDocumentation
+from healthchain.sandbox.use_cases import ClinicalDocumentation
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest, CdaResponse
 from healthchain.fhir import create_document_reference
@@ -245,7 +245,7 @@ The `.generate_prefetch()` method is dependent on use case and workflow. For exa
     ```python
     import healthchain as hc
 
-    from healthchain.use_cases import ClinicalDecisionSupport
+    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
     from healthchain.models import Prefetch
     from healthchain.data_generators import CdsDataGenerator
 
@@ -268,7 +268,7 @@ The `.generate_prefetch()` method is dependent on use case and workflow. For exa
 === "On its own"
     ```python
     from healthchain.data_generators import CdsDataGenerator
-    from healthchain.workflows import Workflow
+    from healthchain.sandbox.workflows import Workflow
 
     # Initialize data generator
     data_generator = CdsDataGenerator()
