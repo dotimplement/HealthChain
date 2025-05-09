@@ -1,25 +1,21 @@
 import base64
-import inspect
 import logging
 import pkgutil
 import xmltodict
 
 from typing import Dict, Optional
-
 from fhir.resources.documentreference import DocumentReference
 
-from healthchain.service import Service
-from healthchain.service.endpoints import Endpoint, ApiProtocol
+from healthchain.service.endpoints import ApiProtocol
+from healthchain.models import CdaRequest
 from healthchain.utils.utils import insert_at_key
 from healthchain.sandbox.base import BaseClient, BaseUseCase, BaseRequestConstructor
-from healthchain.sandbox.apimethod import APIMethod
 from healthchain.sandbox.workflows import (
     UseCaseMapping,
     UseCaseType,
     Workflow,
     validate_workflow,
 )
-from healthchain.models import CdaRequest, CdaResponse
 
 
 log = logging.getLogger(__name__)
@@ -93,38 +89,38 @@ class ClinicalDocumentation(BaseUseCase):
 
     This class represents the backend strategy for clinical documentation using the NoteReader system.
     It inherits from the `BaseUseCase` class and provides methods for processing NoteReader documents.
+    When used with the @sandbox decorator, it enables testing and validation of clinical documentation
+    workflows in a controlled environment.
 
     Attributes:
-        service_api (Optional[APIMethod]): The service API method to be used for processing the documents.
-        service_config (Optional[Dict]): The configuration for the service.
-        service (Optional[Service]): The service to be used for processing the documents.
         client (Optional[BaseClient]): The client to be used for communication with the service.
+        path (str): The endpoint path to send requests to. Defaults to "/notereader/".
+                    Will be normalized to ensure it starts and ends with a forward slash.
+        type (UseCaseType): The type of use case, set to UseCaseType.clindoc.
+        strategy (BaseRequestConstructor): The strategy used for constructing requests.
 
+    Example:
+        @sandbox("http://localhost:8000")
+        class MyNoteReader(ClinicalDocumentation):
+            def __init__(self):
+                super().__init__(path="/custom/notereader/")
+
+        # Create instance and start sandbox
+        note_reader = MyNoteReader()
+        note_reader.start_sandbox(save_data=True)
     """
 
     def __init__(
         self,
-        service_api: Optional[APIMethod] = None,
-        service_config: Optional[Dict] = None,
-        service: Optional[Service] = None,
+        path: str = "/notereader/",
         client: Optional[BaseClient] = None,
     ) -> None:
         super().__init__(
-            service_api=service_api,
-            service_config=service_config,
-            service=service,
             client=client,
         )
         self._type = UseCaseType.clindoc
         self._strategy = ClinDocRequestConstructor()
-        self._endpoints = {
-            "service_mount": Endpoint(
-                path="/notereader/",
-                method="POST",
-                function=self.process_notereader_document,
-                api_protocol="SOAP",
-            )
-        }
+        self._path = path
 
     @property
     def description(self) -> str:
@@ -137,65 +133,3 @@ class ClinicalDocumentation(BaseUseCase):
     @property
     def strategy(self) -> BaseRequestConstructor:
         return self._strategy
-
-    @property
-    def endpoints(self) -> Dict[str, Endpoint]:
-        return self._endpoints
-
-    def process_notereader_document(self, request: CdaRequest) -> CdaResponse:
-        """
-        Process the NoteReader document using the configured service API.
-
-        This method handles the execution of the NoteReader service. It validates the
-        service configuration, checks the input parameters, executes the service
-        function, and ensures the correct response type is returned.
-
-        Args:
-            request (CdaRequest): The request object containing the CDA document to be processed.
-
-        Returns:
-            CdaResponse: The response object containing the processed CDA document.
-
-        Raises:
-            AssertionError: If the service function is not properly configured.
-            TypeError: If the output type does not match the expected CdaResponse type.
-
-        Note:
-            This method performs several checks to ensure the integrity of the service:
-            1. Verifies that the service API is configured.
-            2. Validates the signature of the service function.
-            3. Ensures the service function accepts a CdaRequest as its argument.
-            4. Verifies that the service function returns a CdaResponse.
-        """
-        # Check service_api
-        if self._service_api is None:
-            log.warning("'service_api' not configured, check class init.")
-            return CdaResponse(document="")
-
-        # Check service function signature
-        signature = inspect.signature(self._service_api.func)
-        params = list(signature.parameters.values())
-        if len(params) < 2:  # Only 'self' parameter
-            raise AssertionError(
-                "Service function must have at least one parameter besides 'self'"
-            )
-        first_param = params[1]  # Skip 'self'
-        if first_param.annotation == inspect.Parameter.empty:
-            log.warning(
-                "Service function parameter has no type annotation. Expected CdaRequest."
-            )
-        elif first_param.annotation != CdaRequest:
-            raise TypeError(
-                f"Expected first argument of service function to be CdaRequest, but got {first_param.annotation}"
-            )
-
-        # Call the service function
-        response = self._service_api.func(self, request)
-
-        # Check return type
-        if not isinstance(response, CdaResponse):
-            raise TypeError(
-                f"Expected return type CdaResponse, got {type(response)} instead."
-            )
-
-        return response

@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-from healthchain.service.service import Service
-from healthchain.service.endpoints import Endpoint
-
 from healthchain.sandbox.workflows import UseCaseType, Workflow
-from healthchain.sandbox.apimethod import APIMethod
 
 
 class BaseClient(ABC):
@@ -36,24 +32,19 @@ class BaseRequestConstructor(ABC):
 
 class BaseUseCase(ABC):
     """
-    Abstract class for a specific use case of an EHR object
-    Use cases will differ by:
-    - the data it accepts (FHIR or CDA)
-    - the format of the request it constructs (CDS Hook or NoteReader workflows)
+    Abstract base class for healthcare use cases in the sandbox environment.
+
+    This class provides a foundation for implementing different healthcare use cases
+    such as Clinical Decision Support (CDS) or Clinical Documentation (NoteReader).
+    Subclasses must implement the type and strategy properties.
     """
 
     def __init__(
         self,
-        service_api: Optional[APIMethod] = None,
-        service_config: Optional[Dict] = None,
-        service: Optional[Service] = None,
         client: Optional[BaseClient] = None,
     ) -> None:
-        self._service_api: APIMethod = service_api
-        self._service: Service = service
         self._client: BaseClient = client
 
-        self.service_config: service_config = service_config
         self.responses: List[Dict[str, str]] = []
         self.sandbox_id = None
         self.url = None
@@ -69,6 +60,10 @@ class BaseUseCase(ABC):
         pass
 
     @property
-    @abstractmethod
-    def endpoints(self) -> Dict[str, Endpoint]:
-        pass
+    def path(self) -> str:
+        path = self._path
+        if not path.startswith("/"):
+            path = "/" + path
+        if not path.endswith("/"):
+            path = path + "/"
+        return path

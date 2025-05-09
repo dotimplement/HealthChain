@@ -4,6 +4,15 @@ import httpx
 from unittest.mock import Mock, patch
 
 
+@pytest.fixture
+def mock_strategy():
+    mock = Mock()
+    mock.construct_request = Mock(
+        return_value=Mock(model_dump_json=Mock(return_value="{}"))
+    )
+    return mock
+
+
 def test_init(ehr_client, mock_function, mock_workflow, mock_strategy):
     assert ehr_client.data_generator_func == mock_function
     assert ehr_client.workflow == mock_workflow

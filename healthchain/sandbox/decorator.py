@@ -1,19 +1,14 @@
 import logging
+import httpx
 import logging.config
 
 from functools import wraps
 from typing import Any, Type, TypeVar, Optional, Callable, Union, Dict
 
-from healthchain.service import Service
-from healthchain.sandbox.apimethod import APIMethod
 from healthchain.sandbox.base import BaseUseCase
 from healthchain.sandbox.environment import SandboxEnvironment
 from healthchain.sandbox.workflows import Workflow, UseCaseType
 from healthchain.sandbox.utils import (
-    is_client,
-    is_service_route,
-    validate_single_registration,
-    register_method,
     find_attributes_of_type,
     assign_to_attribute,
 )
@@ -24,23 +19,53 @@ log = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable)
 
 
+def is_client(attr):
+    """Check if an attribute is marked as a client"""
+    return hasattr(attr, "is_client")
+
+
+def validate_single_registration(count, attribute_name):
+    """
+    Ensure only one method is registered for a role.
+    Raises RuntimeError if multiple methods are registered.
+    """
+    if count > 1:
+        raise RuntimeError(
+            f"Multiple methods are registered as {attribute_name}. Only one is allowed."
+        )
+
+
+def register_method(instance, method, cls, name, attribute_name):
+    """
+    Register a method for a specific role and execute it
+    """
+    method_func = method.__get__(instance, cls)
+    log.debug(f"Set {name} as {attribute_name}")
+    return method_func()
+
+
 def api(func: Optional[F] = None) -> Union[Callable[..., Any], Callable[[F], F]]:
     """
     A decorator that wraps a function in an APIMethod; this wraps a function that handles LLM/NLP
     processing and tags it as a service route to be mounted onto the main service endpoints.
 
     It does not take any additional arguments for now, but we may consider adding configs
+
+    .. deprecated:: 1.0.0
+        This decorator is deprecated and will be removed in a future version.
+        Please use the new HealthChainAPI to create services instead.
     """
+    import warnings
+
+    warnings.warn(
+        "The @api decorator is deprecated and will be removed in a future version. "
+        "Please use the new HealthChainAPI to create services instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     def decorator(func: F) -> F:
-        func.is_service_route = True
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> APIMethod:
-            # TODO: set any configs needed
-            return APIMethod(func=func)
-
-        return wrapper
+        return func
 
     if func is None:
         return decorator
@@ -134,21 +159,35 @@ def ehr(
 
 def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
     """
-    Decorator factory for creating a sandboxed environment.
+    Decorator factory for creating a sandboxed environment. The sandbox provides a controlled
+    environment for testing healthcare applications by simulating EHR system interactions.
+    Should be used with a use case class, such as ClinicalDocumentation or ClinicalDecisionSupport.
 
     Parameters:
-        arg: Optional argument which can be a callable (class) or configuration dict.
-        **kwargs: Arbitrary keyword arguments, mainly used to pass in 'service_config'.
+        api: API URL as string
+        config: Dictionary of configuration options
 
     Returns:
-        If `arg` is callable, it applies the default decorator.
-        Otherwise, it uses the provided arguments to configure the service environment.
+        A decorator function that sets up the sandbox environment for the decorated class.
+
+    Raises:
+        ValueError: If no API URL is provided or if the URL is invalid
+        TypeError: If decorated class is not a valid use case
 
     Example:
-        @sandbox(service_config={"port": 9000})
-        class myCDS(ClinicalDecisionSupport):
-            def __init__(self) -> None:
-                self.data_generator = None
+    ```python
+        # Using with API URL
+        @sandbox("http://localhost:8000")
+        class MyUseCase(ClinicalDocumentation):
+            def __init__(self):
+                super().__init__()
+
+        # Using with config
+        @sandbox(api="http://localhost:8000", config={"timeout": 30})
+        class MyUseCase(ClinicalDocumentation):
+            def __init__(self):
+                super().__init__()
+    ```
     """
     if callable(arg):
         # Decorator used without parentheses
@@ -156,28 +195,59 @@ def sandbox(arg: Optional[Any] = None, **kwargs: Any) -> Callable:
         return sandbox_decorator()(cls)
     else:
         # Arguments were provided
-        if "service_config" not in kwargs:
-            log.warning(
-                f"{list(kwargs.keys())} is not a valid argument and will not be used; use 'service_config'."
-            )
-        service_config = arg if arg is not None else kwargs.get("service_config", {})
+        api_url = None
 
-        return sandbox_decorator(service_config)
+        # Check if api was provided as a direct argument
+        if isinstance(arg, str):
+            api_url = arg
+        # Check if api was provided in kwargs
+        elif "api" in kwargs:
+            api_url = kwargs["api"]
+
+        if api_url is None:
+            raise ValueError("'api' is a required argument")
+
+        try:
+            api = httpx.URL(api_url)
+        except Exception as e:
+            raise ValueError(f"Invalid API URL: {str(e)}")
+
+        config = (
+            kwargs.get("config", {})
+            if arg is None
+            else arg
+            if isinstance(arg, dict)
+            else {}
+        )
+
+        return sandbox_decorator(api, config)
 
 
-def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
+def sandbox_decorator(
+    api: Optional[Union[str, httpx.URL]] = None, config: Optional[Dict] = None
+) -> Callable:
     """
-    Sets up a sandbox environment. Modifies class initialization to incorporate
-    service and client management.
+    Internal decorator function that sets up a sandbox environment for a use case class.
+    This function modifies the class initialization to incorporate service and client management.
 
     Parameters:
-        service_config: Dictionary containing configurations for the service.
+        api: The API URL to be used for the sandbox. Can be a string or httpx.URL object.
+        config: Optional dictionary containing configurations for the sandbox environment.
+               Defaults to an empty dictionary if not provided.
 
     Returns:
-        A wrapper function that modifies the class to which it is applied.
+        A wrapper function that modifies the class to which it is applied, adding sandbox
+        functionality including start_sandbox and stop_sandbox methods.
+
+    Raises:
+        TypeError: If the decorated class is not a subclass of BaseUseCase.
+        ValueError: If the 'api' argument is not provided.
     """
-    if service_config is None:
-        service_config = {}
+    if api is None:
+        raise ValueError("'api' is a required argument")
+
+    if config is None:
+        config = {}
 
     def wrapper(cls: Type) -> Type:
         if not issubclass(cls, BaseUseCase):
@@ -189,41 +259,28 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
         def new_init(self, *args: Any, **kwargs: Any) -> None:
             # Initialize parent class
-            super(cls, self).__init__(*args, **kwargs, service_config=service_config)
+            super(cls, self).__init__(*args, **kwargs)
             original_init(self, *args, **kwargs)
 
-            service_route_count = 0
             client_count = 0
 
             for name in dir(self):
                 attr = getattr(self, name)
                 if callable(attr):
-                    # Register service API
-                    if is_service_route(attr):
-                        service_route_count += 1
-                        validate_single_registration(
-                            service_route_count, "_service_api"
-                        )
-                        self._service_api = register_method(
-                            self, attr, cls, name, "_service_api"
-                        )
-
                     # Register client
                     if is_client(attr):
                         client_count += 1
                         validate_single_registration(client_count, "_client")
                         self._client = register_method(self, attr, cls, name, "_client")
 
-            # Create a Service instance and register routes from strategy
-            self._service = Service(endpoints=self.endpoints)
-
             # Initialize sandbox environment
+            # TODO: Path should be passed from a config not UseCase instance
             self.sandbox_env = SandboxEnvironment(
-                service_api=self._service_api,
                 client=self._client,
-                service_config=self.service_config,
                 use_case_type=self.type,
-                endpoints=self.endpoints,
+                api=api,
+                path=self.path,
+                config=config,
             )
 
         # Replace original __init__ with new_init
@@ -231,7 +288,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
 
         def start_sandbox(
             self,
-            service_id: str = "1",
+            service_id: Optional[str] = None,
             save_data: bool = True,
             save_dir: str = "./output/",
             logging_config: Optional[Dict] = None,
@@ -240,7 +297,7 @@ def sandbox_decorator(service_config: Optional[Dict] = None) -> Callable:
             Starts the sandbox: initializes service and sends request through the client.
 
             Args:
-                service_id: Service identifier (default "1")
+                service_id: Service identifier (default None)
                 save_data: Whether to save request/response data
                 save_dir: Directory to save data
                 logging_config: Optional logging configuration

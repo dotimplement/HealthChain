@@ -1,8 +1,9 @@
+from unittest.mock import MagicMock, patch
 import pytest
 
-from healthchain.sandbox.decorator import api, ehr
+from healthchain.sandbox.decorator import ehr
 from healthchain.sandbox.utils import find_attributes_of_type, assign_to_attribute
-from healthchain.sandbox.apimethod import APIMethod
+from healthchain.sandbox.workflows import UseCaseType
 
 from .conftest import MockDataGenerator
 
@@ -37,46 +38,56 @@ def test_assigning_workflow_attributes():
         assign_to_attribute(instance, attributes[1], "set_workflow", "workflow")
 
 
-class TestEHRDecorator:
-    def test_invalid_use_case(self, function):
-        instance = MockUseCase()
-        decorated = ehr(workflow="any_workflow")(function)
-        with pytest.raises(AssertionError) as excinfo:
-            decorated(instance)
-        assert "MockUseCase must be subclass of valid Use Case strategy!" in str(
-            excinfo.value
-        )
-
-    def test_invalid_workflow(self, function, mock_cds):
-        with pytest.raises(ValueError) as excinfo:
-            decorated = ehr(workflow="invalid_workflow")(function)
-            decorated(mock_cds())
-        assert "please select from" in str(excinfo.value)
-
-    def test_correct_behavior(self, function, mock_cds):
-        decorated = ehr(workflow="order-sign")(function)
-        result = decorated(mock_cds())
-        assert len(result.request_data) == 1
-
-    def test_multiple_calls(self, function, mock_cds):
-        decorated = ehr(workflow="order-select", num=3)(function)
-        result = decorated(mock_cds())
-        assert len(result.request_data) == 3
+def test_ehr_invalid_use_case(function):
+    instance = MockUseCase()
+    decorated = ehr(workflow="any_workflow")(function)
+    with pytest.raises(AssertionError) as excinfo:
+        decorated(instance)
+    assert "MockUseCase must be subclass of valid Use Case strategy!" in str(
+        excinfo.value
+    )
 
 
-# TODO: add test for api decorator
-def test_api_decorator():
-    @api
-    def test_function():
-        return "test"
+def test_ehr_invalid_workflow(function, mock_cds):
+    with pytest.raises(ValueError) as excinfo:
+        decorated = ehr(workflow="invalid_workflow")(function)
+        decorated(mock_cds())
+    assert "please select from" in str(excinfo.value)
 
-    # test if the function is correctly wrapped in the APImethod instance.
-    result = test_function()
-    assert isinstance(result, APIMethod)
-    assert result.func() == "test"
 
-    # test if function has "is_service_route"
-    assert hasattr(test_function, "is_service_route")
+def test_ehr_correct_behavior(function, mock_cds):
+    decorated = ehr(workflow="order-sign")(function)
+    result = decorated(mock_cds())
+    assert len(result.request_data) == 1
 
-    # test if the "is_service_route" member is set to True.
-    assert test_function.is_service_route is True
+
+def test_ehr_multiple_calls(function, mock_cds):
+    decorated = ehr(workflow="order-select", num=3)(function)
+    result = decorated(mock_cds())
+    assert len(result.request_data) == 3
+
+
+def test_ehr_decorator():
+    """Test the ehr decorator functionality"""
+
+    class MockUseCase:
+        type = UseCaseType.cds
+        path = "/test"
+
+        # Mock strategy for testing
+        @property
+        def strategy(self):
+            return MagicMock()
+
+        # Test the decorator with workflow
+        @ehr(workflow="patient-view")
+        def test_method(self):
+            return {"test": "data"}
+
+    # Create a mock subclass check to allow our test class
+    with patch("healthchain.sandbox.decorator.issubclass", return_value=True):
+        mock_use_case = MockUseCase()
+
+        # Verify method is marked as client
+        assert hasattr(mock_use_case.test_method, "is_client")
+        assert mock_use_case.test_method.is_client

@@ -45,52 +45,6 @@ def assign_to_attribute(instance, attribute_name, method_name, *args, **kwargs):
     return method(*args, **kwargs)
 
 
-def is_service_route(attr):
-    """Check if an attribute is marked as a service route"""
-    return hasattr(attr, "is_service_route")
-
-
-def is_client(attr):
-    """Check if an attribute is marked as a client"""
-    return hasattr(attr, "is_client")
-
-
-def validate_single_registration(count, attribute_name):
-    """
-    Validate that only one method is registered for a specific role
-
-    Args:
-        count: Current count of registrations
-        attribute_name: Name of the attribute being registered
-
-    Raises:
-        RuntimeError: If multiple methods are registered for the same role
-    """
-    if count > 1:
-        raise RuntimeError(
-            f"Multiple methods are registered as {attribute_name}. Only one is allowed."
-        )
-
-
-def register_method(instance, method, cls, name, attribute_name):
-    """
-    Register a method for a specific role
-
-    Args:
-        instance: Object instance
-        method: Method to register
-        cls: Class of the instance
-        name: Name of the method
-        attribute_name: Role to register for
-
-    Returns:
-        Result of calling the method
-    """
-    method_func = method.__get__(instance, cls)
-    log.debug(f"Set {name} as {attribute_name}")
-    return method_func()
-
-
 def generate_filename(prefix: str, unique_id: str, index: int, extension: str):
     """
     Generate a filename with timestamp and unique identifier
