@@ -1,8 +1,6 @@
-import asyncio
-
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, List, Callable, Any
+from typing import Dict
 from datetime import datetime
 
 
@@ -46,58 +44,17 @@ class EventDispatcher:
     """
 
     def __init__(self):
-        """Initialize the event dispatcher with empty handler registries."""
-        self._handlers: Dict[EHREventType, List[Callable]] = {
-            event_type: [] for event_type in EHREventType
-        }
-        self._default_handlers: List[Callable] = []
+        self.subscribers = {}
 
-    def register_handler(
-        self, event_type: EHREventType, handler: Callable
-    ) -> "EventDispatcher":
-        """Register a handler for a specific event type.
+    def subscribe(self, event_type, handler):
+        """Subscribe to an event type."""
+        if event_type not in self.subscribers:
+            self.subscribers[event_type] = []
+        self.subscribers[event_type].append(handler)
 
-        Args:
-            event_type: The type of event this handler will process
-            handler: Async callable that takes an EHREvent and returns Any
-
-        Returns:
-            Self for method chaining
-        """
-        self._handlers[event_type].append(handler)
-        return self
-
-    def register_default_handler(self, handler: Callable) -> "EventDispatcher":
-        """Register a handler that processes all event types.
-
-        Args:
-            handler: Async callable that takes an EHREvent and returns Any
-
-        Returns:
-            Self for method chaining
-        """
-        self._default_handlers.append(handler)
-        return self
-
-    async def dispatch_event(self, event: EHREvent) -> List[Any]:
-        """Dispatch an event to all registered handlers.
-
-        This method will:
-        1. Find all handlers registered for the event type
-        2. Add any default handlers
-        3. Execute all handlers concurrently
-        4. Return a list of all handler results
-
-        Args:
-            event: The EHR event to dispatch
-
-        Returns:
-            List of results from all handlers that processed the event
-        """
-        handlers = self._handlers[event.event_type] + self._default_handlers
-
-        if not handlers:
-            return []
-
-        tasks = [handler(event) for handler in handlers]
-        return await asyncio.gather(*tasks)
+    async def publish(self, event):
+        """Publish an event to all subscribers."""
+        event_type = event.event_type
+        if event_type in self.subscribers:
+            for handler in self.subscribers[event_type]:
+                await handler(event)

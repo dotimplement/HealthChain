@@ -1,8 +1,8 @@
 from unittest.mock import patch, MagicMock
-from fastapi import FastAPI
 
 import healthchain as hc
 from healthchain.gateway.services.cdshooks import CDSHooksService
+from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.hooks.prefetch import Prefetch
@@ -12,7 +12,8 @@ from healthchain.fhir import create_bundle, create_condition
 
 def test_cdshooks_sandbox_integration():
     """Test CDSHooks service integration with sandbox decorator"""
-    app = FastAPI()
+    # Create HealthChainAPI instead of FastAPI
+    app = HealthChainAPI()
     cds_service = CDSHooksService()
 
     # Register a hook handler for the service
@@ -24,7 +25,8 @@ def test_cdshooks_sandbox_integration():
             ]
         )
 
-    cds_service.add_to_app(app)
+    # Register the service with the HealthChainAPI
+    app.register_service(cds_service, "/cds")
 
     # Define a sandbox class using the CDSHooks service
     @hc.sandbox("http://localhost:8000/")

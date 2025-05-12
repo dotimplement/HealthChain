@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
-from fastapi import FastAPI
+from unittest.mock import MagicMock
 
 from healthchain.gateway.services.cdshooks import (
     CDSHooksService,
@@ -222,21 +221,33 @@ def test_cdshooks_service_handle_request(test_cds_request):
     assert result.cards[0].summary == "Test response"
 
 
-def test_cdshooks_service_add_to_app():
-    """Test adding service to FastAPI app"""
+def test_cdshooks_service_get_routes():
+    """Test that CDSHooksService correctly returns routes with get_routes method"""
     service = CDSHooksService()
-    app = FastAPI()
 
     # Register sample hooks
     @service.hook("patient-view", id="test-patient-view")
     def handle_patient_view(request):
         return CDSResponse(cards=[])
 
-    # Add to app
-    with patch.object(app, "add_api_route") as mock_add_route:
-        service.add_to_app(app)
-        # Should register at least 2 routes (discovery + hook)
-        assert mock_add_route.call_count >= 2
+    # Get routes from service
+    routes = service.get_routes()
+
+    # Should return at least 2 routes (discovery endpoint and hook endpoint)
+    assert len(routes) >= 2
+
+    # Verify discovery endpoint
+    discovery_routes = [r for r in routes if "GET" in r[1]]
+    assert len(discovery_routes) >= 1
+    discovery_route = discovery_routes[0]
+    assert discovery_route[1] == ["GET"]  # HTTP method is GET
+
+    # Verify hook endpoint
+    hook_routes = [r for r in routes if "POST" in r[1]]
+    assert len(hook_routes) >= 1
+    hook_route = hook_routes[0]
+    assert hook_route[1] == ["POST"]  # HTTP method is POST
+    assert "test-patient-view" in hook_route[0]  # Route path contains hook ID
 
 
 def test_cdshooks_service_hook_invalid_hook_type():

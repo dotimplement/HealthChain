@@ -11,8 +11,6 @@ from typing import Optional, Dict, Any, Callable, TypeVar, Union
 from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
-from fastapi import FastAPI
-from fastapi.middleware.wsgi import WSGIMiddleware
 from pydantic import BaseModel
 
 from healthchain.gateway.core.base import InboundAdapter, BaseService
@@ -317,21 +315,3 @@ class NoteReaderService(BaseService):
         )
         # Create WSGI app
         return WsgiApplication(application)
-
-    # TODO: Should be delegated to HealthChainAPI
-    def add_to_app(self, app: FastAPI, path: Optional[str] = None) -> None:
-        """
-        Add this service to a FastAPI application.
-
-        Args:
-            app: The FastAPI application to add to
-            path: The path to add the SOAP service at
-
-        Note:
-            This method creates a WSGI application and adds it to the
-            specified FastAPI application at the given path.
-        """
-        mount_path = path or self.adapter.config.default_mount_path
-        wsgi_app = self.create_wsgi_app()
-        app.mount(mount_path, WSGIMiddleware(wsgi_app))
-        logger.info(f"NoteReader service added at {mount_path}")

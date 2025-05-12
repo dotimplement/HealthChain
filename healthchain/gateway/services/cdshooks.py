@@ -8,7 +8,6 @@ integration with EHR systems.
 import logging
 
 from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
-from fastapi import FastAPI
 from pydantic import BaseModel
 
 from healthchain.gateway.core.base import InboundAdapter, BaseService
@@ -365,15 +364,18 @@ class CDSHooksService(BaseService):
         """
         return self.adapter.handle(request.hook, request=request)
 
-    # TODO: Should be delegated to the HealthChainAPI wrapper
-    def add_to_app(self, app: FastAPI, path: Optional[str] = None) -> None:
+    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
         """
-        Add this service to a FastAPI application.
+        Get routes for the CDS Hooks service.
 
         Args:
-            app: The FastAPI application to add to
-            path: Path to add the service at (uses adapter config if None)
+            path: Optional path to add the service at (uses adapter config if None)
+
+        Returns:
+            List of route tuples (path, methods, handler, kwargs)
         """
+        routes = []
+
         base_path = path or self.adapter.config.base_path
         if base_path:
             base_path = base_path.rstrip("/")
@@ -381,30 +383,34 @@ class CDSHooksService(BaseService):
         # Register the discovery endpoint
         discovery_path = self.adapter.config.discovery_path.lstrip("/")
         discovery_endpoint = (
-            f"{base_path}/{discovery_path}" if base_path else discovery_path
+            f"{base_path}/{discovery_path}" if base_path else f"/{discovery_path}"
         )
-        app.add_api_route(
-            discovery_endpoint,
-            self.handle_discovery,
-            methods=["GET"],
-            response_model_exclude_none=True,
+        routes.append(
+            (
+                discovery_endpoint,
+                ["GET"],
+                self.handle_discovery,
+                {"response_model_exclude_none": True},
+            )
         )
-        logger.info(f"CDS Hooks discovery endpoint added at {discovery_endpoint}")
 
         # Register service endpoints for each hook
         service_path = self.adapter.config.service_path.lstrip("/")
         for metadata in self.adapter.get_metadata():
-            hook_id = metadata["id"]
+            hook_id = metadata.get("id")
             if hook_id:
                 service_endpoint = (
                     f"{base_path}/{service_path}/{hook_id}"
                     if base_path
-                    else f"{service_path}/{hook_id}"
+                    else f"/{service_path}/{hook_id}"
                 )
-                app.add_api_route(
-                    service_endpoint,
-                    self.handle_request,
-                    methods=["POST"],
-                    response_model_exclude_none=True,
+                routes.append(
+                    (
+                        service_endpoint,
+                        ["POST"],
+                        self.handle_request,
+                        {"response_model_exclude_none": True},
+                    )
                 )
-                logger.info(f"CDS Hooks service endpoint added at {service_endpoint}")
+
+        return routes

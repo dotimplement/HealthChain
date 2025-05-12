@@ -8,7 +8,7 @@ architecture of the gateway system.
 import logging
 import asyncio
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union, Type
 from pydantic import BaseModel
 
@@ -214,16 +214,43 @@ class BaseService(ABC):
         self.adapter = adapter
         self.event_dispatcher = event_dispatcher
 
-    @abstractmethod
-    def add_to_app(self, app: Any, path: Optional[str] = None) -> None:
+    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
         """
-        Add this service to a web application.
+        Get routes that this service wants to register with the FastAPI app.
+
+        This method returns a list of tuples with the following structure:
+        (path, methods, handler, kwargs) where:
+        - path is the URL path for the endpoint
+        - methods is a list of HTTP methods this endpoint supports
+        - handler is the function to be called when the endpoint is accessed
+        - kwargs are additional arguments to pass to the add_api_route method
 
         Args:
-            app: The web application to add to
-            path: Base path to add the service at
+            path: Optional base path to prefix all routes
+
+        Returns:
+            List of route tuples (path, methods, handler, kwargs)
         """
-        pass
+        # Default implementation returns empty list
+        # Specific service classes should override this
+        return []
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """
+        Get metadata for this service, including capabilities and configuration.
+
+        Returns:
+            Dictionary of service metadata
+        """
+        # Default implementation returns basic info
+        # Specific service classes should override this
+        return {
+            "service_type": self.__class__.__name__,
+            "adapter_type": self.adapter.__class__.__name__,
+            "operations": self.adapter.get_capabilities()
+            if hasattr(self.adapter, "get_capabilities")
+            else [],
+        }
 
     @classmethod
     def create(

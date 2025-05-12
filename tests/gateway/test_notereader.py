@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from fastapi import FastAPI
 
 from healthchain.gateway.services.notereader import (
     NoteReaderService,
@@ -91,26 +90,16 @@ def test_notereader_service_create_wsgi_app(mock_wsgi):
         return CdaResponse(document="processed", error=None)
 
     # Create WSGI app
-    service.create_wsgi_app()
+    wsgi_app = service.create_wsgi_app()
     mock_wsgi.assert_called_once()
 
+    # Verify WSGI app was created
+    assert wsgi_app is not None
 
-@patch("healthchain.gateway.services.notereader.WSGIMiddleware")
-def test_notereader_service_add_to_app(mock_middleware):
-    """Test adding service to FastAPI app"""
-    service = NoteReaderService()
-    app = FastAPI()
-
-    # Register required ProcessDocument handler
-    @service.method("ProcessDocument")
-    def process_document(request):
-        return CdaResponse(document="processed", error=None)
-
-    # Add to app
-    service.add_to_app(app)
-
-    # Verify middleware was used to mount the service
-    mock_middleware.assert_called_once()
+    # Verify we can get the default mount path from config
+    config = service.adapter.config
+    assert hasattr(config, "default_mount_path")
+    assert config.default_mount_path == "/notereader"
 
 
 def test_notereader_service_create_wsgi_app_no_handler():
