@@ -7,7 +7,6 @@ external FHIR servers through a consistent interface.
 
 from typing import List, Any
 import logging
-import aiohttp
 
 from healthchain.gateway.core.base import OutboundAdapter
 
@@ -106,53 +105,54 @@ class FHIRClient(OutboundAdapter):
         Returns:
             Result of the FHIR operation
         """
-        resource_type = params.get("resource_type")
+        # resource_type = params.get("resource_type")
 
-        if not resource_type:
-            raise ValueError(f"Resource type is required for operation: {operation}")
+        # if not resource_type:
+        #     raise ValueError(f"Resource type is required for operation: {operation}")
 
-        if operation == "search" and resource_type:
-            search_params = params.get("params", {})
-            if self.client:
-                return self.client.server.request_json(
-                    resource_type, params=search_params
-                )
-            else:
-                # Fallback to direct HTTP if no client
-                url = f"{self.base_url}/{resource_type}"
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url, params=search_params) as response:
-                        return await response.json()
+        # if operation == "search" and resource_type:
+        #     search_params = params.get("params", {})
+        #     if self.client:
+        #         return self.client.server.request_json(
+        #             resource_type, params=search_params
+        #         )
+        #     else:
+        #         # Fallback to direct HTTP if no client
+        #         url = f"{self.base_url}/{resource_type}"
+        #         async with aiohttp.ClientSession() as session:
+        #             async with session.get(url, params=search_params) as response:
+        #                 return await response.json()
 
-        elif operation == "read" and resource_type:
-            resource_id = params.get("id")
-            if not resource_id:
-                raise ValueError("Resource ID is required for read operation")
+        # elif operation == "read" and resource_type:
+        #     resource_id = params.get("id")
+        #     if not resource_id:
+        #         raise ValueError("Resource ID is required for read operation")
 
-            if self.client:
-                return self.client.server.request_json(f"{resource_type}/{resource_id}")
-            else:
-                # Fallback to direct HTTP if no client
-                url = f"{self.base_url}/{resource_type}/{resource_id}"
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as response:
-                        return await response.json()
+        #     if self.client:
+        #         return self.client.server.request_json(f"{resource_type}/{resource_id}")
+        #     else:
+        #         # Fallback to direct HTTP if no client
+        #         url = f"{self.base_url}/{resource_type}/{resource_id}"
+        #         async with aiohttp.ClientSession() as session:
+        #             async with session.get(url) as response:
+        #                 return await response.json()
 
-        elif operation == "create" and resource_type:
-            resource_data = params.get("resource")
-            if not resource_data:
-                raise ValueError("Resource data is required for create operation")
+        # elif operation == "create" and resource_type:
+        #     resource_data = params.get("resource")
+        #     if not resource_data:
+        #         raise ValueError("Resource data is required for create operation")
 
-            if self.client:
-                return self.client.server.post_json(resource_type, resource_data)
-            else:
-                # Fallback to direct HTTP if no client
-                url = f"{self.base_url}/{resource_type}"
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(url, json=resource_data) as response:
-                        return await response.json()
+        #     if self.client:
+        #         return self.client.server.post_json(resource_type, resource_data)
+        #     else:
+        #         # Fallback to direct HTTP if no client
+        #         url = f"{self.base_url}/{resource_type}"
+        #         async with aiohttp.ClientSession() as session:
+        #             async with session.post(url, json=resource_data) as response:
+        #                 return await response.json()
 
-        raise ValueError(f"Unsupported operation: {operation}")
+        # raise ValueError(f"Unsupported operation: {operation}")
+        pass
 
     def get_capabilities(self) -> List[str]:
         """
