@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
+from healthchain.sandbox.use_cases import clindoc
 from healthchain.sandbox.use_cases.clindoc import (
     ClinDocRequestConstructor,
     ClinicalDocumentation,
@@ -91,11 +92,12 @@ def test_clindoc_request_construction_no_xml():
         description="Test non-XML Document",
     )
 
-    # Should not raise but return None
-    with patch("healthchain.sandbox.use_cases.clindoc.log.warning") as mock_warning:
-        result = constructor.construct_request(doc_ref, Workflow.sign_note_inpatient)
-        assert result is None
-        mock_warning.assert_called_once()
+    mock_warning = MagicMock()
+    clindoc.log.warning = mock_warning
+
+    result = constructor.construct_request(doc_ref, Workflow.sign_note_inpatient)
+    assert result is None
+    mock_warning.assert_called_once()
 
 
 def test_clinical_documentation_init():

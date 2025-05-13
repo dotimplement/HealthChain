@@ -1,9 +1,10 @@
-from unittest.mock import MagicMock, patch
 import pytest
+from unittest.mock import MagicMock
 
 from healthchain.sandbox.decorator import ehr
 from healthchain.sandbox.utils import find_attributes_of_type, assign_to_attribute
 from healthchain.sandbox.workflows import UseCaseType
+from healthchain.sandbox.base import BaseUseCase
 
 from .conftest import MockDataGenerator
 
@@ -70,7 +71,8 @@ def test_ehr_multiple_calls(function, mock_cds):
 def test_ehr_decorator():
     """Test the ehr decorator functionality"""
 
-    class MockUseCase:
+    # Create a proper subclass of BaseUseCase to avoid patching
+    class MockUseCase(BaseUseCase):
         type = UseCaseType.cds
         path = "/test"
 
@@ -84,10 +86,9 @@ def test_ehr_decorator():
         def test_method(self):
             return {"test": "data"}
 
-    # Create a mock subclass check to allow our test class
-    with patch("healthchain.sandbox.decorator.issubclass", return_value=True):
-        mock_use_case = MockUseCase()
+    # Create an instance
+    mock_use_case = MockUseCase()
 
-        # Verify method is marked as client
-        assert hasattr(mock_use_case.test_method, "is_client")
-        assert mock_use_case.test_method.is_client
+    # Verify method is marked as client
+    assert hasattr(mock_use_case.test_method, "is_client")
+    assert mock_use_case.test_method.is_client
