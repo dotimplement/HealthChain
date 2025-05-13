@@ -4,8 +4,7 @@ import warnings
 from .utils.logger import add_handlers
 from .config.base import ConfigManager, ValidationLevel
 
-# Sandbox imports for backwards compatibility
-from .sandbox.decorator import sandbox as sandbox_decorator, api, ehr
+from .sandbox.decorator import sandbox as sandbox, api, ehr
 
 # Enable deprecation warnings
 warnings.filterwarnings("always", category=DeprecationWarning, module="healthchain")
@@ -16,7 +15,4 @@ add_handlers(logger)
 logger.setLevel(logging.INFO)
 
 # Export them at the top level
-__all__ = ["ConfigManager", "ValidationLevel", "sandbox_decorator", "api", "ehr"]
-
-# For backwards compatibility
-sandbox = sandbox_decorator
+__all__ = ["ConfigManager", "ValidationLevel", "api", "ehr", "sandbox"]
