@@ -1,12 +1,12 @@
 from .base import StandardAdapter, InboundAdapter, OutboundAdapter
-from .manager import GatewayManager
+from .fhir_gateway import FHIRGateway
 from .models import EHREvent, SOAPEvent, EHREventType, RequestModel, ResponseModel
 
 __all__ = [
     "StandardAdapter",
     "InboundAdapter",
     "OutboundAdapter",
-    "GatewayManager",
+    "FHIRGateway",
     "EHREvent",
     "SOAPEvent",
     "EHREventType",

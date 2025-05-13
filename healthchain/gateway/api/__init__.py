@@ -6,6 +6,5 @@ FHIR, SOAP, CDS Hooks, and other healthcare interoperability standards.
 """
 
 from .app import HealthChainAPI, create_app
-from .router import FhirRouter
 
-__all__ = ["HealthChainAPI", "create_app", "FhirRouter"]
+__all__ = ["HealthChainAPI", "create_app"]

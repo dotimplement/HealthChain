@@ -231,6 +231,33 @@ class HealthChainAPI(FastAPI):
             logger.error(f"Failed to register router {router_name}: {str(e)}")
             raise
 
+    def register_gateway(self, gateway) -> None:
+        """
+        Register a gateway with the API.
+
+        This is a convenience method for registering gateways such as FHIRGateway.
+        It registers the gateway as both a router and a service when applicable.
+
+        Args:
+            gateway: The gateway to register
+        """
+        # Register as a router if it inherits from APIRouter
+        if isinstance(gateway, APIRouter):
+            self.register_router(gateway)
+
+        # Register as a service if it has service capabilities
+        if hasattr(gateway, "get_routes") and callable(gateway.get_routes):
+            self.register_service(gateway)
+
+        # Store gateway in a collection for future reference if needed
+        if not hasattr(self, "_gateways"):
+            self._gateways = {}
+
+        gateway_name = gateway.__class__.__name__
+        self._gateways[gateway_name] = gateway
+
+        logger.info(f"Registered gateway {gateway_name}")
+
     def _add_default_routes(self) -> None:
         """Add default routes for the API."""
 
@@ -262,7 +289,7 @@ class HealthChainAPI(FastAPI):
                         "type": name,
                         "endpoints": list(self.service_endpoints.get(name, set())),
                     }
-
+            # TODO: Change date to current date
             return {
                 "resourceType": "CapabilityStatement",
                 "status": "active",
