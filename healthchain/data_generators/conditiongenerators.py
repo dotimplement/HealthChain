@@ -95,8 +95,8 @@ class BodySiteGenerator(BaseGenerator):
     @staticmethod
     def generate():
         return create_single_codeable_concept(
-            code=faker.random_element(elements=("38266002")),
-            display=faker.random_element(elements=("Entire body as a whole")),
+            code=faker.random_element(elements=("38266002",)),
+            display=faker.random_element(elements=("Entire body as a whole",)),
             system="http://snomed.info/sct",
         )
 
