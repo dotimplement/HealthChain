@@ -2,13 +2,14 @@
 HealthChainAPI - FastAPI wrapper with healthcare integration capabilities.
 
 This module provides the main HealthChainAPI class that wraps FastAPI and manages
-healthcare-specific services, routes, middleware, and capabilities.
+healthcare-specific gateways, routes, middleware, and capabilities.
 """
 
 import logging
 import importlib
 import inspect
 
+from datetime import datetime
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.wsgi import WSGIMiddleware
@@ -17,8 +18,8 @@ from fastapi.responses import JSONResponse
 
 from typing import Dict, Optional, Type, Union, Set
 
-from healthchain.gateway.core.base import BaseService
-# from healthchain.config import get_config
+from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.events.dispatcher import EventDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -28,22 +29,27 @@ class HealthChainAPI(FastAPI):
     HealthChainAPI wraps FastAPI to provide healthcare-specific integrations.
 
     This class extends FastAPI to provide additional capabilities for:
-    - Managing healthcare services (FHIR, CDA, CDS Hooks, SOAP, etc.)
+    - Managing healthcare gateways (FHIR, CDA, CDS Hooks, SOAP, etc.)
     - Routing and transforming healthcare data
     - Handling healthcare-specific authentication and authorization
     - Managing healthcare-specific configurations
-    - Providing capability statements and service discovery
+    - Providing capability statements and gateway discovery
+    - Event dispatch for healthcare events
 
     Example:
         ```python
+        # Create the API
         app = HealthChainAPI()
 
-        # Register services
-        app.register_service(NoteReaderService)
-        app.register_service(CDSHooksService)
+        # Create and register gateways
+        fhir_gateway = FHIRGateway()
+        cds_gateway = CDSHooksGateway()
+        note_gateway = NoteReaderGateway()
 
-        # Register routers
-        app.register_router(FhirRouter)
+        # Register with the API
+        app.register_gateway(fhir_gateway)
+        app.register_gateway(cds_gateway)
+        app.register_gateway(note_gateway)
 
         # Run the app with uvicorn
         uvicorn.run(app)
@@ -56,6 +62,7 @@ class HealthChainAPI(FastAPI):
         description: str = "Healthcare Integration API",
         version: str = "1.0.0",
         enable_cors: bool = True,
+        enable_events: bool = True,
         **kwargs,
     ):
         """
@@ -66,15 +73,23 @@ class HealthChainAPI(FastAPI):
             description: API description for documentation
             version: API version
             enable_cors: Whether to enable CORS middleware
+            enable_events: Whether to enable event dispatching functionality
             **kwargs: Additional keyword arguments to pass to FastAPI
         """
         super().__init__(
             title=title, description=description, version=version, **kwargs
         )
 
-        self.services: Dict[str, BaseService] = {}
-        self.service_endpoints: Dict[str, Set[str]] = {}
-        # self.config = get_config()
+        self.gateways: Dict[str, BaseGateway] = {}
+        self.gateway_endpoints: Dict[str, Set[str]] = {}
+        self.enable_events = enable_events
+
+        # Initialize event dispatcher if events are enabled
+        if self.enable_events:
+            self.event_dispatcher = EventDispatcher()
+            self.event_dispatcher.init_app(self)
+        else:
+            self.event_dispatcher = None
 
         # Add default middleware
         if enable_cors:
@@ -96,96 +111,146 @@ class HealthChainAPI(FastAPI):
         # Add default routes
         self._add_default_routes()
 
-    def register_service(
-        self, service_class: Type[BaseService], path: Optional[str] = None, **options
+    def get_event_dispatcher(self) -> Optional[EventDispatcher]:
+        """Get the event dispatcher instance.
+
+        This method is used for dependency injection in route handlers.
+
+        Returns:
+            The application's event dispatcher, or None if events are disabled
+        """
+        return self.event_dispatcher
+
+    def register_gateway(
+        self,
+        gateway: Union[Type[BaseGateway], BaseGateway],
+        path: Optional[str] = None,
+        use_events: Optional[bool] = None,
+        **options,
     ) -> None:
         """
-        Register a service with the API and mount its endpoints.
+        Register a gateway with the API and mount its endpoints.
 
         Args:
-            service_class: The service class to register
-            path: Optional override for the service's mount path
-            **options: Options to pass to the service constructor
+            gateway: The gateway class or instance to register
+            path: Optional override for the gateway's mount path
+            use_events: Whether to enable events for this gateway (defaults to app setting)
+            **options: Options to pass to the constructor
         """
         try:
+            # Determine if events should be used for this gateway
+            gateway_use_events = (
+                self.enable_events if use_events is None else use_events
+            )
+
             # Check if instance is already provided
-            if isinstance(service_class, BaseService):
-                service = service_class
-                service_name = service.__class__.__name__
+            if isinstance(gateway, BaseGateway):
+                gateway_instance = gateway
+                gateway_name = gateway.__class__.__name__
             else:
                 # Create a new instance
-                service = service_class(**options)
-                service_name = service_class.__name__
+                if "use_events" not in options:
+                    options["use_events"] = gateway_use_events
+                gateway_instance = gateway(**options)
+                gateway_name = gateway.__class__.__name__
 
-            # Add to internal service registry
-            self.services[service_name] = service
+            # Add to internal gateway registry
+            self.gateways[gateway_name] = gateway_instance
 
-            # Add service routes to FastAPI app
-            self._add_service_routes(service, path)
+            # Provide event dispatcher to gateway if events are enabled
+            if (
+                gateway_use_events
+                and self.event_dispatcher
+                and hasattr(gateway_instance, "set_event_dispatcher")
+                and callable(gateway_instance.set_event_dispatcher)
+            ):
+                gateway_instance.set_event_dispatcher(self.event_dispatcher)
+
+            # Add gateway routes to FastAPI app
+            self._add_gateway_routes(gateway_instance, path)
 
         except Exception as e:
             logger.error(
-                f"Failed to register service {service_class.__name__}: {str(e)}"
+                f"Failed to register gateway {gateway.__name__ if hasattr(gateway, '__name__') else gateway.__class__.__name__}: {str(e)}"
             )
             raise
 
-    def _add_service_routes(
-        self, service: BaseService, path: Optional[str] = None
+    def _add_gateway_routes(
+        self, gateway: BaseGateway, path: Optional[str] = None
     ) -> None:
         """
-        Add service routes to the FastAPI app.
-
-        This method replaces the add_to_app method in service classes by handling the
-        registration of routes centrally in the HealthChainAPI class.
+        Add gateway routes to the FastAPI app.
 
         Args:
-            service: The service to add routes for
-            path: Optional override for the service's mount path
+            gateway: The gateway to add routes for
+            path: Optional override for the mount path
         """
-        service_name = service.__class__.__name__
-        self.service_endpoints[service_name] = set()
+        gateway_name = gateway.__class__.__name__
+        self.gateway_endpoints[gateway_name] = set()
 
-        # Case 1: Services with get_routes implementation
-        routes = service.get_routes(path)
-        if routes:
-            for route_path, methods, handler, kwargs in routes:
-                for method in methods:
-                    self.add_api_route(
-                        path=route_path, endpoint=handler, methods=[method], **kwargs
-                    )
-                    self.service_endpoints[service_name].add(f"{method}:{route_path}")
-                    logger.info(
-                        f"Registered {method} route {route_path} for {service_name}"
-                    )
+        # Case 1: Gateways with get_routes implementation
+        if hasattr(gateway, "get_routes") and callable(gateway.get_routes):
+            routes = gateway.get_routes(path)
+            if routes:
+                for route_path, methods, handler, kwargs in routes:
+                    for method in methods:
+                        self.add_api_route(
+                            path=route_path,
+                            endpoint=handler,
+                            methods=[method],
+                            **kwargs,
+                        )
+                        self.gateway_endpoints[gateway_name].add(
+                            f"{method}:{route_path}"
+                        )
+                        logger.info(
+                            f"Registered {method} route {route_path} for {gateway_name}"
+                        )
 
-        # Case 2: WSGI services (like SOAP)
-        if hasattr(service, "create_wsgi_app") and callable(service.create_wsgi_app):
-            # For SOAP/WSGI services
-            wsgi_app = service.create_wsgi_app()
+        # Case 2: WSGI gateways (like SOAP)
+        if hasattr(gateway, "create_wsgi_app") and callable(gateway.create_wsgi_app):
+            # For SOAP/WSGI gateways
+            wsgi_app = gateway.create_wsgi_app()
 
             # Determine mount path
             mount_path = path
-            if (
-                mount_path is None
-                and hasattr(service, "adapter")
-                and hasattr(service.adapter, "config")
-            ):
-                # Try to get the default path from the service adapter config
-                mount_path = getattr(service.adapter.config, "default_mount_path", None)
+            if mount_path is None and hasattr(gateway, "config"):
+                # Try to get the default path from the gateway config
+                mount_path = getattr(gateway.config, "default_mount_path", None)
                 if not mount_path:
-                    mount_path = getattr(service.adapter.config, "base_path", None)
+                    mount_path = getattr(gateway.config, "base_path", None)
 
             if not mount_path:
-                # Fallback path based on service name
-                mount_path = f"/{service_name.lower().replace('service', '')}"
+                # Fallback path based on gateway name
+                mount_path = f"/{gateway_name.lower().replace('gateway', '')}"
 
             # Mount the WSGI app
             self.mount(mount_path, WSGIMiddleware(wsgi_app))
-            self.service_endpoints[service_name].add(f"WSGI:{mount_path}")
-            logger.info(f"Registered WSGI service {service_name} at {mount_path}")
+            self.gateway_endpoints[gateway_name].add(f"WSGI:{mount_path}")
+            logger.info(f"Registered WSGI gateway {gateway_name} at {mount_path}")
 
-        elif not routes:
-            logger.warning(f"Service {service_name} does not provide any routes")
+        # Case 3: Gateway instances that are also APIRouters (like FHIRGateway)
+        elif isinstance(gateway, APIRouter):
+            # Include the router
+            self.include_router(gateway)
+            if hasattr(gateway, "routes"):
+                for route in gateway.routes:
+                    for method in route.methods:
+                        self.gateway_endpoints[gateway_name].add(
+                            f"{method}:{route.path}"
+                        )
+                        logger.info(
+                            f"Registered {method} route {route.path} from {gateway_name} router"
+                        )
+            else:
+                logger.info(f"Registered {gateway_name} as router (routes unknown)")
+
+        elif not (
+            hasattr(gateway, "get_routes")
+            and callable(gateway.get_routes)
+            and gateway.get_routes(path)
+        ):
+            logger.warning(f"Gateway {gateway_name} does not provide any routes")
 
     def register_router(self, router: Union[APIRouter, Type, str], **options) -> None:
         """
@@ -231,33 +296,6 @@ class HealthChainAPI(FastAPI):
             logger.error(f"Failed to register router {router_name}: {str(e)}")
             raise
 
-    def register_gateway(self, gateway) -> None:
-        """
-        Register a gateway with the API.
-
-        This is a convenience method for registering gateways such as FHIRGateway.
-        It registers the gateway as both a router and a service when applicable.
-
-        Args:
-            gateway: The gateway to register
-        """
-        # Register as a router if it inherits from APIRouter
-        if isinstance(gateway, APIRouter):
-            self.register_router(gateway)
-
-        # Register as a service if it has service capabilities
-        if hasattr(gateway, "get_routes") and callable(gateway.get_routes):
-            self.register_service(gateway)
-
-        # Store gateway in a collection for future reference if needed
-        if not hasattr(self, "_gateways"):
-            self._gateways = {}
-
-        gateway_name = gateway.__class__.__name__
-        self._gateways[gateway_name] = gateway
-
-        logger.info(f"Registered gateway {gateway_name}")
-
     def _add_default_routes(self) -> None:
         """Add default routes for the API."""
 
@@ -268,7 +306,7 @@ class HealthChainAPI(FastAPI):
                 "name": self.title,
                 "version": self.version,
                 "description": self.description,
-                "services": list(self.services.keys()),
+                "gateways": list(self.gateways.keys()),
             }
 
         @self.get("/health")
@@ -279,21 +317,21 @@ class HealthChainAPI(FastAPI):
         @self.get("/metadata")
         async def metadata():
             """Provide capability statement for the API."""
-            service_info = {}
-            for name, service in self.services.items():
+            gateway_info = {}
+            for name, gateway in self.gateways.items():
                 # Try to get metadata if available
-                if hasattr(service, "get_metadata") and callable(service.get_metadata):
-                    service_info[name] = service.get_metadata()
+                if hasattr(gateway, "get_metadata") and callable(gateway.get_metadata):
+                    gateway_info[name] = gateway.get_metadata()
                 else:
-                    service_info[name] = {
+                    gateway_info[name] = {
                         "type": name,
-                        "endpoints": list(self.service_endpoints.get(name, set())),
+                        "endpoints": list(self.gateway_endpoints.get(name, set())),
                     }
-            # TODO: Change date to current date
+
             return {
                 "resourceType": "CapabilityStatement",
                 "status": "active",
-                "date": "2023-10-01",
+                "date": datetime.now().strftime("%Y-%m-%d"),
                 "kind": "instance",
                 "software": {
                     "name": self.title,
@@ -303,7 +341,7 @@ class HealthChainAPI(FastAPI):
                     "description": self.description,
                     "url": "/",
                 },
-                "services": service_info,
+                "gateways": gateway_info,
             }
 
     async def _validation_exception_handler(
@@ -336,18 +374,38 @@ class HealthChainAPI(FastAPI):
         )
 
 
-def create_app(config: Optional[Dict] = None) -> HealthChainAPI:
+def create_app(
+    config: Optional[Dict] = None, enable_events: bool = True
+) -> HealthChainAPI:
     """
-    Create HealthChainAPI application with default configuration.
+    Factory function to create a new HealthChainAPI application.
+
+    This function provides a simple way to create a HealthChainAPI application
+    with standard middleware and basic configuration. It's useful for quickly
+    bootstrapping an application with sensible defaults.
 
     Args:
         config: Optional configuration dictionary
+        enable_events: Whether to enable event dispatching functionality
 
     Returns:
         Configured HealthChainAPI instance
     """
-    app = HealthChainAPI()
+    # Setup basic application config
+    app_config = {
+        "title": "HealthChain API",
+        "description": "Healthcare Integration API",
+        "version": "0.1.0",
+        "docs_url": "/docs",
+        "redoc_url": "/redoc",
+        "enable_events": enable_events,
+    }
 
-    # Additional setup could be done here based on config
+    # Override with user config if provided
+    if config:
+        app_config.update(config)
+
+    # Create application
+    app = HealthChainAPI(**app_config)
 
     return app

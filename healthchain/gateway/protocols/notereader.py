@@ -12,8 +12,10 @@ from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 from pydantic import BaseModel
+from datetime import datetime
 
-from healthchain.gateway.core.base import InboundAdapter, BaseService
+from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
+from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.service.soap.epiccdsservice import CDSServices
 from healthchain.models.requests import CdaRequest
@@ -25,11 +27,11 @@ logger = logging.getLogger(__name__)
 
 
 # Type variable for self-referencing return types
-T = TypeVar("T", bound="NoteReaderAdapter")
+T = TypeVar("T", bound="NoteReaderGateway")
 
 
 class NoteReaderConfig(BaseModel):
-    """Configuration options for NoteReader services"""
+    """Configuration options for NoteReader gateway"""
 
     service_name: str = "ICDSServices"
     namespace: str = "urn:epic-com:Common.2013.Services"
@@ -37,54 +39,78 @@ class NoteReaderConfig(BaseModel):
     default_mount_path: str = "/notereader"
 
 
-class NoteReaderAdapter(InboundAdapter):
+class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse]):
     """
-    Adapter implementation for clinical document processing via SOAP protocol.
+    Gateway for Epic NoteReader SOAP protocol integration.
 
-    This adapter handles integration with healthcare systems that use SOAP-based
-    protocols for clinical document exchange, particularly for processing CDA
-    (Clinical Document Architecture) documents using Epic's NoteReader NLP service.
-    It provides a standardized interface for registering handlers that process
-    clinical documents and return structured responses.
+    Provides SOAP integration with healthcare systems, particularly
+    Epic's NoteReader CDA document processing and other SOAP-based
+    healthcare services.
+
+    Example:
+        ```python
+        # Create NoteReader gateway with default configuration
+        gateway = NoteReaderGateway()
+
+        # Register method handler with decorator
+        @gateway.method("ProcessDocument")
+        def process_document(request: CdaRequest) -> CdaResponse:
+            # Process the document
+            return CdaResponse(
+                document="Processed document content",
+                error=None
+            )
+
+        # Register the gateway with the API
+        app.register_gateway(gateway)
+        ```
     """
 
-    def __init__(self, config: Optional[NoteReaderConfig] = None, **options):
+    def __init__(
+        self,
+        config: Optional[NoteReaderConfig] = None,
+        event_dispatcher: Optional[EventDispatcher] = None,
+        use_events: bool = True,
+        **options,
+    ):
         """
-        Initialize a new NoteReader adapter.
+        Initialize a new NoteReader gateway.
 
         Args:
-            config: Configuration options for the adapter
-            **options: Additional options passed to the parent class
+            config: Configuration options for the gateway
+            event_dispatcher: Optional event dispatcher for publishing events
+            use_events: Whether to enable event dispatching functionality
+            **options: Additional options for the gateway
         """
-        super().__init__(**options)
+        # Initialize the base gateway
+        super().__init__(use_events=use_events, **options)
+
+        # Initialize specific configuration
         self.config = config or NoteReaderConfig()
         self._handler_metadata = {}
 
-    def register_handler(self, operation: str, handler: Callable, **metadata) -> T:
-        """
-        Register a handler for a specific SOAP method. e.g. ProcessDocument
+        # Set event dispatcher if provided
+        if event_dispatcher and use_events:
+            self.set_event_dispatcher(event_dispatcher)
 
-        Extends the base register_handler method to add additional metadata
-        specific to SOAP services.
+    def method(self, method_name: str) -> Callable:
+        """
+        Decorator to register a handler for a specific SOAP method.
 
         Args:
-            operation: The SOAP method name to handle e.g. ProcessDocument
-            handler: Function that will handle the operation
-            **metadata: Additional metadata for the handler
+            method_name: The SOAP method name to handle (e.g. ProcessDocument)
 
         Returns:
-            Self, to allow for method chaining
+            Decorator function that registers the handler
         """
-        # Use parent class's register_handler
-        super().register_handler(operation, handler)
 
-        # Store any additional metadata
-        if metadata:
-            self._handler_metadata[operation] = metadata
+        def decorator(handler):
+            self.register_handler(method_name, handler)
+            return handler
 
-        return self
+        return decorator
 
-    async def handle(self, operation: str, **params) -> Union[CdaResponse, Dict]:
+    def handle(self, operation: str, **params) -> Union[CdaResponse, Dict]:
         """
         Process a SOAP request using registered handlers.
 
@@ -106,7 +132,7 @@ class NoteReaderAdapter(InboundAdapter):
             return CdaResponse(document="", error="Invalid request parameters")
 
         # Execute the handler with the request
-        return await self._execute_handler(operation, request)
+        return self._execute_handler(operation, request)
 
     def _extract_request(self, operation: str, params: Dict) -> Optional[CdaRequest]:
         """
@@ -141,9 +167,7 @@ class NoteReaderAdapter(InboundAdapter):
             logger.error(f"Error constructing CdaRequest: {str(e)}", exc_info=True)
             return None
 
-    async def _execute_handler(
-        self, operation: str, request: CdaRequest
-    ) -> CdaResponse:
+    def _execute_handler(self, operation: str, request: CdaRequest) -> CdaResponse:
         """
         Execute a registered handler with the given request.
 
@@ -190,82 +214,6 @@ class NoteReaderAdapter(InboundAdapter):
             logger.error(f"Error processing result to CdaResponse: {str(e)}")
             return CdaResponse(document="", error="Invalid response format")
 
-    @classmethod
-    def create(cls, **options) -> T:
-        """
-        Factory method to create a new adapter with default configuration.
-
-        Args:
-            **options: Options to pass to the constructor
-
-        Returns:
-            New NoteReaderAdapter instance
-        """
-        return cls(config=NoteReaderConfig(), **options)
-
-
-class NoteReaderService(BaseService):
-    """
-    Epic NoteReader SOAP service implementation with FastAPI integration.
-
-    Provides SOAP integration with healthcare systems, particularly
-    Epic's NoteReader CDA document processing and other SOAP-based
-    healthcare services.
-
-    Example:
-        ```python
-        # Create NoteReader service with default adapter
-        service = NoteReaderService()
-
-        # Add to a FastAPI app
-        app = FastAPI()
-        service.add_to_app(app)
-
-        # Register method handler with decorator
-        @service.method("ProcessDocument")
-        def process_document(request: CdaRequest) -> CdaResponse:
-            # Process the document
-            return CdaResponse(
-                document="Processed document content",
-                error=None
-            )
-        ```
-    """
-
-    def __init__(
-        self,
-        adapter: Optional[NoteReaderAdapter] = None,
-        event_dispatcher: Optional[EventDispatcher] = None,
-    ):
-        """
-        Initialize a new NoteReader service.
-
-        Args:
-            adapter: NoteReaderAdapter instance for handling SOAP requests (creates default if None)
-            event_dispatcher: Optional EventDispatcher instance
-        """
-        super().__init__(
-            adapter=adapter or NoteReaderAdapter.create(),
-            event_dispatcher=event_dispatcher or EventDispatcher(),
-        )
-
-    def method(self, method_name: str) -> Callable:
-        """
-        Decorator to register a handler for a specific SOAP method.
-
-        Args:
-            method_name: The SOAP method name to handle (e.g. ProcessDocument)
-
-        Returns:
-            Decorator function that registers the handler
-        """
-
-        def decorator(handler):
-            self.adapter.register_handler(method_name, handler)
-            return handler
-
-        return decorator
-
     def create_wsgi_app(self) -> WsgiApplication:
         """
         Creates a WSGI application for the SOAP service.
@@ -282,21 +230,29 @@ class NoteReaderService(BaseService):
         # TODO: Maybe you want to be more explicit that you only need to register a handler for ProcessDocument
         # Can you register multiple services in the same app? Who knows?? Let's find out!!
 
-        if "ProcessDocument" not in self.adapter._handlers:
+        if "ProcessDocument" not in self._handlers:
             raise ValueError(
                 "No ProcessDocument handler registered. "
                 "You must register a handler before creating the WSGI app. "
-                "Use @service.method('ProcessDocument') to register a handler."
+                "Use @gateway.method('ProcessDocument') to register a handler."
             )
 
         # Create adapter for SOAP service integration
         def service_adapter(cda_request: CdaRequest) -> CdaResponse:
-            # This calls the adapter's handle method to process the request
+            # This calls the handle method to process the request
             try:
                 # This will be executed synchronously in the SOAP context
-                handler = self.adapter._handlers["ProcessDocument"]
+                handler = self._handlers["ProcessDocument"]
                 result = handler(cda_request)
-                return self.adapter._process_result(result)
+                processed_result = self._process_result(result)
+
+                # Emit event if we have an event dispatcher
+                if self.event_dispatcher and self.use_events:
+                    self._emit_document_event(
+                        "ProcessDocument", cda_request, processed_result
+                    )
+
+                return processed_result
             except Exception as e:
                 logger.error(f"Error in SOAP service adapter: {str(e)}")
                 return CdaResponse(document="", error=str(e))
@@ -307,11 +263,81 @@ class NoteReaderService(BaseService):
         # Configure the Spyne application
         application = Application(
             [CDSServices],
-            name=self.adapter.config.service_name,
-            tns=self.adapter.config.namespace,
+            name=self.config.service_name,
+            tns=self.config.namespace,
             in_protocol=Soap11(validator="lxml"),
             out_protocol=Soap11(),
             classes=[ServerFault, ClientFault],
         )
         # Create WSGI app
         return WsgiApplication(application)
+
+    def _emit_document_event(
+        self, operation: str, request: CdaRequest, response: CdaResponse
+    ):
+        """
+        Emit an event for document processing.
+
+        Args:
+            operation: The SOAP method name e.g. ProcessDocument
+            request: The CdaRequest object
+            response: The CdaResponse object
+        """
+        # Skip if events are disabled or no dispatcher
+        if not self.event_dispatcher or not self.use_events:
+            return
+
+        # Use custom event creator if provided
+        if self._event_creator:
+            event = self._event_creator(operation, request, response)
+            if event:
+                self._run_async_publish(event)
+            return
+
+        # Create a standard event
+        event = EHREvent(
+            event_type=EHREventType.NOTEREADER_PROCESS_NOTE,
+            source_system="NoteReader",
+            timestamp=datetime.now(),
+            payload={
+                "operation": operation,
+                "work_type": request.work_type,
+                "session_id": request.session_id,
+                "has_error": response.error is not None,
+            },
+            metadata={
+                "service": "NoteReaderService",
+                "system_type": self.config.system_type,
+            },
+        )
+
+        # Publish the event
+        self._run_async_publish(event)
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """
+        Get metadata for this gateway.
+
+        Returns:
+            Dictionary of gateway metadata
+        """
+        return {
+            "gateway_type": self.__class__.__name__,
+            "operations": self.get_capabilities(),
+            "system_type": self.config.system_type,
+            "soap_service": self.config.service_name,
+            "mount_path": self.config.default_mount_path,
+        }
+
+    @classmethod
+    def create(cls, **options) -> T:
+        """
+        Factory method to create a new NoteReader gateway with default configuration.
+
+        Args:
+            **options: Options to pass to the constructor
+
+        Returns:
+            New NoteReaderGateway instance
+        """
+        return cls(**options)

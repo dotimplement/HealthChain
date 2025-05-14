@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 import healthchain as hc
-from healthchain.gateway.services.notereader import NoteReaderService
+from healthchain.gateway.protocols.notereader import NoteReaderGateway
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
@@ -13,7 +13,7 @@ def test_notereader_sandbox_integration():
     """Test NoteReaderService integration with sandbox decorator"""
     # Use HealthChainAPI instead of FastAPI
     app = HealthChainAPI()
-    note_service = NoteReaderService()
+    note_service = NoteReaderGateway()
 
     # Register a method handler for the service
     @note_service.method("ProcessDocument")
@@ -21,7 +21,7 @@ def test_notereader_sandbox_integration():
         return CdaResponse(document="<processed>document</processed>", error=None)
 
     # Register service with HealthChainAPI
-    app.register_service(note_service, "/notereader")
+    app.register_gateway(note_service, "/notereader")
 
     # Define a sandbox class that uses the NoteReader service
     @hc.sandbox("http://localhost:8000/")

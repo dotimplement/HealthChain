@@ -1,15 +1,30 @@
-from .base import StandardAdapter, InboundAdapter, OutboundAdapter
-from .fhir_gateway import FHIRGateway
-from .models import EHREvent, SOAPEvent, EHREventType, RequestModel, ResponseModel
+"""
+Core components for the HealthChain Gateway module.
 
-__all__ = [
-    "StandardAdapter",
-    "InboundAdapter",
-    "OutboundAdapter",
-    "FHIRGateway",
-    "EHREvent",
-    "SOAPEvent",
-    "EHREventType",
-    "RequestModel",
-    "ResponseModel",
-]
+This module contains the base abstractions and core components
+that define the gateway architecture.
+"""
+
+from .base import BaseGateway, GatewayConfig, EventDispatcherMixin
+from ..protocols.fhirgateway import FHIRGateway
+
+# Import these if available, but don't error if they're not
+try:
+    __all__ = [
+        "BaseGateway",
+        "GatewayConfig",
+        "EventDispatcherMixin",
+        "FHIRGateway",
+        "EHREvent",
+        "SOAPEvent",
+        "EHREventType",
+        "RequestModel",
+        "ResponseModel",
+    ]
+except ImportError:
+    __all__ = [
+        "BaseGateway",
+        "GatewayConfig",
+        "EventDispatcherMixin",
+        "FHIRGateway",
+    ]

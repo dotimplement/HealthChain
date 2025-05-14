@@ -8,6 +8,7 @@ handlers for different FHIR operations using decorators, similar to services.
 
 import logging
 from typing import Dict, List, Any, Callable, Type, Optional, TypeVar
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Body, Path, Depends
 from fhir.resources.resource import Resource
@@ -18,15 +19,24 @@ try:
 except ImportError:
     fhir_client = None
 
-from healthchain.gateway.core.base import OutboundAdapter
+from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
 
 logger = logging.getLogger(__name__)
 
 # Type variable for FHIR Resource
 T = TypeVar("T", bound=Resource)
 
+OPERATION_TO_EVENT = {
+    "read": EHREventType.FHIR_READ,
+    "search": EHREventType.FHIR_SEARCH,
+    "create": EHREventType.FHIR_CREATE,
+    "update": EHREventType.FHIR_UPDATE,
+    "delete": EHREventType.FHIR_DELETE,
+}
 
-class FHIRGateway(OutboundAdapter, APIRouter):
+
+class FHIRGateway(BaseGateway, APIRouter):
     """
     Unified FHIR interface that combines client and router capabilities.
 
@@ -63,6 +73,7 @@ class FHIRGateway(OutboundAdapter, APIRouter):
         prefix: str = "/fhir",
         tags: List[str] = ["FHIR"],
         supported_resources: Optional[List[str]] = None,
+        use_events: bool = True,
         **options,
     ):
         """
@@ -74,13 +85,17 @@ class FHIRGateway(OutboundAdapter, APIRouter):
             prefix: URL prefix for inbound API routes
             tags: OpenAPI tags for documentation
             supported_resources: List of supported FHIR resource types (None for all)
+            use_events: Whether to enable event dispatching functionality
             **options: Additional configuration options
         """
-        # Initialize as OutboundAdapter
-        OutboundAdapter.__init__(self, **options)
+        # Initialize as BaseGateway
+        BaseGateway.__init__(self, use_events=use_events, **options)
 
         # Initialize as APIRouter
         APIRouter.__init__(self, prefix=prefix, tags=tags)
+
+        # Store event usage preference
+        self.use_events = use_events
 
         # Create default FHIR client if not provided
         if client is None and base_url:
@@ -289,6 +304,10 @@ class FHIRGateway(OutboundAdapter, APIRouter):
                     # Call the handler
                     result = handler(resource)
 
+                    # Emit event if we have an event dispatcher
+                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
+                        self._emit_fhir_event("read", resource_type, id, result)
+
                     # Return as dict
                     return (
                         result.model_dump() if hasattr(result, "model_dump") else result
@@ -334,6 +353,10 @@ class FHIRGateway(OutboundAdapter, APIRouter):
                     # Call the handler
                     result = handler(resource_obj)
 
+                    # Emit event if we have an event dispatcher
+                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
+                        self._emit_fhir_event("update", resource_type, id, result)
+
                     # Return as dict
                     return (
                         result.model_dump() if hasattr(result, "model_dump") else result
@@ -372,6 +395,10 @@ class FHIRGateway(OutboundAdapter, APIRouter):
                 try:
                     # Call the handler
                     result = handler(id)
+
+                    # Emit event if we have an event dispatcher
+                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
+                        self._emit_fhir_event("delete", resource_type, id, None)
 
                     # Default response if handler doesn't return anything
                     if result is None:
@@ -470,3 +497,50 @@ class FHIRGateway(OutboundAdapter, APIRouter):
         capabilities.extend([op for op in self._handlers.keys()])
 
         return capabilities
+
+    def _emit_fhir_event(
+        self, operation: str, resource_type: str, resource_id: str, resource: Any = None
+    ):
+        """
+        Emit an event for FHIR operations.
+
+        Args:
+            operation: The FHIR operation (read, search, create, update, delete)
+            resource_type: The FHIR resource type
+            resource_id: The resource ID
+            resource: The resource object or data
+        """
+        # Skip if events are disabled or no dispatcher
+        if not self.use_events or not self.event_dispatcher:
+            return
+
+        # Get the event type from the mapping
+        event_type = OPERATION_TO_EVENT.get(operation)
+        if not event_type:
+            return
+
+        # If a custom event creator is defined, use it
+        if self._event_creator:
+            event = self._event_creator(operation, resource_type, resource_id, resource)
+            if event:
+                self._run_async_publish(event)
+            return
+
+        # Create a standard event
+        event = EHREvent(
+            event_type=event_type,
+            source_system="FHIR",
+            timestamp=datetime.now(),
+            payload={
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                "operation": operation,
+            },
+        )
+
+        # Add the resource data if available
+        if resource:
+            event.payload["resource"] = resource
+
+        # Publish the event
+        self._run_async_publish(event)

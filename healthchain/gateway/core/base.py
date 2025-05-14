@@ -9,53 +9,175 @@ import logging
 import asyncio
 
 from abc import ABC
-from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union, Type
+from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-# Type variables for self-referencing return types and generic adapters
-A = TypeVar("A", bound="StandardAdapter")
+# Type variables for self-referencing return types and generic gateways
+G = TypeVar("G", bound="BaseGateway")
 T = TypeVar("T")  # For generic request types
 R = TypeVar("R")  # For generic response types
 
 
-class AdapterConfig(BaseModel):
-    """Base configuration class for adapters"""
+class GatewayConfig(BaseModel):
+    """Base configuration class for gateways"""
 
     return_errors: bool = False
     system_type: str = "GENERIC"
 
 
-class StandardAdapter(ABC, Generic[T, R]):
+class EventDispatcherMixin:
     """
-    Base class for healthcare standard adapters that handle communication with external systems.
+    Mixin class that provides event dispatching capabilities.
 
-    Adapters provide a consistent interface for interacting with healthcare standards
+    This mixin encapsulates all event-related functionality to allow for cleaner separation
+    of concerns and optional event support in gateways.
+    """
+
+    def __init__(self):
+        """
+        Initialize event dispatching capabilities.
+        """
+        self.event_dispatcher = None
+        self._event_creator = None
+
+    def _run_async_publish(self, event):
+        """
+        Safely run the async publish method in a way that works in both sync and async contexts.
+
+        Args:
+            event: The event to publish
+        """
+        if not self.event_dispatcher:
+            return
+
+        try:
+            # Try to get the running loop (only works in async context)
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context, so create_task works
+                asyncio.create_task(self.event_dispatcher.publish(event))
+            except RuntimeError:
+                # We're not in an async context, create a new loop
+                loop = asyncio.new_event_loop()
+                try:
+                    # Run the coroutine to completion in the new loop
+                    loop.run_until_complete(self.event_dispatcher.publish(event))
+                finally:
+                    # Clean up the loop
+                    loop.close()
+        except Exception as e:
+            logger.error(f"Failed to publish event: {str(e)}", exc_info=True)
+
+    def set_event_dispatcher(self, dispatcher):
+        """
+        Set the event dispatcher for this gateway.
+
+        This allows the gateway to publish events and register handlers.
+
+        Args:
+            dispatcher: The event dispatcher instance
+
+        Returns:
+            Self, to allow for method chaining
+        """
+        self.event_dispatcher = dispatcher
+
+        # Register default handlers
+        self._register_default_handlers()
+
+        return self
+
+    def set_event_creator(self, creator_function: Callable):
+        """
+        Set a custom function to map gateway-specific events to EHREvents.
+
+        The creator function will be called instead of any default event creation logic,
+        allowing users to define custom event creation without subclassing.
+
+        Args:
+            creator_function: Function that accepts gateway-specific arguments
+                             and returns an EHREvent or None
+
+        Returns:
+            Self, to allow for method chaining
+        """
+        self._event_creator = creator_function
+        return self
+
+    def _register_default_handlers(self):
+        """
+        Register default event handlers for this gateway.
+
+        Override this method in subclasses to register default handlers
+        for specific event types relevant to the gateway.
+        """
+        # Base implementation does nothing
+        # Subclasses should override this method to register their default handlers
+        pass
+
+    def register_event_handler(self, event_type, handler=None):
+        """
+        Register a custom event handler for a specific event type.
+
+        This can be used as a decorator or called directly.
+
+        Args:
+            event_type: The type of event to handle
+            handler: The handler function (optional if used as decorator)
+
+        Returns:
+            Decorator function if handler is None, self otherwise
+        """
+        if not self.event_dispatcher:
+            raise ValueError("Event dispatcher not set for this gateway")
+
+        # If used as a decorator (no handler provided)
+        if handler is None:
+            return self.event_dispatcher.register_handler(event_type)
+
+        # If called directly with a handler
+        self.event_dispatcher.register_handler(event_type)(handler)
+        return self
+
+
+class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
+    """
+    Base class for healthcare standard gateways that handle communication with external systems.
+
+    Gateways provide a consistent interface for interacting with healthcare standards
     and protocols through the decorator pattern for handler registration.
 
     Type Parameters:
-        T: The request type this adapter handles
-        R: The response type this adapter returns
+        T: The request type this gateway handles
+        R: The response type this gateway returns
     """
 
-    def __init__(self, config: Optional[AdapterConfig] = None, **options):
+    def __init__(
+        self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
+    ):
         """
-        Initialize a new standard adapter.
+        Initialize a new gateway.
 
         Args:
-            config: Configuration options for the adapter
+            config: Configuration options for the gateway
+            use_events: Whether to enable event dispatching
             **options: Additional configuration options
         """
         self._handlers = {}
         self.options = options
-        self.config = config or AdapterConfig()
+        self.config = config or GatewayConfig()
+        self.use_events = use_events
         # Default to raising exceptions unless configured otherwise
         self.return_errors = self.config.return_errors or options.get(
             "return_errors", False
         )
 
-    def register_handler(self, operation: str, handler: Callable) -> A:
+        # Initialize event dispatcher mixin
+        EventDispatcherMixin.__init__(self)
+
+    def register_handler(self, operation: str, handler: Callable) -> G:
         """
         Register a handler function for a specific operation.
 
@@ -156,67 +278,18 @@ class StandardAdapter(ABC, Generic[T, R]):
         else:
             raise ValueError(message)
 
-
-class InboundAdapter(StandardAdapter[T, R]):
-    """
-    Specialized adapter for handling inbound requests from external healthcare systems.
-
-    Inbound adapters receive and process requests according to specific healthcare
-    standards (like SOAP, CDS Hooks) and serve as entry points for external systems.
-
-    Type Parameters:
-        T: The request type this adapter handles
-        R: The response type this adapter returns
-    """
-
     def get_capabilities(self) -> List[str]:
         """
-        Get list of operations this adapter supports.
+        Get list of operations this gateway supports.
 
         Returns:
             List of supported operation names
         """
         return list(self._handlers.keys())
 
-
-class OutboundAdapter(StandardAdapter[T, R]):
-    """
-    Specialized adapter for initiating outbound requests to external healthcare systems.
-
-    Outbound adapters make requests to external systems (like FHIR servers)
-    and handle communication according to their specific standards and protocols.
-
-    Type Parameters:
-        T: The request type this adapter handles
-        R: The response type this adapter returns
-    """
-
-    pass
-
-
-class BaseService(ABC):
-    """
-    Base class for all gateway services.
-
-    Services handle protocol-specific concerns and provide integration with
-    web frameworks like FastAPI. They typically use adapters for the actual
-    handler registration and execution.
-    """
-
-    def __init__(self, adapter: StandardAdapter, event_dispatcher: Any = None):
-        """
-        Initialize a new service.
-
-        Args:
-            adapter: Adapter instance for handling requests
-            event_dispatcher: Optional event dispatcher for publishing events
-        """
-        self.adapter = adapter
-        self.event_dispatcher = event_dispatcher
-
     def get_routes(self, path: Optional[str] = None) -> List[tuple]:
         """
-        Get routes that this service wants to register with the FastAPI app.
+        Get routes that this gateway wants to register with the FastAPI app.
 
         This method returns a list of tuples with the following structure:
         (path, methods, handler, kwargs) where:
@@ -232,41 +305,39 @@ class BaseService(ABC):
             List of route tuples (path, methods, handler, kwargs)
         """
         # Default implementation returns empty list
-        # Specific service classes should override this
+        # Specific gateway classes should override this
         return []
 
     def get_metadata(self) -> Dict[str, Any]:
         """
-        Get metadata for this service, including capabilities and configuration.
+        Get metadata for this gateway, including capabilities and configuration.
 
         Returns:
-            Dictionary of service metadata
+            Dictionary of gateway metadata
         """
         # Default implementation returns basic info
-        # Specific service classes should override this
-        return {
-            "service_type": self.__class__.__name__,
-            "adapter_type": self.adapter.__class__.__name__,
-            "operations": self.adapter.get_capabilities()
-            if hasattr(self.adapter, "get_capabilities")
-            else [],
+        # Specific gateway classes should override this
+        metadata = {
+            "gateway_type": self.__class__.__name__,
+            "operations": self.get_capabilities(),
+            "system_type": self.config.system_type,
         }
 
+        # Add event-related metadata if events are enabled
+        if self.event_dispatcher:
+            metadata["event_enabled"] = True
+
+        return metadata
+
     @classmethod
-    def create(
-        cls, adapter_class: Optional[Type[StandardAdapter]] = None, **options
-    ) -> "BaseService":
+    def create(cls, **options) -> G:
         """
-        Factory method to create a new service with default adapter.
+        Factory method to create a new gateway with default configuration.
 
         Args:
-            adapter_class: The adapter class to use (must be specified if not using default)
-            **options: Options to pass to the adapter constructor
+            **options: Options to pass to the constructor
 
         Returns:
-            New service instance with configured adapter
+            New gateway instance
         """
-        if adapter_class is None:
-            raise ValueError("adapter_class must be specified")
-        adapter = adapter_class.create(**options)
-        return cls(adapter=adapter)
+        return cls(**options)

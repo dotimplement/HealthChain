@@ -1,41 +1,55 @@
 """
-HealthChain Gateway Module
+HealthChain Gateway Module.
 
-A secure gateway layer that manages routing, transformation, and event handling
-between healthcare systems with a focus on maintainable, compliant integration patterns.
+This module provides a secure gateway layer that manages routing, transformation,
+and event handling between healthcare systems (FHIR servers, EHRs) with a focus on
+maintainable, compliant integration patterns.
+
+Core components:
+- BaseGateway: Abstract base class for all gateway implementations
+- Protocol implementations: Concrete gateways for various healthcare protocols
+- Event system: Publish-subscribe framework for healthcare events
+- API framework: FastAPI-based application for exposing gateway endpoints
 """
 
+# Main application exports
+from healthchain.gateway.api.app import HealthChainAPI, create_app
+
 # Core components
-from .core.base import (
-    StandardAdapter,
-    InboundAdapter,
-    OutboundAdapter,
+from healthchain.gateway.core.base import (
+    BaseGateway,
+    GatewayConfig,
+    EventDispatcherMixin,
 )
 
-# Protocol services (inbound)
-from .services.cdshooks import CDSHooksService
-from .services.notereader import NoteReaderService
+# Event system
+from healthchain.gateway.events.dispatcher import (
+    EventDispatcher,
+    EHREvent,
+    EHREventType,
+)
 
-# Client connectors (outbound)
-from .core.fhir_gateway import FHIRGateway
-
-# Event dispatcher
-from .events.dispatcher import EventDispatcher
-
-# Security
-from .security import SecurityProxy
+# Re-export gateway implementations
+from healthchain.gateway.protocols import (
+    FHIRGateway,
+    CDSHooksGateway,
+    NoteReaderGateway,
+)
 
 __all__ = [
-    # Core classes
-    "StandardAdapter",
-    "InboundAdapter",
-    "OutboundAdapter",
-    "FHIRGateway",
-    # Protocol services
-    "CDSHooksService",
-    "NoteReaderService",
-    # Event dispatcher
+    # API
+    "HealthChainAPI",
+    "create_app",
+    # Core
+    "BaseGateway",
+    "GatewayConfig",
+    "EventDispatcherMixin",
+    # Events
     "EventDispatcher",
-    # Security
-    "SecurityProxy",
+    "EHREvent",
+    "EHREventType",
+    # Gateways
+    "FHIRGateway",
+    "CDSHooksGateway",
+    "NoteReaderGateway",
 ]
