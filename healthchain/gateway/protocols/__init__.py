@@ -11,9 +11,11 @@ interface for registration, event handling, and endpoint management.
 from .fhirgateway import FHIRGateway
 from .cdshooks import CDSHooksGateway
 from .notereader import NoteReaderGateway
+from .apiprotocol import ApiProtocol
 
 __all__ = [
     "FHIRGateway",
     "CDSHooksGateway",
     "NoteReaderGateway",
+    "ApiProtocol",
 ]

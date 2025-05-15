@@ -306,7 +306,6 @@ def sandbox_decorator(
                 service_id=service_id,
                 save_data=save_data,
                 save_dir=save_dir,
-                logging_config=logging_config,
             )
 
         def stop_sandbox(self) -> None:

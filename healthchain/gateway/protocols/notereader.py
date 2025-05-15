@@ -17,11 +17,11 @@ from datetime import datetime
 from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import EventDispatcher
-from healthchain.service.soap.epiccdsservice import CDSServices
+from healthchain.gateway.soap.epiccdsservice import CDSServices
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.service.soap.model.epicclientfault import ClientFault
-from healthchain.service.soap.model.epicserverfault import ServerFault
+from healthchain.gateway.soap.model.epicclientfault import ClientFault
+from healthchain.gateway.soap.model.epicserverfault import ServerFault
 from healthchain.gateway.api.protocols import SOAPGatewayProtocol
 
 logger = logging.getLogger(__name__)

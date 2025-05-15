@@ -57,7 +57,6 @@ class SandboxEnvironment:
         service_id: Optional[str] = None,
         save_data: bool = True,
         save_dir: str = "./output/",
-        logging_config: Optional[Dict] = None,
     ) -> None:
         """
         Starts the sandbox: initializes service and sends request through the client.
@@ -74,17 +73,6 @@ class SandboxEnvironment:
             )
 
         self.sandbox_id = uuid.uuid4()
-
-        if logging_config:
-            logging.config.dictConfig(logging_config)
-        else:
-            # Set up default logging configuration
-            logging.basicConfig(
-                level=logging.INFO,
-                format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            )
-
-        log = logging.getLogger(__name__)
 
         log.info(
             f"Starting sandbox {self.sandbox_id} with use case type {self.type.value}..."

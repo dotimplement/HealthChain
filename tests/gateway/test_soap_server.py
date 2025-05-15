@@ -1,8 +1,8 @@
 import pytest
 
 from unittest.mock import MagicMock
-from healthchain.service.soap.epiccdsservice import CDSServices
-from healthchain.service.soap.model import ClientFault, ServerFault
+from healthchain.gateway.soap.epiccdsservice import CDSServices
+from healthchain.gateway.soap.model import ClientFault, ServerFault
 
 
 @pytest.fixture

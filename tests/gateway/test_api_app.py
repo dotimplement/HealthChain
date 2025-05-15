@@ -9,6 +9,7 @@ import pytest
 from unittest.mock import AsyncMock
 from fastapi import Depends, APIRouter, HTTPException
 from fastapi.testclient import TestClient
+from fastapi.responses import JSONResponse
 
 from healthchain.gateway.api.app import create_app
 from healthchain.gateway.api.dependencies import (
@@ -194,6 +195,93 @@ def test_register_router(test_app):
         response = client.get("/test-router/test")
         assert response.status_code == 200
         assert response.json() == {"message": "Router test"}
+
+
+def test_shutdown_endpoint(test_app, monkeypatch):
+    """Test the shutdown endpoint."""
+    # Mock os.kill to prevent actual process termination
+    import os
+    import signal
+
+    kill_called = False
+
+    def mock_kill(pid, sig):
+        nonlocal kill_called
+        kill_called = True
+        assert pid == os.getpid()
+        assert sig == signal.SIGTERM
+
+    monkeypatch.setattr(os, "kill", mock_kill)
+
+    # Test the shutdown endpoint
+    with TestClient(test_app) as client:
+        response = client.get("/shutdown")
+        assert response.status_code == 200
+        assert response.json() == {"message": "Server is shutting down..."}
+        assert kill_called
+
+
+def test_lifespan_hooks(monkeypatch):
+    """Test that lifespan hooks are called during app lifecycle."""
+    from healthchain.gateway.api.app import HealthChainAPI
+
+    # Track if methods were called
+    startup_called = False
+    shutdown_called = False
+
+    # Define mock methods
+    def mock_startup(self):
+        nonlocal startup_called
+        startup_called = True
+
+    def mock_shutdown(self):
+        nonlocal shutdown_called
+        shutdown_called = True
+        return JSONResponse(content={"message": "Server is shutting down..."})
+
+    # Apply mocks
+    monkeypatch.setattr(HealthChainAPI, "_startup", mock_startup)
+    monkeypatch.setattr(HealthChainAPI, "_shutdown", mock_shutdown)
+
+    # Create a fresh app instance
+    app = create_app()
+
+    # The TestClient triggers the lifespan context
+    with TestClient(app):
+        # Check that startup was called during context entry
+        assert startup_called
+        assert not shutdown_called  # Not called until context exit
+
+    # After exiting TestClient context, both hooks should have been called
+    assert startup_called
+    assert shutdown_called  # shutdown should be called when context exits
+
+
+def test_shutdown_method(monkeypatch):
+    """Test the _shutdown method directly."""
+    import os
+    import signal
+
+    # Track if os.kill was called
+    kill_called = False
+
+    def mock_kill(pid, sig):
+        nonlocal kill_called
+        kill_called = True
+        assert pid == os.getpid()
+        assert sig == signal.SIGTERM
+
+    # Apply mock
+    monkeypatch.setattr(os, "kill", mock_kill)
+
+    # Create app and call shutdown method
+    app = create_app()
+    response = app._shutdown()
+
+    # Verify results
+    assert kill_called
+    assert response.status_code == 200
+    assert response.body == b'{"message":"Server is shutting down..."}'
 
 
 def test_exception_handling(test_app):
