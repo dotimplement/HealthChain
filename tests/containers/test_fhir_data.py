@@ -132,13 +132,13 @@ def test_relationship_metadata(fhir_data, sample_document_reference):
     # Verify relationship structure
     child = fhir_data.get_resources("DocumentReference")[1]
     assert hasattr(child, "relatesTo")
-    assert child.relatesTo[0]["code"].coding[0].code == "transforms"
-    assert child.relatesTo[0]["code"].coding[0].display == "Transforms"
+    assert child.relatesTo[0].code.coding[0].code == "transforms"
+    assert child.relatesTo[0].code.coding[0].display == "Transforms"
     assert (
-        child.relatesTo[0]["code"].coding[0].system
+        child.relatesTo[0].code.coding[0].system
         == "http://hl7.org/fhir/ValueSet/document-relationship-type"
     )
-    assert child.relatesTo[0]["target"]["reference"] == f"DocumentReference/{doc_id}"
+    assert child.relatesTo[0].target.reference == f"DocumentReference/{doc_id}"
 
 
 def test_multiple_document_attachments(fhir_data, doc_ref_with_multiple_content):

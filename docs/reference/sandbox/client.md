@@ -12,7 +12,7 @@ You can optionally specify the number of requests to generate with the `num` par
     ```python
     import healthchain as hc
 
-    from healthchain.use_cases import ClinicalDocumentation
+    from healthchain.sandbox.use_cases import ClinicalDocumentation
     from healthchain.fhir import create_document_reference
 
     from fhir.resources.documentreference import DocumentReference
@@ -32,7 +32,7 @@ You can optionally specify the number of requests to generate with the `num` par
     ```python
     import healthchain as hc
 
-    from healthchain.use_cases import ClinicalDecisionSupport
+    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
     from healthchain.models import Prefetch
 
     from fhir.resources.patient import Patient

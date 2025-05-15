@@ -42,11 +42,13 @@
         },
         "statusCode": {"@code": "{{ config.template.problem_obs.status_code }}"},
         "effectiveTime": {
-          {% if resource.onsetDateTime %}
-          "low": {"@value": "{{ resource.onsetDateTime }}"}
-          {% endif %}
-          {% if resource.abatementDateTime %}
-          "high": {"@value": "{{ resource.abatementDateTime }}"}
+          {% if resource.onsetDateTime and resource.abatementDateTime %}
+            "low": {"@value": "{{ resource.onsetDateTime }}"},
+            "high": {"@value": "{{ resource.abatementDateTime }}"}
+          {% elsif resource.onsetDateTime %}
+            "low": {"@value": "{{ resource.onsetDateTime }}"}
+          {% elsif resource.abatementDateTime %}
+            "high": {"@value": "{{ resource.abatementDateTime }}"}
           {% endif %}
         },
         "value": {

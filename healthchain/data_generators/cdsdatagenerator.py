@@ -5,11 +5,13 @@ import logging
 from typing import Callable, Dict, Optional, List
 from pathlib import Path
 
-from healthchain.base import Workflow
 from fhir.resources.resource import Resource
+
 from healthchain.data_generators.basegenerators import generator_registry
 from healthchain.models import Prefetch
 from healthchain.fhir import create_document_reference
+from healthchain.sandbox.workflows import Workflow
+
 
 logger = logging.getLogger(__name__)
 

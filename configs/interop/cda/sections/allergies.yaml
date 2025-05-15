@@ -69,7 +69,8 @@ template:
 
   # Clinical status observation configuration
   clinical_status_obs:
-    template_id: "2.16.840.1.113883.10.20.1.39"
+    template_id:
+      - "2.16.840.1.113883.10.20.1.39"
     code: "33999-4"
     code_system: "2.16.840.1.113883.6.1"
     code_system_name: "LOINC"
