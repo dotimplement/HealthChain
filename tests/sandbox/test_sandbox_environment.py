@@ -64,27 +64,24 @@ def test_start_sandbox(correct_sandbox_class):
     # Test with default parameters
     test_sandbox.start_sandbox()
     mock_env.start_sandbox.assert_called_once_with(
-        service_id=None, save_data=True, save_dir="./output/", logging_config=None
+        service_id=None, save_data=True, save_dir="./output/"
     )
 
     # Reset mock and test with custom parameters
     mock_env.reset_mock()
     service_id = "test-service"
     save_dir = "./custom_dir/"
-    logging_config = {"level": "DEBUG"}
 
     test_sandbox.start_sandbox(
         service_id=service_id,
         save_data=False,
         save_dir=save_dir,
-        logging_config=logging_config,
     )
 
     mock_env.start_sandbox.assert_called_once_with(
         service_id=service_id,
         save_data=False,
         save_dir=save_dir,
-        logging_config=logging_config,
     )
 
 
