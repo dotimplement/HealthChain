@@ -1,10 +1,39 @@
 """
-API module for the HealthChain Gateway.
+HealthChain API module.
 
-This module provides API integration for healthcare systems including
-FHIR, SOAP, CDS Hooks, and other healthcare interoperability standards.
+This module provides API components for the HealthChain gateway.
 """
 
-from .app import HealthChainAPI, create_app
+from healthchain.gateway.api.app import HealthChainAPI, create_app
+from healthchain.gateway.api.dependencies import (
+    get_app,
+    get_event_dispatcher,
+    get_gateway,
+    get_all_gateways,
+    get_typed_gateway,
+)
+from healthchain.gateway.api.protocols import (
+    HealthChainAPIProtocol,
+    GatewayProtocol,
+    EventDispatcherProtocol,
+    FHIRGatewayProtocol,
+    SOAPGatewayProtocol,
+)
 
-__all__ = ["HealthChainAPI", "create_app"]
+__all__ = [
+    # Classes
+    "HealthChainAPI",
+    # Functions
+    "create_app",
+    "get_app",
+    "get_event_dispatcher",
+    "get_gateway",
+    "get_all_gateways",
+    "get_typed_gateway",
+    # Protocols
+    "HealthChainAPIProtocol",
+    "GatewayProtocol",
+    "EventDispatcherProtocol",
+    "FHIRGatewayProtocol",
+    "SOAPGatewayProtocol",
+]

@@ -20,7 +20,12 @@ except ImportError:
     fhir_client = None
 
 from healthchain.gateway.core.base import BaseGateway
-from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
+from healthchain.gateway.events.dispatcher import (
+    EHREvent,
+    EHREventType,
+    EventDispatcher,
+)
+from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +41,7 @@ OPERATION_TO_EVENT = {
 }
 
 
-class FHIRGateway(BaseGateway, APIRouter):
+class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
     """
     Unified FHIR interface that combines client and router capabilities.
 
@@ -133,9 +138,15 @@ class FHIRGateway(BaseGateway, APIRouter):
     def _register_default_routes(self):
         """Register default FHIR API routes."""
 
+        # Create a dependency for this specific gateway instance
+        def get_self_gateway():
+            return self
+
         # Metadata endpoint
         @self.get("/metadata")
-        async def capability_statement():
+        async def capability_statement(
+            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+        ):
             """Return the FHIR capability statement."""
             return {
                 "resourceType": "CapabilityStatement",
@@ -153,7 +164,7 @@ class FHIRGateway(BaseGateway, APIRouter):
                                     {"code": "search-type"},
                                 ],
                             }
-                            for resource_type in self.supported_resources
+                            for resource_type in fhir.supported_resources
                         ],
                     }
                 ],
@@ -167,12 +178,13 @@ class FHIRGateway(BaseGateway, APIRouter):
         async def search_resources(
             resource_type: str = Path(..., description="FHIR resource type"),
             query_params: Dict = Depends(self._extract_query_params),
+            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
         ):
             """Search for FHIR resources."""
-            self._validate_resource_type(resource_type)
+            fhir._validate_resource_type(resource_type)
 
             # Check if there's a custom search handler
-            handler = self._get_resource_handler(resource_type, "search")
+            handler = fhir._get_resource_handler(resource_type, "search")
             if handler:
                 return await handler(query_params)
 
@@ -189,12 +201,13 @@ class FHIRGateway(BaseGateway, APIRouter):
         async def create_resource(
             resource: Dict = Body(..., description="FHIR resource"),
             resource_type: str = Path(..., description="FHIR resource type"),
+            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
         ):
             """Create a new FHIR resource."""
-            self._validate_resource_type(resource_type)
+            fhir._validate_resource_type(resource_type)
 
             # Check if there's a custom create handler
-            handler = self._get_resource_handler(resource_type, "create")
+            handler = fhir._get_resource_handler(resource_type, "create")
             if handler:
                 return await handler(resource)
 
@@ -269,6 +282,22 @@ class FHIRGateway(BaseGateway, APIRouter):
         if resource_type not in self.supported_resources:
             self.supported_resources.append(resource_type)
 
+    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
+        """
+        Set the event dispatcher for this gateway.
+
+        Args:
+            event_dispatcher: The event dispatcher to use
+
+        Returns:
+            Self, for method chaining
+        """
+        # Directly set the attribute instead of using super() to avoid inheritance issues
+        self.event_dispatcher = event_dispatcher
+        # Register default handlers if needed
+        self._register_default_handlers()
+        return self
+
     def read(self, resource_class: Type[T]):
         """
         Decorator to register a handler for reading a specific resource type.
@@ -281,17 +310,24 @@ class FHIRGateway(BaseGateway, APIRouter):
         """
         resource_type = resource_class.__name__
 
+        # Create a dependency for this specific gateway instance
+        def get_self_gateway():
+            return self
+
         def decorator(handler: Callable[[T], T]):
             self._register_resource_handler(resource_type, "read", handler)
 
             # Register the route
             @self.get(f"/{resource_type}/{{id}}")
-            async def read_resource(id: str = Path(..., description="Resource ID")):
+            async def read_resource(
+                id: str = Path(..., description="Resource ID"),
+                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            ):
                 """Read a specific FHIR resource instance."""
                 try:
                     # Get the resource from the FHIR server
-                    if self.client:
-                        resource_data = self.client.server.request_json(
+                    if fhir.client:
+                        resource_data = fhir.client.server.request_json(
                             f"{resource_type}/{id}"
                         )
                         resource = resource_class(resource_data)
@@ -305,8 +341,8 @@ class FHIRGateway(BaseGateway, APIRouter):
                     result = handler(resource)
 
                     # Emit event if we have an event dispatcher
-                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
-                        self._emit_fhir_event("read", resource_type, id, result)
+                    if hasattr(fhir, "event_dispatcher") and fhir.event_dispatcher:
+                        fhir._emit_fhir_event("read", resource_type, id, result)
 
                     # Return as dict
                     return (
@@ -336,6 +372,10 @@ class FHIRGateway(BaseGateway, APIRouter):
         """
         resource_type = resource_class.__name__
 
+        # Create a dependency for this specific gateway instance
+        def get_self_gateway():
+            return self
+
         def decorator(handler: Callable[[T], T]):
             self._register_resource_handler(resource_type, "update", handler)
 
@@ -344,6 +384,7 @@ class FHIRGateway(BaseGateway, APIRouter):
             async def update_resource(
                 resource: Dict = Body(..., description="FHIR resource"),
                 id: str = Path(..., description="Resource ID"),
+                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
             ):
                 """Update a specific FHIR resource instance."""
                 try:
@@ -354,8 +395,8 @@ class FHIRGateway(BaseGateway, APIRouter):
                     result = handler(resource_obj)
 
                     # Emit event if we have an event dispatcher
-                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
-                        self._emit_fhir_event("update", resource_type, id, result)
+                    if hasattr(fhir, "event_dispatcher") and fhir.event_dispatcher:
+                        fhir._emit_fhir_event("update", resource_type, id, result)
 
                     # Return as dict
                     return (
@@ -385,20 +426,27 @@ class FHIRGateway(BaseGateway, APIRouter):
         """
         resource_type = resource_class.__name__
 
+        # Create a dependency for this specific gateway instance
+        def get_self_gateway():
+            return self
+
         def decorator(handler: Callable[[str], Any]):
             self._register_resource_handler(resource_type, "delete", handler)
 
             # Register the route
             @self.delete(f"/{resource_type}/{{id}}")
-            async def delete_resource(id: str = Path(..., description="Resource ID")):
+            async def delete_resource(
+                id: str = Path(..., description="Resource ID"),
+                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            ):
                 """Delete a specific FHIR resource instance."""
                 try:
                     # Call the handler
                     result = handler(id)
 
                     # Emit event if we have an event dispatcher
-                    if hasattr(self, "event_dispatcher") and self.event_dispatcher:
-                        self._emit_fhir_event("delete", resource_type, id, None)
+                    if hasattr(fhir, "event_dispatcher") and fhir.event_dispatcher:
+                        fhir._emit_fhir_event("delete", resource_type, id, None)
 
                     # Default response if handler doesn't return anything
                     if result is None:

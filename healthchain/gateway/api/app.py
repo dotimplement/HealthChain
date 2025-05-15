@@ -16,12 +16,17 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from typing import Dict, Optional, Type, Union, Set
+from typing import Dict, Optional, Type, Union, Set, ForwardRef
 
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import EventDispatcher
+from healthchain.gateway.api.dependencies import get_app
 
 logger = logging.getLogger(__name__)
+
+
+# Forward reference for type hints
+HealthChainAPIRef = ForwardRef("HealthChainAPI")
 
 
 class HealthChainAPI(FastAPI):
@@ -63,6 +68,7 @@ class HealthChainAPI(FastAPI):
         version: str = "1.0.0",
         enable_cors: bool = True,
         enable_events: bool = True,
+        event_dispatcher: Optional[EventDispatcher] = None,
         **kwargs,
     ):
         """
@@ -74,6 +80,7 @@ class HealthChainAPI(FastAPI):
             version: API version
             enable_cors: Whether to enable CORS middleware
             enable_events: Whether to enable event dispatching functionality
+            event_dispatcher: Optional event dispatcher to use (for testing/DI)
             **kwargs: Additional keyword arguments to pass to FastAPI
         """
         super().__init__(
@@ -86,8 +93,9 @@ class HealthChainAPI(FastAPI):
 
         # Initialize event dispatcher if events are enabled
         if self.enable_events:
-            self.event_dispatcher = EventDispatcher()
-            self.event_dispatcher.init_app(self)
+            self.event_dispatcher = event_dispatcher or EventDispatcher()
+            if not event_dispatcher:  # Only initialize if we created it
+                self.event_dispatcher.init_app(self)
         else:
             self.event_dispatcher = None
 
@@ -111,6 +119,9 @@ class HealthChainAPI(FastAPI):
         # Add default routes
         self._add_default_routes()
 
+        # Register self as a dependency for get_app
+        self.dependency_overrides[get_app] = lambda: self
+
     def get_event_dispatcher(self) -> Optional[EventDispatcher]:
         """Get the event dispatcher instance.
 
@@ -120,6 +131,25 @@ class HealthChainAPI(FastAPI):
             The application's event dispatcher, or None if events are disabled
         """
         return self.event_dispatcher
+
+    def get_gateway(self, gateway_name: str) -> Optional[BaseGateway]:
+        """Get a specific gateway by name.
+
+        Args:
+            gateway_name: The name of the gateway to retrieve
+
+        Returns:
+            The gateway instance or None if not found
+        """
+        return self.gateways.get(gateway_name)
+
+    def get_all_gateways(self) -> Dict[str, BaseGateway]:
+        """Get all registered gateways.
+
+        Returns:
+            Dictionary of all registered gateways
+        """
+        return self.gateways
 
     def register_gateway(
         self,
@@ -375,7 +405,9 @@ class HealthChainAPI(FastAPI):
 
 
 def create_app(
-    config: Optional[Dict] = None, enable_events: bool = True
+    config: Optional[Dict] = None,
+    enable_events: bool = True,
+    event_dispatcher: Optional[EventDispatcher] = None,
 ) -> HealthChainAPI:
     """
     Factory function to create a new HealthChainAPI application.
@@ -387,6 +419,7 @@ def create_app(
     Args:
         config: Optional configuration dictionary
         enable_events: Whether to enable event dispatching functionality
+        event_dispatcher: Optional event dispatcher to use (for testing/DI)
 
     Returns:
         Configured HealthChainAPI instance
@@ -399,6 +432,7 @@ def create_app(
         "docs_url": "/docs",
         "redoc_url": "/redoc",
         "enable_events": enable_events,
+        "event_dispatcher": event_dispatcher,
     }
 
     # Override with user config if provided

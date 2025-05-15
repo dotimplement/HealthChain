@@ -114,3 +114,29 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
 ```
+
+## Type Safety with Protocols
+
+The gateway module uses Python's Protocol typing for robust interface definitions:
+
+```python
+# Register gateways with explicit types
+app.register_gateway(fhir)  # Implements FHIRGatewayProtocol
+app.register_gateway(cds)   # Implements CDSHooksGatewayProtocol
+app.register_gateway(soap)  # Implements SOAPGatewayProtocol
+
+# Get typed gateway dependencies in API routes
+@app.get("/api/patient/{id}")
+async def get_patient(
+    id: str,
+    fhir: FHIRGatewayProtocol = Depends(get_typed_gateway("FHIRGateway", FHIRGatewayProtocol))
+):
+    # Type-safe access to FHIR methods
+    return await fhir.read("Patient", id)
+```
+
+This approach provides:
+- Enhanced type checking and IDE auto-completion
+- Clear interface definition for gateway implementations
+- Runtime type safety with detailed error messages
+- Better testability through protocol-based mocking

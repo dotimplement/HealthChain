@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Optional
@@ -6,6 +7,9 @@ from fastapi import FastAPI
 from fastapi_events.dispatcher import dispatch
 from fastapi_events.handlers.local import local_handler
 from fastapi_events.middleware import EventHandlerASGIMiddleware
+
+
+logger = logging.getLogger(__name__)
 
 
 class EHREventType(Enum):
@@ -140,6 +144,8 @@ class EventDispatcher:
 
         # Dispatch the event with the middleware_id
         # Note: dispatch may return None instead of an awaitable, so handle that case
+        logger.debug(f"Dispatching event: {event_name}")
+
         result = dispatch(event_name, event_data, middleware_id=mid)
         if result is not None:
             await result

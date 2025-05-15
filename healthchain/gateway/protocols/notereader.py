@@ -22,6 +22,7 @@ from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.service.soap.model.epicclientfault import ClientFault
 from healthchain.service.soap.model.epicserverfault import ServerFault
+from healthchain.gateway.api.protocols import SOAPGatewayProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class NoteReaderConfig(BaseModel):
     default_mount_path: str = "/notereader"
 
 
-class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse]):
+class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtocol):
     """
     Gateway for Epic NoteReader SOAP protocol integration.
 
@@ -92,6 +93,22 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse]):
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
             self.set_event_dispatcher(event_dispatcher)
+
+    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
+        """
+        Set the event dispatcher for this gateway.
+
+        Args:
+            event_dispatcher: The event dispatcher to use
+
+        Returns:
+            Self, for method chaining
+        """
+        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
+        self.event_dispatcher = event_dispatcher
+        # Register default handlers if needed
+        self._register_default_handlers()
+        return self
 
     def method(self, method_name: str) -> Callable:
         """
@@ -328,16 +345,3 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse]):
             "soap_service": self.config.service_name,
             "mount_path": self.config.default_mount_path,
         }
-
-    @classmethod
-    def create(cls, **options) -> T:
-        """
-        Factory method to create a new NoteReader gateway with default configuration.
-
-        Args:
-            **options: Options to pass to the constructor
-
-        Returns:
-            New NoteReaderGateway instance
-        """
-        return cls(**options)

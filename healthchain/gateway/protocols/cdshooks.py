@@ -10,6 +10,7 @@ from datetime import datetime
 
 from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
 from pydantic import BaseModel
+from fastapi import Depends, Body
 
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import (
@@ -17,6 +18,7 @@ from healthchain.gateway.events.dispatcher import (
     EHREvent,
     EHREventType,
 )
+from healthchain.gateway.api.protocols import GatewayProtocol
 
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsdiscovery import CDSService, CDSServiceInformation
@@ -49,7 +51,7 @@ class CDSHooksConfig(BaseModel):
     allowed_hooks: List[str] = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
 
 
-class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse]):
+class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
     """
     Gateway for CDS Hooks protocol integration.
 
@@ -107,6 +109,22 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse]):
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
             self.set_event_dispatcher(event_dispatcher)
+
+    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
+        """
+        Set the event dispatcher for this gateway.
+
+        Args:
+            event_dispatcher: The event dispatcher to use
+
+        Returns:
+            Self, for method chaining
+        """
+        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
+        self.event_dispatcher = event_dispatcher
+        # Register default handlers if needed
+        self._register_default_handlers()
+        return self
 
     def hook(
         self,
@@ -385,6 +403,10 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse]):
         """
         routes = []
 
+        # Create a dependency for this specific gateway instance
+        def get_self_cds():
+            return self
+
         base_path = path or self.config.base_path
         if base_path:
             base_path = base_path.rstrip("/")
@@ -394,11 +416,16 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse]):
         discovery_endpoint = (
             f"{base_path}/{discovery_path}" if base_path else f"/{discovery_path}"
         )
+
+        # Create handlers with dependency injection
+        async def discovery_handler(cds: GatewayProtocol = Depends(get_self_cds)):
+            return cds.handle_discovery()
+
         routes.append(
             (
                 discovery_endpoint,
                 ["GET"],
-                self.handle_discovery,
+                discovery_handler,
                 {"response_model_exclude_none": True},
             )
         )
@@ -413,26 +440,24 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse]):
                     if base_path
                     else f"/{service_path}/{hook_id}"
                 )
+
+                # Create a handler factory to properly capture hook_id in closure
+                def create_handler_for_hook():
+                    async def service_handler(
+                        request: CDSRequest = Body(...),
+                        cds: GatewayProtocol = Depends(get_self_cds),
+                    ):
+                        return cds.handle_request(request)
+
+                    return service_handler
+
                 routes.append(
                     (
                         service_endpoint,
                         ["POST"],
-                        self.handle_request,
+                        create_handler_for_hook(),
                         {"response_model_exclude_none": True},
                     )
                 )
 
         return routes
-
-    @classmethod
-    def create(cls, **options) -> T:
-        """
-        Factory method to create a new CDS Hooks gateway with default configuration.
-
-        Args:
-            **options: Options to pass to the constructor
-
-        Returns:
-            New CDSHooksGateway instance
-        """
-        return cls(**options)
