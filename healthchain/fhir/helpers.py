@@ -16,6 +16,7 @@ from fhir.resources.codeablereference import CodeableReference
 from fhir.resources.coding import Coding
 from fhir.resources.attachment import Attachment
 from fhir.resources.resource import Resource
+from fhir.resources.reference import Reference
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +197,7 @@ def create_condition(
 
     condition = Condition(
         id=_generate_id(),
-        subject={"reference": subject},
+        subject=Reference(reference=subject),
         clinicalStatus=create_single_codeable_concept(
             code=clinical_status,
             display=clinical_status.capitalize(),
@@ -237,7 +238,7 @@ def create_medication_statement(
 
     medication = MedicationStatement(
         id=_generate_id(),
-        subject={"reference": subject},
+        subject=Reference(reference=subject),
         status=status,
         medication={"concept": medication_concept},
     )
@@ -272,7 +273,7 @@ def create_allergy_intolerance(
 
     allergy = AllergyIntolerance(
         id=_generate_id(),
-        patient={"reference": patient},
+        patient=Reference(reference=patient),
         code=allergy_code,
     )
 

@@ -155,7 +155,7 @@ Sandboxes provide a staging environment for testing and validating your pipeline
 import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.models import Card, Prefetch, CDSRequest
 from healthchain.data_generator import CdsDataGenerator
 from typing import List
@@ -192,7 +192,7 @@ The `ClinicalDocumentation` use case implements a real-time Clinical Documentati
 import healthchain as hc
 
 from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.use_cases import ClinicalDocumentation
+from healthchain.sandbox.use_cases import ClinicalDocumentation
 from healthchain.models import CdaRequest, CdaResponse
 from fhir.resources.documentreference import DocumentReference
 
@@ -227,7 +227,7 @@ Ensure you run the following commands in your `mycds.py` file:
 
 ```python
 cds = MyCDS()
-cds.run_sandbox()
+cds.start_sandbox()
 ```
 This will populate your EHR client with the data generation method you have defined, send requests to your server for processing, and save the data in the `./output` directory.
 

@@ -14,7 +14,7 @@ Here are minimal examples for each use case:
     ```python
     import healthchain as hc
 
-    from healthchain.use_cases import ClinicalDocumentation
+    from healthchain.sandbox.use_cases import ClinicalDocumentation
     from healthchain.pipeline import MedicalCodingPipeline
     from healthchain.models import CdaRequest, CdaResponse
     from healthchain.fhir import create_document_reference
@@ -42,7 +42,7 @@ Here are minimal examples for each use case:
     ```python
     import healthchain as hc
 
-    from healthchain.use_cases import ClinicalDecisionSupport
+    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
     from healthchain.pipeline import SummarizationPipeline
     from healthchain.models import CDSRequest, CDSResponse, Prefetch
     from fhir.resources.patient import Patient

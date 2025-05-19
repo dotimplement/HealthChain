@@ -2,6 +2,7 @@ import os
 import signal
 import logging
 import uvicorn
+import warnings
 
 from typing import Dict
 
@@ -11,9 +12,15 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from contextlib import asynccontextmanager
 from termcolor import colored
 
-from healthchain.service.soap.wsgi import start_wsgi
+from healthchain.gateway.soap.wsgi import start_wsgi
 
-from .endpoints import Endpoint, ApiProtocol
+# Use new location but maintain old import for backward compatibility
+try:
+    from healthchain.gateway.protocols.apiprotocol import ApiProtocol
+except ImportError:
+    from .endpoints import ApiProtocol
+
+from .endpoints import Endpoint
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +29,9 @@ class Service:
     """
     A service wrapper which registers routes and starts a FastAPI service
 
+    DEPRECATED: This class is deprecated and will be removed in a future version.
+    Use `healthchain.gateway.api.app.HealthChainAPI` or `create_app()` instead.
+
     Parameters:
     endpoints (Dict[str, Enpoint]): the list of endpoints to register, must be a dictionary
     of Endpoint objects. Should have human-readable keys e.g. ["info", "service_mount"]
@@ -29,6 +39,12 @@ class Service:
     """
 
     def __init__(self, endpoints: Dict[str, Endpoint] = None):
+        warnings.warn(
+            "The Service class is deprecated and will be removed in a future version. "
+            "Use healthchain.gateway.api.app.HealthChainAPI or create_app() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.app = FastAPI(lifespan=self.lifespan)
         self.endpoints: Endpoint = endpoints
 
