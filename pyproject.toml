@@ -44,7 +44,6 @@ xmltodict = "^0.13.0"
 fhir-resources = "^8.0.0"
 python-liquid = "^1.13.0"
 regex = "!=2019.12.17"
-fhirclient = "^4.3.1"
 fastapi-events = "^0.12.2"
 
 [tool.poetry.group.dev.dependencies]

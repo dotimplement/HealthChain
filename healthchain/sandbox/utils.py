@@ -83,6 +83,8 @@ def save_file(data, prefix, sandbox_id, index, save_dir, extension):
     elif extension == "xml":
         with open(file_path, "w") as outfile:
             outfile.write(data)
+    else:
+        raise ValueError(f"Unsupported extension: {extension}")
 
 
 def ensure_directory_exists(directory):
