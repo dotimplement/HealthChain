@@ -8,9 +8,10 @@ Full example coming soon!
 import healthchain as hc
 
 from healthchain.io import Document
-from healthchain.models.requests.cda import CdaRequest, CdaResponse
+from healthchain.models.requests import CdaRequest
+from healthchain.models.responses import CdaResponse
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
-from healthchain.use_cases.clindoc import ClinicalDocumentation
+from healthchain.sandbox.use_cases import ClinicalDocumentation
 from healthchain.fhir import create_document_reference
 
 from spacy.tokens import Span

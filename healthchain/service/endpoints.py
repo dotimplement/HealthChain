@@ -1,11 +1,30 @@
 from enum import Enum
 from pydantic import BaseModel, field_validator
 from typing import Optional, Callable
+import warnings
 
 
-class ApiProtocol(Enum):
-    soap = "SOAP"
-    rest = "REST"
+# Keep for backward compatibility but warn about new location
+try:
+    from healthchain.gateway.protocols.apiprotocol import ApiProtocol
+except ImportError:
+    # Fallback definition if the new location isn't available yet
+    class ApiProtocol(Enum):
+        """
+        DEPRECATED: This enum has moved to healthchain.gateway.protocols.api_protocol
+        """
+
+        soap = "SOAP"
+        rest = "REST"
+
+        def __init__(self, *args, **kwargs):
+            warnings.warn(
+                "ApiProtocol has moved to healthchain.gateway.protocols.api_protocol. "
+                "This location is deprecated and will be removed in a future version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            super().__init__(*args, **kwargs)
 
 
 class Endpoint(BaseModel):

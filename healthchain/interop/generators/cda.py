@@ -173,7 +173,7 @@ class CDAGenerator(BaseGenerator):
                 f"cda.document.{document_type}.structure.body.include_sections"
             )
             if include_sections:
-                log.info(
+                log.debug(
                     f"Generating sections: {include_sections} for document type {document_type}"
                 )
 

@@ -3,7 +3,7 @@ import xmltodict
 import logging
 
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 
 from healthchain.utils.utils import search_key
 
@@ -12,6 +12,9 @@ log = logging.getLogger(__name__)
 
 class CdaRequest(BaseModel):
     document: str
+    session_id: Optional[str] = None
+    work_type: Optional[str] = None
+    organization_id: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict):

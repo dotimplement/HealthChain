@@ -1,9 +1,9 @@
 import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.use_cases import ClinicalDecisionSupport
 from healthchain.models import CDSRequest, CDSResponse, Prefetch
 from healthchain.data_generators import CdsDataGenerator
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 
 from langchain_huggingface.llms import HuggingFaceEndpoint
 from langchain_huggingface import ChatHuggingFace

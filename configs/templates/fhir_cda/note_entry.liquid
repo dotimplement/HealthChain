@@ -17,7 +17,7 @@
         "@value": "{{ resource.date | format_date: 'cda' }}"
       },
       {% endif %}
-      "text": "{{ resource.content[0].attachment.data | from_base64 }}"
+      "text": {{ resource.content[0].attachment.data | from_base64 | json }}
     }
   }
 }

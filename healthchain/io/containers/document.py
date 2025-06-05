@@ -11,6 +11,8 @@ from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.bundle import Bundle
 from fhir.resources.documentreference import DocumentReference
 from fhir.resources.resource import Resource
+from fhir.resources.reference import Reference
+from fhir.resources.documentreference import DocumentReferenceRelatesTo
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
@@ -351,14 +353,14 @@ class FhirData:
             if not hasattr(document, "relatesTo") or not document.relatesTo:
                 document.relatesTo = []
             document.relatesTo.append(
-                {
-                    "target": {"reference": f"DocumentReference/{parent_id}"},
-                    "code": create_single_codeable_concept(
+                DocumentReferenceRelatesTo(
+                    target=Reference(reference=f"DocumentReference/{parent_id}"),
+                    code=create_single_codeable_concept(
                         code=relationship_type,
                         display=relationship_type.capitalize(),
                         system="http://hl7.org/fhir/ValueSet/document-relationship-type",
                     ),
-                }
+                )
             )
 
         self.add_resources([document], "DocumentReference", replace=False)
@@ -454,7 +456,7 @@ class FhirData:
         if hasattr(target_doc, "relatesTo") and target_doc.relatesTo:
             # Find parents from target's relationships
             for relation in target_doc.relatesTo:
-                parent_ref = relation.get("target", {}).get("reference")
+                parent_ref = relation.target.reference
                 parent_id = parent_ref.split("/")[-1]
                 parent = next((doc for doc in documents if doc.id == parent_id), None)
                 if parent:
@@ -466,7 +468,7 @@ class FhirData:
                 continue
 
             for relation in doc.relatesTo:
-                target_ref = relation.get("target", {}).get("reference")
+                target_ref = relation.target.reference
                 related_id = target_ref.split("/")[-1]
 
                 # Check if this doc is a child of our target

@@ -33,7 +33,7 @@ Every sandbox also requires a [**Client**](./client.md) function marked by `@hc.
 import healthchain as hc
 
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.data_generators import CdsDataGenerator
 from healthchain.models import CDSRequest, Prefetch, CDSResponse
 
