@@ -46,40 +46,6 @@ app.register_gateway(cds)
 app.register_gateway(soap)
 ```
 
-## Module Structure
-
-```
-healthchain/gateway/
-│
-├── __init__.py                  # Main exports
-│
-├── core/                        # Core components
-│   ├── __init__.py
-│   ├── base.py                  # BaseGateway and core abstractions
-│   └── fhirgateway.py           # FHIR protocol gateway
-│
-├── protocols/                   # Protocol implementations
-│   ├── __init__.py              # Re-exports all gateway implementations
-│
-├── services/                    # (Legacy) Implementation of services
-│   ├── cdshooks.py              # CDS Hooks gateway
-│   └── notereader.py            # NoteReader/SOAP gateway
-│
-├── events/                      # Event handling system
-│   ├── __init__.py
-│   └── dispatcher.py            # Event dispatcher and models
-│
-├── api/                         # API layer
-│   ├── __init__.py
-│   └── app.py                   # HealthChainAPI app implementation
-│
-├── security/                    # Security and compliance
-│   └── __init__.py
-│
-└── monitoring/                  # Observability components
-    └── __init__.py
-```
-
 ## Core Types
 
 - `BaseGateway`: The central abstraction for all protocol gateway implementations
