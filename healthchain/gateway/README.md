@@ -140,3 +140,26 @@ This approach provides:
 - Clear interface definition for gateway implementations
 - Runtime type safety with detailed error messages
 - Better testability through protocol-based mocking
+
+## Context Managers
+
+Context managers are a powerful tool for managing resource lifecycles in a safe and predictable way. They are particularly useful for:
+
+- Standalone CRUD operations
+- Creating new resources
+- Bulk operations
+- Cross-resource transactions
+- When you need guaranteed cleanup/connection management
+
+The decorator pattern is more for processing existing resources, while context managers are for managing resource lifecycles.
+
+```python
+@fhir.read(Patient)
+async def read_patient_and_create_note(patient):
+    # Use context manager to create related resources
+    async with fhir.resource_context("DiagnosticReport") as report:
+        report["subject"] = {"reference": f"Patient/{patient.id}"}
+        report["status"] = "final"
+
+    return patient
+```

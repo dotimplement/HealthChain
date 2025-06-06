@@ -17,7 +17,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    AsyncContextManager,
 )
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
@@ -388,23 +387,25 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         # Store connection string for pooling
         self._connection_strings[name] = connection_string
 
-        # Parse the connection string
+        # Parse the connection string for validation only
         try:
             if not connection_string.startswith("fhir://"):
                 raise ValueError("Connection string must start with fhir://")
 
-            # Parse URL
+            # Parse URL for validation
             parsed = urllib.parse.urlparse(connection_string)
 
-            # Extract parameters
-            params = dict(urllib.parse.parse_qsl(parsed.query))
+            # Validate that we have a valid hostname
+            if not parsed.netloc:
+                raise ValueError("Invalid connection string: missing hostname")
 
-            # Create appropriate server based on parameters
-            from healthchain.gateway.clients import create_fhir_server
-
-            self.sources[name] = create_fhir_server(
-                base_url=f"https://{parsed.netloc}{parsed.path}", **params
+            # Store the source name - actual connections will be managed by the pool
+            self.sources[name] = (
+                None  # Placeholder - pool will manage actual connections
             )
+
+            logger.info(f"Added FHIR source '{name}' with connection pooling enabled")
+
         except Exception as e:
             raise FHIRConnectionError(
                 message=f"Failed to parse connection string: {str(e)}",
@@ -412,14 +413,86 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
                 state="08001",  # SQL state code for connection failure
             )
 
+    def _create_server_from_connection_string(
+        self, connection_string: str
+    ) -> FHIRServerInterface:
+        """
+        Create a FHIR server instance from a connection string.
+
+        This is used by the connection pool to create new server instances.
+
+        Args:
+            connection_string: FHIR connection string
+
+        Returns:
+            FHIRServerInterface: A new FHIR server instance
+        """
+        # Parse the connection string
+        parsed = urllib.parse.urlparse(connection_string)
+
+        # Extract parameters
+        params = dict(urllib.parse.parse_qsl(parsed.query))
+
+        # Create appropriate server based on parameters
+        from healthchain.gateway.clients import create_fhir_server
+
+        return create_fhir_server(
+            base_url=f"https://{parsed.netloc}{parsed.path}", **params
+        )
+
+    def get_pooled_connection(self, source: str = None) -> FHIRServerInterface:
+        """
+        Get a pooled FHIR server connection.
+
+        Use this method when you need direct access to a FHIR server connection
+        outside of the resource_context manager. Remember to call release_pooled_connection()
+        when done to return the connection to the pool.
+
+        Args:
+            source: Source name to get connection for (uses first available if None)
+
+        Returns:
+            FHIRServerInterface: A pooled FHIR server connection
+
+        Raises:
+            ValueError: If source is unknown or no connection string found
+        """
+        source_name = source or next(iter(self.sources.keys()))
+        if source_name not in self.sources:
+            raise ValueError(f"Unknown source: {source_name}")
+
+        if source_name not in self._connection_strings:
+            raise ValueError(f"No connection string found for source: {source_name}")
+
+        connection_string = self._connection_strings[source_name]
+
+        return self.connection_pool.get_connection(
+            connection_string, self._create_server_from_connection_string
+        )
+
+    def release_pooled_connection(
+        self, server: FHIRServerInterface, source: str = None
+    ):
+        """
+        Release a pooled FHIR server connection back to the pool.
+
+        Args:
+            server: The server connection to release
+            source: Source name the connection belongs to (uses first available if None)
+        """
+        source_name = source or next(iter(self.sources.keys()))
+        if source_name in self._connection_strings:
+            connection_string = self._connection_strings[source_name]
+            self.connection_pool.release_connection(connection_string, server)
+
     @asynccontextmanager
     async def resource_context(
         self, resource_type: str, id: str = None, source: str = None
-    ) -> AsyncContextManager[Resource]:
+    ):
         """
         Context manager for working with FHIR resources.
 
-        Automatically handles fetching, updating, and error handling.
+        Automatically handles fetching, updating, and error handling using connection pooling.
 
         Args:
             resource_type: The FHIR resource type (e.g. 'Patient')
@@ -433,36 +506,70 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             FHIRConnectionError: If connection fails
             ValueError: If resource type is invalid
         """
-        # Get the source server
+        # Get the source name and connection string
         source_name = source or next(iter(self.sources.keys()))
         if source_name not in self.sources:
             raise ValueError(f"Unknown source: {source_name}")
 
-        server = self.sources[source_name]
+        if source_name not in self._connection_strings:
+            raise ValueError(f"No connection string found for source: {source_name}")
+
+        connection_string = self._connection_strings[source_name]
+
+        # Get server from connection pool
+        server = self.connection_pool.get_connection(
+            connection_string, self._create_server_from_connection_string
+        )
+
         resource = None
         is_new = id is None
 
         try:
-            # Import the resource class
-            from fhir.resources import get_resource_class
+            # Dynamically import the resource class
+            import importlib
 
-            resource_class = get_resource_class(resource_type)
+            resource_module = importlib.import_module(
+                f"fhir.resources.{resource_type.lower()}"
+            )
+            resource_class = getattr(resource_module, resource_type)
 
             if is_new:
                 # Create new resource
                 resource = resource_class()
+                logger.debug(
+                    f"Created new {resource_type} resource using pooled connection"
+                )
             else:
                 # Fetch existing resource
-                resource = await server.read(resource_type, id)
+                result = await server.read(f"{resource_type}/{id}")
+                if result:
+                    resource = resource_class(**result)
+                else:
+                    raise ValueError(f"Resource {resource_type}/{id} not found")
+                logger.debug(f"Retrieved {resource_type}/{id} using pooled connection")
+
+            # Emit read event if fetching existing resource
+            if not is_new:
+                self._emit_fhir_event("read", resource_type, id, resource)
 
             # Yield the resource for the context block
             yield resource
 
             # After the context block, save changes
             if is_new:
-                await server.create(resource_type, resource.dict())
+                result = await server.create(resource_type, resource.dict())
+                if result and "id" in result:
+                    resource.id = result[
+                        "id"
+                    ]  # Update resource with server-assigned ID
+                self._emit_fhir_event("create", resource_type, resource.id, resource)
+                logger.debug(
+                    f"Created {resource_type} resource using pooled connection"
+                )
             else:
                 await server.update(resource_type, id, resource.dict())
+                self._emit_fhir_event("update", resource_type, id, resource)
+                logger.debug(f"Updated {resource_type}/{id} using pooled connection")
 
         except Exception as e:
             logger.error(f"Error in resource context: {str(e)}")
@@ -471,6 +578,10 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
                 code="RESOURCE_ERROR",
                 state="HY000",  # General error
             )
+        finally:
+            # Return the server connection to the pool
+            self.connection_pool.release_connection(connection_string, server)
+            logger.debug(f"Released connection for {source_name} back to pool")
 
     @property
     def supported_resources(self) -> List[str]:
@@ -581,3 +692,31 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         capabilities.extend([op for op in self._handlers.keys()])
 
         return capabilities
+
+    def get_connection_pool_status(self) -> Dict[str, Any]:
+        """
+        Get the current status of the connection pool.
+
+        Returns:
+            Dict containing pool status information including:
+            - max_connections: Maximum connections per source
+            - sources: Dict of source names and their current pool sizes
+            - total_pooled_connections: Total number of pooled connections
+        """
+        pool_status = {
+            "max_connections": self.connection_pool.max_connections,
+            "sources": {},
+            "total_pooled_connections": 0,
+        }
+
+        for source_name, connection_string in self._connection_strings.items():
+            pool_size = len(
+                self.connection_pool._connections.get(connection_string, [])
+            )
+            pool_status["sources"][source_name] = {
+                "connection_string": connection_string,
+                "pooled_connections": pool_size,
+            }
+            pool_status["total_pooled_connections"] += pool_size
+
+        return pool_status
