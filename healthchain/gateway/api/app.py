@@ -184,15 +184,16 @@ class HealthChainAPI(FastAPI):
                 self.enable_events if use_events is None else use_events
             )
 
-            gateway_name = gateway.__class__.__name__
-
-            # Create a new instance
+            # Check if instance is already provided
             if isinstance(gateway, BaseGateway):
                 gateway_instance = gateway
+                gateway_name = gateway.__class__.__name__
             else:
+                # Create a new instance
                 if "use_events" not in options:
                     options["use_events"] = gateway_use_events
                 gateway_instance = gateway(**options)
+                gateway_name = gateway.__class__.__name__
 
             # Add to internal gateway registry
             self.gateways[gateway_name] = gateway_instance
@@ -248,7 +249,7 @@ class HealthChainAPI(FastAPI):
                         )
 
         # Case 2: WSGI gateways (like SOAP)
-        elif hasattr(gateway, "create_wsgi_app") and callable(gateway.create_wsgi_app):
+        if hasattr(gateway, "create_wsgi_app") and callable(gateway.create_wsgi_app):
             # For SOAP/WSGI gateways
             wsgi_app = gateway.create_wsgi_app()
 

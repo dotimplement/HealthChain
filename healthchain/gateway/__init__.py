@@ -19,6 +19,7 @@ from healthchain.gateway.api.app import HealthChainAPI, create_app
 from healthchain.gateway.core.base import (
     BaseGateway,
     GatewayConfig,
+    EventDispatcherMixin,
 )
 
 # Event system
@@ -30,6 +31,7 @@ from healthchain.gateway.events.dispatcher import (
 
 # Re-export gateway implementations
 from healthchain.gateway.protocols import (
+    FHIRGateway,
     CDSHooksGateway,
     NoteReaderGateway,
 )
@@ -41,11 +43,13 @@ __all__ = [
     # Core
     "BaseGateway",
     "GatewayConfig",
+    "EventDispatcherMixin",
     # Events
     "EventDispatcher",
     "EHREvent",
     "EHREventType",
     # Gateways
+    "FHIRGateway",
     "CDSHooksGateway",
     "NoteReaderGateway",
 ]
