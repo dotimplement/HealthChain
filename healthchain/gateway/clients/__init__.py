@@ -1,3 +1,3 @@
-from .fhir import FHIRServerInterface, FHIRServer, create_fhir_server
+from .fhir import FHIRServerInterface, AsyncFHIRClient, create_fhir_server
 
-__all__ = ["FHIRServerInterface", "FHIRServer", "create_fhir_server"]
+__all__ = ["FHIRServerInterface", "AsyncFHIRClient", "create_fhir_server"]

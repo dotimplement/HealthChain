@@ -5,44 +5,33 @@ This module provides standardized interfaces for different FHIR client libraries
 """
 
 import logging
+import json
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional, Union, Type
+from urllib.parse import urljoin, urlencode
+import httpx
 from fhir.resources.resource import Resource
+from fhir.resources.bundle import Bundle
+from fhir.resources.capabilitystatement import CapabilityStatement
 
 logger = logging.getLogger(__name__)
 
 
-def _get_fhirclient_resource_class(resource_type: str):
-    """Get the FHIR resource class from fhirclient.models.
+class FHIRClientError(Exception):
+    """Base exception for FHIR client errors."""
 
-    Args:
-        resource_type: The FHIR resource type (e.g. 'Patient', 'Observation')
-
-    Returns:
-        The resource class from fhirclient.models
-
-    Raises:
-        ImportError: If the resource class cannot be imported
-    """
-    module_name = f"fhirclient.models.{resource_type.lower()}"
-    try:
-        module = __import__(module_name, fromlist=[resource_type])
-        return getattr(module, resource_type)
-    except (ImportError, AttributeError) as e:
-        raise ImportError(
-            f"Failed to import FHIR client resource {resource_type}: {str(e)}"
-        )
+    def __init__(
+        self, message: str, status_code: int = None, response_data: dict = None
+    ):
+        self.status_code = status_code
+        self.response_data = response_data
+        super().__init__(message)
 
 
 def create_fhir_server(
     base_url: str,
+    access_token: str = None,
     auth: str = None,
-    client_id: str = None,
-    client_secret: str = None,
-    redirect_uri: str = None,
-    patient_id: str = None,
-    scope: str = None,
-    launch_token: str = None,
     timeout: int = 30,
     **additional_params,
 ) -> "FHIRServerInterface":
@@ -51,55 +40,22 @@ def create_fhir_server(
 
     Args:
         base_url: The FHIR server base URL
-        auth: Authentication type ('oauth', 'basic', etc.)
-        client_id: OAuth client ID or username for basic auth
-        client_secret: OAuth client secret or password for basic auth
-        redirect_uri: OAuth redirect URI
-        patient_id: Optional patient context
-        scope: OAuth scopes (space-separated)
-        launch_token: Launch token for EHR launch
+        access_token: JWT access token for Bearer authentication
+        auth: Authentication type (deprecated, use access_token)
         timeout: Request timeout in seconds
         **additional_params: Additional parameters for the client
 
     Returns:
         A configured FHIRServerInterface implementation
     """
-    # Prepare the settings dictionary for fhirclient
-    settings = {"api_base": base_url, "timeout": timeout}
+    logger.debug(f"Creating FHIR server for {base_url}")
 
-    # Add auth-related settings based on auth type
-    if auth == "oauth":
-        settings.update(
-            {
-                "app_id": client_id,
-                "app_secret": client_secret,
-                "redirect_uri": redirect_uri,
-            }
-        )
-
-        # Add optional OAuth parameters if provided
-        if scope:
-            settings["scope"] = scope
-        if launch_token:
-            settings["launch_token"] = launch_token
-
-    elif auth == "basic":
-        # For basic auth, we'll use app_id as username and app_secret as password
-        settings.update(
-            {"app_id": client_id, "app_secret": client_secret, "auth_type": "basic"}
-        )
-
-    # Add patient context if provided
-    if patient_id:
-        settings["patient_id"] = patient_id
-
-    # Add any additional parameters
-    settings.update(additional_params)
-
-    logger.debug(f"Creating FHIR server for {base_url} with auth type: {auth}")
-
-    # Create and return the server instance
-    return FHIRServer(settings)
+    return AsyncFHIRClient(
+        base_url=base_url,
+        access_token=access_token,
+        timeout=timeout,
+        **additional_params,
+    )
 
 
 class FHIRServerInterface(ABC):
@@ -111,195 +67,287 @@ class FHIRServerInterface(ABC):
     """
 
     @abstractmethod
-    async def read(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict:
-        """Get a resource or search results."""
+    async def read(
+        self, resource_type: Union[str, Type[Resource]], resource_id: str
+    ) -> Resource:
+        """Read a specific resource by ID."""
         pass
 
     @abstractmethod
-    async def create(self, resource_type: str, resource: Dict) -> Dict:
+    async def create(self, resource: Resource) -> Resource:
         """Create a new resource."""
         pass
 
     @abstractmethod
-    async def update(self, resource_type: str, id: str, resource: Dict) -> Dict:
+    async def update(self, resource: Resource) -> Resource:
         """Update an existing resource."""
         pass
 
     @abstractmethod
-    async def delete(self, resource_type: str, id: str) -> Dict:
+    async def delete(
+        self, resource_type: Union[str, Type[Resource]], resource_id: str
+    ) -> bool:
         """Delete a resource."""
         pass
 
     @abstractmethod
     async def search(
-        self, resource_type: str, params: Optional[Dict[str, Any]] = None
-    ) -> Dict:
+        self,
+        resource_type: Union[str, Type[Resource]],
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Bundle:
         """Search for resources."""
         pass
 
     @abstractmethod
-    async def transaction(self, bundle: Dict) -> Dict:
+    async def transaction(self, bundle: Bundle) -> Bundle:
         """Execute a transaction bundle."""
         pass
 
     @abstractmethod
-    async def capabilities(self) -> Dict:
+    async def capabilities(self) -> CapabilityStatement:
         """Get the capabilities of the FHIR server."""
         pass
 
 
-class FHIRServer(FHIRServerInterface):
+class AsyncFHIRClient(FHIRServerInterface):
     """
-    Adapter for the fhirclient library.
+    Async FHIR client optimized for HealthChain gateway use cases.
 
-    This class wraps the SMART on FHIR client-py library to provide a standardized interface
-    for interacting with FHIR servers. It handles the conversion between fhirclient.models
-    objects and our fhir.resource models.
-
-    It's a bit roundabout as we need to convert the resource object to a fhirclient.models
-    object and back again. But I'd rather use an actively maintained library than roll our own atm.
+    - Uses fhir.resources for validation
+    - Supports JWT Bearer token authentication
+    - Async-first with httpx
     """
 
-    def __init__(self, settings: Dict[str, Any]):
+    def __init__(
+        self,
+        base_url: str,
+        access_token: str = None,
+        timeout: int = 30,
+        verify_ssl: bool = True,
+        **kwargs,
+    ):
         """
-        Initialize the FHIR server adapter with client settings.
+        Initialize the FHIR client.
 
         Args:
-            settings (Dict[str, Any]): Configuration settings for the FHIR client
+            base_url: FHIR server base URL (e.g., "https://fhir.epic.com/api/FHIR/R4/")
+            access_token: JWT access token for authentication
+            timeout: Request timeout in seconds
+            verify_ssl: Whether to verify SSL certificates
+            **kwargs: Additional parameters
         """
+        self.base_url = base_url.rstrip("/") + "/"
+        self.timeout = timeout
+
+        # Setup headers
+        self.headers = {
+            "Accept": "application/fhir+json",
+            "Content-Type": "application/fhir+json",
+        }
+
+        if access_token:
+            self.headers["Authorization"] = f"Bearer {access_token}"
+
+        # Create httpx client
+        self.client = httpx.AsyncClient(
+            timeout=timeout, verify=verify_ssl, headers=self.headers
+        )
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
+
+    async def close(self):
+        """Close the HTTP client."""
+        await self.client.aclose()
+
+    def _build_url(self, path: str, params: Dict[str, Any] = None) -> str:
+        """Build a complete URL with optional query parameters."""
+        url = urljoin(self.base_url, path)
+        if params:
+            # Filter out None values and convert to strings
+            clean_params = {k: str(v) for k, v in params.items() if v is not None}
+            if clean_params:
+                url += "?" + urlencode(clean_params)
+        return url
+
+    def _handle_response(self, response: httpx.Response) -> dict:
+        """Handle HTTP response and convert to dict."""
         try:
-            import fhirclient.client as smart_client
-        except ImportError:
-            raise ImportError("fhirclient library is required for FHIR server adapter")
+            data = response.json()
+        except json.JSONDecodeError:
+            raise FHIRClientError(
+                f"Invalid JSON response: {response.text}",
+                status_code=response.status_code,
+            )
 
-        self.client = smart_client.FHIRClient(settings=settings)
+        if not response.is_success:
+            error_msg = f"FHIR request failed: {response.status_code}"
+            if isinstance(data, dict) and "issue" in data:
+                # FHIR OperationOutcome format
+                issues = data.get("issue", [])
+                if issues:
+                    error_msg += f" - {issues[0].get('diagnostics', 'Unknown error')}"
 
-    def read(self, resource: Resource, resource_id: str) -> Optional[Resource]:
-        """Get a resource by ID.
+            raise FHIRClientError(
+                error_msg, status_code=response.status_code, response_data=data
+            )
+
+        return data
+
+    async def capabilities(self) -> CapabilityStatement:
+        """
+        Fetch the server's CapabilityStatement.
+
+        Returns:
+            CapabilityStatement resource
+        """
+        response = await self.client.get(self._build_url("metadata"))
+        data = self._handle_response(response)
+        return CapabilityStatement(**data)
+
+    async def read(
+        self, resource_type: Union[str, Type[Resource]], resource_id: str
+    ) -> Resource:
+        """
+        Read a specific resource by ID.
 
         Args:
-            resource (Resource): The resource type to read
-            resource_id (str): The ID of the resource to retrieve
+            resource_type: FHIR resource type or class
+            resource_id: Resource ID
 
         Returns:
-            Optional[Resource]: The retrieved resource or None if an error occurs
+            Resource instance
         """
-        # We need to convert the resource object to fhirclient.models
-        resource_class = _get_fhirclient_resource_class(resource.__resource_type__)
+        if hasattr(resource_type, "__name__"):
+            type_name = resource_type.__name__
+            resource_class = resource_type
+        else:
+            type_name = str(resource_type)
+            # Dynamically import the resource class
+            module_name = f"fhir.resources.{type_name.lower()}"
+            module = __import__(module_name, fromlist=[type_name])
+            resource_class = getattr(module, type_name)
 
-        result = resource_class.read(resource_id, self.client)
+        url = self._build_url(f"{type_name}/{resource_id}")
+        response = await self.client.get(url)
+        data = self._handle_response(response)
 
-        # Convert the result back to a pydantic model
-        try:
-            return resource(**result.as_json())
-        except Exception as e:
-            logger.error(f"Resource response validation error: {e}")
+        return resource_class(**data)
 
-            # TODO: use FHIR error handling
-            return None
-
-    def create(self, resource: Resource) -> Optional[Resource]:
-        """Create a new resource.
+    async def search(
+        self, resource_type: Union[str, Type[Resource]], params: Dict[str, Any] = None
+    ) -> Bundle:
+        """
+        Search for resources.
 
         Args:
-            resource (Resource): The resource to create
+            resource_type: FHIR resource type or class
+            params: Search parameters
 
         Returns:
-            Optional[Resource]: The created resource or None if an error occurs
+            Bundle containing search results
         """
-        # We need to convert the resource object to fhirclient.models
-        resource_class = _get_fhirclient_resource_class(resource.__resource_type__)
+        if hasattr(resource_type, "__name__"):
+            type_name = resource_type.__name__
+        else:
+            type_name = str(resource_type)
 
-        result = resource_class.create(self.client)
+        url = self._build_url(type_name, params)
+        response = await self.client.get(url)
+        data = self._handle_response(response)
 
-        # Convert the result back to a pydantic model
-        try:
-            return resource(**result.as_json())
-        except Exception as e:
-            logger.error(f"Resource response validation error: {e}")
-            return None
+        return Bundle(**data)
 
-    def update(self, resource: Resource) -> Optional[Resource]:
-        """Update an existing resource.
+    async def create(self, resource: Resource) -> Resource:
+        """
+        Create a new resource.
 
         Args:
-            resource (Resource): The resource to update
+            resource: Resource to create
 
         Returns:
-            Optional[Resource]: The updated resource or None if an error occurs
+            Created resource with server-assigned ID
         """
-        # We need to convert the resource object to fhirclient.models
-        resource_class = _get_fhirclient_resource_class(resource.__resource_type__)
+        resource_type = resource.__resource_type__
+        url = self._build_url(resource_type)
 
-        result = resource_class.update(self.client)
+        response = await self.client.post(url, content=resource.model_dump_json())
+        data = self._handle_response(response)
 
-        # Convert the result back to a pydantic model
-        try:
-            return resource(**result.as_json())
-        except Exception as e:
-            logger.error(f"Resource response validation error: {e}")
-            return None
+        # Return the same resource type
+        resource_class = type(resource)
+        return resource_class(**data)
 
-    def delete(self, resource: Resource) -> Optional[Resource]:
-        """Delete a resource.
+    async def update(self, resource: Resource) -> Resource:
+        """
+        Update an existing resource.
 
         Args:
-            resource (Resource): The resource to delete
+            resource: Resource to update (must have ID)
 
         Returns:
-            Optional[Resource]: The deleted resource or None if an error occurs
+            Updated resource
         """
-        # We need to convert the resource object to fhirclient.models
-        resource_class = _get_fhirclient_resource_class(resource.__resource_type__)
+        if not resource.id:
+            raise ValueError("Resource must have an ID for update")
 
-        result = resource_class.delete(self.client)
+        resource_type = resource.__resource_type__
+        url = self._build_url(f"{resource_type}/{resource.id}")
 
-        # Convert the result back to a pydantic model
-        try:
-            return resource(**result.as_json())
-        except Exception as e:
-            logger.error(f"Resource response validation error: {e}")
-            return None
+        response = await self.client.put(url, content=resource.model_dump_json())
+        data = self._handle_response(response)
 
-    def search(
-        self, resource: Resource, params: Optional[Dict[str, Any]] = None
-    ) -> Optional[List[Resource]]:
-        """Search for resources.
+        # Return the same resource type
+        resource_class = type(resource)
+        return resource_class(**data)
+
+    async def delete(
+        self, resource_type: Union[str, Type[Resource]], resource_id: str
+    ) -> bool:
+        """
+        Delete a resource.
 
         Args:
-            resource (Resource): The resource type to search for
-            params (Optional[Dict[str, Any]]): Search parameters
+            resource_type: FHIR resource type or class
+            resource_id: Resource ID to delete
 
         Returns:
-            Optional[List[Resource]]: List of matching resources or None if an error occurs
+            True if successful
         """
-        # We need to convert the resource object to fhirclient.models
-        resource_class = _get_fhirclient_resource_class(resource.__resource_type__)
+        if hasattr(resource_type, "__name__"):
+            type_name = resource_type.__name__
+        else:
+            type_name = str(resource_type)
 
-        result = resource_class.search(self.client, params)
+        url = self._build_url(f"{type_name}/{resource_id}")
+        response = await self.client.delete(url)
 
-        # Convert the result back to a pydantic model
-        try:
-            return [resource(**r.as_json()) for r in result]
-        except Exception as e:
-            logger.error(f"Resource response validation error: {e}")
-            return None
+        # Delete operations typically return 204 No Content
+        if response.status_code in (200, 204):
+            return True
 
-    def transaction(self, bundle: List[Resource]) -> Optional[List[Resource]]:
-        """Execute a transaction bundle.
+        self._handle_response(response)  # This will raise an error
+        return False
+
+    async def transaction(self, bundle: Bundle) -> Bundle:
+        """
+        Execute a transaction bundle.
 
         Args:
-            bundle (List[Resource]): List of resources to process in the transaction
+            bundle: Transaction bundle
 
         Returns:
-            Optional[List[Resource]]: List of processed resources or None if an error occurs
+            Response bundle
         """
-        pass
+        url = self._build_url("")  # Base URL for transaction
 
-    def capabilities(self) -> Dict:
-        """Get the capabilities of the FHIR server.
+        response = await self.client.post(url, content=bundle.model_dump_json())
+        data = self._handle_response(response)
 
-        Returns:
-            Dict: Server capabilities information
-        """
-        return self.client.prepare()
+        return Bundle(**data)
