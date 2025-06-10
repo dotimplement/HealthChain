@@ -6,15 +6,38 @@ This module provides standardized interfaces for different FHIR client libraries
 
 import logging
 import json
+import httpx
+
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Union, Type
 from urllib.parse import urljoin, urlencode
-import httpx
+
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
 
+from healthchain.gateway.clients.auth import OAuth2TokenManager, FHIRAuthConfig
+
+
 logger = logging.getLogger(__name__)
+
+
+def create_fhir_client(
+    auth_config: FHIRAuthConfig,
+    **additional_params,
+) -> "FHIRServerInterface":
+    """
+    Factory function to create and configure a FHIR server interface using OAuth2.0
+
+    Args:
+        auth_config: OAuth2.0 authentication configuration
+        **additional_params: Additional parameters for the client
+
+    Returns:
+        A configured FHIRServerInterface implementation
+    """
+    logger.debug(f"Creating FHIR server with OAuth2.0 for {auth_config.base_url}")
+    return AsyncFHIRClient(auth_config=auth_config, **additional_params)
 
 
 class FHIRClientError(Exception):
@@ -26,36 +49,6 @@ class FHIRClientError(Exception):
         self.status_code = status_code
         self.response_data = response_data
         super().__init__(message)
-
-
-def create_fhir_server(
-    base_url: str,
-    access_token: str = None,
-    auth: str = None,
-    timeout: int = 30,
-    **additional_params,
-) -> "FHIRServerInterface":
-    """
-    Factory function to create and configure a FHIR server interface.
-
-    Args:
-        base_url: The FHIR server base URL
-        access_token: JWT access token for Bearer authentication
-        auth: Authentication type (deprecated, use access_token)
-        timeout: Request timeout in seconds
-        **additional_params: Additional parameters for the client
-
-    Returns:
-        A configured FHIRServerInterface implementation
-    """
-    logger.debug(f"Creating FHIR server for {base_url}")
-
-    return AsyncFHIRClient(
-        base_url=base_url,
-        access_token=access_token,
-        timeout=timeout,
-        **additional_params,
-    )
 
 
 class FHIRServerInterface(ABC):
@@ -119,40 +112,33 @@ class AsyncFHIRClient(FHIRServerInterface):
     - Async-first with httpx
     """
 
+    # TODO: pass kwargs to httpx client
+
     def __init__(
         self,
-        base_url: str,
-        access_token: str = None,
-        timeout: int = 30,
-        verify_ssl: bool = True,
+        auth_config: FHIRAuthConfig,
         **kwargs,
     ):
         """
-        Initialize the FHIR client.
+        Initialize the FHIR client with OAuth2.0 authentication.
 
         Args:
-            base_url: FHIR server base URL (e.g., "https://fhir.epic.com/api/FHIR/R4/")
-            access_token: JWT access token for authentication
-            timeout: Request timeout in seconds
-            verify_ssl: Whether to verify SSL certificates
+            auth_config: OAuth2.0 authentication configuration
             **kwargs: Additional parameters
         """
-        self.base_url = base_url.rstrip("/") + "/"
-        self.timeout = timeout
+        self.base_url = auth_config.base_url.rstrip("/") + "/"
+        self.timeout = auth_config.timeout
+        self.verify_ssl = auth_config.verify_ssl
+        self.token_manager = OAuth2TokenManager(auth_config.to_oauth2_config())
 
-        # Setup headers
-        self.headers = {
+        # Setup base headers
+        self.base_headers = {
             "Accept": "application/fhir+json",
             "Content-Type": "application/fhir+json",
         }
 
-        if access_token:
-            self.headers["Authorization"] = f"Bearer {access_token}"
-
         # Create httpx client
-        self.client = httpx.AsyncClient(
-            timeout=timeout, verify=verify_ssl, headers=self.headers
-        )
+        self.client = httpx.AsyncClient(timeout=self.timeout, verify=self.verify_ssl)
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -165,6 +151,13 @@ class AsyncFHIRClient(FHIRServerInterface):
     async def close(self):
         """Close the HTTP client."""
         await self.client.aclose()
+
+    async def _get_headers(self) -> Dict[str, str]:
+        """Get headers with fresh OAuth2.0 token."""
+        headers = self.base_headers.copy()
+        token = await self.token_manager.get_access_token()
+        headers["Authorization"] = f"Bearer {token}"
+        return headers
 
     def _build_url(self, path: str, params: Dict[str, Any] = None) -> str:
         """Build a complete URL with optional query parameters."""
@@ -207,7 +200,8 @@ class AsyncFHIRClient(FHIRServerInterface):
         Returns:
             CapabilityStatement resource
         """
-        response = await self.client.get(self._build_url("metadata"))
+        headers = await self._get_headers()
+        response = await self.client.get(self._build_url("metadata"), headers=headers)
         data = self._handle_response(response)
         return CapabilityStatement(**data)
 
@@ -235,7 +229,10 @@ class AsyncFHIRClient(FHIRServerInterface):
             resource_class = getattr(module, type_name)
 
         url = self._build_url(f"{type_name}/{resource_id}")
-        response = await self.client.get(url)
+        logger.debug(f"Sending GET request to {url}")
+
+        headers = await self._get_headers()
+        response = await self.client.get(url, headers=headers)
         data = self._handle_response(response)
 
         return resource_class(**data)
@@ -259,7 +256,10 @@ class AsyncFHIRClient(FHIRServerInterface):
             type_name = str(resource_type)
 
         url = self._build_url(type_name, params)
-        response = await self.client.get(url)
+        logger.debug(f"Sending GET request to {url}")
+
+        headers = await self._get_headers()
+        response = await self.client.get(url, headers=headers)
         data = self._handle_response(response)
 
         return Bundle(**data)
@@ -276,8 +276,12 @@ class AsyncFHIRClient(FHIRServerInterface):
         """
         resource_type = resource.__resource_type__
         url = self._build_url(resource_type)
+        logger.debug(f"Sending POST request to {url}")
 
-        response = await self.client.post(url, content=resource.model_dump_json())
+        headers = await self._get_headers()
+        response = await self.client.post(
+            url, content=resource.model_dump_json(), headers=headers
+        )
         data = self._handle_response(response)
 
         # Return the same resource type
@@ -299,8 +303,12 @@ class AsyncFHIRClient(FHIRServerInterface):
 
         resource_type = resource.__resource_type__
         url = self._build_url(f"{resource_type}/{resource.id}")
+        logger.debug(f"Sending PUT request to {url}")
 
-        response = await self.client.put(url, content=resource.model_dump_json())
+        headers = await self._get_headers()
+        response = await self.client.put(
+            url, content=resource.model_dump_json(), headers=headers
+        )
         data = self._handle_response(response)
 
         # Return the same resource type
@@ -326,7 +334,10 @@ class AsyncFHIRClient(FHIRServerInterface):
             type_name = str(resource_type)
 
         url = self._build_url(f"{type_name}/{resource_id}")
-        response = await self.client.delete(url)
+        logger.debug(f"Sending DELETE request to {url}")
+
+        headers = await self._get_headers()
+        response = await self.client.delete(url, headers=headers)
 
         # Delete operations typically return 204 No Content
         if response.status_code in (200, 204):
@@ -346,8 +357,12 @@ class AsyncFHIRClient(FHIRServerInterface):
             Response bundle
         """
         url = self._build_url("")  # Base URL for transaction
+        logger.debug(f"Sending POST request to {url}")
 
-        response = await self.client.post(url, content=bundle.model_dump_json())
+        headers = await self._get_headers()
+        response = await self.client.post(
+            url, content=bundle.model_dump_json(), headers=headers
+        )
         data = self._handle_response(response)
 
         return Bundle(**data)

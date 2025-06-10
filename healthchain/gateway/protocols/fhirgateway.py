@@ -20,6 +20,7 @@ from typing import (
     TypeVar,
     Union,
     Type,
+    TYPE_CHECKING,
 )
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
@@ -34,6 +35,10 @@ from healthchain.gateway.events.dispatcher import (
 )
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients import FHIRServerInterface
+
+# Import for type hints - will be available at runtime through local imports
+if TYPE_CHECKING:
+    from healthchain.gateway.clients.auth import FHIRAuthConfig
 
 
 logger = logging.getLogger(__name__)
@@ -534,13 +539,13 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
     def add_source(self, name: str, connection_string: str):
         """
-        Add a FHIR data source using connection string.
+        Add a FHIR data source using connection string with OAuth2.0 flow.
 
         Format: fhir://hostname:port/path?param1=value1&param2=value2
 
         Examples:
-            fhir://r4.smarthealthit.org
-            fhir://epic.org:443/r4?auth=oauth&client_id=app&timeout=30
+            fhir://epic.org/api/FHIR/R4?client_id=my_app&client_secret=secret&token_url=https://epic.org/oauth2/token&scope=system/*.read
+            fhir://cerner.org/r4?client_id=app_id&client_secret=app_secret&token_url=https://cerner.org/token&audience=https://cerner.org/fhir
         """
         # Store connection string for pooling
         self._connection_strings[name] = connection_string
@@ -585,18 +590,12 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         Returns:
             FHIRServerInterface: A new FHIR server instance
         """
-        # Parse the connection string
-        parsed = urllib.parse.urlparse(connection_string)
+        from healthchain.gateway.clients import create_fhir_client
+        from healthchain.gateway.clients.auth import parse_fhir_auth_connection_string
 
-        # Extract parameters
-        params = dict(urllib.parse.parse_qsl(parsed.query))
-
-        # Create appropriate server based on parameters
-        from healthchain.gateway.clients import create_fhir_server
-
-        return create_fhir_server(
-            base_url=f"https://{parsed.netloc}{parsed.path}", **params
-        )
+        # Parse connection string as OAuth2.0 configuration
+        auth_config = parse_fhir_auth_connection_string(connection_string)
+        return create_fhir_client(auth_config=auth_config)
 
     def get_pooled_connection(self, source: str = None) -> FHIRServerInterface:
         """
@@ -983,3 +982,128 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             pool_status["total_pooled_connections"] += pool_size
 
         return pool_status
+
+    def add_source_config(self, name: str, auth_config: "FHIRAuthConfig"):
+        """
+        Add a FHIR data source using a configuration object.
+
+        This is an alternative to connection strings for those who prefer
+        explicit configuration objects.
+
+        Args:
+            name: Source name
+            auth_config: FHIRAuthConfig object with OAuth2 settings
+
+        Example:
+            from healthchain.gateway.clients.auth import FHIRAuthConfig
+
+            config = FHIRAuthConfig(
+                client_id="your_client_id",
+                client_secret="your_client_secret",
+                token_url="https://epic.com/oauth2/token",
+                base_url="https://epic.com/api/FHIR/R4",
+                scope="system/Patient.read"
+            )
+            fhir_gateway.add_source_config("epic", config)
+        """
+        from healthchain.gateway.clients.auth import FHIRAuthConfig
+
+        if not isinstance(auth_config, FHIRAuthConfig):
+            raise ValueError("auth_config must be a FHIRAuthConfig instance")
+
+        # Store the config for connection pooling
+        # Create a synthetic connection string for internal storage
+        connection_string = (
+            f"fhir://{auth_config.base_url.replace('https://', '').replace('http://', '')}?"
+            f"client_id={auth_config.client_id}&"
+            f"client_secret={auth_config.client_secret}&"
+            f"token_url={auth_config.token_url}&"
+            f"scope={auth_config.scope or ''}&"
+            f"timeout={auth_config.timeout}&"
+            f"verify_ssl={auth_config.verify_ssl}"
+        )
+
+        if auth_config.audience:
+            connection_string += f"&audience={auth_config.audience}"
+
+        self._connection_strings[name] = connection_string
+        self.sources[name] = None  # Placeholder for pool management
+
+        logger.info(f"Added FHIR source '{name}' using configuration object")
+
+    def add_source_from_env(self, name: str, env_prefix: str):
+        """
+        Add a FHIR data source using environment variables.
+
+        This method reads OAuth2.0 configuration from environment variables
+        with a given prefix.
+
+        Args:
+            name: Source name
+            env_prefix: Environment variable prefix (e.g., "EPIC")
+
+        Expected environment variables:
+            {env_prefix}_CLIENT_ID
+            {env_prefix}_CLIENT_SECRET
+            {env_prefix}_TOKEN_URL
+            {env_prefix}_BASE_URL
+            {env_prefix}_SCOPE (optional)
+            {env_prefix}_AUDIENCE (optional)
+            {env_prefix}_TIMEOUT (optional, default: 30)
+            {env_prefix}_VERIFY_SSL (optional, default: true)
+
+        Example:
+            # Set environment variables:
+            # EPIC_CLIENT_ID=app123
+            # EPIC_CLIENT_SECRET=secret456
+            # EPIC_TOKEN_URL=https://epic.com/oauth2/token
+            # EPIC_BASE_URL=https://epic.com/api/FHIR/R4
+
+            fhir_gateway.add_source_from_env("epic", "EPIC")
+        """
+        import os
+        from healthchain.gateway.clients.auth import FHIRAuthConfig
+
+        # Read required environment variables
+        client_id = os.getenv(f"{env_prefix}_CLIENT_ID")
+        client_secret = os.getenv(f"{env_prefix}_CLIENT_SECRET")
+        token_url = os.getenv(f"{env_prefix}_TOKEN_URL")
+        base_url = os.getenv(f"{env_prefix}_BASE_URL")
+
+        if not all([client_id, client_secret, token_url, base_url]):
+            missing = [
+                var
+                for var, val in [
+                    (f"{env_prefix}_CLIENT_ID", client_id),
+                    (f"{env_prefix}_CLIENT_SECRET", client_secret),
+                    (f"{env_prefix}_TOKEN_URL", token_url),
+                    (f"{env_prefix}_BASE_URL", base_url),
+                ]
+                if not val
+            ]
+            raise ValueError(f"Missing required environment variables: {missing}")
+
+        # Read optional environment variables
+        scope = os.getenv(f"{env_prefix}_SCOPE", "system/*.read")
+        audience = os.getenv(f"{env_prefix}_AUDIENCE")
+        timeout = int(os.getenv(f"{env_prefix}_TIMEOUT", "30"))
+        verify_ssl = os.getenv(f"{env_prefix}_VERIFY_SSL", "true").lower() == "true"
+
+        # Create configuration object
+        config = FHIRAuthConfig(
+            client_id=client_id,
+            client_secret=client_secret,
+            token_url=token_url,
+            base_url=base_url,
+            scope=scope,
+            audience=audience,
+            timeout=timeout,
+            verify_ssl=verify_ssl,
+        )
+
+        # Add the source using the config object
+        self.add_source_config(name, config)
+
+        logger.info(
+            f"Added FHIR source '{name}' from environment variables with prefix '{env_prefix}'"
+        )
