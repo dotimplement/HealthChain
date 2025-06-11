@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 def create_fhir_client(
     auth_config: FHIRAuthConfig,
+    limits: httpx.Limits = None,
     **additional_params,
 ) -> "FHIRServerInterface":
     """
@@ -31,13 +32,14 @@ def create_fhir_client(
 
     Args:
         auth_config: OAuth2.0 authentication configuration
+        limits: httpx connection limits for pooling
         **additional_params: Additional parameters for the client
 
     Returns:
         A configured FHIRServerInterface implementation
     """
     logger.debug(f"Creating FHIR server with OAuth2.0 for {auth_config.base_url}")
-    return AsyncFHIRClient(auth_config=auth_config, **additional_params)
+    return AsyncFHIRClient(auth_config=auth_config, limits=limits, **additional_params)
 
 
 class FHIRClientError(Exception):
@@ -117,6 +119,7 @@ class AsyncFHIRClient(FHIRServerInterface):
     def __init__(
         self,
         auth_config: FHIRAuthConfig,
+        limits: httpx.Limits = None,
         **kwargs,
     ):
         """
@@ -124,6 +127,7 @@ class AsyncFHIRClient(FHIRServerInterface):
 
         Args:
             auth_config: OAuth2.0 authentication configuration
+            limits: httpx connection limits for pooling
             **kwargs: Additional parameters
         """
         self.base_url = auth_config.base_url.rstrip("/") + "/"
@@ -137,8 +141,12 @@ class AsyncFHIRClient(FHIRServerInterface):
             "Content-Type": "application/fhir+json",
         }
 
-        # Create httpx client
-        self.client = httpx.AsyncClient(timeout=self.timeout, verify=self.verify_ssl)
+        # Create httpx client with connection pooling
+        client_kwargs = {"timeout": self.timeout, "verify": self.verify_ssl}
+        if limits is not None:
+            client_kwargs["limits"] = limits
+
+        self.client = httpx.AsyncClient(**client_kwargs)
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -193,6 +201,31 @@ class AsyncFHIRClient(FHIRServerInterface):
 
         return data
 
+    def _resolve_resource_type(
+        self, resource_type: Union[str, Type[Resource]]
+    ) -> tuple[str, Type[Resource]]:
+        """
+        Resolve resource type to both string name and class.
+
+        Args:
+            resource_type: FHIR resource type or class
+
+        Returns:
+            Tuple of (type_name: str, resource_class: Type[Resource])
+        """
+        if hasattr(resource_type, "__name__"):
+            # It's already a class
+            type_name = resource_type.__name__
+            resource_class = resource_type
+        else:
+            # It's a string, need to dynamically import
+            type_name = str(resource_type)
+            module_name = f"fhir.resources.{type_name.lower()}"
+            module = __import__(module_name, fromlist=[type_name])
+            resource_class = getattr(module, type_name)
+
+        return type_name, resource_class
+
     async def capabilities(self) -> CapabilityStatement:
         """
         Fetch the server's CapabilityStatement.
@@ -218,16 +251,7 @@ class AsyncFHIRClient(FHIRServerInterface):
         Returns:
             Resource instance
         """
-        if hasattr(resource_type, "__name__"):
-            type_name = resource_type.__name__
-            resource_class = resource_type
-        else:
-            type_name = str(resource_type)
-            # Dynamically import the resource class
-            module_name = f"fhir.resources.{type_name.lower()}"
-            module = __import__(module_name, fromlist=[type_name])
-            resource_class = getattr(module, type_name)
-
+        type_name, resource_class = self._resolve_resource_type(resource_type)
         url = self._build_url(f"{type_name}/{resource_id}")
         logger.debug(f"Sending GET request to {url}")
 
@@ -250,11 +274,7 @@ class AsyncFHIRClient(FHIRServerInterface):
         Returns:
             Bundle containing search results
         """
-        if hasattr(resource_type, "__name__"):
-            type_name = resource_type.__name__
-        else:
-            type_name = str(resource_type)
-
+        type_name, _ = self._resolve_resource_type(resource_type)
         url = self._build_url(type_name, params)
         logger.debug(f"Sending GET request to {url}")
 
@@ -274,8 +294,10 @@ class AsyncFHIRClient(FHIRServerInterface):
         Returns:
             Created resource with server-assigned ID
         """
-        resource_type = resource.__resource_type__
-        url = self._build_url(resource_type)
+        type_name, resource_class = self._resolve_resource_type(
+            resource.__resource_type__
+        )
+        url = self._build_url(type_name)
         logger.debug(f"Sending POST request to {url}")
 
         headers = await self._get_headers()
@@ -285,7 +307,6 @@ class AsyncFHIRClient(FHIRServerInterface):
         data = self._handle_response(response)
 
         # Return the same resource type
-        resource_class = type(resource)
         return resource_class(**data)
 
     async def update(self, resource: Resource) -> Resource:
@@ -301,8 +322,10 @@ class AsyncFHIRClient(FHIRServerInterface):
         if not resource.id:
             raise ValueError("Resource must have an ID for update")
 
-        resource_type = resource.__resource_type__
-        url = self._build_url(f"{resource_type}/{resource.id}")
+        type_name, resource_class = self._resolve_resource_type(
+            resource.__resource_type__
+        )
+        url = self._build_url(f"{type_name}/{resource.id}")
         logger.debug(f"Sending PUT request to {url}")
 
         headers = await self._get_headers()
@@ -312,7 +335,6 @@ class AsyncFHIRClient(FHIRServerInterface):
         data = self._handle_response(response)
 
         # Return the same resource type
-        resource_class = type(resource)
         return resource_class(**data)
 
     async def delete(
@@ -328,11 +350,7 @@ class AsyncFHIRClient(FHIRServerInterface):
         Returns:
             True if successful
         """
-        if hasattr(resource_type, "__name__"):
-            type_name = resource_type.__name__
-        else:
-            type_name = str(resource_type)
-
+        type_name, _ = self._resolve_resource_type(resource_type)
         url = self._build_url(f"{type_name}/{resource_id}")
         logger.debug(f"Sending DELETE request to {url}")
 

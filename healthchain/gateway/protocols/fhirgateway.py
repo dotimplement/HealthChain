@@ -9,6 +9,8 @@ import logging
 import urllib.parse
 import inspect
 import warnings
+import httpx
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import (
@@ -26,6 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
 
 from fhir.resources.resource import Resource
+from fhir.resources.bundle import Bundle
 
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import (
@@ -34,7 +37,8 @@ from healthchain.gateway.events.dispatcher import (
     EventDispatcher,
 )
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
-from healthchain.gateway.clients import FHIRServerInterface
+from healthchain.gateway.clients.fhir import FHIRServerInterface
+from healthchain.gateway.clients.pool import FHIRClientPool
 
 # Import for type hints - will be available at runtime through local imports
 if TYPE_CHECKING:
@@ -65,37 +69,6 @@ class FHIRConnectionError(Exception):
         super().__init__(f"[{code}] {message}")
 
 
-class FHIRConnectionPool:
-    """Connection pool for FHIR servers to improve performance."""
-
-    def __init__(self, max_connections: int = 10):
-        self._connections: Dict[str, List[FHIRServerInterface]] = {}
-        self.max_connections = max_connections
-
-    def get_connection(
-        self, connection_string: str, server_factory
-    ) -> FHIRServerInterface:
-        """Get a connection from the pool or create a new one."""
-        if connection_string not in self._connections:
-            self._connections[connection_string] = []
-
-        # Return existing connection if available
-        if self._connections[connection_string]:
-            return self._connections[connection_string].pop()
-
-        # Create new connection
-        return server_factory(connection_string)
-
-    def release_connection(self, connection_string: str, server: FHIRServerInterface):
-        """Return a connection to the pool."""
-        if connection_string not in self._connections:
-            self._connections[connection_string] = []
-
-        # Only keep up to max_connections
-        if len(self._connections[connection_string]) < self.max_connections:
-            self._connections[connection_string].append(server)
-
-
 class FHIRResponse(JSONResponse):
     """
     Custom response class for FHIR resources.
@@ -107,6 +80,7 @@ class FHIRResponse(JSONResponse):
 
 
 class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
+    # TODO: move to documentation
     """
     FHIR integration hub for data aggregation, transformation, and routing.
 
@@ -130,38 +104,36 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
         # Register transform handler using decorator (recommended pattern)
         @fhir_gateway.transform(DocumentReference)
-        def enhance_document(id: str, source: str = None) -> DocumentReference:
+        async def enhance_document(id: str, source: str = None) -> DocumentReference:
             # For read-only operations, use get_resource (lightweight)
-            if read_only_mode:
-                document = await fhir_gateway.get_resource(DocumentReference, id, source)
-                summary = extract_summary(document.text)
-                return document
+            document = await fhir_gateway.get_resource(DocumentReference, id, source)
 
             # For modifications, use context manager for automatic lifecycle management
-            async with fhir_gateway.resource_context(DocumentReference, id, source) as document:
+            async with fhir_gateway.resource_context(DocumentReference, id, source) as doc:
                 # Apply transformations - document is automatically saved on exit
-                document.description = "Enhanced by HealthChain"
+                doc.description = "Enhanced by HealthChain"
 
                 # Add processing metadata
-                if not document.extension:
-                    document.extension = []
-                document.extension.append({
+                if not doc.extension:
+                    doc.extension = []
+                doc.extension.append({
                     "url": "http://healthchain.org/extension/processed",
                     "valueDateTime": datetime.now().isoformat()
                 })
 
-                return document
+                return doc
 
         # Register aggregation handler
         @fhir_gateway.aggregate(Patient)
-        def aggregate_patient_data(id: str, sources: List[str] = None) -> List[Patient]:
+        async def aggregate_patient_data(id: str, sources: List[str] = None) -> List[Patient]:
             patients = []
             sources = sources or ["epic", "cerner"]
 
             for source in sources:
                 try:
-                    async with fhir_gateway.resource_context(Patient, id, source) as patient:
-                        patients.append(patient)
+                    # Simple read-only access with automatic connection pooling
+                    patient = await fhir_gateway.get_resource(Patient, id, source)
+                    patients.append(patient)
                 except Exception as e:
                     logger.warning(f"Could not retrieve patient from {source}: {e}")
 
@@ -182,19 +154,22 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         prefix: str = "/fhir",
         tags: List[str] = ["FHIR"],
         use_events: bool = True,
-        connection_pool_size: int = 10,
+        max_connections: int = 100,
+        max_keepalive_connections: int = 20,
+        keepalive_expiry: float = 5.0,
         **options,
     ):
         """
         Initialize the FHIR Gateway.
 
         Args:
-            base_url: Base URL for FHIR server (optional if using sources)
             sources: Dictionary of named FHIR servers or connection strings
             prefix: URL prefix for API routes
             tags: OpenAPI tags
             use_events: Enable event-based processing
-            connection_pool_size: Maximum size of the connection pool per source
+            max_connections: Maximum total HTTP connections across all sources
+            max_keepalive_connections: Maximum keep-alive connections per source
+            keepalive_expiry: How long to keep connections alive (seconds)
             **options: Additional options
         """
         # Initialize as BaseGateway and APIRouter
@@ -203,8 +178,12 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
         self.use_events = use_events
 
-        # Create connection pool
-        self.connection_pool = FHIRConnectionPool(max_connections=connection_pool_size)
+        # Create httpx-based client pool
+        self.client_pool = FHIRClientPool(
+            max_connections=max_connections,
+            max_keepalive_connections=max_keepalive_connections,
+            keepalive_expiry=keepalive_expiry,
+        )
 
         # Store configuration
         self.sources = {}
@@ -577,39 +556,40 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             )
 
     def _create_server_from_connection_string(
-        self, connection_string: str
+        self, connection_string: str, limits: httpx.Limits = None
     ) -> FHIRServerInterface:
         """
-        Create a FHIR server instance from a connection string.
+        Create a FHIR server instance from a connection string with connection pooling.
 
-        This is used by the connection pool to create new server instances.
+        This is used by the client pool to create new server instances.
 
         Args:
             connection_string: FHIR connection string
+            limits: httpx connection limits for pooling
 
         Returns:
-            FHIRServerInterface: A new FHIR server instance
+            FHIRServerInterface: A new FHIR server instance with pooled connections
         """
         from healthchain.gateway.clients import create_fhir_client
         from healthchain.gateway.clients.auth import parse_fhir_auth_connection_string
 
         # Parse connection string as OAuth2.0 configuration
         auth_config = parse_fhir_auth_connection_string(connection_string)
-        return create_fhir_client(auth_config=auth_config)
 
-    def get_pooled_connection(self, source: str = None) -> FHIRServerInterface:
+        # Pass httpx limits for connection pooling
+        return create_fhir_client(auth_config=auth_config, limits=limits)
+
+    async def get_client(self, source: str = None) -> FHIRServerInterface:
         """
-        Get a pooled FHIR server connection.
+        Get a FHIR client for the specified source.
 
-        Use this method when you need direct access to a FHIR server connection
-        outside of the resource_context manager. Remember to call release_pooled_connection()
-        when done to return the connection to the pool.
+        Connections are automatically pooled and managed by httpx.
 
         Args:
-            source: Source name to get connection for (uses first available if None)
+            source: Source name to get client for (uses first available if None)
 
         Returns:
-            FHIRServerInterface: A pooled FHIR server connection
+            FHIRServerInterface: A FHIR client with pooled connections
 
         Raises:
             ValueError: If source is unknown or no connection string found
@@ -623,37 +603,22 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
         connection_string = self._connection_strings[source_name]
 
-        return self.connection_pool.get_connection(
+        return await self.client_pool.get_client(
             connection_string, self._create_server_from_connection_string
         )
 
-    def release_pooled_connection(
-        self, server: FHIRServerInterface, source: str = None
-    ):
-        """
-        Release a pooled FHIR server connection back to the pool.
-
-        Args:
-            server: The server connection to release
-            source: Source name the connection belongs to (uses first available if None)
-        """
-        source_name = source or next(iter(self.sources.keys()))
-        if source_name in self._connection_strings:
-            connection_string = self._connection_strings[source_name]
-            self.connection_pool.release_connection(connection_string, server)
-
-    async def get_resource(
-        self, resource_type: Union[str, Type[Resource]], id: str, source: str = None
+    async def read(
+        self,
+        resource_type: Union[str, Type[Resource]],
+        fhir_id: str,
+        source: str = None,
     ) -> Resource:
         """
-        Fetch a FHIR resource for read-only operations.
-
-        This is a lightweight alternative to resource_context for cases where
-        you only need to read a resource without making changes.
+        Read a FHIR resource.
 
         Args:
             resource_type: The FHIR resource type (class or string)
-            id: Resource ID to fetch
+            fhir_id: Resource ID to fetch
             source: Source name to fetch from (uses first available if None)
 
         Returns:
@@ -668,48 +633,24 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             document = await fhir_gateway.get_resource(DocumentReference, "123", "epic")
             summary = extract_summary(document.text)
         """
-        # Get the source name and connection string
-        source_name = source or next(iter(self.sources.keys()))
-        if source_name not in self.sources:
-            raise ValueError(f"Unknown source: {source_name}")
-
-        if source_name not in self._connection_strings:
-            raise ValueError(f"No connection string found for source: {source_name}")
-
-        connection_string = self._connection_strings[source_name]
-
-        # Get server from connection pool
-        server = self.connection_pool.get_connection(
-            connection_string, self._create_server_from_connection_string
-        )
+        client = await self.get_client(source)
 
         try:
-            # Get resource type name for dynamic import
-            if hasattr(resource_type, "__name__"):
-                type_name = resource_type.__name__
-            else:
-                type_name = str(resource_type)
-
-            # Dynamically import the resource class
-            import importlib
-
-            resource_module = importlib.import_module(
-                f"fhir.resources.{type_name.lower()}"
-            )
-            resource_class = getattr(resource_module, type_name)
-
             # Fetch the resource
-            result = await server.read(f"{type_name}/{id}")
-            if not result:
-                raise ValueError(f"Resource {type_name}/{id} not found")
+            resource = await client.read(resource_type, fhir_id)
+            if not resource:
+                # Get type name for error message
+                type_name = getattr(resource_type, "__name__", str(resource_type))
+                raise ValueError(f"Resource {type_name}/{fhir_id} not found")
 
-            # Create resource object
-            resource = resource_class(**result)
+            # Get type name for event emission
+            type_name = resource.__resource_type__
 
             # Emit read event
-            self._emit_fhir_event("read", type_name, id, resource)
+            self._emit_fhir_event("read", type_name, fhir_id, resource)
 
-            logger.debug(f"Retrieved {type_name}/{id} for read-only access")
+            logger.debug(f"Retrieved {type_name}/{fhir_id} for read-only access")
+
             return resource
 
         except Exception as e:
@@ -719,14 +660,73 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
                 code="RESOURCE_READ_ERROR",
                 state="HY000",
             )
-        finally:
-            # Return the server connection to the pool
-            self.connection_pool.release_connection(connection_string, server)
+
+    async def search(
+        self,
+        resource_type: Union[str, Type[Resource]],
+        params: Dict[str, Any] = None,
+        source: str = None,
+    ) -> Bundle:
+        """
+        Search for FHIR resources.
+
+        Args:
+            resource_type: The FHIR resource type (class or string)
+            params: Search parameters (e.g., {"name": "Smith", "active": "true"})
+            source: Source name to search in (uses first available if None)
+
+        Returns:
+            Bundle containing search results
+
+        Raises:
+            ValueError: If source is invalid
+            FHIRConnectionError: If connection fails
+
+        Example:
+            # Search for patients by name
+            bundle = await fhir_gateway.search(Patient, {"name": "Smith"}, "epic")
+            for entry in bundle.entry or []:
+                patient = entry.resource
+                print(f"Found patient: {patient.name[0].family}")
+        """
+        client = await self.get_client(source)
+
+        try:
+            bundle = await client.search(resource_type, params)
+
+            # Get type name for event emission
+            if hasattr(resource_type, "__name__"):
+                type_name = resource_type.__name__
+            else:
+                type_name = str(resource_type)
+
+            # Emit search event
+            self._emit_fhir_event(
+                "search",
+                type_name,
+                None,
+                {
+                    "params": params,
+                    "result_count": len(bundle.entry) if bundle.entry else 0,
+                },
+            )
+
+            logger.debug(
+                f"Searched {type_name} with params {params}, found {len(bundle.entry) if bundle.entry else 0} results"
+            )
+
+            return bundle
+
+        except Exception as e:
+            logger.error(f"Error searching resources: {str(e)}")
+            raise FHIRConnectionError(
+                message=f"Failed to search resources: {str(e)}",
+                code="RESOURCE_SEARCH_ERROR",
+                state="HY000",
+            )
 
     @asynccontextmanager
-    async def resource_context(
-        self, resource_type: str, id: str = None, source: str = None
-    ):
+    async def modify(self, resource_type: str, fhir_id: str = None, source: str = None):
         """
         Context manager for working with FHIR resources.
 
@@ -734,7 +734,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
         Args:
             resource_type: The FHIR resource type (e.g. 'Patient')
-            id: Resource ID (if None, creates a new resource)
+            fhir_id: Resource ID (if None, creates a new resource)
             source: Source name to use (uses first available if None)
 
         Yields:
@@ -744,34 +744,21 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             FHIRConnectionError: If connection fails
             ValueError: If resource type is invalid
         """
-        # Get the source name and connection string
-        source_name = source or next(iter(self.sources.keys()))
-        if source_name not in self.sources:
-            raise ValueError(f"Unknown source: {source_name}")
-
-        if source_name not in self._connection_strings:
-            raise ValueError(f"No connection string found for source: {source_name}")
-
-        connection_string = self._connection_strings[source_name]
-
-        # Get server from connection pool
-        server = self.connection_pool.get_connection(
-            connection_string, self._create_server_from_connection_string
-        )
+        client = await self.get_client(source)
 
         resource = None
-        is_new = id is None
+        is_new = fhir_id is None
 
         try:
-            # Dynamically import the resource class
-            import importlib
-
-            resource_module = importlib.import_module(
-                f"fhir.resources.{resource_type.lower()}"
-            )
-            resource_class = getattr(resource_module, resource_type)
-
             if is_new:
+                # For new resources, we still need dynamic import since client expects existing resources
+                import importlib
+
+                resource_module = importlib.import_module(
+                    f"fhir.resources.{resource_type.lower()}"
+                )
+                resource_class = getattr(resource_module, resource_type)
+
                 # Create new resource
                 resource = resource_class()
                 logger.debug(
@@ -779,37 +766,44 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
                 )
             else:
                 # Fetch existing resource
-                # TODO: pass correct args to read
-                result = await server.read(f"{resource_type}/{id}")
-                if result:
-                    resource = resource_class(**result)
-                else:
-                    raise ValueError(f"Resource {resource_type}/{id} not found")
-                logger.debug(f"Retrieved {resource_type}/{id} using pooled connection")
+                resource = await client.read(resource_type, fhir_id)
+                if not resource:
+                    raise ValueError(f"Resource {resource_type}/{fhir_id} not found")
+                logger.debug(
+                    f"Retrieved {resource_type}/{fhir_id} using pooled connection"
+                )
 
             # Emit read event if fetching existing resource
             if not is_new:
-                self._emit_fhir_event("read", resource_type, id, resource)
+                self._emit_fhir_event("read", resource_type, fhir_id, resource)
 
             # Yield the resource for the context block
             yield resource
 
             # After the context block, save changes
             if is_new:
-                # TODO: pass correct args to create
-                result = await server.create(resource_type, resource.dict())
-                if result and "id" in result:
-                    resource.id = result[
-                        "id"
-                    ]  # Update resource with server-assigned ID
+                created_resource = await client.create(resource)
+                # Update our resource with the server response (including ID)
+                resource.id = created_resource.id
+                # Copy any other server-generated fields
+                for field_name, field_value in created_resource.model_dump().items():
+                    if hasattr(resource, field_name):
+                        setattr(resource, field_name, field_value)
+
                 self._emit_fhir_event("create", resource_type, resource.id, resource)
                 logger.debug(
                     f"Created {resource_type} resource using pooled connection"
                 )
             else:
-                await server.update(resource_type, id, resource.dict())
-                self._emit_fhir_event("update", resource_type, id, resource)
-                logger.debug(f"Updated {resource_type}/{id} using pooled connection")
+                # Client handles resource update and returns the updated resource
+                updated_resource = await client.update(resource)
+                # The resource is updated in place, but we could sync any server changes
+                self._emit_fhir_event(
+                    "update", resource_type, fhir_id, updated_resource
+                )
+                logger.debug(
+                    f"Updated {resource_type}/{fhir_id} using pooled connection"
+                )
 
         except Exception as e:
             logger.error(f"Error in resource context: {str(e)}")
@@ -818,10 +812,6 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
                 code="RESOURCE_ERROR",
                 state="HY000",  # General error
             )
-        finally:
-            # Return the server connection to the pool
-            self.connection_pool.release_connection(connection_string, server)
-            logger.debug(f"Released connection for {source_name} back to pool")
 
     @property
     def supported_resources(self) -> List[str]:
@@ -950,38 +940,19 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             for operation in operations:
                 capabilities.append(f"{operation}:{resource_type}")
 
-        # Add custom operations
-        capabilities.extend([op for op in self._handlers.keys()])
-
         return capabilities
 
-    def get_connection_pool_status(self) -> Dict[str, Any]:
+    def get_pool_status(self) -> Dict[str, Any]:
         """
         Get the current status of the connection pool.
 
         Returns:
             Dict containing pool status information including:
-            - max_connections: Maximum connections per source
-            - sources: Dict of source names and their current pool sizes
-            - total_pooled_connections: Total number of pooled connections
+            - max_connections: Maximum connections across all sources
+            - sources: Dict of source names and their connection info
+            - client_stats: Detailed httpx connection pool statistics
         """
-        pool_status = {
-            "max_connections": self.connection_pool.max_connections,
-            "sources": {},
-            "total_pooled_connections": 0,
-        }
-
-        for source_name, connection_string in self._connection_strings.items():
-            pool_size = len(
-                self.connection_pool._connections.get(connection_string, [])
-            )
-            pool_status["sources"][source_name] = {
-                "connection_string": connection_string,
-                "pooled_connections": pool_size,
-            }
-            pool_status["total_pooled_connections"] += pool_size
-
-        return pool_status
+        return self.client_pool.get_pool_stats()
 
     def add_source_config(self, name: str, auth_config: "FHIRAuthConfig"):
         """
@@ -1107,3 +1078,15 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         logger.info(
             f"Added FHIR source '{name}' from environment variables with prefix '{env_prefix}'"
         )
+
+    async def close(self):
+        """Close all connections and clean up resources."""
+        await self.client_pool.close_all()
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
