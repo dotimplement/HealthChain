@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from healthchain.gateway.protocols.notereader import (
-    NoteReaderGateway,
+    NoteReaderService,
     NoteReaderConfig,
 )
 from healthchain.models.requests import CdaRequest
@@ -11,8 +11,8 @@ from healthchain.gateway.events.dispatcher import EventDispatcher
 
 
 def test_notereader_gateway_initialization():
-    """Test NoteReaderGateway initialization with default config"""
-    gateway = NoteReaderGateway()
+    """Test NoteReaderService initialization with default config"""
+    gateway = NoteReaderService()
     assert isinstance(gateway.config, NoteReaderConfig)
     assert gateway.config.service_name == "ICDSServices"
     assert gateway.config.namespace == "urn:epic-com:Common.2013.Services"
@@ -20,15 +20,15 @@ def test_notereader_gateway_initialization():
 
 
 def test_notereader_gateway_create():
-    """Test NoteReaderGateway.create factory method"""
-    gateway = NoteReaderGateway.create()
-    assert isinstance(gateway, NoteReaderGateway)
+    """Test NoteReaderService.create factory method"""
+    gateway = NoteReaderService.create()
+    assert isinstance(gateway, NoteReaderService)
     assert isinstance(gateway.config, NoteReaderConfig)
 
 
 def test_notereader_gateway_register_handler():
     """Test handler registration with gateway"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
     mock_handler = MagicMock(return_value=CdaResponse(document="test", error=None))
 
     # Register handler
@@ -41,7 +41,7 @@ def test_notereader_gateway_register_handler():
 
 def test_notereader_gateway_method_decorator():
     """Test method decorator for registering handlers"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     @gateway.method("ProcessDocument")
     def process_document(request):
@@ -53,7 +53,7 @@ def test_notereader_gateway_method_decorator():
 
 def test_notereader_gateway_handle():
     """Test request handling logic directly (bypassing async methods)"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # Register a handler
     @gateway.method("ProcessDocument")
@@ -88,7 +88,7 @@ def test_notereader_gateway_handle():
 
 def test_notereader_gateway_extract_request():
     """Test request extraction from parameters"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # Case 1: CdaRequest passed directly
     request = CdaRequest(document="<doc>test</doc>")
@@ -110,7 +110,7 @@ def test_notereader_gateway_extract_request():
 
 def test_notereader_gateway_process_result():
     """Test processing results from handlers"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # Test with CdaResponse object
     response = CdaResponse(document="test", error=None)
@@ -138,7 +138,7 @@ def test_notereader_gateway_create_wsgi_app(mock_wsgi, mock_application):
     mock_wsgi_instance = MagicMock()
     mock_wsgi.return_value = mock_wsgi_instance
 
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # Register required ProcessDocument handler
     @gateway.method("ProcessDocument")
@@ -161,7 +161,7 @@ def test_notereader_gateway_create_wsgi_app(mock_wsgi, mock_application):
 
 def test_notereader_gateway_create_wsgi_app_no_handler():
     """Test WSGI app creation fails without ProcessDocument handler"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # No handler registered - should raise ValueError
     with pytest.raises(ValueError):
@@ -170,7 +170,7 @@ def test_notereader_gateway_create_wsgi_app_no_handler():
 
 def test_notereader_gateway_get_metadata():
     """Test retrieving gateway metadata"""
-    gateway = NoteReaderGateway()
+    gateway = NoteReaderService()
 
     # Register a handler to have some capabilities
     @gateway.method("ProcessDocument")
@@ -181,8 +181,8 @@ def test_notereader_gateway_get_metadata():
     metadata = gateway.get_metadata()
 
     # Verify metadata contains expected keys
-    assert "gateway_type" in metadata
-    assert metadata["gateway_type"] == "NoteReaderGateway"
+    assert "service_type" in metadata
+    assert metadata["service_type"] in "NoteReaderService"
     assert "operations" in metadata
     assert "ProcessDocument" in metadata["operations"]
     assert "system_type" in metadata
@@ -192,7 +192,7 @@ def test_notereader_gateway_get_metadata():
 
 
 def test_notereader_gateway_custom_config():
-    """Test NoteReaderGateway with custom configuration"""
+    """Test NoteReaderService with custom configuration"""
     custom_config = NoteReaderConfig(
         service_name="CustomService",
         namespace="urn:custom:namespace",
@@ -200,7 +200,7 @@ def test_notereader_gateway_custom_config():
         default_mount_path="/custom-path",
     )
 
-    gateway = NoteReaderGateway(config=custom_config)
+    gateway = NoteReaderService(config=custom_config)
 
     assert gateway.config.service_name == "CustomService"
     assert gateway.config.namespace == "urn:custom:namespace"
@@ -215,7 +215,7 @@ def test_notereader_gateway_event_emission(mock_cds_services):
     mock_dispatcher = MagicMock(spec=EventDispatcher)
 
     # Create gateway with event dispatcher
-    gateway = NoteReaderGateway(event_dispatcher=mock_dispatcher)
+    gateway = NoteReaderService(event_dispatcher=mock_dispatcher)
 
     # Mock the service adapter directly
     mock_service_adapter = MagicMock()

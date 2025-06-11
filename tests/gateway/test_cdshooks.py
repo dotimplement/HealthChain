@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from healthchain.gateway.protocols.cdshooks import (
-    CDSHooksGateway,
+    CDSHooksService,
     CDSHooksConfig,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
@@ -12,8 +12,8 @@ from healthchain.models.responses.cdsdiscovery import CDSServiceInformation
 
 
 def test_cdshooks_gateway_initialization():
-    """Test CDSHooksGateway initialization with default config"""
-    gateway = CDSHooksGateway()
+    """Test CDSHooksService initialization with default config"""
+    gateway = CDSHooksService()
     assert isinstance(gateway.config, CDSHooksConfig)
     assert gateway.config.system_type == "CDS-HOOKS"
     assert gateway.config.base_path == "/cds"
@@ -22,15 +22,15 @@ def test_cdshooks_gateway_initialization():
 
 
 def test_cdshooks_gateway_create():
-    """Test CDSHooksGateway.create factory method"""
-    gateway = CDSHooksGateway.create()
-    assert isinstance(gateway, CDSHooksGateway)
+    """Test CDSHooksService.create factory method"""
+    gateway = CDSHooksService.create()
+    assert isinstance(gateway, CDSHooksService)
     assert isinstance(gateway.config, CDSHooksConfig)
 
 
 def test_cdshooks_gateway_hook_decorator():
     """Test hook decorator for registering handlers"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     @gateway.hook("patient-view", id="test-patient-view")
     def handle_patient_view(request):
@@ -49,7 +49,7 @@ def test_cdshooks_gateway_hook_decorator():
 
 def test_cdshooks_gateway_hook_with_custom_metadata():
     """Test hook decorator with custom metadata"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     @gateway.hook(
         "patient-view",
@@ -74,7 +74,7 @@ def test_cdshooks_gateway_hook_with_custom_metadata():
 
 def test_cdshooks_gateway_handle_request(test_cds_request):
     """Test request handler endpoint"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register a handler with the hook decorator
     @gateway.hook("patient-view", id="test-patient-view")
@@ -96,7 +96,7 @@ def test_cdshooks_gateway_handle_request(test_cds_request):
 
 def test_cdshooks_gateway_handle_discovery():
     """Test discovery endpoint handler"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register sample hooks
     @gateway.hook("patient-view", id="test-patient-view", title="Patient View")
@@ -124,8 +124,8 @@ def test_cdshooks_gateway_handle_discovery():
 
 
 def test_cdshooks_gateway_get_routes():
-    """Test that CDSHooksGateway correctly returns routes with get_routes method"""
-    gateway = CDSHooksGateway()
+    """Test that CDSHooksService correctly returns routes with get_routes method"""
+    gateway = CDSHooksService()
 
     # Register sample hooks
     @gateway.hook("patient-view", id="test-patient-view")
@@ -153,13 +153,13 @@ def test_cdshooks_gateway_get_routes():
 
 
 def test_cdshooks_gateway_custom_base_path():
-    """Test CDSHooksGateway with custom base path"""
+    """Test CDSHooksService with custom base path"""
     config = CDSHooksConfig(
         base_path="/custom-cds",
         discovery_path="/custom-discovery",
         service_path="/custom-services",
     )
-    gateway = CDSHooksGateway(config=config)
+    gateway = CDSHooksService(config=config)
 
     @gateway.hook("patient-view", id="test-service")
     def handle_patient_view(request):
@@ -181,7 +181,7 @@ def test_cdshooks_gateway_event_emission():
     mock_dispatcher = MagicMock(spec=EventDispatcher)
 
     # Create gateway with event dispatcher
-    gateway = CDSHooksGateway(event_dispatcher=mock_dispatcher)
+    gateway = CDSHooksService(event_dispatcher=mock_dispatcher)
 
     # Register a handler
     @gateway.hook("patient-view", id="test-service")
@@ -208,7 +208,7 @@ def test_cdshooks_gateway_event_emission():
 
 def test_cdshooks_gateway_hook_invalid_hook_type():
     """Test hook decorator with invalid hook type"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Try to register an invalid hook type
     with pytest.raises(ValueError):
@@ -220,7 +220,7 @@ def test_cdshooks_gateway_hook_invalid_hook_type():
 
 def test_cdshooks_gateway_handle_with_direct_request():
     """Test handling a CDSRequest directly with the handle method"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register a handler
     @gateway.hook("patient-view", id="test-service")
@@ -249,7 +249,7 @@ def test_cdshooks_gateway_handle_with_direct_request():
 
 def test_cdshooks_gateway_get_metadata():
     """Test retrieving metadata for registered hooks"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register handlers with different metadata
     @gateway.hook("patient-view", id="patient-service", title="Patient Service")
