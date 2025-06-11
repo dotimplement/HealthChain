@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Type variables for self-referencing return types and generic gateways
 G = TypeVar("G", bound="BaseGateway")
+P = TypeVar("P", bound="BaseProtocolHandler")
 T = TypeVar("T")  # For generic request types
 R = TypeVar("R")  # For generic response types
 
@@ -142,26 +143,28 @@ class EventDispatcherMixin:
         return self
 
 
-class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
+class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
     """
-    Base class for healthcare standard gateways that handle communication with external systems.
+    Base class for protocol handlers that process specific request/response types.
 
-    Gateways provide a consistent interface for interacting with healthcare standards
-    and protocols through the decorator pattern for handler registration.
+    This is designed for CDS Hooks, SOAP, and other protocol-specific handlers that:
+    - Have a specific request/response type
+    - Use decorator pattern for handler registration
+    - Process operations through registered handlers
 
     Type Parameters:
-        T: The request type this gateway handles
-        R: The response type this gateway returns
+        T: The request type this handler processes
+        R: The response type this handler returns
     """
 
     def __init__(
         self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
     ):
         """
-        Initialize a new gateway.
+        Initialize a new protocol handler.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the handler
             use_events: Whether to enable event dispatching
             **options: Additional configuration options
         """
@@ -177,7 +180,7 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
         # Initialize event dispatcher mixin
         EventDispatcherMixin.__init__(self)
 
-    def register_handler(self, operation: str, handler: Callable) -> G:
+    def register_handler(self, operation: str, handler: Callable) -> P:
         """
         Register a handler function for a specific operation.
 
@@ -280,12 +283,53 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
 
     def get_capabilities(self) -> List[str]:
         """
-        Get list of operations this gateway supports.
+        Get list of operations this handler supports.
 
         Returns:
             List of supported operation names
         """
         return list(self._handlers.keys())
+
+    @classmethod
+    def create(cls, **options) -> G:
+        """
+        Factory method to create a new gateway with default configuration.
+
+        Args:
+            **options: Options to pass to the constructor
+
+        Returns:
+            New gateway instance
+        """
+        return cls(**options)
+
+
+class BaseGateway(ABC, EventDispatcherMixin):
+    """
+    Base class for healthcare integration gateways. e.g. FHIR Gateway
+    """
+
+    def __init__(
+        self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
+    ):
+        """
+        Initialize a new gateway.
+
+        Args:
+            config: Configuration options for the gateway
+            use_events: Whether to enable event dispatching
+            **options: Additional configuration options
+        """
+        self.options = options
+        self.config = config or GatewayConfig()
+        self.use_events = use_events
+        # Default to raising exceptions unless configured otherwise
+        self.return_errors = self.config.return_errors or options.get(
+            "return_errors", False
+        )
+
+        # Initialize event dispatcher mixin
+        EventDispatcherMixin.__init__(self)
 
     def get_routes(self, path: Optional[str] = None) -> List[tuple]:
         """
@@ -319,7 +363,6 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
         # Specific gateway classes should override this
         metadata = {
             "gateway_type": self.__class__.__name__,
-            "operations": self.get_capabilities(),
             "system_type": self.config.system_type,
         }
 
@@ -328,16 +371,3 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
             metadata["event_enabled"] = True
 
         return metadata
-
-    @classmethod
-    def create(cls, **options) -> G:
-        """
-        Factory method to create a new gateway with default configuration.
-
-        Args:
-            **options: Options to pass to the constructor
-
-        Returns:
-            New gateway instance
-        """
-        return cls(**options)

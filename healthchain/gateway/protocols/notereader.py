@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
-from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.soap.epiccdsservice import CDSServices
 from healthchain.models.requests import CdaRequest
@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 # Type variable for self-referencing return types
-T = TypeVar("T", bound="NoteReaderGateway")
+T = TypeVar("T", bound="NoteReaderService")
 
 
 class NoteReaderConfig(BaseModel):
-    """Configuration options for NoteReader gateway"""
+    """Configuration options for NoteReader service"""
 
     service_name: str = "ICDSServices"
     namespace: str = "urn:epic-com:Common.2013.Services"
@@ -40,9 +40,11 @@ class NoteReaderConfig(BaseModel):
     default_mount_path: str = "/notereader"
 
 
-class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtocol):
+class NoteReaderService(
+    BaseProtocolHandler[CdaRequest, CdaResponse], SOAPGatewayProtocol
+):
     """
-    Gateway for Epic NoteReader SOAP protocol integration.
+    Service for Epic NoteReader SOAP protocol integration.
 
     Provides SOAP integration with healthcare systems, particularly
     Epic's NoteReader CDA document processing and other SOAP-based
@@ -50,11 +52,11 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
 
     Example:
         ```python
-        # Create NoteReader gateway with default configuration
-        gateway = NoteReaderGateway()
+        # Create NoteReader service with default configuration
+        service = NoteReaderService()
 
         # Register method handler with decorator
-        @gateway.method("ProcessDocument")
+        @service.method("ProcessDocument")
         def process_document(request: CdaRequest) -> CdaResponse:
             # Process the document
             return CdaResponse(
@@ -62,8 +64,8 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
                 error=None
             )
 
-        # Register the gateway with the API
-        app.register_gateway(gateway)
+        # Register the service with the API
+        app.register_service(service)
         ```
     """
 
@@ -75,15 +77,15 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
         **options,
     ):
         """
-        Initialize a new NoteReader gateway.
+        Initialize a new NoteReader service.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the service
             event_dispatcher: Optional event dispatcher for publishing events
             use_events: Whether to enable event dispatching functionality
-            **options: Additional options for the gateway
+            **options: Additional options for the service
         """
-        # Initialize the base gateway
+        # Initialize the base protocol handler
         super().__init__(use_events=use_events, **options)
 
         # Initialize specific configuration
@@ -96,7 +98,7 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
 
     def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
         """
-        Set the event dispatcher for this gateway.
+        Set the event dispatcher for this service.
 
         Args:
             event_dispatcher: The event dispatcher to use
@@ -251,7 +253,7 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
             raise ValueError(
                 "No ProcessDocument handler registered. "
                 "You must register a handler before creating the WSGI app. "
-                "Use @gateway.method('ProcessDocument') to register a handler."
+                "Use @service.method('ProcessDocument') to register a handler."
             )
 
         # Create adapter for SOAP service integration
@@ -333,15 +335,16 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
 
     def get_metadata(self) -> Dict[str, Any]:
         """
-        Get metadata for this gateway.
+        Get metadata for this service.
 
         Returns:
-            Dictionary of gateway metadata
+            Dictionary of service metadata
         """
         return {
-            "gateway_type": self.__class__.__name__,
+            "service_type": self.__class__.__name__,
             "operations": self.get_capabilities(),
             "system_type": self.config.system_type,
             "soap_service": self.config.service_name,
+            "namespace": self.config.namespace,
             "mount_path": self.config.default_mount_path,
         }

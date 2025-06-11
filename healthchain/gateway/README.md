@@ -16,7 +16,7 @@ All protocol implementations extend `BaseGateway` to provide protocol-specific f
 ```python
 from healthchain.gateway import (
     HealthChainAPI, BaseGateway,
-    FHIRGateway, CDSHooksGateway, NoteReaderGateway
+    FHIRGateway, CDSHooksService, NoteReaderService
 )
 
 # Create the application
@@ -24,8 +24,8 @@ app = HealthChainAPI()
 
 # Create gateways for different protocols
 fhir = FHIRGateway(base_url="https://fhir.example.com/r4")
-cds = CDSHooksGateway()
-soap = NoteReaderGateway()
+cds = CDSHooksService()
+soap = NoteReaderService()
 
 # Register protocol-specific handlers
 @fhir.read(Patient)
@@ -53,8 +53,8 @@ app.register_gateway(soap)
 - `HealthChainAPI`: FastAPI wrapper for healthcare gateway registration
 - Concrete gateway implementations:
   - `FHIRGateway`: FHIR REST API protocol
-  - `CDSHooksGateway`: CDS Hooks protocol
-  - `NoteReaderGateway`: SOAP/CDA protocol
+  - `CDSHooksService`: CDS Hooks protocol
+  - `NoteReaderService`: SOAP/CDA protocol
 
 ## Quick Start
 
@@ -87,9 +87,9 @@ The gateway module uses Python's Protocol typing for robust interface definition
 
 ```python
 # Register gateways with explicit types
-app.register_gateway(fhir)  # Implements FHIRGatewayProtocol
-app.register_gateway(cds)   # Implements CDSHooksGatewayProtocol
-app.register_gateway(soap)  # Implements SOAPGatewayProtocol
+app.register_gateway(fhir)  # Implements FHIRGateway
+app.register_gateway(cds)   # Implements CDSHooksService
+app.register_gateway(soap)  # Implements NoteReaderService
 
 # Get typed gateway dependencies in API routes
 @app.get("/api/patient/{id}")

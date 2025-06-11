@@ -32,8 +32,8 @@ from healthchain.gateway.events.dispatcher import (
 # Re-export gateway implementations
 from healthchain.gateway.protocols import (
     FHIRGateway,
-    CDSHooksGateway,
-    NoteReaderGateway,
+    CDSHooksService,
+    NoteReaderService,
 )
 
 __all__ = [
@@ -50,6 +50,7 @@ __all__ = [
     "EHREventType",
     # Gateways
     "FHIRGateway",
-    "CDSHooksGateway",
-    "NoteReaderGateway",
+    # Services
+    "CDSHooksService",
+    "NoteReaderService",
 ]

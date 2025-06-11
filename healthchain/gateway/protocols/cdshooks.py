@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
 from pydantic import BaseModel
 from fastapi import Depends, Body
 
-from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import (
     EventDispatcher,
     EHREvent,
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 # Type variable for self-referencing return types
-T = TypeVar("T", bound="CDSHooksGateway")
+T = TypeVar("T", bound="CDSHooksService")
 
 
 HOOK_TO_EVENT = {
@@ -40,9 +40,9 @@ HOOK_TO_EVENT = {
 }
 
 
-# Configuration options for CDS Hooks gateway
+# Configuration options for CDS Hooks service
 class CDSHooksConfig(BaseModel):
-    """Configuration options for CDS Hooks gateway"""
+    """Configuration options for CDS Hooks service"""
 
     system_type: str = "CDS-HOOKS"
     base_path: str = "/cds"
@@ -51,21 +51,21 @@ class CDSHooksConfig(BaseModel):
     allowed_hooks: List[str] = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
 
 
-class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
+class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProtocol):
     """
-    Gateway for CDS Hooks protocol integration.
+    Service for CDS Hooks protocol integration.
 
-    This gateway implements the CDS Hooks standard for integrating clinical decision
+    This service implements the CDS Hooks standard for integrating clinical decision
     support with EHR systems. It provides discovery and hook execution endpoints
     that conform to the CDS Hooks specification.
 
     Example:
         ```python
-        # Create a CDS Hooks gateway
-        cds_gateway = CDSHooksGateway()
+        # Create a CDS Hooks service
+        cds_service = CDSHooksService()
 
         # Register a hook handler
-        @cds_gateway.hook("patient-view", id="patient-summary")
+        @cds_service.hook("patient-view", id="patient-summary")
         def handle_patient_view(request: CDSRequest) -> CDSResponse:
             # Create cards based on the patient context
             return CDSResponse(
@@ -78,8 +78,8 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
                 ]
             )
 
-        # Register the gateway with the API
-        app.register_gateway(cds_gateway)
+        # Register the service with the API
+        app.register_service(cds_service)
         ```
     """
 
@@ -91,15 +91,15 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
         **options,
     ):
         """
-        Initialize a new CDS Hooks gateway.
+        Initialize a new CDS Hooks service.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the service
             event_dispatcher: Optional event dispatcher for publishing events
             use_events: Whether to enable event dispatching functionality
-            **options: Additional options for the gateway
+            **options: Additional options for the service
         """
-        # Initialize the base gateway
+        # Initialize the base protocol handler
         super().__init__(use_events=use_events, **options)
 
         # Initialize specific configuration
@@ -112,7 +112,7 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
 
     def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
         """
-        Set the event dispatcher for this gateway.
+        Set the event dispatcher for this service.
 
         Args:
             event_dispatcher: The event dispatcher to use
@@ -393,17 +393,17 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
 
     def get_routes(self, path: Optional[str] = None) -> List[tuple]:
         """
-        Get routes for the CDS Hooks gateway.
+        Get routes for the CDS Hooks service.
 
         Args:
-            path: Optional path to add the gateway at (uses config if None)
+            path: Optional path to add the service at (uses config if None)
 
         Returns:
             List of route tuples (path, methods, handler, kwargs)
         """
         routes = []
 
-        # Create a dependency for this specific gateway instance
+        # Create a dependency for this specific service instance
         def get_self_cds():
             return self
 
