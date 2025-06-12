@@ -6,6 +6,7 @@ management and refresh.
 """
 
 import logging
+import os
 import uuid
 import asyncio
 import httpx
@@ -22,11 +23,47 @@ class OAuth2Config(BaseModel):
     """OAuth2 configuration for client credentials flow."""
 
     client_id: str
-    client_secret: str  # Can be secret string or path to private key for JWT assertion
     token_url: str
+    client_secret: Optional[str] = None  # Client secret string for standard flow
+    client_secret_path: Optional[str] = (
+        None  # Path to private key file for JWT assertion
+    )
     scope: Optional[str] = None
     audience: Optional[str] = None  # For Epic and other systems that require audience
     use_jwt_assertion: bool = False  # Use JWT client assertion instead of client secret
+
+    def model_post_init(self, __context) -> None:
+        """Validate that exactly one of client_secret or client_secret_path is provided."""
+        if not self.client_secret and not self.client_secret_path:
+            raise ValueError(
+                "Either client_secret or client_secret_path must be provided"
+            )
+
+        if self.client_secret and self.client_secret_path:
+            raise ValueError("Cannot provide both client_secret and client_secret_path")
+
+        if self.use_jwt_assertion and not self.client_secret_path:
+            raise ValueError(
+                "use_jwt_assertion=True requires client_secret_path to be set"
+            )
+
+        if not self.use_jwt_assertion and self.client_secret_path:
+            raise ValueError(
+                "client_secret_path can only be used with use_jwt_assertion=True"
+            )
+
+    @property
+    def secret_value(self) -> str:
+        """Get the secret value, reading from file if necessary."""
+        if self.client_secret_path:
+            try:
+                with open(self.client_secret_path, "rb") as f:
+                    return f.read().decode("utf-8")
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to read secret from {self.client_secret_path}: {e}"
+                )
+        return self.client_secret
 
 
 class TokenInfo(BaseModel):
@@ -97,9 +134,12 @@ class OAuth2TokenManager:
         """Refresh the access token using client credentials flow."""
         logger.debug(f"Refreshing token from {self.config.token_url}")
 
-        # Check if client_secret is a JWT (starts with path or is a JWT assertion)
-        if hasattr(self.config, "use_jwt_assertion") and self.config.use_jwt_assertion:
+        # Check if client_secret is a private key path or JWT assertion is enabled
+        if self.config.use_jwt_assertion or self.config.client_secret_path:
             # Use JWT client assertion flow (Epic/SMART on FHIR style)
+            logger.debug(
+                f"Using JWT client assertion flow with private key {os.path.basename(self.config.client_secret_path)}"
+            )
             jwt_assertion = self._create_jwt_assertion()
             token_data = {
                 "grant_type": "client_credentials",
@@ -108,10 +148,11 @@ class OAuth2TokenManager:
             }
         else:
             # Standard client credentials flow
+            logger.debug("Using standard client credentials flow")
             token_data = {
                 "grant_type": "client_credentials",
                 "client_id": self.config.client_id,
-                "client_secret": self.config.client_secret,
+                "client_secret": self.config.secret_value,
             }
 
         if self.config.scope:
@@ -160,12 +201,12 @@ class OAuth2TokenManager:
 
         # Load private key (client_secret should be path to private key for JWT assertion)
         try:
-            with open(self.config.client_secret, "rb") as f:
+            with open(self.config.client_secret_path, "rb") as f:
                 private_key_data = f.read()
             key = jwk_from_pem(private_key_data)
         except Exception as e:
             raise Exception(
-                f"Failed to load private key from {self.config.client_secret}: {e}"
+                f"Failed to load private key from {os.path.basename(self.config.client_secret_path)}: {e}"
             )
 
         # Create JWT claims matching the script
@@ -192,7 +233,10 @@ class FHIRAuthConfig(BaseModel):
 
     # OAuth2 settings
     client_id: str
-    client_secret: str  # Can be secret string or path to private key for JWT assertion
+    client_secret: Optional[str] = None  # Client secret string for standard flow
+    client_secret_path: Optional[str] = (
+        None  # Path to private key file for JWT assertion
+    )
     token_url: str
     scope: Optional[str] = "system/*.read system/*.write"
     audience: Optional[str] = None
@@ -203,11 +247,32 @@ class FHIRAuthConfig(BaseModel):
     timeout: int = 30
     verify_ssl: bool = True
 
+    def model_post_init(self, __context) -> None:
+        """Validate that exactly one of client_secret or client_secret_path is provided."""
+        if not self.client_secret and not self.client_secret_path:
+            raise ValueError(
+                "Either client_secret or client_secret_path must be provided"
+            )
+
+        if self.client_secret and self.client_secret_path:
+            raise ValueError("Cannot provide both client_secret and client_secret_path")
+
+        if self.use_jwt_assertion and not self.client_secret_path:
+            raise ValueError(
+                "use_jwt_assertion=True requires client_secret_path to be set"
+            )
+
+        if not self.use_jwt_assertion and self.client_secret_path:
+            raise ValueError(
+                "client_secret_path can only be used with use_jwt_assertion=True"
+            )
+
     def to_oauth2_config(self) -> OAuth2Config:
         """Convert to OAuth2Config for token manager."""
         return OAuth2Config(
             client_id=self.client_id,
             client_secret=self.client_secret,
+            client_secret_path=self.client_secret_path,
             token_url=self.token_url,
             scope=self.scope,
             audience=self.audience,
@@ -220,6 +285,7 @@ def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
     Parse a FHIR connection string into authentication configuration.
 
     Format: fhir://hostname:port/path?client_id=xxx&client_secret=xxx&token_url=xxx&scope=xxx
+    Or for JWT: fhir://hostname:port/path?client_id=xxx&client_secret_path=xxx&token_url=xxx&use_jwt_assertion=true
 
     Args:
         connection_string: FHIR connection string with OAuth2 credentials
@@ -239,18 +305,33 @@ def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
     params = dict(urllib.parse.parse_qsl(parsed.query))
 
     # Validate required parameters
-    required_params = ["client_id", "client_secret", "token_url"]
+    required_params = ["client_id", "token_url"]
     missing_params = [param for param in required_params if param not in params]
 
     if missing_params:
         raise ValueError(f"Missing required parameters: {missing_params}")
+
+    # Check that exactly one of client_secret or client_secret_path is provided
+    has_secret = "client_secret" in params
+    has_secret_path = "client_secret_path" in params
+
+    if not has_secret and not has_secret_path:
+        raise ValueError(
+            "Either 'client_secret' or 'client_secret_path' parameter must be provided"
+        )
+
+    if has_secret and has_secret_path:
+        raise ValueError(
+            "Cannot provide both 'client_secret' and 'client_secret_path' parameters"
+        )
 
     # Build base URL
     base_url = f"https://{parsed.netloc}{parsed.path}"
 
     return FHIRAuthConfig(
         client_id=params["client_id"],
-        client_secret=params["client_secret"],
+        client_secret=params.get("client_secret"),
+        client_secret_path=params.get("client_secret_path"),
         token_url=params["token_url"],
         scope=params.get("scope", "system/*.read system/*.write"),
         audience=params.get("audience"),
