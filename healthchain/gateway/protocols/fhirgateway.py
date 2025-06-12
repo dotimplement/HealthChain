@@ -29,6 +29,7 @@ from fastapi.responses import JSONResponse
 
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
+from fhir.resources.capabilitystatement import CapabilityStatement
 
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import (
@@ -57,6 +58,57 @@ OPERATION_TO_EVENT = {
     "update": EHREventType.FHIR_UPDATE,
     "delete": EHREventType.FHIR_DELETE,
 }
+
+
+def _handle_fhir_error(
+    e: Exception,
+    resource_type: str,
+    fhir_id: str = None,
+    operation: str = "operation",
+) -> None:
+    """Handle FHIR operation errors consistently."""
+    error_msg = str(e)
+    resource_ref = f"{resource_type}{'' if fhir_id is None else f'/{fhir_id}'}"
+
+    # Map status codes to FHIR error types and messages
+    # https://build.fhir.org/http.html
+    error_map = {
+        400: "Bad Request - Resource could not be parsed or failed basic FHIR validation rules (or multiple matches were found for conditional criteria)",
+        401: "Unauthorized - Authorization is required for the interaction that was attempted",
+        403: "Permission Denied - You may not have permission to perform this operation",
+        404: "Not Found - The resource you are looking for does not exist, is not a resource type, or is not a FHIR end point",
+        405: "Method Not Allowed - The server does not allow client defined ids for resources",
+        409: "Conflict - Version conflict - update cannot be done",
+        410: "Gone - The resource you are looking for is no longer available",
+        412: "Precondition Failed - Version conflict - version id does not match",
+        422: "Unprocessable Entity - Proposed resource violated applicable FHIR profiles or server business rules",
+    }
+
+    # Try status code first
+    status_code = getattr(e, "status_code", None)
+    if status_code in error_map:
+        msg = error_map[status_code]
+        raise FHIRConnectionError(
+            message=f"{operation} {resource_ref} failed: {msg}",
+            code=error_msg,
+            state=str(status_code),
+        )
+
+    # Fall back to message parsing
+    error_msg_lower = error_msg.lower()
+    for code, msg in error_map.items():
+        if str(code) in error_msg_lower:
+            raise FHIRConnectionError(
+                message=f"{operation} {resource_ref} failed: {msg}",
+                code=error_msg,
+                state=str(code),
+            )
+
+    raise FHIRConnectionError(
+        message=f"{operation} {resource_ref} failed: HTTP error",
+        code=error_msg,
+        state=str(status_code),
+    )
 
 
 class FHIRConnectionError(Exception):
@@ -607,6 +659,34 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             connection_string, self._create_server_from_connection_string
         )
 
+    async def capabilities(self, source: str = None) -> CapabilityStatement:
+        """
+        Get the capabilities of the FHIR server.
+
+        Args:
+            source: Source name to get capabilities for (uses first available if None)
+
+        Returns:
+            CapabilityStatement: The capabilities of the FHIR server
+
+        Raises:
+            FHIRConnectionError: If connection fails
+        """
+        try:
+            client = await self.get_client(source)
+            capabilities = await client.capabilities()
+
+            # Emit capabilities event
+            self._emit_fhir_event(
+                "capabilities", "CapabilityStatement", None, capabilities
+            )
+            logger.debug("Retrieved server capabilities")
+
+            return capabilities
+
+        except Exception as e:
+            _handle_fhir_error(e, "CapabilityStatement", None, "capabilities")
+
     async def read(
         self,
         resource_type: Union[str, Type[Resource]],
@@ -654,12 +734,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             return resource
 
         except Exception as e:
-            logger.error(f"Error fetching resource: {str(e)}")
-            raise FHIRConnectionError(
-                message=f"Failed to fetch resource: {str(e)}",
-                code="RESOURCE_READ_ERROR",
-                state="HY000",
-            )
+            _handle_fhir_error(e, resource_type, fhir_id, "read")
 
     async def search(
         self,
@@ -718,12 +793,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             return bundle
 
         except Exception as e:
-            logger.error(f"Error searching resources: {str(e)}")
-            raise FHIRConnectionError(
-                message=f"Failed to search resources: {str(e)}",
-                code="RESOURCE_SEARCH_ERROR",
-                state="HY000",
-            )
+            _handle_fhir_error(e, resource_type, None, "search")
 
     @asynccontextmanager
     async def modify(self, resource_type: str, fhir_id: str = None, source: str = None):
@@ -745,72 +815,47 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             ValueError: If resource type is invalid
         """
         client = await self.get_client(source)
-
         resource = None
         is_new = fhir_id is None
 
+        # Get type name for error messages
+        type_name = (
+            resource_type.__name__
+            if hasattr(resource_type, "__name__")
+            else str(resource_type)
+        )
+
         try:
             if is_new:
-                # For new resources, we still need dynamic import since client expects existing resources
                 import importlib
 
                 resource_module = importlib.import_module(
-                    f"fhir.resources.{resource_type.lower()}"
+                    f"fhir.resources.{type_name.lower()}"
                 )
-                resource_class = getattr(resource_module, resource_type)
-
-                # Create new resource
+                resource_class = getattr(resource_module, type_name)
                 resource = resource_class()
-                logger.debug(
-                    f"Created new {resource_type} resource using pooled connection"
-                )
             else:
-                # Fetch existing resource
                 resource = await client.read(resource_type, fhir_id)
-                if not resource:
-                    raise ValueError(f"Resource {resource_type}/{fhir_id} not found")
-                logger.debug(
-                    f"Retrieved {resource_type}/{fhir_id} using pooled connection"
-                )
+                logger.debug(f"Retrieved {type_name}/{fhir_id} in modify context")
+                self._emit_fhir_event("read", type_name, fhir_id, resource)
 
-            # Emit read event if fetching existing resource
-            if not is_new:
-                self._emit_fhir_event("read", resource_type, fhir_id, resource)
-
-            # Yield the resource for the context block
             yield resource
 
-            # After the context block, save changes
-            if is_new:
-                created_resource = await client.create(resource)
-                # Update our resource with the server response (including ID)
-                resource.id = created_resource.id
-                # Copy any other server-generated fields
-                for field_name, field_value in created_resource.model_dump().items():
-                    if hasattr(resource, field_name):
-                        setattr(resource, field_name, field_value)
+            updated_resource = await client.update(resource)
+            resource.id = updated_resource.id
+            for field_name, field_value in updated_resource.model_dump().items():
+                if hasattr(resource, field_name):
+                    setattr(resource, field_name, field_value)
 
-                self._emit_fhir_event("create", resource_type, resource.id, resource)
-                logger.debug(
-                    f"Created {resource_type} resource using pooled connection"
-                )
-            else:
-                # Client handles resource update and returns the updated resource
-                updated_resource = await client.update(resource)
-                # The resource is updated in place, but we could sync any server changes
-                self._emit_fhir_event(
-                    "update", resource_type, fhir_id, updated_resource
-                )
-                logger.debug(
-                    f"Updated {resource_type}/{fhir_id} using pooled connection"
-                )
+            event_type = "create" if is_new else "update"
+            self._emit_fhir_event(event_type, type_name, resource.id, updated_resource)
+            logger.debug(
+                f"{'Created' if is_new else 'Updated'} {type_name} resource in modify context"
+            )
 
         except Exception as e:
-            logger.error(f"Error in resource context: {str(e)}")
-            raise FHIRConnectionError(
-                message=f"Resource operation failed: {str(e)}",
-                code="RESOURCE_ERROR",
-                state="HY000",  # General error
+            _handle_fhir_error(
+                e, type_name, fhir_id, "read" if not is_new else "create"
             )
 
     @property
