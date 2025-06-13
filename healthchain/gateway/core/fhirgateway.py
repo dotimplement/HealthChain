@@ -20,7 +20,6 @@ from typing import (
     TypeVar,
     Union,
     Type,
-    TYPE_CHECKING,
 )
 from fastapi import Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
@@ -39,10 +38,6 @@ from healthchain.gateway.events.dispatcher import (
 )
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients.fhir import FHIRServerInterface
-
-# Import for type hints - will be available at runtime through local imports
-if TYPE_CHECKING:
-    from healthchain.gateway.clients.auth import FHIRAuthConfig
 
 
 logger = logging.getLogger(__name__)
@@ -543,11 +538,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 e, type_name, fhir_id, "read" if not is_new else "create"
             )
 
-    @property
-    def supported_resources(self) -> List[Type[Resource]]:
-        """Get list of supported FHIR resource types."""
-        return list(self._resource_handlers.keys())
-
     def aggregate(self, resource_type: Type[Resource]):
         """
         Decorator for custom aggregation functions.
@@ -651,22 +641,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         # Publish the event
         self._run_async_publish(event)
 
-    def get_capabilities(self) -> List[str]:
-        """
-        Get list of supported FHIR operations and resources.
-
-        Returns:
-            List of capabilities this gateway supports
-        """
-        capabilities = []
-
-        # Add resource-level capabilities
-        for resource_type, operations in self._resource_handlers.items():
-            for operation in operations:
-                capabilities.append(f"{operation}:{resource_type}")
-
-        return capabilities
-
     def get_pool_status(self) -> Dict[str, Any]:
         """
         Get the current status of the connection pool.
@@ -678,63 +652,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             - client_stats: Detailed httpx connection pool statistics
         """
         return self.connection_manager.get_pool_status()
-
-    def add_source_config(self, name: str, auth_config: "FHIRAuthConfig"):
-        """
-        Add a FHIR data source using a configuration object.
-
-        This is an alternative to connection strings for those who prefer
-        explicit configuration objects.
-
-        Args:
-            name: Source name
-            auth_config: FHIRAuthConfig object with OAuth2 settings
-
-        Example:
-            from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-            config = FHIRAuthConfig(
-                client_id="your_client_id",
-                client_secret="your_client_secret",
-                token_url="https://epic.com/oauth2/token",
-                base_url="https://epic.com/api/FHIR/R4",
-                scope="system/Patient.read"
-            )
-            fhir_gateway.add_source_config("epic", config)
-        """
-        return self.connection_manager.add_source_config(name, auth_config)
-
-    def add_source_from_env(self, name: str, env_prefix: str):
-        """
-        Add a FHIR data source using environment variables.
-
-        This method reads OAuth2.0 configuration from environment variables
-        with a given prefix.
-
-        Args:
-            name: Source name
-            env_prefix: Environment variable prefix (e.g., "EPIC")
-
-        Expected environment variables:
-            {env_prefix}_CLIENT_ID
-            {env_prefix}_CLIENT_SECRET
-            {env_prefix}_TOKEN_URL
-            {env_prefix}_BASE_URL
-            {env_prefix}_SCOPE (optional)
-            {env_prefix}_AUDIENCE (optional)
-            {env_prefix}_TIMEOUT (optional, default: 30)
-            {env_prefix}_VERIFY_SSL (optional, default: true)
-
-        Example:
-            # Set environment variables:
-            # EPIC_CLIENT_ID=app123
-            # EPIC_CLIENT_SECRET=secret456
-            # EPIC_TOKEN_URL=https://epic.com/oauth2/token
-            # EPIC_BASE_URL=https://epic.com/api/FHIR/R4
-
-            fhir_gateway.add_source_from_env("epic", "EPIC")
-        """
-        return self.connection_manager.add_source_from_env(name, env_prefix)
 
     async def close(self):
         """Close all connections and clean up resources."""

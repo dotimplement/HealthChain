@@ -279,6 +279,125 @@ class FHIRAuthConfig(BaseModel):
             use_jwt_assertion=self.use_jwt_assertion,
         )
 
+    @classmethod
+    def from_env(cls, env_prefix: str) -> "FHIRAuthConfig":
+        """
+        Create FHIRAuthConfig from environment variables.
+
+        Args:
+            env_prefix: Environment variable prefix (e.g., "EPIC")
+
+        Expected environment variables:
+            {env_prefix}_CLIENT_ID
+            {env_prefix}_CLIENT_SECRET (or {env_prefix}_CLIENT_SECRET_PATH)
+            {env_prefix}_TOKEN_URL
+            {env_prefix}_BASE_URL
+            {env_prefix}_SCOPE (optional)
+            {env_prefix}_AUDIENCE (optional)
+            {env_prefix}_TIMEOUT (optional, default: 30)
+            {env_prefix}_VERIFY_SSL (optional, default: true)
+            {env_prefix}_USE_JWT_ASSERTION (optional, default: false)
+
+        Returns:
+            FHIRAuthConfig instance
+
+        Example:
+            # Set environment variables:
+            # EPIC_CLIENT_ID=app123
+            # EPIC_CLIENT_SECRET=secret456
+            # EPIC_TOKEN_URL=https://epic.com/oauth2/token
+            # EPIC_BASE_URL=https://epic.com/api/FHIR/R4
+
+            config = FHIRAuthConfig.from_env("EPIC")
+        """
+        import os
+
+        # Read required environment variables
+        client_id = os.getenv(f"{env_prefix}_CLIENT_ID")
+        client_secret = os.getenv(f"{env_prefix}_CLIENT_SECRET")
+        client_secret_path = os.getenv(f"{env_prefix}_CLIENT_SECRET_PATH")
+        token_url = os.getenv(f"{env_prefix}_TOKEN_URL")
+        base_url = os.getenv(f"{env_prefix}_BASE_URL")
+
+        if not all([client_id, token_url, base_url]):
+            missing = [
+                var
+                for var, val in [
+                    (f"{env_prefix}_CLIENT_ID", client_id),
+                    (f"{env_prefix}_TOKEN_URL", token_url),
+                    (f"{env_prefix}_BASE_URL", base_url),
+                ]
+                if not val
+            ]
+            raise ValueError(f"Missing required environment variables: {missing}")
+
+        # Read optional environment variables
+        scope = os.getenv(f"{env_prefix}_SCOPE", "system/*.read system/*.write")
+        audience = os.getenv(f"{env_prefix}_AUDIENCE")
+        timeout = int(os.getenv(f"{env_prefix}_TIMEOUT", "30"))
+        verify_ssl = os.getenv(f"{env_prefix}_VERIFY_SSL", "true").lower() == "true"
+        use_jwt_assertion = (
+            os.getenv(f"{env_prefix}_USE_JWT_ASSERTION", "false").lower() == "true"
+        )
+
+        return cls(
+            client_id=client_id,
+            client_secret=client_secret,
+            client_secret_path=client_secret_path,
+            token_url=token_url,
+            base_url=base_url,
+            scope=scope,
+            audience=audience,
+            timeout=timeout,
+            verify_ssl=verify_ssl,
+            use_jwt_assertion=use_jwt_assertion,
+        )
+
+    def to_connection_string(self) -> str:
+        """
+        Convert FHIRAuthConfig to connection string format.
+
+        Returns:
+            Connection string in fhir:// format
+
+        Example:
+            config = FHIRAuthConfig(...)
+            connection_string = config.to_connection_string()
+            # Returns: "fhir://hostname/path?client_id=...&token_url=..."
+        """
+        # Extract hostname and path from base_url
+        import urllib.parse
+
+        parsed_base = urllib.parse.urlparse(self.base_url)
+
+        # Build query parameters
+        params = {
+            "client_id": self.client_id,
+            "token_url": self.token_url,
+        }
+
+        # Add secret (either client_secret or client_secret_path)
+        if self.client_secret:
+            params["client_secret"] = self.client_secret
+        elif self.client_secret_path:
+            params["client_secret_path"] = self.client_secret_path
+
+        # Add optional parameters
+        if self.scope:
+            params["scope"] = self.scope
+        if self.audience:
+            params["audience"] = self.audience
+        if self.timeout != 30:
+            params["timeout"] = str(self.timeout)
+        if not self.verify_ssl:
+            params["verify_ssl"] = "false"
+        if self.use_jwt_assertion:
+            params["use_jwt_assertion"] = "true"
+
+        # Build connection string
+        query_string = urllib.parse.urlencode(params)
+        return f"fhir://{parsed_base.netloc}{parsed_base.path}?{query_string}"
+
 
 def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
     """

@@ -11,14 +11,10 @@ from typing import Dict
 
 import httpx
 
-from typing import TYPE_CHECKING
-
 from healthchain.gateway.clients.fhir import FHIRServerInterface
 from healthchain.gateway.clients.pool import FHIRClientPool
 from healthchain.gateway.core.errors import FHIRConnectionError
 
-if TYPE_CHECKING:
-    from healthchain.gateway.clients.auth import FHIRAuthConfig
 
 logger = logging.getLogger(__name__)
 
@@ -102,137 +98,6 @@ class FHIRConnectionManager:
                 state="500",
             )
 
-    def add_source_config(self, name: str, auth_config: "FHIRAuthConfig"):
-        """
-        Add a FHIR data source using a configuration object.
-
-        This is an alternative to connection strings for those who prefer
-        explicit configuration objects.
-
-        Args:
-            name: Source name
-            auth_config: FHIRAuthConfig object with OAuth2 settings
-
-        Example:
-            from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-            config = FHIRAuthConfig(
-                client_id="your_client_id",
-                client_secret="your_client_secret",
-                token_url="https://epic.com/oauth2/token",
-                base_url="https://epic.com/api/FHIR/R4",
-                scope="system/Patient.read"
-            )
-            connection_manager.add_source_config("epic", config)
-        """
-        from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-        if not isinstance(auth_config, FHIRAuthConfig):
-            raise ValueError("auth_config must be a FHIRAuthConfig instance")
-
-        # Store the config for connection pooling
-        # Create a synthetic connection string for internal storage
-        connection_string = (
-            f"fhir://{auth_config.base_url.replace('https://', '').replace('http://', '')}?"
-            f"client_id={auth_config.client_id}&"
-            f"client_secret={auth_config.client_secret}&"
-            f"token_url={auth_config.token_url}&"
-            f"scope={auth_config.scope or ''}&"
-            f"timeout={auth_config.timeout}&"
-            f"verify_ssl={auth_config.verify_ssl}&"
-            f"use_jwt_assertion={auth_config.use_jwt_assertion}"
-        )
-
-        if auth_config.audience:
-            connection_string += f"&audience={auth_config.audience}"
-
-        self._connection_strings[name] = connection_string
-        self.sources[name] = None  # Placeholder for pool management
-
-        logger.info(f"Added FHIR source '{name}' using configuration object")
-
-    def add_source_from_env(self, name: str, env_prefix: str):
-        """
-        Add a FHIR data source using environment variables.
-
-        This method reads OAuth2.0 configuration from environment variables
-        with a given prefix.
-
-        Args:
-            name: Source name
-            env_prefix: Environment variable prefix (e.g., "EPIC")
-
-        Expected environment variables:
-            {env_prefix}_CLIENT_ID
-            {env_prefix}_CLIENT_SECRET
-            {env_prefix}_TOKEN_URL
-            {env_prefix}_BASE_URL
-            {env_prefix}_SCOPE (optional)
-            {env_prefix}_AUDIENCE (optional)
-            {env_prefix}_TIMEOUT (optional, default: 30)
-            {env_prefix}_VERIFY_SSL (optional, default: true)
-            {env_prefix}_USE_JWT_ASSERTION (optional, default: false)
-
-        Example:
-            # Set environment variables:
-            # EPIC_CLIENT_ID=app123
-            # EPIC_CLIENT_SECRET=secret456
-            # EPIC_TOKEN_URL=https://epic.com/oauth2/token
-            # EPIC_BASE_URL=https://epic.com/api/FHIR/R4
-
-            connection_manager.add_source_from_env("epic", "EPIC")
-        """
-        import os
-        from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-        # Read required environment variables
-        client_id = os.getenv(f"{env_prefix}_CLIENT_ID")
-        client_secret = os.getenv(f"{env_prefix}_CLIENT_SECRET")
-        token_url = os.getenv(f"{env_prefix}_TOKEN_URL")
-        base_url = os.getenv(f"{env_prefix}_BASE_URL")
-
-        if not all([client_id, client_secret, token_url, base_url]):
-            missing = [
-                var
-                for var, val in [
-                    (f"{env_prefix}_CLIENT_ID", client_id),
-                    (f"{env_prefix}_CLIENT_SECRET", client_secret),
-                    (f"{env_prefix}_TOKEN_URL", token_url),
-                    (f"{env_prefix}_BASE_URL", base_url),
-                ]
-                if not val
-            ]
-            raise ValueError(f"Missing required environment variables: {missing}")
-
-        # Read optional environment variables
-        scope = os.getenv(f"{env_prefix}_SCOPE", "system/*.read")
-        audience = os.getenv(f"{env_prefix}_AUDIENCE")
-        timeout = int(os.getenv(f"{env_prefix}_TIMEOUT", "30"))
-        verify_ssl = os.getenv(f"{env_prefix}_VERIFY_SSL", "true").lower() == "true"
-        use_jwt_assertion = (
-            os.getenv(f"{env_prefix}_USE_JWT_ASSERTION", "false").lower() == "true"
-        )
-
-        # Create configuration object
-        config = FHIRAuthConfig(
-            client_id=client_id,
-            client_secret=client_secret,
-            token_url=token_url,
-            base_url=base_url,
-            scope=scope,
-            audience=audience,
-            timeout=timeout,
-            verify_ssl=verify_ssl,
-            use_jwt_assertion=use_jwt_assertion,
-        )
-
-        # Add the source using the config object
-        self.add_source_config(name, config)
-
-        logger.info(
-            f"Added FHIR source '{name}' from environment variables with prefix '{env_prefix}'"
-        )
-
     def _create_server_from_connection_string(
         self, connection_string: str, limits: httpx.Limits = None
     ) -> FHIRServerInterface:
@@ -309,11 +174,3 @@ class FHIRConnectionManager:
     async def close(self):
         """Close all connections and clean up resources."""
         await self.client_pool.close_all()
-
-    async def __aenter__(self):
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        await self.close()
