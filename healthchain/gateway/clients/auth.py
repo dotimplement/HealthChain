@@ -137,9 +137,6 @@ class OAuth2TokenManager:
         # Check if client_secret is a private key path or JWT assertion is enabled
         if self.config.use_jwt_assertion or self.config.client_secret_path:
             # Use JWT client assertion flow (Epic/SMART on FHIR style)
-            logger.debug(
-                f"Using JWT client assertion flow with private key {os.path.basename(self.config.client_secret_path)}"
-            )
             jwt_assertion = self._create_jwt_assertion()
             token_data = {
                 "grant_type": "client_credentials",
@@ -148,7 +145,6 @@ class OAuth2TokenManager:
             }
         else:
             # Standard client credentials flow
-            logger.debug("Using standard client credentials flow")
             token_data = {
                 "grant_type": "client_credentials",
                 "client_id": self.config.client_id,
