@@ -8,13 +8,11 @@ These gateways handle the details of each protocol while presenting a consistent
 interface for registration, event handling, and endpoint management.
 """
 
-from .fhirgateway import FHIRGateway
 from .cdshooks import CDSHooksService
 from .notereader import NoteReaderService
 from .apiprotocol import ApiProtocol
 
 __all__ = [
-    "FHIRGateway",
     "CDSHooksService",
     "NoteReaderService",
     "ApiProtocol",

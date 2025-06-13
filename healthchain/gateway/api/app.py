@@ -303,8 +303,7 @@ class HealthChainAPI(FastAPI):
     def _add_gateway_routes(
         self, gateway: BaseGateway, path: Optional[str] = None
     ) -> None:
-        """
-        Add gateway routes to the FastAPI app.
+        """Add gateway routes to the FastAPI app.
 
         Args:
             gateway: The gateway to add routes for
@@ -313,69 +312,30 @@ class HealthChainAPI(FastAPI):
         gateway_name = gateway.__class__.__name__
         self.gateway_endpoints[gateway_name] = set()
 
-        # Case 1: Gateways with get_routes implementation
-        if hasattr(gateway, "get_routes") and callable(gateway.get_routes):
-            routes = gateway.get_routes(path)
-            if routes:
-                for route_path, methods, handler, kwargs in routes:
-                    for method in methods:
-                        self.add_api_route(
-                            path=route_path,
-                            endpoint=handler,
-                            methods=[method],
-                            **kwargs,
-                        )
-                        self.gateway_endpoints[gateway_name].add(
-                            f"{method}:{route_path}"
-                        )
-                        logger.debug(
-                            f"Registered {method} route {route_path} for {gateway_name}"
-                        )
+        if not isinstance(gateway, APIRouter):
+            logger.warning(
+                f"Gateway {gateway_name} is not an APIRouter and cannot be registered"
+            )
+            return
 
-        # Case 2: WSGI gateways (like SOAP)
-        if hasattr(gateway, "create_wsgi_app") and callable(gateway.create_wsgi_app):
-            # For SOAP/WSGI gateways
-            wsgi_app = gateway.create_wsgi_app()
+        # Use provided path or gateway's prefix
+        mount_path = path or gateway.prefix
+        if mount_path:
+            gateway.prefix = mount_path
 
-            # Determine mount path
-            mount_path = path
-            if mount_path is None and hasattr(gateway, "config"):
-                # Try to get the default path from the gateway config
-                mount_path = getattr(gateway.config, "default_mount_path", None)
-                if not mount_path:
-                    mount_path = getattr(gateway.config, "base_path", None)
+        self.include_router(gateway)
 
-            if not mount_path:
-                # Fallback path based on gateway name
-                mount_path = f"/{gateway_name.lower().replace('gateway', '')}"
+        if not hasattr(gateway, "routes"):
+            logger.debug(f"Registered {gateway_name} as router (routes unknown)")
+            return
 
-            # Mount the WSGI app
-            self.mount(mount_path, WSGIMiddleware(wsgi_app))
-            self.gateway_endpoints[gateway_name].add(f"WSGI:{mount_path}")
-            logger.debug(f"Registered WSGI gateway {gateway_name} at {mount_path}")
-
-        # Case 3: Gateway instances that are also APIRouters (like FHIRGateway)
-        elif isinstance(gateway, APIRouter):
-            # Include the router
-            self.include_router(gateway)
-            if hasattr(gateway, "routes"):
-                for route in gateway.routes:
-                    for method in route.methods:
-                        self.gateway_endpoints[gateway_name].add(
-                            f"{method}:{route.path}"
-                        )
-                        logger.debug(
-                            f"Registered {method} route {route.path} from {gateway_name} router"
-                        )
-            else:
-                logger.debug(f"Registered {gateway_name} as router (routes unknown)")
-
-        elif not (
-            hasattr(gateway, "get_routes")
-            and callable(gateway.get_routes)
-            and gateway.get_routes(path)
-        ):
-            logger.warning(f"Gateway {gateway_name} does not provide any routes")
+        for route in gateway.routes:
+            for method in route.methods:
+                endpoint = f"{method}:{route.path}"
+                self.gateway_endpoints[gateway_name].add(endpoint)
+                logger.debug(
+                    f"Registered {method} route {route.path} from {gateway_name} router"
+                )
 
     def _add_service_routes(
         self, service: BaseProtocolHandler, path: Optional[str] = None

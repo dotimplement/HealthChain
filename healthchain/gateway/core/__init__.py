@@ -6,7 +6,9 @@ that define the gateway architecture.
 """
 
 from .base import BaseGateway, GatewayConfig, EventDispatcherMixin
-from ..protocols.fhirgateway import FHIRGateway
+from .connection import FHIRConnectionManager
+from .errors import FHIRErrorHandler, FHIRConnectionError
+from .fhirgateway import FHIRGateway
 
 # Import these if available, but don't error if they're not
 try:
@@ -14,6 +16,9 @@ try:
         "BaseGateway",
         "GatewayConfig",
         "EventDispatcherMixin",
+        "FHIRConnectionManager",
+        "FHIRErrorHandler",
+        "FHIRConnectionError",
         "FHIRGateway",
         "EHREvent",
         "SOAPEvent",
@@ -26,5 +31,8 @@ except ImportError:
         "BaseGateway",
         "GatewayConfig",
         "EventDispatcherMixin",
+        "FHIRConnectionManager",
+        "FHIRErrorHandler",
+        "FHIRConnectionError",
         "FHIRGateway",
     ]

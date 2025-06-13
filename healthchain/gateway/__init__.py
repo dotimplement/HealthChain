@@ -14,6 +14,7 @@ Core components:
 
 # Main application exports
 from healthchain.gateway.api.app import HealthChainAPI, create_app
+from healthchain.gateway.core.fhirgateway import FHIRGateway
 
 # Core components
 from healthchain.gateway.core.base import (
@@ -31,7 +32,6 @@ from healthchain.gateway.events.dispatcher import (
 
 # Re-export gateway implementations
 from healthchain.gateway.protocols import (
-    FHIRGateway,
     CDSHooksService,
     NoteReaderService,
 )

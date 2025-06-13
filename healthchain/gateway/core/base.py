@@ -11,6 +11,7 @@ import asyncio
 from abc import ABC
 from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
+from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
@@ -304,13 +305,21 @@ class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
         return cls(**options)
 
 
-class BaseGateway(ABC, EventDispatcherMixin):
+class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
     """
-    Base class for healthcare integration gateways. e.g. FHIR Gateway
+    Base class for healthcare integration gateways.
+
+    Combines FastAPI routing capabilities with event
+    dispatching to enable protocol-specific integrations.
     """
 
     def __init__(
-        self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
+        self,
+        config: Optional[GatewayConfig] = None,
+        use_events: bool = True,
+        prefix: str = "/api",
+        tags: Optional[List[str]] = None,
+        **options,
     ):
         """
         Initialize a new gateway.
@@ -318,8 +327,13 @@ class BaseGateway(ABC, EventDispatcherMixin):
         Args:
             config: Configuration options for the gateway
             use_events: Whether to enable event dispatching
+            prefix: URL prefix for API routes
+            tags: OpenAPI tags
             **options: Additional configuration options
         """
+        # Initialize APIRouter
+        APIRouter.__init__(self, prefix=prefix, tags=tags or [])
+
         self.options = options
         self.config = config or GatewayConfig()
         self.use_events = use_events
@@ -331,27 +345,7 @@ class BaseGateway(ABC, EventDispatcherMixin):
         # Initialize event dispatcher mixin
         EventDispatcherMixin.__init__(self)
 
-    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
-        """
-        Get routes that this gateway wants to register with the FastAPI app.
-
-        This method returns a list of tuples with the following structure:
-        (path, methods, handler, kwargs) where:
-        - path is the URL path for the endpoint
-        - methods is a list of HTTP methods this endpoint supports
-        - handler is the function to be called when the endpoint is accessed
-        - kwargs are additional arguments to pass to the add_api_route method
-
-        Args:
-            path: Optional base path to prefix all routes
-
-        Returns:
-            List of route tuples (path, methods, handler, kwargs)
-        """
-        # Default implementation returns empty list
-        # Specific gateway classes should override this
-        return []
-
+    # TODO: Implement this
     def get_metadata(self) -> Dict[str, Any]:
         """
         Get metadata for this gateway, including capabilities and configuration.

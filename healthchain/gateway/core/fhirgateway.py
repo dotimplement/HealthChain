@@ -6,10 +6,8 @@ transformation, and routing.
 """
 
 import logging
-import urllib.parse
 import inspect
 import warnings
-import httpx
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -24,7 +22,7 @@ from typing import (
     Type,
     TYPE_CHECKING,
 )
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
 
 from fhir.resources.resource import Resource
@@ -32,6 +30,8 @@ from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
 
 from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.core.connection import FHIRConnectionManager
+from healthchain.gateway.core.errors import FHIRErrorHandler
 from healthchain.gateway.events.dispatcher import (
     EHREvent,
     EHREventType,
@@ -39,7 +39,6 @@ from healthchain.gateway.events.dispatcher import (
 )
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients.fhir import FHIRServerInterface
-from healthchain.gateway.clients.pool import FHIRClientPool
 
 # Import for type hints - will be available at runtime through local imports
 if TYPE_CHECKING:
@@ -60,67 +59,6 @@ OPERATION_TO_EVENT = {
 }
 
 
-def _handle_fhir_error(
-    e: Exception,
-    resource_type: str,
-    fhir_id: str = None,
-    operation: str = "operation",
-) -> None:
-    """Handle FHIR operation errors consistently."""
-    error_msg = str(e)
-    resource_ref = f"{resource_type}{'' if fhir_id is None else f'/{fhir_id}'}"
-
-    # Map status codes to FHIR error types and messages
-    # https://build.fhir.org/http.html
-    error_map = {
-        400: "Bad Request - Resource could not be parsed or failed basic FHIR validation rules (or multiple matches were found for conditional criteria)",
-        401: "Unauthorized - Authorization is required for the interaction that was attempted",
-        403: "Permission Denied - You may not have permission to perform this operation",
-        404: "Not Found - The resource you are looking for does not exist, is not a resource type, or is not a FHIR end point",
-        405: "Method Not Allowed - The server does not allow client defined ids for resources",
-        409: "Conflict - Version conflict - update cannot be done",
-        410: "Gone - The resource you are looking for is no longer available",
-        412: "Precondition Failed - Version conflict - version id does not match",
-        422: "Unprocessable Entity - Proposed resource violated applicable FHIR profiles or server business rules",
-    }
-
-    # Try status code first
-    status_code = getattr(e, "status_code", None)
-    if status_code in error_map:
-        msg = error_map[status_code]
-        raise FHIRConnectionError(
-            message=f"{operation} {resource_ref} failed: {msg}",
-            code=error_msg,
-            state=str(status_code),
-        )
-
-    # Fall back to message parsing
-    error_msg_lower = error_msg.lower()
-    for code, msg in error_map.items():
-        if str(code) in error_msg_lower:
-            raise FHIRConnectionError(
-                message=f"{operation} {resource_ref} failed: {msg}",
-                code=error_msg,
-                state=str(code),
-            )
-
-    raise FHIRConnectionError(
-        message=f"{operation} {resource_ref} failed: HTTP error",
-        code=error_msg,
-        state=str(status_code),
-    )
-
-
-class FHIRConnectionError(Exception):
-    """Standardized FHIR connection error with state codes."""
-
-    def __init__(self, message: str, code: str, state: str = None):
-        self.message = message
-        self.code = code
-        self.state = state
-        super().__init__(f"[{code}] {message}")
-
-
 class FHIRResponse(JSONResponse):
     """
     Custom response class for FHIR resources.
@@ -131,72 +69,43 @@ class FHIRResponse(JSONResponse):
     media_type = "application/fhir+json"
 
 
-class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
+class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
     # TODO: move to documentation
     """
-    FHIR integration hub for data aggregation, transformation, and routing.
-
-    Adds value-add endpoints like /aggregate and /transform with automatic
-    connection pooling and lifecycle management.
+    FHIR integration hub with automatic connection pooling and lifecycle management.
+    Provides value-add endpoints for data aggregation and transformation.
 
     Example:
         ```python
-        # Create a FHIR gateway
         from fhir.resources.patient import Patient
         from fhir.resources.documentreference import DocumentReference
         from healthchain.gateway import FHIRGateway
         from healthchain.gateway.api.app import HealthChainAPI
 
         app = HealthChainAPI()
-
-        # Configure FHIR data sources
         fhir_gateway = FHIRGateway()
+
+        # Configure sources
         fhir_gateway.add_source("epic", "fhir://r4.epic.com/api/FHIR/R4?auth=oauth&timeout=30")
         fhir_gateway.add_source("cerner", "fhir://cernercare.com/r4?auth=basic&username=user&password=pass")
 
-        # Register transform handler using decorator (recommended pattern)
+        # Transform handler
         @fhir_gateway.transform(DocumentReference)
         async def enhance_document(id: str, source: str = None) -> DocumentReference:
-            # For read-only operations, use get_resource (lightweight)
             document = await fhir_gateway.get_resource(DocumentReference, id, source)
-
-            # For modifications, use context manager for automatic lifecycle management
             async with fhir_gateway.resource_context(DocumentReference, id, source) as doc:
-                # Apply transformations - document is automatically saved on exit
                 doc.description = "Enhanced by HealthChain"
-
-                # Add processing metadata
                 if not doc.extension:
                     doc.extension = []
                 doc.extension.append({
                     "url": "http://healthchain.org/extension/processed",
                     "valueDateTime": datetime.now().isoformat()
                 })
-
                 return doc
 
-        # Register aggregation handler
-        @fhir_gateway.aggregate(Patient)
-        async def aggregate_patient_data(id: str, sources: List[str] = None) -> List[Patient]:
-            patients = []
-            sources = sources or ["epic", "cerner"]
 
-            for source in sources:
-                try:
-                    # Simple read-only access with automatic connection pooling
-                    patient = await fhir_gateway.get_resource(Patient, id, source)
-                    patients.append(patient)
-                except Exception as e:
-                    logger.warning(f"Could not retrieve patient from {source}: {e}")
-
-            return patients
-
-        # Register gateway with HealthChainAPI
-        app.register_gateway(fhir_gateway)
-
-        # Access endpoints:
-        # GET /fhir/transform/DocumentReference/{id}?source=epic
-        # GET /fhir/aggregate/Patient?id=123&sources=epic&sources=cerner
+        # Endpoints: /fhir/transform/DocumentReference/{id}?source=epic
+        #            /fhir/aggregate/Patient?id=123&sources=epic&sources=cerner
         ```
     """
 
@@ -224,30 +133,25 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             keepalive_expiry: How long to keep connections alive (seconds)
             **options: Additional options
         """
-        # Initialize as BaseGateway and APIRouter
-        BaseGateway.__init__(self, use_events=use_events, **options)
-        APIRouter.__init__(self, prefix=prefix, tags=tags)
+        # Initialize as BaseGateway (which includes APIRouter)
+        super().__init__(use_events=use_events, prefix=prefix, tags=tags, **options)
 
         self.use_events = use_events
 
-        # Create httpx-based client pool
-        self.client_pool = FHIRClientPool(
+        # Create connection manager
+        self.connection_manager = FHIRConnectionManager(
             max_connections=max_connections,
             max_keepalive_connections=max_keepalive_connections,
             keepalive_expiry=keepalive_expiry,
         )
 
-        # Store configuration
-        self.sources = {}
-        self._connection_strings = {}
-
         # Add sources if provided
         if sources:
             for name, source in sources.items():
                 if isinstance(source, str):
-                    self.add_source(name, source)
+                    self.connection_manager.add_source(name, source)
                 else:
-                    self.sources[name] = source
+                    self.connection_manager.sources[name] = source
 
         # Handlers for resource operations
         self._resource_handlers: Dict[str, Dict[str, Callable]] = {}
@@ -296,7 +200,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
     def _register_handler_routes(self) -> None:
         """
-        Register routes for all handlers directly on the APIRouter.
+        Register routes for all handlers directly on the gateway.
 
         This ensures all routes get the router's prefix automatically.
         """
@@ -357,7 +261,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
             return transform_handler
 
-        # Add the route directly to the APIRouter
+        # Add the route directly to the gateway
         self.add_api_route(
             path=transform_path,
             endpoint=create_transform_handler(resource_type),
@@ -420,7 +324,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
             return aggregate_handler
 
-        # Add the route directly to the APIRouter
+        # Add the route directly to the gateway
         self.add_api_route(
             path=aggregate_path,
             endpoint=create_aggregate_handler(resource_type),
@@ -578,58 +482,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             fhir://epic.org/api/FHIR/R4?client_id=my_app&client_secret=secret&token_url=https://epic.org/oauth2/token&scope=system/*.read
             fhir://cerner.org/r4?client_id=app_id&client_secret=app_secret&token_url=https://cerner.org/token&audience=https://cerner.org/fhir
         """
-        # Store connection string for pooling
-        self._connection_strings[name] = connection_string
-
-        # Parse the connection string for validation only
-        try:
-            if not connection_string.startswith("fhir://"):
-                raise ValueError("Connection string must start with fhir://")
-
-            # Parse URL for validation
-            parsed = urllib.parse.urlparse(connection_string)
-
-            # Validate that we have a valid hostname
-            if not parsed.netloc:
-                raise ValueError("Invalid connection string: missing hostname")
-
-            # Store the source name - actual connections will be managed by the pool
-            self.sources[name] = (
-                None  # Placeholder - pool will manage actual connections
-            )
-
-            logger.info(f"Added FHIR source '{name}' with connection pooling enabled")
-
-        except Exception as e:
-            raise FHIRConnectionError(
-                message=f"Failed to parse connection string: {str(e)}",
-                code="INVALID_CONNECTION_STRING",
-                state="08001",  # SQL state code for connection failure
-            )
-
-    def _create_server_from_connection_string(
-        self, connection_string: str, limits: httpx.Limits = None
-    ) -> FHIRServerInterface:
-        """
-        Create a FHIR server instance from a connection string with connection pooling.
-
-        This is used by the client pool to create new server instances.
-
-        Args:
-            connection_string: FHIR connection string
-            limits: httpx connection limits for pooling
-
-        Returns:
-            FHIRServerInterface: A new FHIR server instance with pooled connections
-        """
-        from healthchain.gateway.clients import create_fhir_client
-        from healthchain.gateway.clients.auth import parse_fhir_auth_connection_string
-
-        # Parse connection string as OAuth2.0 configuration
-        auth_config = parse_fhir_auth_connection_string(connection_string)
-
-        # Pass httpx limits for connection pooling
-        return create_fhir_client(auth_config=auth_config, limits=limits)
+        return self.connection_manager.add_source(name, connection_string)
 
     async def get_client(self, source: str = None) -> FHIRServerInterface:
         """
@@ -646,18 +499,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
         Raises:
             ValueError: If source is unknown or no connection string found
         """
-        source_name = source or next(iter(self.sources.keys()))
-        if source_name not in self.sources:
-            raise ValueError(f"Unknown source: {source_name}")
-
-        if source_name not in self._connection_strings:
-            raise ValueError(f"No connection string found for source: {source_name}")
-
-        connection_string = self._connection_strings[source_name]
-
-        return await self.client_pool.get_client(
-            connection_string, self._create_server_from_connection_string
-        )
+        return await self.connection_manager.get_client(source)
 
     async def capabilities(self, source: str = None) -> CapabilityStatement:
         """
@@ -685,7 +527,9 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             return capabilities
 
         except Exception as e:
-            _handle_fhir_error(e, "CapabilityStatement", None, "capabilities")
+            FHIRErrorHandler.handle_fhir_error(
+                e, "CapabilityStatement", None, "capabilities"
+            )
 
     async def read(
         self,
@@ -734,7 +578,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             return resource
 
         except Exception as e:
-            _handle_fhir_error(e, resource_type, fhir_id, "read")
+            FHIRErrorHandler.handle_fhir_error(e, resource_type, fhir_id, "read")
 
     async def search(
         self,
@@ -793,7 +637,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             return bundle
 
         except Exception as e:
-            _handle_fhir_error(e, resource_type, None, "search")
+            FHIRErrorHandler.handle_fhir_error(e, resource_type, None, "search")
 
     @asynccontextmanager
     async def modify(self, resource_type: str, fhir_id: str = None, source: str = None):
@@ -854,19 +698,14 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             )
 
         except Exception as e:
-            _handle_fhir_error(
+            FHIRErrorHandler.handle_fhir_error(
                 e, type_name, fhir_id, "read" if not is_new else "create"
             )
 
     @property
     def supported_resources(self) -> List[str]:
         """Get list of supported FHIR resource types."""
-        resources = set(self._resource_handlers.keys())
-
-        # Add any other resources that might be supported through other means
-        # (This could be expanded based on your implementation)
-
-        return list(resources)
+        return list(self._resource_handlers.keys())
 
     def aggregate(self, resource_type: Union[str, Type[Resource]]):
         """
@@ -997,7 +836,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             - sources: Dict of source names and their connection info
             - client_stats: Detailed httpx connection pool statistics
         """
-        return self.client_pool.get_pool_stats()
+        return self.connection_manager.get_pool_status()
 
     def add_source_config(self, name: str, auth_config: "FHIRAuthConfig"):
         """
@@ -1022,30 +861,7 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
             )
             fhir_gateway.add_source_config("epic", config)
         """
-        from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-        if not isinstance(auth_config, FHIRAuthConfig):
-            raise ValueError("auth_config must be a FHIRAuthConfig instance")
-
-        # Store the config for connection pooling
-        # Create a synthetic connection string for internal storage
-        connection_string = (
-            f"fhir://{auth_config.base_url.replace('https://', '').replace('http://', '')}?"
-            f"client_id={auth_config.client_id}&"
-            f"client_secret={auth_config.client_secret}&"
-            f"token_url={auth_config.token_url}&"
-            f"scope={auth_config.scope or ''}&"
-            f"timeout={auth_config.timeout}&"
-            f"verify_ssl={auth_config.verify_ssl}"
-        )
-
-        if auth_config.audience:
-            connection_string += f"&audience={auth_config.audience}"
-
-        self._connection_strings[name] = connection_string
-        self.sources[name] = None  # Placeholder for pool management
-
-        logger.info(f"Added FHIR source '{name}' using configuration object")
+        return self.connection_manager.add_source_config(name, auth_config)
 
     def add_source_from_env(self, name: str, env_prefix: str):
         """
@@ -1077,56 +893,11 @@ class FHIRGateway(BaseGateway, APIRouter, FHIRGatewayProtocol):
 
             fhir_gateway.add_source_from_env("epic", "EPIC")
         """
-        import os
-        from healthchain.gateway.clients.auth import FHIRAuthConfig
-
-        # Read required environment variables
-        client_id = os.getenv(f"{env_prefix}_CLIENT_ID")
-        client_secret = os.getenv(f"{env_prefix}_CLIENT_SECRET")
-        token_url = os.getenv(f"{env_prefix}_TOKEN_URL")
-        base_url = os.getenv(f"{env_prefix}_BASE_URL")
-
-        if not all([client_id, client_secret, token_url, base_url]):
-            missing = [
-                var
-                for var, val in [
-                    (f"{env_prefix}_CLIENT_ID", client_id),
-                    (f"{env_prefix}_CLIENT_SECRET", client_secret),
-                    (f"{env_prefix}_TOKEN_URL", token_url),
-                    (f"{env_prefix}_BASE_URL", base_url),
-                ]
-                if not val
-            ]
-            raise ValueError(f"Missing required environment variables: {missing}")
-
-        # Read optional environment variables
-        scope = os.getenv(f"{env_prefix}_SCOPE", "system/*.read")
-        audience = os.getenv(f"{env_prefix}_AUDIENCE")
-        timeout = int(os.getenv(f"{env_prefix}_TIMEOUT", "30"))
-        verify_ssl = os.getenv(f"{env_prefix}_VERIFY_SSL", "true").lower() == "true"
-
-        # Create configuration object
-        config = FHIRAuthConfig(
-            client_id=client_id,
-            client_secret=client_secret,
-            token_url=token_url,
-            base_url=base_url,
-            scope=scope,
-            audience=audience,
-            timeout=timeout,
-            verify_ssl=verify_ssl,
-        )
-
-        # Add the source using the config object
-        self.add_source_config(name, config)
-
-        logger.info(
-            f"Added FHIR source '{name}' from environment variables with prefix '{env_prefix}'"
-        )
+        return self.connection_manager.add_source_from_env(name, env_prefix)
 
     async def close(self):
         """Close all connections and clean up resources."""
-        await self.client_pool.close_all()
+        await self.connection_manager.close()
 
     async def __aenter__(self):
         """Async context manager entry."""
