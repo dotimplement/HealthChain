@@ -14,11 +14,13 @@ Core components:
 
 # Main application exports
 from healthchain.gateway.api.app import HealthChainAPI, create_app
+from healthchain.gateway.core.fhirgateway import FHIRGateway
 
 # Core components
 from healthchain.gateway.core.base import (
     BaseGateway,
     GatewayConfig,
+    EventDispatcherMixin,
 )
 
 # Event system
@@ -30,8 +32,8 @@ from healthchain.gateway.events.dispatcher import (
 
 # Re-export gateway implementations
 from healthchain.gateway.protocols import (
-    CDSHooksGateway,
-    NoteReaderGateway,
+    CDSHooksService,
+    NoteReaderService,
 )
 
 __all__ = [
@@ -41,11 +43,14 @@ __all__ = [
     # Core
     "BaseGateway",
     "GatewayConfig",
+    "EventDispatcherMixin",
     # Events
     "EventDispatcher",
     "EHREvent",
     "EHREventType",
     # Gateways
-    "CDSHooksGateway",
-    "NoteReaderGateway",
+    "FHIRGateway",
+    # Services
+    "CDSHooksService",
+    "NoteReaderService",
 ]

@@ -11,11 +11,13 @@ import asyncio
 from abc import ABC
 from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
+from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
 # Type variables for self-referencing return types and generic gateways
 G = TypeVar("G", bound="BaseGateway")
+P = TypeVar("P", bound="BaseProtocolHandler")
 T = TypeVar("T")  # For generic request types
 R = TypeVar("R")  # For generic response types
 
@@ -142,26 +144,28 @@ class EventDispatcherMixin:
         return self
 
 
-class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
+class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
     """
-    Base class for healthcare standard gateways that handle communication with external systems.
+    Base class for protocol handlers that process specific request/response types.
 
-    Gateways provide a consistent interface for interacting with healthcare standards
-    and protocols through the decorator pattern for handler registration.
+    This is designed for CDS Hooks, SOAP, and other protocol-specific handlers that:
+    - Have a specific request/response type
+    - Use decorator pattern for handler registration
+    - Process operations through registered handlers
 
     Type Parameters:
-        T: The request type this gateway handles
-        R: The response type this gateway returns
+        T: The request type this handler processes
+        R: The response type this handler returns
     """
 
     def __init__(
         self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
     ):
         """
-        Initialize a new gateway.
+        Initialize a new protocol handler.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the handler
             use_events: Whether to enable event dispatching
             **options: Additional configuration options
         """
@@ -177,7 +181,7 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
         # Initialize event dispatcher mixin
         EventDispatcherMixin.__init__(self)
 
-    def register_handler(self, operation: str, handler: Callable) -> G:
+    def register_handler(self, operation: str, handler: Callable) -> P:
         """
         Register a handler function for a specific operation.
 
@@ -280,54 +284,12 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
 
     def get_capabilities(self) -> List[str]:
         """
-        Get list of operations this gateway supports.
+        Get list of operations this handler supports.
 
         Returns:
             List of supported operation names
         """
         return list(self._handlers.keys())
-
-    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
-        """
-        Get routes that this gateway wants to register with the FastAPI app.
-
-        This method returns a list of tuples with the following structure:
-        (path, methods, handler, kwargs) where:
-        - path is the URL path for the endpoint
-        - methods is a list of HTTP methods this endpoint supports
-        - handler is the function to be called when the endpoint is accessed
-        - kwargs are additional arguments to pass to the add_api_route method
-
-        Args:
-            path: Optional base path to prefix all routes
-
-        Returns:
-            List of route tuples (path, methods, handler, kwargs)
-        """
-        # Default implementation returns empty list
-        # Specific gateway classes should override this
-        return []
-
-    def get_metadata(self) -> Dict[str, Any]:
-        """
-        Get metadata for this gateway, including capabilities and configuration.
-
-        Returns:
-            Dictionary of gateway metadata
-        """
-        # Default implementation returns basic info
-        # Specific gateway classes should override this
-        metadata = {
-            "gateway_type": self.__class__.__name__,
-            "operations": self.get_capabilities(),
-            "system_type": self.config.system_type,
-        }
-
-        # Add event-related metadata if events are enabled
-        if self.event_dispatcher:
-            metadata["event_enabled"] = True
-
-        return metadata
 
     @classmethod
     def create(cls, **options) -> G:
@@ -341,3 +303,65 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
             New gateway instance
         """
         return cls(**options)
+
+
+class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
+    """
+    Base class for healthcare integration gateways.
+
+    Combines FastAPI routing capabilities with event
+    dispatching to enable protocol-specific integrations.
+    """
+
+    def __init__(
+        self,
+        config: Optional[GatewayConfig] = None,
+        use_events: bool = True,
+        prefix: str = "/api",
+        tags: Optional[List[str]] = None,
+        **options,
+    ):
+        """
+        Initialize a new gateway.
+
+        Args:
+            config: Configuration options for the gateway
+            use_events: Whether to enable event dispatching
+            prefix: URL prefix for API routes
+            tags: OpenAPI tags
+            **options: Additional configuration options
+        """
+        # Initialize APIRouter
+        APIRouter.__init__(self, prefix=prefix, tags=tags or [])
+
+        self.options = options
+        self.config = config or GatewayConfig()
+        self.use_events = use_events
+        # Default to raising exceptions unless configured otherwise
+        self.return_errors = self.config.return_errors or options.get(
+            "return_errors", False
+        )
+
+        # Initialize event dispatcher mixin
+        EventDispatcherMixin.__init__(self)
+
+    # TODO: Implement this
+    def get_metadata(self) -> Dict[str, Any]:
+        """
+        Get metadata for this gateway, including capabilities and configuration.
+
+        Returns:
+            Dictionary of gateway metadata
+        """
+        # Default implementation returns basic info
+        # Specific gateway classes should override this
+        metadata = {
+            "gateway_type": self.__class__.__name__,
+            "system_type": self.config.system_type,
+        }
+
+        # Add event-related metadata if events are enabled
+        if self.event_dispatcher:
+            metadata["event_enabled"] = True
+
+        return metadata
