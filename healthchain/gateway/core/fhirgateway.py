@@ -72,40 +72,30 @@ class FHIRResponse(JSONResponse):
 class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
     # TODO: move to documentation
     """
-    FHIR integration hub with automatic connection pooling and lifecycle management.
-    Provides value-add endpoints for data aggregation and transformation.
+    FHIR Gateway for HealthChain.
+
+    A specialized gateway for FHIR resource operations including:
+    - Connection pooling and management
+    - Resource transformation and aggregation
+    - Event-driven processing
+    - OAuth2 authentication support
 
     Example:
         ```python
-        from fhir.resources.patient import Patient
-        from fhir.resources.documentreference import DocumentReference
-        from healthchain.gateway import FHIRGateway
-        from healthchain.gateway.api.app import HealthChainAPI
+        # Initialize with connection pooling
+        async with FHIRGateway(max_connections=50) as gateway:
+            # Add FHIR source
+            gateway.add_source("epic", "fhir://epic.org/api/FHIR/R4?...")
 
-        app = HealthChainAPI()
-        fhir_gateway = FHIRGateway()
+            # Register transformation handler
+            @gateway.transform(Patient)
+            async def enhance_patient(id: str, source: str = None) -> Patient:
+                async with gateway.modify(Patient, id, source) as patient:
+                    patient.active = True
+                    return patient
 
-        # Configure sources
-        fhir_gateway.add_source("epic", "fhir://r4.epic.com/api/FHIR/R4?auth=oauth&timeout=30")
-        fhir_gateway.add_source("cerner", "fhir://cernercare.com/r4?auth=basic&username=user&password=pass")
-
-        # Transform handler
-        @fhir_gateway.transform(DocumentReference)
-        async def enhance_document(id: str, source: str = None) -> DocumentReference:
-            document = await fhir_gateway.get_resource(DocumentReference, id, source)
-            async with fhir_gateway.resource_context(DocumentReference, id, source) as doc:
-                doc.description = "Enhanced by HealthChain"
-                if not doc.extension:
-                    doc.extension = []
-                doc.extension.append({
-                    "url": "http://healthchain.org/extension/processed",
-                    "valueDateTime": datetime.now().isoformat()
-                })
-                return doc
-
-
-        # Endpoints: /fhir/transform/DocumentReference/{id}?source=epic
-        #            /fhir/aggregate/Patient?id=123&sources=epic&sources=cerner
+            # Use the gateway
+            patient = await gateway.read(Patient, "123", "epic")
         ```
     """
 
@@ -158,15 +148,22 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
         # Register base routes only (metadata endpoint)
         self._register_base_routes()
-        # Handler-specific routes will be registered when the app is ready
-        self._routes_registered = False
+
+    def _get_gateway_dependency(self):
+        """Create a dependency function that returns this gateway instance."""
+
+        def get_self_gateway():
+            return self
+
+        return get_self_gateway
+
+    def _get_resource_name(self, resource_type: Type[Resource]) -> str:
+        """Extract resource name from resource type."""
+        return resource_type.__resource_type__
 
     def _register_base_routes(self):
         """Register basic endpoints"""
-
-        # Dependency for this gateway instance
-        def get_self_gateway():
-            return self
+        get_self_gateway = self._get_gateway_dependency()
 
         # Metadata endpoint
         @self.get("/metadata", response_class=FHIRResponse)
@@ -174,6 +171,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
         ):
             """Return the FHIR capability statement."""
+            # TODO: Review this
             return {
                 "resourceType": "CapabilityStatement",
                 "status": "active",
@@ -198,152 +196,12 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 ],
             }
 
-    def _register_handler_routes(self) -> None:
-        """
-        Register routes for all handlers directly on the gateway.
-
-        This ensures all routes get the router's prefix automatically.
-        """
-        # Register transform and aggregate routes for each resource type
-        for resource_type, operations in self._resource_handlers.items():
-            if "transform" in operations:
-                self._register_transform_route(resource_type)
-
-            if "aggregate" in operations:
-                self._register_aggregate_route(resource_type)
-
-        # Mark routes as registered
-        self._routes_registered = True
-
-    def _register_transform_route(self, resource_type: str) -> None:
-        """Register a transform route for a specific resource type."""
-        # Get resource type name
-        if hasattr(resource_type, "__resource_type__"):
-            resource_name = resource_type.__resource_type__
-        elif isinstance(resource_type, str):
-            resource_name = resource_type
-        else:
-            resource_name = getattr(resource_type, "__name__", str(resource_type))
-
-        # Create the transform path
-        transform_path = f"/transform/{resource_name}/{{id}}"
-
-        # Dependency for this gateway instance
-        def get_self_gateway():
-            return self
-
-        # Create a closure to capture the resource_type
-        def create_transform_handler(res_type):
-            async def transform_handler(
-                id: str = Path(..., description="Resource ID to transform"),
-                source: Optional[str] = Query(
-                    None, description="Source system to retrieve the resource from"
-                ),
-                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
-            ):
-                """Transform a resource with registered handler."""
-                # Get the handler for this resource type
-                handler = fhir._resource_handlers[res_type]["transform"]
-
-                # Execute the handler and return the result
-                try:
-                    result = handler(id, source)
-
-                    # Validate the result matches expected type
-                    validated_result = fhir._validate_handler_result(
-                        result, res_type, handler.__name__
-                    )
-
-                    return validated_result
-                except Exception as e:
-                    logger.error(f"Error in transform handler: {str(e)}")
-                    raise HTTPException(status_code=500, detail=str(e))
-
-            return transform_handler
-
-        # Add the route directly to the gateway
-        self.add_api_route(
-            path=transform_path,
-            endpoint=create_transform_handler(resource_type),
-            methods=["GET"],
-            summary=f"Transform {resource_name}",
-            description=f"Transform a {resource_name} resource with registered handler",
-            response_model_exclude_none=True,
-            response_class=FHIRResponse,
-            tags=self.tags,
-            include_in_schema=True,
-        )
-        logger.debug(f"Registered transform endpoint: {self.prefix}{transform_path}")
-
-    def _register_aggregate_route(self, resource_type: str) -> None:
-        """Register an aggregate route for a specific resource type."""
-        # Get resource type name
-        if hasattr(resource_type, "__resource_type__"):
-            resource_name = resource_type.__resource_type__
-        elif isinstance(resource_type, str):
-            resource_name = resource_type
-        else:
-            resource_name = getattr(resource_type, "__name__", str(resource_type))
-
-        # Create the aggregate path
-        aggregate_path = f"/aggregate/{resource_name}"
-
-        # Dependency for this gateway instance
-        def get_self_gateway():
-            return self
-
-        # Create a closure to capture the resource_type
-        def create_aggregate_handler(res_type):
-            async def aggregate_handler(
-                id: Optional[str] = Query(None, description="ID to aggregate data for"),
-                sources: Optional[List[str]] = Query(
-                    None, description="List of source names to query"
-                ),
-                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
-            ):
-                """Aggregate resources with registered handler."""
-                # Get the handler for this resource type
-                handler = fhir._resource_handlers[res_type]["aggregate"]
-
-                # Execute the handler and return the result
-                try:
-                    result = handler(id, sources)
-
-                    # For aggregate operations, result might be a list or bundle
-                    # Validate if it's a single resource
-                    if hasattr(result, "resourceType"):
-                        validated_result = fhir._validate_handler_result(
-                            result, res_type, handler.__name__
-                        )
-                        return validated_result
-
-                    return result
-                except Exception as e:
-                    logger.error(f"Error in aggregate handler: {str(e)}")
-                    raise HTTPException(status_code=500, detail=str(e))
-
-            return aggregate_handler
-
-        # Add the route directly to the gateway
-        self.add_api_route(
-            path=aggregate_path,
-            endpoint=create_aggregate_handler(resource_type),
-            methods=["GET"],
-            summary=f"Aggregate {resource_name}",
-            description=f"Aggregate {resource_name} resources from multiple sources",
-            response_model_exclude_none=True,
-            response_class=FHIRResponse,
-            tags=self.tags,
-            include_in_schema=True,
-        )
-        logger.debug(f"Registered aggregate endpoint: {self.prefix}{aggregate_path}")
-
     def _register_resource_handler(
         self,
-        resource_type: Union[str, Type[Resource]],
+        resource_type: Type[Resource],
         operation: str,
         handler: Callable,
-    ):
+    ) -> None:
         """Register a custom handler for a resource operation."""
         self._validate_handler_annotations(resource_type, operation, handler)
 
@@ -351,128 +209,123 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             self._resource_handlers[resource_type] = {}
         self._resource_handlers[resource_type][operation] = handler
 
-        # Log the registration
-        resource_name = getattr(resource_type, "__resource_type__", str(resource_type))
+        resource_name = self._get_resource_name(resource_type)
         logger.debug(
             f"Registered {operation} handler for {resource_name}: {handler.__name__}"
         )
 
-        # Register this specific route immediately
-        if operation == "transform":
-            self._register_transform_route(resource_type)
-        elif operation == "aggregate":
-            self._register_aggregate_route(resource_type)
+        self._register_operation_route(resource_type, operation)
 
     def _validate_handler_annotations(
         self,
-        resource_type: Union[str, Type[Resource]],
+        resource_type: Type[Resource],
         operation: str,
         handler: Callable,
-    ):
-        """
-        Validate that handler annotations match the decorator resource type.
+    ) -> None:
+        """Validate that handler annotations match the decorator resource type."""
+        if operation != "transform":
+            return
 
-        Args:
-            resource_type: The resource type from the decorator
-            operation: The operation being registered (transform, aggregate)
-            handler: The handler function to validate
-
-        Raises:
-            TypeError: If annotations don't match or are missing
-        """
         try:
-            # Get handler signature
             sig = inspect.signature(handler)
+            return_annotation = sig.return_annotation
 
-            # Check return type annotation for transform operations
-            if operation == "transform":
-                return_annotation = sig.return_annotation
+            if return_annotation == inspect.Parameter.empty:
+                warnings.warn(
+                    f"Handler {handler.__name__} missing return type annotation for {resource_type.__name__}"
+                )
+                return
 
-                if return_annotation == inspect.Parameter.empty:
-                    warnings.warn(
-                        f"Handler {handler.__name__} for {operation} operation "
-                        f"should have a return type annotation matching {resource_type}"
-                    )
-                elif return_annotation != resource_type:
-                    # Try to compare by name if direct comparison fails
-                    resource_name = getattr(
-                        resource_type, "__name__", str(resource_type)
-                    )
-                    return_name = getattr(
-                        return_annotation, "__name__", str(return_annotation)
-                    )
+            if return_annotation != resource_type:
+                raise TypeError(
+                    f"Handler {handler.__name__} return type ({return_annotation}) "
+                    f"doesn't match decorator resource type ({resource_type})"
+                )
 
-                    if resource_name != return_name:
-                        error_msg = (
-                            f"Handler {handler.__name__} return type annotation "
-                            f"({return_annotation}) doesn't match decorator resource type "
-                            f"({resource_type}). They must be identical for type safety."
-                        )
-                        logger.error(error_msg)
-                        raise TypeError(error_msg)
-
-            # Check if handler expects resource_type parameter (for future enhancement)
-            if "resource_type" in sig.parameters:
-                param = sig.parameters["resource_type"]
-                if param.annotation not in (Type[Resource], inspect.Parameter.empty):
-                    warnings.warn(
-                        f"Handler {handler.__name__} has resource_type parameter "
-                        f"with annotation {param.annotation}. Consider using Type[Resource] "
-                        f"for better type safety."
-                    )
-
-        except TypeError as e:
-            # Re-raise TypeError to prevent registration of invalid handlers
-            raise e
         except Exception as e:
+            if isinstance(e, TypeError):
+                raise
             logger.warning(f"Could not validate handler annotations: {str(e)}")
 
-    def _validate_handler_result(
-        self, result: Any, expected_type: Union[str, Type[Resource]], handler_name: str
-    ) -> Any:
-        """
-        Validate that handler result matches expected resource type.
+    def _register_operation_route(
+        self, resource_type: Type[Resource], operation: str
+    ) -> None:
+        """Register a route for a specific resource type and operation."""
+        resource_name = self._get_resource_name(resource_type)
 
-        Args:
-            result: The result returned by the handler
-            expected_type: The expected resource type
-            handler_name: Name of the handler for error reporting
+        if operation == "transform":
+            path = f"/transform/{resource_name}/{{id}}"
+            summary = f"Transform {resource_name}"
+            description = (
+                f"Transform a {resource_name} resource with registered handler"
+            )
+        elif operation == "aggregate":
+            path = f"/aggregate/{resource_name}"
+            summary = f"Aggregate {resource_name}"
+            description = f"Aggregate {resource_name} resources from multiple sources"
+        else:
+            raise ValueError(f"Unsupported operation: {operation}")
 
-        Returns:
-            The validated result
+        handler = self._create_route_handler(resource_type, operation)
 
-        Raises:
-            TypeError: If result type doesn't match expected type
-        """
-        if result is None:
-            return result
+        self.add_api_route(
+            path=path,
+            endpoint=handler,
+            methods=["GET"],
+            summary=summary,
+            description=description,
+            response_model_exclude_none=True,
+            response_class=FHIRResponse,
+            tags=self.tags,
+            include_in_schema=True,
+        )
+        logger.debug(f"Registered {operation} endpoint: {self.prefix}{path}")
 
-        # For FHIR Resource types, check inheritance
-        if hasattr(expected_type, "__mro__") and issubclass(expected_type, Resource):
-            if not isinstance(result, expected_type):
-                raise TypeError(
-                    f"Handler {handler_name} returned {type(result)} "
-                    f"but expected {expected_type}. Ensure the handler returns "
-                    f"the correct FHIR resource type."
-                )
+    def _create_route_handler(
+        self, resource_type: Type[Resource], operation: str
+    ) -> Callable:
+        """Create a route handler for the given resource type and operation."""
+        get_self_gateway = self._get_gateway_dependency()
 
-        # For string resource types, check resourceType attribute
-        elif isinstance(expected_type, str):
-            if hasattr(result, "resourceType"):
-                if result.resourceType != expected_type:
-                    raise TypeError(
-                        f"Handler {handler_name} returned resource with type "
-                        f"'{result.resourceType}' but expected '{expected_type}'"
-                    )
-            else:
-                logger.warning(
-                    f"Cannot validate resource type for result from {handler_name}: "
-                    f"no resourceType attribute found"
-                )
+        if operation == "transform":
 
-        return result
+            async def handler(
+                id: str = Path(..., description="Resource ID to transform"),
+                source: Optional[str] = Query(
+                    None, description="Source system to retrieve the resource from"
+                ),
+                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            ):
+                """Transform a resource with registered handler."""
+                try:
+                    handler_func = fhir._resource_handlers[resource_type]["transform"]
+                    result = handler_func(id, source)
+                    return result
+                except Exception as e:
+                    logger.error(f"Error in transform handler: {str(e)}")
+                    raise HTTPException(status_code=500, detail=str(e))
 
-    def add_source(self, name: str, connection_string: str):
+        elif operation == "aggregate":
+
+            async def handler(
+                id: Optional[str] = Query(None, description="ID to aggregate data for"),
+                sources: Optional[List[str]] = Query(
+                    None, description="List of source names to query"
+                ),
+                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            ):
+                """Aggregate resources with registered handler."""
+                try:
+                    handler_func = fhir._resource_handlers[resource_type]["aggregate"]
+                    result = handler_func(id, sources)
+                    return result
+                except Exception as e:
+                    logger.error(f"Error in aggregate handler: {str(e)}")
+                    raise HTTPException(status_code=500, detail=str(e))
+
+        return handler
+
+    def add_source(self, name: str, connection_string: str) -> None:
         """
         Add a FHIR data source using connection string with OAuth2.0 flow.
 
@@ -533,7 +386,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
     async def read(
         self,
-        resource_type: Union[str, Type[Resource]],
+        resource_type: Type[Resource],
         fhir_id: str,
         source: str = None,
     ) -> Resource:
@@ -541,7 +394,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         Read a FHIR resource.
 
         Args:
-            resource_type: The FHIR resource type (class or string)
+            resource_type: The FHIR resource type class
             fhir_id: Resource ID to fetch
             source: Source name to fetch from (uses first available if None)
 
@@ -563,8 +416,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             # Fetch the resource
             resource = await client.read(resource_type, fhir_id)
             if not resource:
-                # Get type name for error message
-                type_name = getattr(resource_type, "__name__", str(resource_type))
+                type_name = resource_type.__resource_type__
                 raise ValueError(f"Resource {type_name}/{fhir_id} not found")
 
             # Get type name for event emission
@@ -582,7 +434,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
     async def search(
         self,
-        resource_type: Union[str, Type[Resource]],
+        resource_type: Type[Resource],
         params: Dict[str, Any] = None,
         source: str = None,
     ) -> Bundle:
@@ -590,7 +442,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         Search for FHIR resources.
 
         Args:
-            resource_type: The FHIR resource type (class or string)
+            resource_type: The FHIR resource type class
             params: Search parameters (e.g., {"name": "Smith", "active": "true"})
             source: Source name to search in (uses first available if None)
 
@@ -614,10 +466,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             bundle = await client.search(resource_type, params)
 
             # Get type name for event emission
-            if hasattr(resource_type, "__name__"):
-                type_name = resource_type.__name__
-            else:
-                type_name = str(resource_type)
+            type_name = resource_type.__resource_type__
 
             # Emit search event
             self._emit_fhir_event(
@@ -640,14 +489,16 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             FHIRErrorHandler.handle_fhir_error(e, resource_type, None, "search")
 
     @asynccontextmanager
-    async def modify(self, resource_type: str, fhir_id: str = None, source: str = None):
+    async def modify(
+        self, resource_type: Type[Resource], fhir_id: str = None, source: str = None
+    ):
         """
         Context manager for working with FHIR resources.
 
         Automatically handles fetching, updating, and error handling using connection pooling.
 
         Args:
-            resource_type: The FHIR resource type (e.g. 'Patient')
+            resource_type: The FHIR resource type class (e.g. Patient)
             fhir_id: Resource ID (if None, creates a new resource)
             source: Source name to use (uses first available if None)
 
@@ -663,21 +514,11 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         is_new = fhir_id is None
 
         # Get type name for error messages
-        type_name = (
-            resource_type.__name__
-            if hasattr(resource_type, "__name__")
-            else str(resource_type)
-        )
+        type_name = resource_type.__resource_type__
 
         try:
             if is_new:
-                import importlib
-
-                resource_module = importlib.import_module(
-                    f"fhir.resources.{type_name.lower()}"
-                )
-                resource_class = getattr(resource_module, type_name)
-                resource = resource_class()
+                resource = resource_type()
             else:
                 resource = await client.read(resource_type, fhir_id)
                 logger.debug(f"Retrieved {type_name}/{fhir_id} in modify context")
@@ -703,16 +544,16 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             )
 
     @property
-    def supported_resources(self) -> List[str]:
+    def supported_resources(self) -> List[Type[Resource]]:
         """Get list of supported FHIR resource types."""
         return list(self._resource_handlers.keys())
 
-    def aggregate(self, resource_type: Union[str, Type[Resource]]):
+    def aggregate(self, resource_type: Type[Resource]):
         """
         Decorator for custom aggregation functions.
 
         Args:
-            resource_type: The FHIR resource type (class or string) that this handler aggregates
+            resource_type: The FHIR resource type class that this handler aggregates
 
         Example:
             @fhir_gateway.aggregate(Patient)
@@ -727,12 +568,12 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
         return decorator
 
-    def transform(self, resource_type: Union[str, Type[Resource]]):
+    def transform(self, resource_type: Type[Resource]):
         """
         Decorator for custom transformation functions.
 
         Args:
-            resource_type: The FHIR resource type (class or string) that this handler transforms
+            resource_type: The FHIR resource type class that this handler transforms
 
         Example:
             @fhir_gateway.transform(DocumentReference)
