@@ -6,20 +6,15 @@ integration with EHR systems.
 """
 
 import logging
-from datetime import datetime
 
-from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from fastapi import Body, Depends
 from pydantic import BaseModel
-from fastapi import Depends, Body
 
-from healthchain.gateway.core.base import BaseProtocolHandler
-from healthchain.gateway.events.dispatcher import (
-    EventDispatcher,
-    EHREvent,
-    EHREventType,
-)
 from healthchain.gateway.api.protocols import GatewayProtocol
-
+from healthchain.gateway.core.base import BaseProtocolHandler
+from healthchain.gateway.events.cdshooks import create_cds_hook_event
+from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsdiscovery import CDSService, CDSServiceInformation
 from healthchain.models.responses.cdsresponse import CDSResponse
@@ -30,14 +25,6 @@ logger = logging.getLogger(__name__)
 
 # Type variable for self-referencing return types
 T = TypeVar("T", bound="CDSHooksService")
-
-
-HOOK_TO_EVENT = {
-    "patient-view": EHREventType.CDS_PATIENT_VIEW,
-    "encounter-discharge": EHREventType.CDS_ENCOUNTER_DISCHARGE,
-    "order-sign": EHREventType.CDS_ORDER_SIGN,
-    "order-select": EHREventType.CDS_ORDER_SELECT,
-}
 
 
 # Configuration options for CDS Hooks service
@@ -347,26 +334,10 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
                 self._run_async_publish(event)
             return
 
-        # Get the event type from the mapping
-        event_type = HOOK_TO_EVENT.get(hook_type, EHREventType.EHR_GENERIC)
-
-        # Create a standard event
-        event = EHREvent(
-            event_type=event_type,
-            source_system="CDS-Hooks",
-            timestamp=datetime.now(),
-            payload={
-                "hook": hook_type,
-                "hook_instance": request.hookInstance,
-                "context": dict(request.context),
-            },
-            metadata={
-                "cards_count": len(response.cards) if response.cards else 0,
-            },
-        )
-
-        # Publish the event
-        self._run_async_publish(event)
+        # Create a standard CDS Hook event using the utility function
+        event = create_cds_hook_event(hook_type, request, response)
+        if event:
+            self._run_async_publish(event)
 
     def get_metadata(self) -> List[Dict[str, Any]]:
         """

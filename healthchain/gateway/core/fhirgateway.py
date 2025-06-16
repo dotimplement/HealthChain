@@ -10,7 +10,6 @@ import inspect
 import warnings
 
 from contextlib import asynccontextmanager
-from datetime import datetime
 from typing import (
     Dict,
     List,
@@ -18,7 +17,6 @@ from typing import (
     Callable,
     Optional,
     TypeVar,
-    Union,
     Type,
 )
 from fastapi import Depends, HTTPException, Query, Path
@@ -31,11 +29,8 @@ from fhir.resources.capabilitystatement import CapabilityStatement
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.core.connection import FHIRConnectionManager
 from healthchain.gateway.core.errors import FHIRErrorHandler
-from healthchain.gateway.events.dispatcher import (
-    EHREvent,
-    EHREventType,
-    EventDispatcher,
-)
+from healthchain.gateway.events.dispatcher import EventDispatcher
+from healthchain.gateway.events.fhir import create_fhir_event
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients.fhir import FHIRServerInterface
 
@@ -44,14 +39,6 @@ logger = logging.getLogger(__name__)
 
 # Type variable for FHIR Resource
 T = TypeVar("T", bound=Resource)
-
-OPERATION_TO_EVENT = {
-    "read": EHREventType.FHIR_READ,
-    "search": EHREventType.FHIR_SEARCH,
-    "create": EHREventType.FHIR_CREATE,
-    "update": EHREventType.FHIR_UPDATE,
-    "delete": EHREventType.FHIR_DELETE,
-}
 
 
 class FHIRResponse(JSONResponse):
@@ -96,7 +83,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
     def __init__(
         self,
-        sources: Dict[str, Union[FHIRServerInterface, str]] = None,
+        sources: Dict[str, FHIRServerInterface] = None,
         prefix: str = "/fhir",
         tags: List[str] = ["FHIR"],
         use_events: bool = True,
@@ -610,11 +597,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         if not self.use_events or not self.event_dispatcher:
             return
 
-        # Get the event type from the mapping
-        event_type = OPERATION_TO_EVENT.get(operation)
-        if not event_type:
-            return
-
         # If a custom event creator is defined, use it
         if self._event_creator:
             event = self._event_creator(operation, resource_type, resource_id, resource)
@@ -622,24 +604,28 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 self._run_async_publish(event)
             return
 
-        # Create a standard event
-        event = EHREvent(
-            event_type=event_type,
-            source_system="FHIR",
-            timestamp=datetime.now(),
-            payload={
-                "resource_type": resource_type,
-                "resource_id": resource_id,
-                "operation": operation,
-            },
-        )
+        # Create a standard FHIR event using the utility function
+        event = create_fhir_event(operation, resource_type, resource_id, resource)
+        if event:
+            self._run_async_publish(event)
 
-        # Add the resource data if available
-        if resource:
-            event.payload["resource"] = resource
+    @property
+    def supported_resources(self) -> List[str]:
+        """Get list of supported FHIR resource types."""
+        return list(self._resource_handlers.keys())
 
-        # Publish the event
-        self._run_async_publish(event)
+    def get_capabilities(self) -> List[str]:
+        """
+        Get list of supported FHIR operations and resources.
+
+        Returns:
+            List of capabilities this gateway supports
+        """
+        capabilities = []
+        for resource_type, operations in self._resource_handlers.items():
+            for operation in operations:
+                capabilities.append(f"{operation}:{resource_type}")
+        return capabilities
 
     def get_pool_status(self) -> Dict[str, Any]:
         """

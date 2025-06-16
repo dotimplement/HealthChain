@@ -6,23 +6,23 @@ Epic's CDA document processing services.
 """
 
 import logging
-from typing import Optional, Dict, Any, Callable, TypeVar, Union
 
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
+
+from pydantic import BaseModel
 from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
-from pydantic import BaseModel
-from datetime import datetime
 
-from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
+from healthchain.gateway.api.protocols import SOAPGatewayProtocol
 from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
+from healthchain.gateway.events.notereader import create_notereader_event
 from healthchain.gateway.soap.epiccdsservice import CDSServices
-from healthchain.models.requests import CdaRequest
-from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.gateway.soap.model.epicclientfault import ClientFault
 from healthchain.gateway.soap.model.epicserverfault import ServerFault
-from healthchain.gateway.api.protocols import SOAPGatewayProtocol
+from healthchain.models.requests.cdarequest import CdaRequest
+from healthchain.models.responses.cdaresponse import CdaResponse
 
 logger = logging.getLogger(__name__)
 
@@ -313,24 +313,10 @@ class NoteReaderService(
                 self._run_async_publish(event)
             return
 
-        # Create a standard event
-        event = EHREvent(
-            event_type=EHREventType.NOTEREADER_PROCESS_NOTE,
-            source_system="NoteReader",
-            timestamp=datetime.now(),
-            payload={
-                "operation": operation,
-                "work_type": request.work_type,
-                "session_id": request.session_id,
-                "has_error": response.error is not None,
-            },
-            metadata={
-                "service": "NoteReaderService",
-                "system_type": self.config.system_type,
-            },
+        # Create a standard NoteReader event using the utility function
+        event = create_notereader_event(
+            operation, request, response, self.config.system_type
         )
-
-        # Publish the event
         self._run_async_publish(event)
 
     def get_metadata(self) -> Dict[str, Any]:
