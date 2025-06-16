@@ -11,65 +11,85 @@ from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.responses.cdsdiscovery import CDSServiceInformation
 
 
-def test_cdshooks_gateway_initialization():
-    """Test CDSHooksService initialization with default config"""
-    gateway = CDSHooksService()
-    assert isinstance(gateway.config, CDSHooksConfig)
-    assert gateway.config.system_type == "CDS-HOOKS"
-    assert gateway.config.base_path == "/cds"
-    assert gateway.config.discovery_path == "/cds-discovery"
-    assert gateway.config.service_path == "/cds-services"
+@pytest.mark.parametrize(
+    "config_args,expected_paths",
+    [
+        # Default config
+        (
+            {},
+            {
+                "base_path": "/cds",
+                "discovery_path": "/cds-discovery",
+                "service_path": "/cds-services",
+            },
+        ),
+        # Custom config
+        (
+            {
+                "base_path": "/custom-cds",
+                "discovery_path": "/custom-discovery",
+                "service_path": "/custom-services",
+            },
+            {
+                "base_path": "/custom-cds",
+                "discovery_path": "/custom-discovery",
+                "service_path": "/custom-services",
+            },
+        ),
+    ],
+)
+def test_cdshooks_service_configuration(config_args, expected_paths):
+    """CDSHooksService supports both default and custom path configurations."""
+    if config_args:
+        config = CDSHooksConfig(**config_args)
+        gateway = CDSHooksService(config=config)
+    else:
+        gateway = CDSHooksService.create()
 
-
-def test_cdshooks_gateway_create():
-    """Test CDSHooksService.create factory method"""
-    gateway = CDSHooksService.create()
     assert isinstance(gateway, CDSHooksService)
     assert isinstance(gateway.config, CDSHooksConfig)
+    assert gateway.config.system_type == "CDS-HOOKS"
+
+    for path_name, expected_value in expected_paths.items():
+        assert getattr(gateway.config, path_name) == expected_value
 
 
-def test_cdshooks_gateway_hook_decorator():
-    """Test hook decorator for registering handlers"""
+def test_cdshooks_hook_decorator_with_metadata_variants():
+    """Hook decorator supports default and custom metadata configurations."""
     gateway = CDSHooksService()
 
+    # Default metadata
     @gateway.hook("patient-view", id="test-patient-view")
-    def handle_patient_view(request):
+    def handle_patient_view_default(request):
         return CDSResponse(cards=[])
 
-    # Verify handler is registered
-    assert "patient-view" in gateway._handlers
-    assert "patient-view" in gateway._handler_metadata
-    assert gateway._handler_metadata["patient-view"]["id"] == "test-patient-view"
-    assert gateway._handler_metadata["patient-view"]["title"] == "Patient View"
-    assert (
-        gateway._handler_metadata["patient-view"]["description"]
-        == "CDS Hook service created by HealthChain"
-    )
-
-
-def test_cdshooks_gateway_hook_with_custom_metadata():
-    """Test hook decorator with custom metadata"""
-    gateway = CDSHooksService()
-
+    # Custom metadata
     @gateway.hook(
-        "patient-view",
+        "order-select",
         id="custom-id",
         title="Custom Title",
         description="Custom description",
         usage_requirements="Requires patient context",
     )
-    def handle_patient_view(request):
+    def handle_order_select_custom(request):
         return CDSResponse(cards=[])
 
-    assert gateway._handler_metadata["patient-view"]["id"] == "custom-id"
-    assert gateway._handler_metadata["patient-view"]["title"] == "Custom Title"
-    assert (
-        gateway._handler_metadata["patient-view"]["description"] == "Custom description"
-    )
-    assert (
-        gateway._handler_metadata["patient-view"]["usage_requirements"]
-        == "Requires patient context"
-    )
+    # Verify both handlers registered correctly
+    assert "patient-view" in gateway._handlers
+    assert "order-select" in gateway._handlers
+
+    # Check default metadata
+    default_meta = gateway._handler_metadata["patient-view"]
+    assert default_meta["id"] == "test-patient-view"
+    assert default_meta["title"] == "Patient View"
+    assert default_meta["description"] == "CDS Hook service created by HealthChain"
+
+    # Check custom metadata
+    custom_meta = gateway._handler_metadata["order-select"]
+    assert custom_meta["id"] == "custom-id"
+    assert custom_meta["title"] == "Custom Title"
+    assert custom_meta["description"] == "Custom description"
+    assert custom_meta["usage_requirements"] == "Requires patient context"
 
 
 def test_cdshooks_gateway_handle_request(test_cds_request):
@@ -123,56 +143,49 @@ def test_cdshooks_gateway_handle_discovery():
     assert hooks["order-select"].title == "Order Select"
 
 
-def test_cdshooks_gateway_get_routes():
-    """Test that CDSHooksService correctly returns routes with get_routes method"""
+def test_cdshooks_gateway_routing_and_custom_paths():
+    """CDSHooksService generates correct routes for both default and custom configurations."""
+    # Test default paths
     gateway = CDSHooksService()
 
-    # Register sample hooks
     @gateway.hook("patient-view", id="test-patient-view")
     def handle_patient_view(request):
         return CDSResponse(cards=[])
 
-    # Get routes from gateway
     routes = gateway.get_routes()
-
-    # Should return at least 2 routes (discovery endpoint and hook endpoint)
     assert len(routes) >= 2
 
     # Verify discovery endpoint
     discovery_routes = [r for r in routes if "GET" in r[1]]
     assert len(discovery_routes) >= 1
     discovery_route = discovery_routes[0]
-    assert discovery_route[1] == ["GET"]  # HTTP method is GET
+    assert discovery_route[1] == ["GET"]
 
     # Verify hook endpoint
     hook_routes = [r for r in routes if "POST" in r[1]]
     assert len(hook_routes) >= 1
     hook_route = hook_routes[0]
-    assert hook_route[1] == ["POST"]  # HTTP method is POST
-    assert "test-patient-view" in hook_route[0]  # Route path contains hook ID
+    assert hook_route[1] == ["POST"]
+    assert "test-patient-view" in hook_route[0]
 
-
-def test_cdshooks_gateway_custom_base_path():
-    """Test CDSHooksService with custom base path"""
-    config = CDSHooksConfig(
+    # Test custom paths
+    custom_config = CDSHooksConfig(
         base_path="/custom-cds",
         discovery_path="/custom-discovery",
         service_path="/custom-services",
     )
-    gateway = CDSHooksService(config=config)
+    custom_gateway = CDSHooksService(config=custom_config)
 
-    @gateway.hook("patient-view", id="test-service")
-    def handle_patient_view(request):
+    @custom_gateway.hook("patient-view", id="test-service")
+    def handle_custom_patient_view(request):
         return CDSResponse(cards=[])
 
-    routes = gateway.get_routes()
+    custom_routes = custom_gateway.get_routes()
+    custom_discovery_route = [r for r in custom_routes if "GET" in r[1]][0]
+    custom_service_route = [r for r in custom_routes if "POST" in r[1]][0]
 
-    # Check that custom paths are used in routes
-    discovery_route = [r for r in routes if "GET" in r[1]][0]
-    assert discovery_route[0] == "/custom-cds/custom-discovery"
-
-    service_route = [r for r in routes if "POST" in r[1]][0]
-    assert "/custom-cds/custom-services/test-service" in service_route[0]
+    assert custom_discovery_route[0] == "/custom-cds/custom-discovery"
+    assert "/custom-cds/custom-services/test-service" in custom_service_route[0]
 
 
 def test_cdshooks_gateway_event_emission():

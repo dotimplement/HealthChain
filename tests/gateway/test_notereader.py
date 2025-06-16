@@ -10,45 +10,67 @@ from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.gateway.events.dispatcher import EventDispatcher
 
 
-def test_notereader_gateway_initialization():
-    """Test NoteReaderService initialization with default config"""
-    gateway = NoteReaderService()
-    assert isinstance(gateway.config, NoteReaderConfig)
-    assert gateway.config.service_name == "ICDSServices"
-    assert gateway.config.namespace == "urn:epic-com:Common.2013.Services"
-    assert gateway.config.system_type == "EHR_CDA"
+@pytest.mark.parametrize(
+    "config_args,expected_values",
+    [
+        # Default config via create()
+        (
+            {},
+            {
+                "service_name": "ICDSServices",
+                "namespace": "urn:epic-com:Common.2013.Services",
+                "system_type": "EHR_CDA",
+                "default_mount_path": "/notereader",
+            },
+        ),
+        # Custom config
+        (
+            {
+                "service_name": "CustomService",
+                "namespace": "urn:custom:namespace",
+                "system_type": "CUSTOM_SYSTEM",
+                "default_mount_path": "/custom-path",
+            },
+            {
+                "service_name": "CustomService",
+                "namespace": "urn:custom:namespace",
+                "system_type": "CUSTOM_SYSTEM",
+                "default_mount_path": "/custom-path",
+            },
+        ),
+    ],
+)
+def test_notereader_service_configuration(config_args, expected_values):
+    """NoteReaderService supports both default and custom configurations."""
+    if config_args:
+        config = NoteReaderConfig(**config_args)
+        gateway = NoteReaderService(config=config)
+    else:
+        gateway = NoteReaderService.create()
 
-
-def test_notereader_gateway_create():
-    """Test NoteReaderService.create factory method"""
-    gateway = NoteReaderService.create()
     assert isinstance(gateway, NoteReaderService)
     assert isinstance(gateway.config, NoteReaderConfig)
 
+    for attr_name, expected_value in expected_values.items():
+        assert getattr(gateway.config, attr_name) == expected_value
 
-def test_notereader_gateway_register_handler():
-    """Test handler registration with gateway"""
+
+def test_notereader_handler_registration_methods():
+    """NoteReaderService supports both direct registration and decorator-based registration."""
     gateway = NoteReaderService()
+
+    # Test direct registration
     mock_handler = MagicMock(return_value=CdaResponse(document="test", error=None))
-
-    # Register handler
     gateway.register_handler("ProcessDocument", mock_handler)
-
-    # Verify handler is registered
     assert "ProcessDocument" in gateway._handlers
     assert gateway._handlers["ProcessDocument"] == mock_handler
 
-
-def test_notereader_gateway_method_decorator():
-    """Test method decorator for registering handlers"""
-    gateway = NoteReaderService()
-
-    @gateway.method("ProcessDocument")
-    def process_document(request):
+    # Test decorator registration
+    @gateway.method("ProcessNotes")
+    def process_notes(request):
         return CdaResponse(document="processed", error=None)
 
-    # Verify handler is registered
-    assert "ProcessDocument" in gateway._handlers
+    assert "ProcessNotes" in gateway._handlers
 
 
 def test_notereader_gateway_handle():
@@ -189,23 +211,6 @@ def test_notereader_gateway_get_metadata():
     assert metadata["system_type"] == "EHR_CDA"
     assert "mount_path" in metadata
     assert metadata["mount_path"] == "/notereader"
-
-
-def test_notereader_gateway_custom_config():
-    """Test NoteReaderService with custom configuration"""
-    custom_config = NoteReaderConfig(
-        service_name="CustomService",
-        namespace="urn:custom:namespace",
-        system_type="CUSTOM_SYSTEM",
-        default_mount_path="/custom-path",
-    )
-
-    gateway = NoteReaderService(config=custom_config)
-
-    assert gateway.config.service_name == "CustomService"
-    assert gateway.config.namespace == "urn:custom:namespace"
-    assert gateway.config.system_type == "CUSTOM_SYSTEM"
-    assert gateway.config.default_mount_path == "/custom-path"
 
 
 @patch("healthchain.gateway.protocols.notereader.CDSServices")

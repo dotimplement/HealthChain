@@ -47,23 +47,29 @@ def sample_event():
     )
 
 
-def test_event_dispatcher_initialization(dispatcher):
-    """Test that EventDispatcher initializes correctly."""
+def test_event_dispatcher_initialization_and_app_binding(app, dispatcher):
+    """EventDispatcher initializes correctly and binds to FastAPI apps."""
+    # Test initial state
     assert dispatcher.app is None
     assert dispatcher.middleware_id is not None
 
-
-def test_event_dispatcher_init_app(app, dispatcher):
-    """Test that EventDispatcher can be initialized with a FastAPI app."""
+    # Test app initialization
     dispatcher.init_app(app)
     assert dispatcher.app == app
     assert len(app.user_middleware) == 1
 
 
-def test_register_handler(initialized_dispatcher):
-    """Test that register_handler returns a decorator."""
+def test_event_handler_registration_returns_decorator(initialized_dispatcher):
+    """EventDispatcher register_handler returns a callable decorator."""
     decorator = initialized_dispatcher.register_handler(EHREventType.EHR_GENERIC)
     assert callable(decorator)
+
+
+def test_ehr_event_naming_and_types(sample_event):
+    """EHREvent provides correct event naming and type validation."""
+    assert sample_event.get_name() == "ehr.generic"
+    assert EHREventType.EHR_GENERIC.value == "ehr.generic"
+    assert EHREventType.FHIR_READ.value == "fhir.read"
 
 
 # TODO: test async
@@ -73,14 +79,3 @@ def test_register_handler(initialized_dispatcher):
 #     mock_dispatch.return_value = None
 #     await initialized_dispatcher.publish(sample_event)
 #     mock_dispatch.assert_called_once()
-
-
-def test_ehr_event_get_name(sample_event):
-    """Test that EHREvent.get_name returns the correct event name."""
-    assert sample_event.get_name() == "ehr.generic"
-
-
-def test_basic_event_types():
-    """Test a few basic event types."""
-    assert EHREventType.EHR_GENERIC.value == "ehr.generic"
-    assert EHREventType.FHIR_READ.value == "fhir.read"
