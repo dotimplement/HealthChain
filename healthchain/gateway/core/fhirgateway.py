@@ -323,8 +323,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         """
         Get a FHIR client for the specified source.
 
-        Connections are automatically pooled and managed by httpx.
-
         Args:
             source: Source name to get client for (uses first available if None)
 
@@ -349,22 +347,17 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         Raises:
             FHIRConnectionError: If connection fails
         """
-        try:
-            client = await self.get_client(source)
-            capabilities = await client.capabilities()
+        capabilities = await self._execute_with_client(
+            "capabilities",
+            source=source,
+            resource_type=CapabilityStatement,
+        )
 
-            # Emit capabilities event
-            self._emit_fhir_event(
-                "capabilities", "CapabilityStatement", None, capabilities
-            )
-            logger.debug("Retrieved server capabilities")
+        # Emit capabilities event
+        self._emit_fhir_event("capabilities", "CapabilityStatement", None, capabilities)
+        logger.debug("Retrieved server capabilities")
 
-            return capabilities
-
-        except Exception as e:
-            FHIRErrorHandler.handle_fhir_error(
-                e, "CapabilityStatement", None, "capabilities"
-            )
+        return capabilities
 
     async def read(
         self,
@@ -389,30 +382,27 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
         Example:
             # Simple read-only access
-            document = await fhir_gateway.get_resource(DocumentReference, "123", "epic")
+            document = await fhir_gateway.read(DocumentReference, "123", "epic")
             summary = extract_summary(document.text)
         """
-        client = await self.get_client(source)
+        resource = await self._execute_with_client(
+            "read",
+            source=source,
+            resource_type=resource_type,
+            resource_id=fhir_id,
+            client_args=(resource_type, fhir_id),
+        )
 
-        try:
-            # Fetch the resource
-            resource = await client.read(resource_type, fhir_id)
-            if not resource:
-                type_name = resource_type.__resource_type__
-                raise ValueError(f"Resource {type_name}/{fhir_id} not found")
+        if not resource:
+            type_name = resource_type.__resource_type__
+            raise ValueError(f"Resource {type_name}/{fhir_id} not found")
 
-            # Get type name for event emission
-            type_name = resource.__resource_type__
+        # Emit read event
+        type_name = resource.__resource_type__
+        self._emit_fhir_event("read", type_name, fhir_id, resource)
+        logger.debug(f"Retrieved {type_name}/{fhir_id} for read-only access")
 
-            # Emit read event
-            self._emit_fhir_event("read", type_name, fhir_id, resource)
-
-            logger.debug(f"Retrieved {type_name}/{fhir_id} for read-only access")
-
-            return resource
-
-        except Exception as e:
-            FHIRErrorHandler.handle_fhir_error(e, resource_type, fhir_id, "read")
+        return resource
 
     async def search(
         self,
@@ -442,33 +432,182 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 patient = entry.resource
                 print(f"Found patient: {patient.name[0].family}")
         """
-        client = await self.get_client(source)
+        bundle = await self._execute_with_client(
+            "search",
+            source=source,
+            resource_type=resource_type,
+            client_args=(resource_type,),
+            client_kwargs={"params": params},
+        )
 
-        try:
-            bundle = await client.search(resource_type, params)
+        # Emit search event with result count
+        type_name = resource_type.__resource_type__
+        event_data = {
+            "params": params,
+            "result_count": len(bundle.entry) if bundle.entry else 0,
+        }
+        self._emit_fhir_event("search", type_name, None, event_data)
+        logger.debug(
+            f"Searched {type_name} with params {params}, found {len(bundle.entry) if bundle.entry else 0} results"
+        )
 
-            # Get type name for event emission
+        return bundle
+
+    async def create(self, resource: Resource, source: str = None) -> Resource:
+        """
+        Create a new FHIR resource.
+
+        Args:
+            resource: The FHIR resource to create
+            source: Source name to create in (uses first available if None)
+
+        Returns:
+            The created FHIR resource with server-assigned ID
+
+        Raises:
+            ValueError: If source is invalid
+            FHIRConnectionError: If connection fails
+
+        Example:
+            # Create a new patient
+            patient = Patient(name=[HumanName(family="Smith", given=["John"])])
+            created = await fhir_gateway.create(patient, "epic")
+            print(f"Created patient with ID: {created.id}")
+        """
+        created = await self._execute_with_client(
+            "create",
+            source=source,
+            resource_type=resource.__class__,
+            client_args=(resource,),
+        )
+
+        # Emit create event
+        type_name = resource.__resource_type__
+        self._emit_fhir_event("create", type_name, created.id, created)
+        logger.debug(f"Created {type_name} resource with ID {created.id}")
+
+        return created
+
+    async def update(self, resource: Resource, source: str = None) -> Resource:
+        """
+        Update an existing FHIR resource.
+
+        Args:
+            resource: The FHIR resource to update (must have ID)
+            source: Source name to update in (uses first available if None)
+
+        Returns:
+            The updated FHIR resource
+
+        Raises:
+            ValueError: If resource has no ID or source is invalid
+            FHIRConnectionError: If connection fails
+
+        Example:
+            # Update a patient's name
+            patient = await fhir_gateway.read(Patient, "123", "epic")
+            patient.name[0].family = "Jones"
+            updated = await fhir_gateway.update(patient, "epic")
+        """
+        if not resource.id:
+            raise ValueError("Resource must have an ID for update")
+
+        updated = await self._execute_with_client(
+            "update",
+            source=source,
+            resource_type=resource.__class__,
+            resource_id=resource.id,
+            client_args=(resource,),
+        )
+
+        # Emit update event
+        type_name = resource.__resource_type__
+        self._emit_fhir_event("update", type_name, resource.id, updated)
+        logger.debug(f"Updated {type_name} resource with ID {resource.id}")
+
+        return updated
+
+    async def delete(
+        self, resource_type: Type[Resource], fhir_id: str, source: str = None
+    ) -> bool:
+        """
+        Delete a FHIR resource.
+
+        Args:
+            resource_type: The FHIR resource type class
+            fhir_id: Resource ID to delete
+            source: Source name to delete from (uses first available if None)
+
+        Returns:
+            True if deletion was successful
+
+        Raises:
+            ValueError: If source is invalid
+            FHIRConnectionError: If connection fails
+
+        Example:
+            # Delete a patient
+            success = await fhir_gateway.delete(Patient, "123", "epic")
+            if success:
+                print("Patient deleted successfully")
+        """
+        success = await self._execute_with_client(
+            "delete",
+            source=source,
+            resource_type=resource_type,
+            resource_id=fhir_id,
+            client_args=(resource_type, fhir_id),
+        )
+
+        if success:
+            # Emit delete event
             type_name = resource_type.__resource_type__
+            self._emit_fhir_event("delete", type_name, fhir_id, None)
+            logger.debug(f"Deleted {type_name} resource with ID {fhir_id}")
 
-            # Emit search event
-            self._emit_fhir_event(
-                "search",
-                type_name,
-                None,
-                {
-                    "params": params,
-                    "result_count": len(bundle.entry) if bundle.entry else 0,
-                },
-            )
+        return success
 
-            logger.debug(
-                f"Searched {type_name} with params {params}, found {len(bundle.entry) if bundle.entry else 0} results"
-            )
+    async def transaction(self, bundle: Bundle, source: str = None) -> Bundle:
+        """
+        Execute a FHIR transaction bundle.
 
-            return bundle
+        Args:
+            bundle: The transaction bundle to execute
+            source: Source name to execute in (uses first available if None)
 
-        except Exception as e:
-            FHIRErrorHandler.handle_fhir_error(e, resource_type, None, "search")
+        Returns:
+            The response bundle with results
+
+        Raises:
+            ValueError: If source is invalid
+            FHIRConnectionError: If connection fails
+
+        Example:
+            # Create a transaction bundle
+            bundle = Bundle(type="transaction", entry=[
+                BundleEntry(resource=patient1, request=BundleRequest(method="POST")),
+                BundleEntry(resource=patient2, request=BundleRequest(method="POST"))
+            ])
+            result = await fhir_gateway.transaction(bundle, "epic")
+        """
+        result = await self._execute_with_client(
+            "transaction",
+            source=source,
+            resource_type=Bundle,
+            client_args=(bundle,),
+        )
+
+        # Emit transaction event with entry counts
+        event_data = {
+            "entry_count": len(bundle.entry) if bundle.entry else 0,
+            "result_count": len(result.entry) if result.entry else 0,
+        }
+        self._emit_fhir_event("transaction", "Bundle", None, event_data)
+        logger.debug(
+            f"Executed transaction bundle with {len(bundle.entry) if bundle.entry else 0} entries"
+        )
+
+        return result
 
     @asynccontextmanager
     async def modify(
@@ -508,22 +647,31 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
             yield resource
 
-            updated_resource = await client.update(resource)
+            if is_new:
+                updated_resource = await client.create(resource)
+            else:
+                updated_resource = await client.update(resource)
+
             resource.id = updated_resource.id
             for field_name, field_value in updated_resource.model_dump().items():
                 if hasattr(resource, field_name):
                     setattr(resource, field_name, field_value)
 
-            event_type = "create" if is_new else "update"
-            self._emit_fhir_event(event_type, type_name, resource.id, updated_resource)
+            operation = "create" if is_new else "update"
+            self._emit_fhir_event(operation, type_name, resource.id, updated_resource)
             logger.debug(
                 f"{'Created' if is_new else 'Updated'} {type_name} resource in modify context"
             )
 
         except Exception as e:
-            FHIRErrorHandler.handle_fhir_error(
-                e, type_name, fhir_id, "read" if not is_new else "create"
+            operation = (
+                "read"
+                if not is_new and resource is None
+                else "create"
+                if is_new
+                else "update"
             )
+            FHIRErrorHandler.handle_fhir_error(e, type_name, fhir_id, operation)
 
     def aggregate(self, resource_type: Type[Resource]):
         """
@@ -650,3 +798,42 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
+
+    async def _execute_with_client(
+        self,
+        operation: str,
+        *,  # Force keyword-only arguments
+        source: str = None,
+        resource_type: Type[Resource] = None,
+        resource_id: str = None,
+        client_args: tuple = (),
+        client_kwargs: dict = None,
+    ):
+        """
+        Execute a client operation with consistent error handling.
+
+        Args:
+            operation: Operation name (read, create, update, delete, etc.)
+            source: Source name to use
+            resource_type: Resource type for error handling
+            resource_id: Resource ID for error handling (if applicable)
+            client_args: Positional arguments to pass to the client method
+            client_kwargs: Keyword arguments to pass to the client method
+        """
+        client = await self.get_client(source)
+        client_kwargs = client_kwargs or {}
+
+        try:
+            result = await getattr(client, operation)(*client_args, **client_kwargs)
+            return result
+
+        except Exception as e:
+            # Use existing error handler
+            error_resource_type = resource_type or (
+                client_args[0].__class__
+                if client_args and hasattr(client_args[0], "__class__")
+                else None
+            )
+            FHIRErrorHandler.handle_fhir_error(
+                e, error_resource_type, resource_id, operation
+            )
