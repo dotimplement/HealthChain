@@ -187,7 +187,74 @@ class HealthChainAPI(FastAPI):
         """
         return self.services
 
-    # TODO: sort out this repetition of code
+    def _register_component(
+        self,
+        component: Union[Type, object],
+        component_type: str,
+        path: Optional[str] = None,
+        use_events: Optional[bool] = None,
+        **options,
+    ) -> None:
+        """
+        Generic method to register gateways or services.
+
+        Args:
+            component: The component class or instance to register
+            component_type: Either 'gateway' or 'service'
+            path: Optional override for the component's mount path
+            use_events: Whether to enable events for this component
+            **options: Options to pass to the constructor
+        """
+        try:
+            # Determine if events should be used
+            component_use_events = (
+                self.enable_events if use_events is None else use_events
+            )
+
+            # Get the appropriate registry and base class
+            if component_type == "gateway":
+                registry = self.gateways
+                # endpoints_registry = self.gateway_endpoints
+                base_class = BaseGateway
+            else:  # service
+                registry = self.services
+                # endpoints_registry = self.service_endpoints
+                base_class = BaseProtocolHandler
+
+            # Check if instance is already provided
+            if isinstance(component, base_class):
+                component_instance = component
+                component_name = component.__class__.__name__
+            else:
+                # Create a new instance
+                if "use_events" not in options:
+                    options["use_events"] = component_use_events
+                component_instance = component(**options)
+                component_name = component.__class__.__name__
+
+            # Add to internal registry
+            registry[component_name] = component_instance
+
+            # Provide event dispatcher if events are enabled
+            if (
+                component_use_events
+                and self.event_dispatcher
+                and hasattr(component_instance, "set_event_dispatcher")
+                and callable(component_instance.set_event_dispatcher)
+            ):
+                component_instance.set_event_dispatcher(self.event_dispatcher)
+
+            # Add routes to FastAPI app
+            if component_type == "gateway":
+                self._add_gateway_routes(component_instance, path)
+            else:
+                self._add_service_routes(component_instance, path)
+
+        except Exception as e:
+            logger.error(
+                f"Failed to register {component_type} {component.__name__ if hasattr(component, '__name__') else component.__class__.__name__}: {str(e)}"
+            )
+            raise
 
     def register_gateway(
         self,
@@ -196,52 +263,8 @@ class HealthChainAPI(FastAPI):
         use_events: Optional[bool] = None,
         **options,
     ) -> None:
-        """
-        Register a gateway with the API and mount its endpoints.
-
-        Args:
-            gateway: The gateway class or instance to register
-            path: Optional override for the gateway's mount path
-            use_events: Whether to enable events for this gateway (defaults to app setting)
-            **options: Options to pass to the constructor
-        """
-        try:
-            # Determine if events should be used for this gateway
-            gateway_use_events = (
-                self.enable_events if use_events is None else use_events
-            )
-
-            # Check if instance is already provided
-            if isinstance(gateway, BaseGateway):
-                gateway_instance = gateway
-                gateway_name = gateway.__class__.__name__
-            else:
-                # Create a new instance
-                if "use_events" not in options:
-                    options["use_events"] = gateway_use_events
-                gateway_instance = gateway(**options)
-                gateway_name = gateway.__class__.__name__
-
-            # Add to internal gateway registry
-            self.gateways[gateway_name] = gateway_instance
-
-            # Provide event dispatcher to gateway if events are enabled
-            if (
-                gateway_use_events
-                and self.event_dispatcher
-                and hasattr(gateway_instance, "set_event_dispatcher")
-                and callable(gateway_instance.set_event_dispatcher)
-            ):
-                gateway_instance.set_event_dispatcher(self.event_dispatcher)
-
-            # Add gateway routes to FastAPI app
-            self._add_gateway_routes(gateway_instance, path)
-
-        except Exception as e:
-            logger.error(
-                f"Failed to register gateway {gateway.__name__ if hasattr(gateway, '__name__') else gateway.__class__.__name__}: {str(e)}"
-            )
-            raise
+        """Register a gateway with the API and mount its endpoints."""
+        self._register_component(gateway, "gateway", path, use_events, **options)
 
     def register_service(
         self,
@@ -250,55 +273,8 @@ class HealthChainAPI(FastAPI):
         use_events: Optional[bool] = None,
         **options,
     ) -> None:
-        """
-        Register a service with the API and mount its endpoints.
-
-        Services are protocol handlers that expose endpoints for clients to call,
-        such as CDS Hooks services or SOAP services.
-
-        Args:
-            service: The service class or instance to register
-            path: Optional override for the service's mount path
-            use_events: Whether to enable events for this service (defaults to app setting)
-            **options: Options to pass to the constructor
-        """
-        try:
-            # Determine if events should be used for this service
-            service_use_events = (
-                self.enable_events if use_events is None else use_events
-            )
-
-            # Check if instance is already provided
-            if isinstance(service, BaseProtocolHandler):
-                service_instance = service
-                service_name = service.__class__.__name__
-            else:
-                # Create a new instance
-                if "use_events" not in options:
-                    options["use_events"] = service_use_events
-                service_instance = service(**options)
-                service_name = service.__class__.__name__
-
-            # Add to internal service registry
-            self.services[service_name] = service_instance
-
-            # Provide event dispatcher to service if events are enabled
-            if (
-                service_use_events
-                and self.event_dispatcher
-                and hasattr(service_instance, "set_event_dispatcher")
-                and callable(service_instance.set_event_dispatcher)
-            ):
-                service_instance.set_event_dispatcher(self.event_dispatcher)
-
-            # Add service routes to FastAPI app
-            self._add_service_routes(service_instance, path)
-
-        except Exception as e:
-            logger.error(
-                f"Failed to register service {service.__name__ if hasattr(service, '__name__') else service.__class__.__name__}: {str(e)}"
-            )
-            raise
+        """Register a service with the API and mount its endpoints."""
+        self._register_component(service, "service", path, use_events, **options)
 
     def _add_gateway_routes(
         self, gateway: BaseGateway, path: Optional[str] = None

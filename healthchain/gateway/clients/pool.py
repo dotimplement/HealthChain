@@ -73,7 +73,7 @@ class FHIRClientPool:
 
         for conn_str, client in self._clients.items():
             # Try to get httpx client stats if available
-            client_stats = {"connection_string": conn_str}
+            client_stats = {}
             if hasattr(client, "client") and hasattr(client.client, "_pool"):
                 pool = client.client._pool
                 client_stats.update(
