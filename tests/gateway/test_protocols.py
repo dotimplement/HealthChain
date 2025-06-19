@@ -9,10 +9,10 @@ from typing import cast
 
 from healthchain.gateway.api.protocols import (
     HealthChainAPIProtocol,
-    GatewayProtocol,
     EventDispatcherProtocol,
 )
 from healthchain.gateway.api.app import create_app
+from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from tests.gateway.test_api_app import MockGateway
 
@@ -48,29 +48,30 @@ def test_eventdispatcher_conforms_to_protocol():
 
 
 def test_gateway_conforms_to_protocol():
-    """Test that MockGateway conforms to GatewayProtocol."""
+    """Test that MockGateway conforms to BaseGateway."""
     # Create an instance of MockGateway
     gateway = MockGateway()
 
-    # Cast to the protocol type - this will fail at runtime if not compatible
-    protocol_gateway = cast(GatewayProtocol, gateway)
+    # Cast to the base class type - this will fail at runtime if not compatible
+    base_gateway = cast(BaseGateway, gateway)
 
     # Basic assertions to check that it functions as expected
-    assert hasattr(protocol_gateway, "get_metadata")
-    assert hasattr(protocol_gateway, "set_event_dispatcher")
+    assert hasattr(base_gateway, "get_metadata")
+    assert hasattr(base_gateway, "events")
+    assert hasattr(base_gateway.events, "set_dispatcher")
 
 
 def test_typed_gateway_access():
-    """Test accessing a gateway with a specific protocol type."""
+    """Test accessing a gateway with BaseGateway type."""
     # Create app and gateway
     app = create_app()
     gateway = MockGateway()
     app.register_gateway(gateway)
 
-    # Test getting the gateway as a general GatewayProtocol
+    # Test getting the gateway as a BaseGateway
     retrieved_gateway = app.get_gateway("MockGateway")
     assert retrieved_gateway is not None
 
-    # Cast to protocol type - will fail if not compatible
-    protocol_gateway = cast(GatewayProtocol, retrieved_gateway)
-    assert protocol_gateway.get_metadata() == gateway.get_metadata()
+    # Cast to base class type - will fail if not compatible
+    base_gateway = cast(BaseGateway, retrieved_gateway)
+    assert base_gateway.get_metadata() == gateway.get_metadata()

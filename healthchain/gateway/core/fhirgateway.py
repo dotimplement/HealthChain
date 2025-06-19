@@ -31,7 +31,6 @@ from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.core.connection import FHIRConnectionManager
 from healthchain.gateway.core.errors import FHIRErrorHandler
 from healthchain.gateway.events.fhir import create_fhir_event
-from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients.fhir import FHIRServerInterface
 
 
@@ -51,7 +50,7 @@ class FHIRResponse(JSONResponse):
     media_type = "application/fhir+json"
 
 
-class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
+class FHIRGateway(BaseGateway):
     # TODO: move to documentation
     """
     FHIR Gateway for HealthChain.
@@ -150,7 +149,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         # FHIR Metadata endpoint - returns CapabilityStatement
         @self.get("/metadata", response_class=FHIRResponse)
         def capability_statement(
-            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            fhir: "FHIRGateway" = Depends(get_self_gateway),
         ):
             """Return the FHIR capability statement for this gateway's services."""
             return fhir.build_capability_statement().model_dump()
@@ -158,7 +157,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         # Gateway status endpoint - returns operational metadata
         @self.get("/status", response_class=JSONResponse)
         def gateway_status(
-            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+            fhir: "FHIRGateway" = Depends(get_self_gateway),
         ):
             """Return operational status and metadata for this gateway."""
             return fhir.get_gateway_status()
@@ -292,7 +291,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             # Event system status
             "events": {
                 "enabled": self.use_events,
-                "dispatcher_configured": self.event_dispatcher is not None,
+                "dispatcher_configured": self.events.dispatcher is not None,
             },
         }
 
@@ -396,7 +395,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 source: Optional[str] = Query(
                     None, description="Source system to retrieve the resource from"
                 ),
-                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+                fhir: "FHIRGateway" = Depends(get_self_gateway),
             ):
                 """Transform a resource with registered handler."""
                 try:
@@ -414,7 +413,7 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
                 sources: Optional[List[str]] = Query(
                     None, description="List of source names to query"
                 ),
-                fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+                fhir: "FHIRGateway" = Depends(get_self_gateway),
             ):
                 """Aggregate resources with registered handler."""
                 try:
@@ -846,20 +845,22 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
             resource: The resource object or data
         """
         # Skip if events are disabled or no dispatcher
-        if not self.use_events or not self.event_dispatcher:
+        if not self.events.dispatcher or not self.use_events:
             return
 
-        # If a custom event creator is defined, use it
-        if self._event_creator:
-            event = self._event_creator(operation, resource_type, resource_id, resource)
+        # Use custom event creator if provided
+        if self.events._event_creator:
+            event = self.events._event_creator(
+                operation, resource_type, resource_id, resource
+            )
             if event:
-                self._run_async_publish(event)
+                self.events.publish(event)
             return
 
         # Create a standard FHIR event using the utility function
         event = create_fhir_event(operation, resource_type, resource_id, resource)
         if event:
-            self._run_async_publish(event)
+            self.events.publish(event)
 
     def get_pool_status(self) -> Dict[str, Any]:
         """

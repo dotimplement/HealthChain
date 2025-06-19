@@ -11,7 +11,6 @@ from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 from fastapi import Body, Depends
 from pydantic import BaseModel
 
-from healthchain.gateway.api.protocols import GatewayProtocol
 from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.cdshooks import create_cds_hook_event
 from healthchain.gateway.events.dispatcher import EventDispatcher
@@ -38,7 +37,7 @@ class CDSHooksConfig(BaseModel):
     allowed_hooks: List[str] = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
 
 
-class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProtocol):
+class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
     """
     Service for CDS Hooks protocol integration.
 
@@ -95,23 +94,7 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
 
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
-            self.set_event_dispatcher(event_dispatcher)
-
-    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
-        """
-        Set the event dispatcher for this service.
-
-        Args:
-            event_dispatcher: The event dispatcher to use
-
-        Returns:
-            Self, for method chaining
-        """
-        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
-        self.event_dispatcher = event_dispatcher
-        # Register default handlers if needed
-        self._register_default_handlers()
-        return self
+            self.events.set_dispatcher(event_dispatcher)
 
     def hook(
         self,
@@ -195,7 +178,7 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
         response = self.handle(hook_type, request=request)
 
         # If we have an event dispatcher, emit an event for the hook execution
-        if self.event_dispatcher and self.use_events:
+        if self.events.dispatcher and self.use_events:
             try:
                 self._emit_hook_event(hook_type, request, response)
             except Exception as e:
@@ -324,20 +307,20 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
             response: The CDSResponse object
         """
         # Skip if events are disabled or no dispatcher
-        if not self.event_dispatcher or not self.use_events:
+        if not self.events.dispatcher or not self.use_events:
             return
 
         # Use custom event creator if provided
-        if self._event_creator:
-            event = self._event_creator(hook_type, request, response)
+        if self.events._event_creator:
+            event = self.events._event_creator(hook_type, request, response)
             if event:
-                self._run_async_publish(event)
+                self.events.publish(event)
             return
 
         # Create a standard CDS Hook event using the utility function
         event = create_cds_hook_event(hook_type, request, response)
         if event:
-            self._run_async_publish(event)
+            self.events.publish(event)
 
     def get_metadata(self) -> List[Dict[str, Any]]:
         """
@@ -389,7 +372,7 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
         )
 
         # Create handlers with dependency injection
-        async def discovery_handler(cds: GatewayProtocol = Depends(get_self_cds)):
+        async def discovery_handler(cds: "CDSHooksService" = Depends(get_self_cds)):
             return cds.handle_discovery()
 
         routes.append(
@@ -416,7 +399,7 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], GatewayProto
                 def create_handler_for_hook():
                     async def service_handler(
                         request: CDSRequest = Body(...),
-                        cds: GatewayProtocol = Depends(get_self_cds),
+                        cds: "CDSHooksService" = Depends(get_self_cds),
                     ):
                         return cds.handle_request(request)
 

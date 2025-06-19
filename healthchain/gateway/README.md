@@ -49,7 +49,7 @@ app.register_gateway(soap)
 ## Core Types
 
 - `BaseGateway`: The central abstraction for all protocol gateway implementations
-- `EventDispatcherMixin`: A reusable mixin that provides event dispatching
+- `EventCapability`: A component that provides event dispatching
 - `HealthChainAPI`: FastAPI wrapper for healthcare gateway registration
 - Concrete gateway implementations:
   - `FHIRGateway`: FHIR REST API protocol

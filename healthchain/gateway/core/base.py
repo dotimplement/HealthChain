@@ -13,6 +13,8 @@ from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
+from healthchain.gateway.api.protocols import EventDispatcherProtocol
+
 logger = logging.getLogger(__name__)
 
 # Type variables for self-referencing return types and generic gateways
@@ -29,28 +31,27 @@ class GatewayConfig(BaseModel):
     system_type: str = "GENERIC"
 
 
-class EventDispatcherMixin:
+class EventCapability:
     """
-    Mixin class that provides event dispatching capabilities.
+    Encapsulates event dispatching functionality.
 
-    This mixin encapsulates all event-related functionality.
     """
 
     def __init__(self):
-        """
-        Initialize event dispatching capabilities.
-        """
-        self.event_dispatcher = None
-        self._event_creator = None
+        """Initialize event dispatching capabilities."""
+        self.dispatcher: Optional[EventDispatcherProtocol] = (
+            None  # EventDispatcherProtocol
+        )
+        self._event_creator: Optional[Callable] = None
 
-    def _run_async_publish(self, event):
+    def publish(self, event):
         """
-        Safely run the async publish method in a way that works in both sync and async contexts.
+        Publish an event using the configured dispatcher.
 
         Args:
             event: The event to publish
         """
-        if not self.event_dispatcher:
+        if not self.dispatcher:
             return
 
         try:
@@ -58,24 +59,22 @@ class EventDispatcherMixin:
             try:
                 loop = asyncio.get_running_loop()
                 # We're in an async context, so create_task works
-                asyncio.create_task(self.event_dispatcher.publish(event))
+                asyncio.create_task(self.dispatcher.publish(event))
             except RuntimeError:
                 # We're not in an async context, create a new loop
                 loop = asyncio.new_event_loop()
                 try:
                     # Run the coroutine to completion in the new loop
-                    loop.run_until_complete(self.event_dispatcher.publish(event))
+                    loop.run_until_complete(self.dispatcher.publish(event))
                 finally:
                     # Clean up the loop
                     loop.close()
         except Exception as e:
             logger.error(f"Failed to publish event: {str(e)}", exc_info=True)
 
-    def set_event_dispatcher(self, dispatcher):
+    def set_dispatcher(self, dispatcher) -> "EventCapability":
         """
-        Set the event dispatcher for this gateway.
-
-        This allows the gateway to publish events and register handlers.
+        Set the event dispatcher.
 
         Args:
             dispatcher: The event dispatcher instance
@@ -83,14 +82,10 @@ class EventDispatcherMixin:
         Returns:
             Self, to allow for method chaining
         """
-        self.event_dispatcher = dispatcher
-
-        # Register default handlers
-        self._register_default_handlers()
-
+        self.dispatcher = dispatcher
         return self
 
-    def set_event_creator(self, creator_function: Callable):
+    def set_event_creator(self, creator_function: Callable) -> "EventCapability":
         """
         Set a custom function to map gateway-specific events to EHREvents.
 
@@ -104,18 +99,7 @@ class EventDispatcherMixin:
         self._event_creator = creator_function
         return self
 
-    def _register_default_handlers(self):
-        """
-        Register default event handlers for this gateway.
-
-        Override this method in subclasses to register default handlers
-        for specific event types relevant to the gateway.
-        """
-        # Base implementation does nothing
-        # Subclasses should override this method to register their default handlers
-        pass
-
-    def register_event_handler(self, event_type, handler=None):
+    def register_handler(self, event_type, handler=None):
         """
         Register a custom event handler for a specific event type.
 
@@ -126,21 +110,21 @@ class EventDispatcherMixin:
             handler: The handler function (optional if used as decorator)
 
         Returns:
-            Decorator function if handler is None, self otherwise
+            Decorator function if handler is None, the capability object otherwise
         """
-        if not self.event_dispatcher:
-            raise ValueError("Event dispatcher not set for this gateway")
+        if not self.dispatcher:
+            raise ValueError("Event dispatcher not set")
 
         # If used as a decorator (no handler provided)
         if handler is None:
-            return self.event_dispatcher.register_handler(event_type)
+            return self.dispatcher.register_handler(event_type)
 
         # If called directly with a handler
-        self.event_dispatcher.register_handler(event_type)(handler)
+        self.dispatcher.register_handler(event_type)(handler)
         return self
 
 
-class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
+class BaseProtocolHandler(ABC, Generic[T, R]):
     """
     Base class for protocol handlers that process specific request/response types.
 
@@ -167,9 +151,7 @@ class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
         self.return_errors = self.config.return_errors or options.get(
             "return_errors", False
         )
-
-        # Initialize event dispatcher mixin
-        EventDispatcherMixin.__init__(self)
+        self.events = EventCapability()
 
     def register_handler(self, operation: str, handler: Callable) -> P:
         """
@@ -295,11 +277,11 @@ class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
         return cls(**options)
 
 
-class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
+class BaseGateway(ABC, APIRouter):
     """
     Base class for healthcare integration gateways.
 
-    Combines FastAPI routing capabilities with event dispatching.
+    Combines FastAPI routing capabilities with event dispatching using composition.
     """
 
     def __init__(
@@ -330,9 +312,7 @@ class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
         self.return_errors = self.config.return_errors or options.get(
             "return_errors", False
         )
-
-        # Initialize event dispatcher mixin
-        EventDispatcherMixin.__init__(self)
+        self.events = EventCapability()
 
     def get_gateway_status(self) -> Dict[str, Any]:
         """
@@ -354,7 +334,7 @@ class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
         if self.use_events:
             status["events"] = {
                 "enabled": True,
-                "dispatcher_configured": self.event_dispatcher is not None,
+                "dispatcher_configured": self.events.dispatcher is not None,
             }
 
         return status

@@ -6,9 +6,22 @@ for various components of the gateway system, enabling structural
 typing and better type checking.
 """
 
-from typing import Dict, Optional, Set, Any, Protocol, Callable, Union
+from typing import (
+    Dict,
+    Optional,
+    Set,
+    Any,
+    Protocol,
+    Callable,
+    Union,
+    Type,
+    TYPE_CHECKING,
+)
 
-from healthchain.gateway.events.dispatcher import EHREvent
+from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 
 class EventDispatcherProtocol(Protocol):
@@ -16,103 +29,39 @@ class EventDispatcherProtocol(Protocol):
 
     async def publish(
         self, event: EHREvent, middleware_id: Optional[int] = None
-    ) -> bool:
+    ) -> None:
         """Dispatch an event to registered handlers.
 
         Args:
             event: The event to publish
             middleware_id: Optional middleware ID
+        """
+        ...
+
+    def init_app(self, app: "FastAPI") -> None:
+        """Initialize the dispatcher with a FastAPI application.
+
+        Args:
+            app: FastAPI application instance to initialize with
+        """
+        ...
+
+    def register_handler(self, event_type: EHREventType) -> Callable:
+        """Register a handler for a specific event type.
+
+        Args:
+            event_type: The EHR event type to handle
 
         Returns:
-            True if the event was successfully dispatched
+            Decorator function for registering handlers
         """
         ...
 
-    def init_app(self, app: Any) -> None:
-        """Initialize the dispatcher with an application.
-
-        Args:
-            app: Application instance to initialize with
-        """
-        ...
-
-    def register_handler(self, event_name: str, handler: Callable) -> None:
-        """Register a handler for a specific event.
-
-        Args:
-            event_name: The name of the event to handle
-            handler: The handler function
-        """
-        ...
-
-
-class GatewayProtocol(Protocol):
-    """Protocol defining the interface for gateways."""
-
-    def get_metadata(self) -> Dict[str, Any]:
-        """Get metadata about the gateway.
+    def register_default_handler(self) -> Callable:
+        """Register a handler for all events.
 
         Returns:
-            Dictionary with gateway metadata
-        """
-        ...
-
-    def set_event_dispatcher(self, dispatcher: EventDispatcherProtocol) -> None:
-        """Set the event dispatcher for this gateway.
-
-        Args:
-            dispatcher: The event dispatcher to use
-        """
-        ...
-
-
-class FHIRGatewayProtocol(GatewayProtocol, Protocol):
-    """Protocol defining the interface for FHIR gateways."""
-
-    async def search(
-        self, resource_type: str, params: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Search for FHIR resources.
-
-        Args:
-            resource_type: The FHIR resource type
-            params: Search parameters
-
-        Returns:
-            FHIR Bundle containing search results
-        """
-        ...
-
-    async def read(self, resource_type: str, resource_id: str) -> Dict[str, Any]:
-        """Read a FHIR resource.
-
-        Args:
-            resource_type: The FHIR resource type
-            resource_id: The resource ID
-
-        Returns:
-            FHIR resource
-        """
-        ...
-
-
-class SOAPGatewayProtocol(GatewayProtocol, Protocol):
-    """Protocol defining the interface for SOAP gateways."""
-
-    def create_wsgi_app(self) -> Any:
-        """Create a WSGI application for the SOAP service.
-
-        Returns:
-            WSGI application
-        """
-        ...
-
-    def register_method(self, method_name: str, handler: Callable) -> None:
-        """Register a method handler for the SOAP service.
-
-        Args:
-            method_name: The SOAP method name
-            handler: The handler function
+            Decorator function for registering handlers
         """
         ...
 
@@ -120,8 +69,10 @@ class SOAPGatewayProtocol(GatewayProtocol, Protocol):
 class HealthChainAPIProtocol(Protocol):
     """Protocol defining the interface for the HealthChainAPI."""
 
-    gateways: Dict[str, GatewayProtocol]
+    gateways: Dict[str, Any]
+    services: Dict[str, Any]
     gateway_endpoints: Dict[str, Set[str]]
+    service_endpoints: Dict[str, Set[str]]
     enable_events: bool
     event_dispatcher: Optional[EventDispatcherProtocol]
 
@@ -133,7 +84,7 @@ class HealthChainAPIProtocol(Protocol):
         """
         ...
 
-    def get_gateway(self, gateway_name: str) -> Optional[GatewayProtocol]:
+    def get_gateway(self, gateway_name: str) -> Optional[Any]:
         """Get a gateway by name.
 
         Args:
@@ -144,7 +95,7 @@ class HealthChainAPIProtocol(Protocol):
         """
         ...
 
-    def get_all_gateways(self) -> Dict[str, GatewayProtocol]:
+    def get_all_gateways(self) -> Dict[str, Any]:
         """Get all registered gateways.
 
         Returns:
@@ -152,9 +103,28 @@ class HealthChainAPIProtocol(Protocol):
         """
         ...
 
+    def get_service(self, service_name: str) -> Optional[Any]:
+        """Get a service by name.
+
+        Args:
+            service_name: The name of the service
+
+        Returns:
+            The service or None if not found
+        """
+        ...
+
+    def get_all_services(self) -> Dict[str, Any]:
+        """Get all registered services.
+
+        Returns:
+            Dictionary of all registered services
+        """
+        ...
+
     def register_gateway(
         self,
-        gateway: Union[GatewayProtocol, Any],
+        gateway: Union[Type[Any], Any],
         path: Optional[str] = None,
         use_events: Optional[bool] = None,
         **options,
@@ -162,7 +132,24 @@ class HealthChainAPIProtocol(Protocol):
         """Register a gateway.
 
         Args:
-            gateway: The gateway to register
+            gateway: The gateway to register (class or instance)
+            path: Optional mount path
+            use_events: Whether to use events
+            **options: Additional options
+        """
+        ...
+
+    def register_service(
+        self,
+        service: Union[Type[Any], Any],
+        path: Optional[str] = None,
+        use_events: Optional[bool] = None,
+        **options,
+    ) -> None:
+        """Register a service.
+
+        Args:
+            service: The service to register (class or instance)
             path: Optional mount path
             use_events: Whether to use events
             **options: Additional options

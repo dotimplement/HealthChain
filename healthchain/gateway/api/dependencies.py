@@ -10,12 +10,12 @@ from fastapi import Depends
 
 from healthchain.gateway.api.protocols import (
     HealthChainAPIProtocol,
-    GatewayProtocol,
     EventDispatcherProtocol,
 )
+from healthchain.gateway.core.base import BaseGateway
 
 # Type variable for type hinting
-T = TypeVar("T", bound=GatewayProtocol)
+T = TypeVar("T", bound=BaseGateway)
 
 
 # Application instance dependency
@@ -54,7 +54,7 @@ def get_event_dispatcher(
 
 def get_gateway(
     gateway_name: str, app: HealthChainAPIProtocol = Depends(get_app)
-) -> Optional[GatewayProtocol]:
+) -> Optional[BaseGateway]:
     """Get a specific gateway from the app.
 
     This is a dependency that can be used in route handlers to access
@@ -72,7 +72,7 @@ def get_gateway(
 
 def get_all_gateways(
     app: HealthChainAPIProtocol = Depends(get_app),
-) -> Dict[str, GatewayProtocol]:
+) -> Dict[str, BaseGateway]:
     """Get all registered gateways from the app.
 
     This is a dependency that can be used in route handlers to access

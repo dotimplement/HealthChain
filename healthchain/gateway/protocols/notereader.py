@@ -14,7 +14,6 @@ from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 
-from healthchain.gateway.api.protocols import SOAPGatewayProtocol
 from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.events.notereader import create_notereader_event
@@ -40,9 +39,7 @@ class NoteReaderConfig(BaseModel):
     default_mount_path: str = "/notereader"
 
 
-class NoteReaderService(
-    BaseProtocolHandler[CdaRequest, CdaResponse], SOAPGatewayProtocol
-):
+class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
     """
     Service for Epic NoteReader SOAP protocol integration.
 
@@ -94,23 +91,7 @@ class NoteReaderService(
 
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
-            self.set_event_dispatcher(event_dispatcher)
-
-    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
-        """
-        Set the event dispatcher for this service.
-
-        Args:
-            event_dispatcher: The event dispatcher to use
-
-        Returns:
-            Self, for method chaining
-        """
-        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
-        self.event_dispatcher = event_dispatcher
-        # Register default handlers if needed
-        self._register_default_handlers()
-        return self
+            self.events.set_dispatcher(event_dispatcher)
 
     def method(self, method_name: str) -> Callable:
         """
@@ -266,7 +247,7 @@ class NoteReaderService(
                 processed_result = self._process_result(result)
 
                 # Emit event if we have an event dispatcher
-                if self.event_dispatcher and self.use_events:
+                if self.events.dispatcher and self.use_events:
                     self._emit_document_event(
                         "ProcessDocument", cda_request, processed_result
                     )
@@ -303,21 +284,21 @@ class NoteReaderService(
             response: The CdaResponse object
         """
         # Skip if events are disabled or no dispatcher
-        if not self.event_dispatcher or not self.use_events:
+        if not self.events.dispatcher or not self.use_events:
             return
 
         # Use custom event creator if provided
-        if self._event_creator:
-            event = self._event_creator(operation, request, response)
+        if self.events._event_creator:
+            event = self.events._event_creator(operation, request, response)
             if event:
-                self._run_async_publish(event)
+                self.events.publish(event)
             return
 
         # Create a standard NoteReader event using the utility function
         event = create_notereader_event(
             operation, request, response, self.config.system_type
         )
-        self._run_async_publish(event)
+        self.events.publish(event)
 
     def get_metadata(self) -> Dict[str, Any]:
         """

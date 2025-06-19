@@ -50,13 +50,9 @@ class MockGateway(BaseGateway):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MockGateway"
-        self.event_dispatcher = None
 
     def get_metadata(self):
         return {"type": "mock", "version": "1.0.0"}
-
-    def set_event_dispatcher(self, dispatcher):
-        self.event_dispatcher = dispatcher
 
 
 class AnotherMockGateway(BaseGateway):
@@ -291,4 +287,4 @@ def test_gateway_event_dispatcher_integration(mock_event_dispatcher):
     app.register_gateway(gateway)
 
     # Check that gateway received the event dispatcher
-    assert gateway.event_dispatcher is mock_event_dispatcher
+    assert gateway.events.dispatcher is mock_event_dispatcher

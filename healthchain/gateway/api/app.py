@@ -239,10 +239,10 @@ class HealthChainAPI(FastAPI):
             if (
                 component_use_events
                 and self.event_dispatcher
-                and hasattr(component_instance, "set_event_dispatcher")
-                and callable(component_instance.set_event_dispatcher)
+                and hasattr(component_instance, "events")
+                and hasattr(component_instance.events, "set_dispatcher")
             ):
-                component_instance.set_event_dispatcher(self.event_dispatcher)
+                component_instance.events.set_dispatcher(self.event_dispatcher)
 
             # Add routes to FastAPI app
             if component_type == "gateway":

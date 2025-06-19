@@ -5,7 +5,7 @@ This module contains the base abstractions and core components
 that define the gateway architecture.
 """
 
-from .base import BaseGateway, GatewayConfig, EventDispatcherMixin
+from .base import BaseGateway, GatewayConfig, EventCapability
 from .connection import FHIRConnectionManager
 from .errors import FHIRErrorHandler, FHIRConnectionError
 from .fhirgateway import FHIRGateway
@@ -15,7 +15,7 @@ try:
     __all__ = [
         "BaseGateway",
         "GatewayConfig",
-        "EventDispatcherMixin",
+        "EventCapability",
         "FHIRConnectionManager",
         "FHIRErrorHandler",
         "FHIRConnectionError",
@@ -30,7 +30,7 @@ except ImportError:
     __all__ = [
         "BaseGateway",
         "GatewayConfig",
-        "EventDispatcherMixin",
+        "EventCapability",
         "FHIRConnectionManager",
         "FHIRErrorHandler",
         "FHIRConnectionError",

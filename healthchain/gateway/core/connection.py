@@ -54,13 +54,13 @@ class FHIRConnectionManager:
 
     def add_source(self, name: str, connection_string: str):
         """
-        Add a FHIR data source using connection string with OAuth2.0 flow.
+        Add a FHIR data source using connection string.
 
         Format: fhir://hostname:port/path?param1=value1&param2=value2
 
         Examples:
-            fhir://epic.org/api/FHIR/R4?client_id=my_app&client_secret=secret&token_url=https://epic.org/oauth2/token&scope=system/*.read
-            fhir://cerner.org/r4?client_id=app_id&client_secret=app_secret&token_url=https://cerner.org/token&audience=https://cerner.org/fhir
+            fhir://epic.org/api/FHIR/R4?client_id=my_app&client_secret=secret&token_url=https://epic.org/oauth2/token&use_jwt_assertion=true
+            fhir://cerner.org/r4?client_id=app_id&client_secret=app_secret&token_url=https://cerner.org/token&scope=openid
 
         Args:
             name: Source name identifier
@@ -84,12 +84,10 @@ class FHIRConnectionManager:
             if not parsed.netloc:
                 raise ValueError("Invalid connection string: missing hostname")
 
-            # Store the source name - actual connections will be managed by the pool
-            self.sources[name] = (
-                None  # Placeholder - pool will manage actual connections
-            )
+            # Store the source name
+            self.sources[name] = None  # Placeholder - store metadata here
 
-            logger.info(f"Added FHIR source '{name}' with connection pooling enabled")
+            logger.info(f"Added FHIR source '{name}'")
 
         except Exception as e:
             raise FHIRConnectionError(
@@ -125,8 +123,6 @@ class FHIRConnectionManager:
     async def get_client(self, source: str = None) -> FHIRServerInterface:
         """
         Get a FHIR client for the specified source.
-
-        Connections are automatically pooled and managed by httpx.
 
         Args:
             source: Source name to get client for (uses first available if None)

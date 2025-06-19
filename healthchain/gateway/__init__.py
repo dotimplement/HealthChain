@@ -20,7 +20,7 @@ from healthchain.gateway.core.fhirgateway import FHIRGateway
 from healthchain.gateway.core.base import (
     BaseGateway,
     GatewayConfig,
-    EventDispatcherMixin,
+    EventCapability,
 )
 
 # Event system
@@ -43,7 +43,7 @@ __all__ = [
     # Core
     "BaseGateway",
     "GatewayConfig",
-    "EventDispatcherMixin",
+    "EventCapability",
     # Events
     "EventDispatcher",
     "EHREvent",

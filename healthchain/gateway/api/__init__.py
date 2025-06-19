@@ -14,10 +14,7 @@ from healthchain.gateway.api.dependencies import (
 )
 from healthchain.gateway.api.protocols import (
     HealthChainAPIProtocol,
-    GatewayProtocol,
     EventDispatcherProtocol,
-    FHIRGatewayProtocol,
-    SOAPGatewayProtocol,
 )
 
 __all__ = [
@@ -32,8 +29,5 @@ __all__ = [
     "get_typed_gateway",
     # Protocols
     "HealthChainAPIProtocol",
-    "GatewayProtocol",
     "EventDispatcherProtocol",
-    "FHIRGatewayProtocol",
-    "SOAPGatewayProtocol",
 ]
