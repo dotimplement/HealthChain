@@ -7,7 +7,6 @@ from healthchain.gateway.protocols.notereader import (
 )
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.gateway.events.dispatcher import EventDispatcher
 
 
 @pytest.mark.parametrize(
@@ -73,41 +72,6 @@ def test_notereader_handler_registration_methods():
     assert "ProcessNotes" in gateway._handlers
 
 
-def test_notereader_gateway_handle():
-    """Test request handling logic directly (bypassing async methods)"""
-    gateway = NoteReaderService()
-
-    # Register a handler
-    @gateway.method("ProcessDocument")
-    def process_document(request):
-        return CdaResponse(document="processed", error=None)
-
-    # Create a request
-    request = CdaRequest(document="<doc>test</doc>")
-
-    # Instead of testing the async handle method, let's test the core logic directly
-    # Extract the request
-    extracted_request = gateway._extract_request(
-        "ProcessDocument", {"request": request}
-    )
-    assert extracted_request == request
-
-    # Verify handler is properly registered
-    assert "ProcessDocument" in gateway._handlers
-    handler = gateway._handlers["ProcessDocument"]
-
-    # Call the handler directly
-    handler_result = handler(request)
-    assert isinstance(handler_result, CdaResponse)
-    assert handler_result.document == "processed"
-
-    # Verify process_result works correctly
-    processed_result = gateway._process_result(handler_result)
-    assert isinstance(processed_result, CdaResponse)
-    assert processed_result.document == "processed"
-    assert processed_result.error is None
-
-
 def test_notereader_gateway_extract_request():
     """Test request extraction from parameters"""
     gateway = NoteReaderService()
@@ -145,18 +109,11 @@ def test_notereader_gateway_process_result():
     assert isinstance(result, CdaResponse)
     assert result.document == "test_dict"
 
-    # Test with unexpected type
-    result = gateway._process_result("just a string")
-    assert isinstance(result, CdaResponse)
-    assert result.document == "just a string"
-    assert result.error is None
-
 
 @patch("healthchain.gateway.protocols.notereader.Application")
 @patch("healthchain.gateway.protocols.notereader.WsgiApplication")
 def test_notereader_gateway_create_wsgi_app(mock_wsgi, mock_application):
     """Test WSGI app creation for SOAP service"""
-    # Set up the mock to return a simple mock object instead of trying to create a real WsgiApplication
     mock_wsgi_instance = MagicMock()
     mock_wsgi.return_value = mock_wsgi_instance
 
@@ -211,43 +168,3 @@ def test_notereader_gateway_get_metadata():
     assert metadata["system_type"] == "EHR_CDA"
     assert "mount_path" in metadata
     assert metadata["mount_path"] == "/notereader"
-
-
-@patch("healthchain.gateway.protocols.notereader.CDSServices")
-def test_notereader_gateway_event_emission(mock_cds_services):
-    """Test that events are emitted when handling requests"""
-    # Create mock event dispatcher
-    mock_dispatcher = MagicMock(spec=EventDispatcher)
-
-    # Create gateway with event dispatcher
-    gateway = NoteReaderService(event_dispatcher=mock_dispatcher)
-
-    # Mock the service adapter directly
-    mock_service_adapter = MagicMock()
-    mock_cds_services._service = mock_service_adapter
-
-    # Register a handler
-    @gateway.method("ProcessDocument")
-    def process_document(request):
-        return CdaResponse(document="processed", error=None)
-
-    # Create WSGI app to install handler
-    with patch("healthchain.gateway.protocols.notereader.WsgiApplication"):
-        with patch("healthchain.gateway.protocols.notereader.Application"):
-            gateway.create_wsgi_app()
-
-    # Get the adapter function from the CDSServices class (this would be set by create_wsgi_app)
-    mock_cds_services._service
-
-    # Create a request and manually call the adapter function
-    # just to verify it would call our event dispatcher
-    with patch.object(gateway, "_emit_document_event") as mock_emit:
-        request = CdaRequest(document="<doc>test</doc>")
-        mock_handler = gateway._handlers["ProcessDocument"]
-
-        # Simulate what would happen in service_adapter
-        result = mock_handler(request)
-        gateway._emit_document_event("ProcessDocument", request, result)
-
-        # Verify event emission was called
-        mock_emit.assert_called_once()

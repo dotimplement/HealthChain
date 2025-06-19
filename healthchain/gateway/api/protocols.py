@@ -164,3 +164,78 @@ class HealthChainAPIProtocol(Protocol):
             **options: Additional options
         """
         ...
+
+
+class FHIRConnectionManagerProtocol(Protocol):
+    """Protocol for FHIR connection management."""
+
+    def add_source(self, name: str, connection_string: str) -> None:
+        """Add a FHIR data source."""
+        ...
+
+    async def get_client(self, source: str = None) -> "FHIRServerInterfaceProtocol":
+        """Get a FHIR client for the specified source."""
+        ...
+
+    def get_pool_status(self) -> Dict[str, Any]:
+        """Get connection pool status."""
+        ...
+
+    async def close(self) -> None:
+        """Close all connections."""
+        ...
+
+    @property
+    def sources(self) -> Dict[str, Any]:
+        """Get registered sources."""
+        ...
+
+
+class FHIRServerInterfaceProtocol(Protocol):
+    """Protocol for FHIR server interface."""
+
+    async def read(self, resource_type: Type[Any], resource_id: str) -> Any:
+        """Read a FHIR resource."""
+        ...
+
+    async def search(
+        self, resource_type: Type[Any], params: Dict[str, Any] = None
+    ) -> Any:
+        """Search for FHIR resources."""
+        ...
+
+    async def create(self, resource: Any) -> Any:
+        """Create a FHIR resource."""
+        ...
+
+    async def update(self, resource: Any) -> Any:
+        """Update a FHIR resource."""
+        ...
+
+    async def delete(self, resource_type: Type[Any], resource_id: str) -> bool:
+        """Delete a FHIR resource."""
+        ...
+
+    async def transaction(self, bundle: Any) -> Any:
+        """Execute a transaction bundle."""
+        ...
+
+    async def capabilities(self) -> Any:
+        """Get server capabilities."""
+        ...
+
+
+class FHIRClientPoolProtocol(Protocol):
+    """Protocol for FHIR client pooling."""
+
+    async def get_client(self, connection_string: str) -> FHIRServerInterfaceProtocol:
+        """Get a client for the given connection string."""
+        ...
+
+    async def close(self) -> None:
+        """Close all clients in the pool."""
+        ...
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get pool statistics."""
+        ...
