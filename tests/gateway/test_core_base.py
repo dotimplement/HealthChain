@@ -215,6 +215,39 @@ def test_base_gateway_event_handler_registration(mock_event_dispatcher):
         no_dispatcher_gateway.events.register_handler("event", test_handler)
 
 
+def test_event_capability_emit_event_abstraction(mock_event_dispatcher):
+    """EventCapability.emit_event provides unified event emission pattern."""
+    capability = EventCapability()
+    capability.set_dispatcher(mock_event_dispatcher)
+
+    # Mock event creator function
+    def mock_creator(*args, **kwargs):
+        return {
+            "event_type": "test",
+            "source_system": "test",
+            "timestamp": "2023-01-01T00:00:00Z",
+            "payload": {"args": args, "kwargs": kwargs},
+            "metadata": {"test": True},
+        }
+
+    # Test standard event creation path
+    capability.emit_event(mock_creator, "arg1", "arg2", kwarg1="value1")
+
+    # Verify the event creator was called with correct arguments
+    assert mock_creator("arg1", "arg2", kwarg1="value1") is not None
+
+    # Test with custom event creator
+    mock_custom_creator = Mock(return_value={"custom": "event"})
+    capability.set_event_creator(mock_custom_creator)
+
+    capability.emit_event(mock_creator, "test_arg")
+    mock_custom_creator.assert_called_once_with("test_arg")
+
+    # Test with events disabled
+    capability.emit_event(mock_creator, "disabled", use_events=False)
+    # Should not call the dispatcher when events are disabled
+
+
 def test_protocol_handler_capabilities_and_factory_method():
     """BaseProtocolHandler provides capabilities introspection and factory method."""
     # Test capabilities

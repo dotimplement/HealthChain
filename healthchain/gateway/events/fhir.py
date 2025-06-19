@@ -72,4 +72,8 @@ def create_fhir_event(
         source_system="FHIR",
         timestamp=datetime.now(),
         payload=payload,
+        metadata={
+            "operation": operation,
+            "resource_type": resource_type,
+        },
     )

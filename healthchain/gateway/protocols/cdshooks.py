@@ -306,21 +306,13 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
             request: The CDSRequest object
             response: The CDSResponse object
         """
-        # Skip if events are disabled or no dispatcher
-        if not self.events.dispatcher or not self.use_events:
-            return
-
-        # Use custom event creator if provided
-        if self.events._event_creator:
-            event = self.events._event_creator(hook_type, request, response)
-            if event:
-                self.events.publish(event)
-            return
-
-        # Create a standard CDS Hook event using the utility function
-        event = create_cds_hook_event(hook_type, request, response)
-        if event:
-            self.events.publish(event)
+        self.events.emit_event(
+            create_cds_hook_event,
+            hook_type,
+            request,
+            response,
+            use_events=self.use_events,
+        )
 
     def get_metadata(self) -> List[Dict[str, Any]]:
         """

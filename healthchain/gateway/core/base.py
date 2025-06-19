@@ -123,6 +123,45 @@ class EventCapability:
         self.dispatcher.register_handler(event_type)(handler)
         return self
 
+    def emit_event(
+        self, creator_function: Callable, *args, use_events: bool = True, **kwargs
+    ) -> None:
+        """
+        Emit an event using the standard custom/fallback pattern.
+
+        This method implements the common event emission pattern used across
+        all protocol handlers: try custom event creator first, then fallback
+        to standard event creator.
+
+        Args:
+            creator_function: Standard event creator function to use as fallback
+            *args: Positional arguments to pass to the event creator
+            use_events: Whether events are enabled for this operation
+            **kwargs: Keyword arguments to pass to the event creator
+
+        Example:
+            # In a protocol handler
+            self.events.emit_event(
+                create_fhir_event,
+                operation, resource_type, resource_id, resource
+            )
+        """
+        # Skip if events are disabled or no dispatcher
+        if not self.dispatcher or not use_events:
+            return
+
+        # Use custom event creator if provided
+        if self._event_creator:
+            event = self._event_creator(*args)
+            if event:
+                self.publish(event)
+            return
+
+        # Create a standard event using the provided creator function
+        event = creator_function(*args, **kwargs)
+        if event:
+            self.publish(event)
+
 
 class BaseProtocolHandler(ABC, Generic[T, R]):
     """

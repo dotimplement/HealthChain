@@ -283,22 +283,14 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
             request: The CdaRequest object
             response: The CdaResponse object
         """
-        # Skip if events are disabled or no dispatcher
-        if not self.events.dispatcher or not self.use_events:
-            return
-
-        # Use custom event creator if provided
-        if self.events._event_creator:
-            event = self.events._event_creator(operation, request, response)
-            if event:
-                self.events.publish(event)
-            return
-
-        # Create a standard NoteReader event using the utility function
-        event = create_notereader_event(
-            operation, request, response, self.config.system_type
+        self.events.emit_event(
+            create_notereader_event,
+            operation,
+            request,
+            response,
+            use_events=self.use_events,
+            system_type=self.config.system_type,
         )
-        self.events.publish(event)
 
     def get_metadata(self) -> Dict[str, Any]:
         """

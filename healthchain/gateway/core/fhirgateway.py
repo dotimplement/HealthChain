@@ -844,23 +844,14 @@ class FHIRGateway(BaseGateway):
             resource_id: The resource ID
             resource: The resource object or data
         """
-        # Skip if events are disabled or no dispatcher
-        if not self.events.dispatcher or not self.use_events:
-            return
-
-        # Use custom event creator if provided
-        if self.events._event_creator:
-            event = self.events._event_creator(
-                operation, resource_type, resource_id, resource
-            )
-            if event:
-                self.events.publish(event)
-            return
-
-        # Create a standard FHIR event using the utility function
-        event = create_fhir_event(operation, resource_type, resource_id, resource)
-        if event:
-            self.events.publish(event)
+        self.events.emit_event(
+            create_fhir_event,
+            operation,
+            resource_type,
+            resource_id,
+            resource,
+            use_events=self.use_events,
+        )
 
     def get_pool_status(self) -> Dict[str, Any]:
         """
