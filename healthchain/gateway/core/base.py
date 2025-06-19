@@ -33,8 +33,7 @@ class EventDispatcherMixin:
     """
     Mixin class that provides event dispatching capabilities.
 
-    This mixin encapsulates all event-related functionality to allow for cleaner separation
-    of concerns and optional event support in gateways.
+    This mixin encapsulates all event-related functionality.
     """
 
     def __init__(self):
@@ -95,9 +94,6 @@ class EventDispatcherMixin:
         """
         Set a custom function to map gateway-specific events to EHREvents.
 
-        The creator function will be called instead of any default event creation logic,
-        allowing users to define custom event creation without subclassing.
-
         Args:
             creator_function: Function that accepts gateway-specific arguments
                              and returns an EHREvent or None
@@ -148,14 +144,8 @@ class BaseProtocolHandler(ABC, Generic[T, R], EventDispatcherMixin):
     """
     Base class for protocol handlers that process specific request/response types.
 
-    This is designed for CDS Hooks, SOAP, and other protocol-specific handlers that:
-    - Have a specific request/response type
-    - Use decorator pattern for handler registration
-    - Process operations through registered handlers
-
-    Type Parameters:
-        T: The request type this handler processes
-        R: The response type this handler returns
+    This is designed for CDS Hooks, SOAP, and other protocol-specific handlers.
+    Register handlers with the register_handler method.
     """
 
     def __init__(
@@ -309,8 +299,7 @@ class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
     """
     Base class for healthcare integration gateways.
 
-    Combines FastAPI routing capabilities with event
-    dispatching to enable protocol-specific integrations.
+    Combines FastAPI routing capabilities with event dispatching.
     """
 
     def __init__(
@@ -345,23 +334,27 @@ class BaseGateway(ABC, APIRouter, EventDispatcherMixin):
         # Initialize event dispatcher mixin
         EventDispatcherMixin.__init__(self)
 
-    # TODO: Implement this
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_gateway_status(self) -> Dict[str, Any]:
         """
-        Get metadata for this gateway, including capabilities and configuration.
+        Get operational status and metadata for this gateway.
 
         Returns:
-            Dictionary of gateway metadata
+            Dictionary of gateway operational status and metadata
         """
         # Default implementation returns basic info
         # Specific gateway classes should override this
-        metadata = {
+        status = {
             "gateway_type": self.__class__.__name__,
             "system_type": self.config.system_type,
+            "status": "active",
+            "return_errors": self.return_errors,
         }
 
         # Add event-related metadata if events are enabled
-        if self.event_dispatcher:
-            metadata["event_enabled"] = True
+        if self.use_events:
+            status["events"] = {
+                "enabled": True,
+                "dispatcher_configured": self.event_dispatcher is not None,
+            }
 
-        return metadata
+        return status

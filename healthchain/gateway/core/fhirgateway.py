@@ -21,6 +21,7 @@ from typing import (
 )
 from fastapi import Depends, HTTPException, Query, Path
 from fastapi.responses import JSONResponse
+from datetime import datetime
 
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
@@ -29,7 +30,6 @@ from fhir.resources.capabilitystatement import CapabilityStatement
 from healthchain.gateway.core.base import BaseGateway
 from healthchain.gateway.core.connection import FHIRConnectionManager
 from healthchain.gateway.core.errors import FHIRErrorHandler
-from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.events.fhir import create_fhir_event
 from healthchain.gateway.api.protocols import FHIRGatewayProtocol
 from healthchain.gateway.clients.fhir import FHIRServerInterface
@@ -147,36 +147,156 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         """Register basic endpoints"""
         get_self_gateway = self._get_gateway_dependency()
 
-        # Metadata endpoint
+        # FHIR Metadata endpoint - returns CapabilityStatement
         @self.get("/metadata", response_class=FHIRResponse)
         def capability_statement(
             fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
         ):
-            """Return the FHIR capability statement."""
-            # TODO: Review this
-            return {
-                "resourceType": "CapabilityStatement",
-                "status": "active",
-                "fhirVersion": "4.0.1",
-                "format": ["application/fhir+json"],
-                "rest": [
+            """Return the FHIR capability statement for this gateway's services."""
+            return fhir.build_capability_statement().model_dump()
+
+        # Gateway status endpoint - returns operational metadata
+        @self.get("/status", response_class=JSONResponse)
+        def gateway_status(
+            fhir: FHIRGatewayProtocol = Depends(get_self_gateway),
+        ):
+            """Return operational status and metadata for this gateway."""
+            return fhir.get_gateway_status()
+
+    def build_capability_statement(self) -> CapabilityStatement:
+        """
+        Build a FHIR CapabilityStatement for this gateway's value-add services.
+
+        Only includes resources and operations that this gateway provides through
+        its transform/aggregate endpoints, not the underlying FHIR sources.
+
+        Returns:
+            CapabilityStatement: FHIR-compliant capability statement
+        """
+        # Build resource entries based on registered handlers
+        resources = []
+        for resource_type, operations in self._resource_handlers.items():
+            interactions = []
+
+            # Add supported interactions based on registered handlers
+            for operation in operations:
+                if operation == "transform":
+                    interactions.append(
+                        {"code": "read"}
+                    )  # Transform requires read access
+                elif operation == "aggregate":
+                    interactions.append(
+                        {"code": "search-type"}
+                    )  # Aggregate is like search
+
+            if interactions:
+                # Extract the resource name from the resource type class
+                resource_name = self._get_resource_name(resource_type)
+                resources.append(
                     {
-                        "mode": "server",
-                        "resource": [
-                            {
-                                "type": resource_type,
-                                "interaction": [
-                                    {"code": "read"},
-                                    {"code": "search-type"},
-                                ],
-                            }
-                            for resource_type in [
-                                "Patient"
-                            ]  # TODO: should extract from servers
-                        ],
+                        "type": resource_name,
+                        "interaction": interactions,
+                        "documentation": f"Gateway provides {', '.join(operations)} operations for {resource_name}",
                     }
-                ],
-            }
+                )
+
+        capability_data = {
+            "resourceType": "CapabilityStatement",
+            "status": "active",
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "publisher": "HealthChain",
+            "kind": "instance",
+            "software": {
+                "name": "HealthChain FHIR Gateway",
+                "version": "1.0.0",  # TODO: Extract from package
+            },
+            "fhirVersion": "4.0.1",  # TODO: Extract from package
+            "format": ["application/fhir+json"],
+            "rest": [
+                {
+                    "mode": "server",
+                    "documentation": "HealthChain FHIR Gateway provides transformation and aggregation services",
+                    "resource": resources,
+                }
+            ]
+            if resources
+            else [],
+        }
+
+        return CapabilityStatement(**capability_data)
+
+    @property
+    def supported_resources(self) -> List[str]:
+        """Get list of supported FHIR resource types."""
+        return [
+            self._get_resource_name(resource_type)
+            for resource_type in self._resource_handlers.keys()
+        ]
+
+    def get_capabilities(self) -> List[str]:
+        """
+        Get list of supported FHIR operations and resources.
+
+        Returns:
+            List of capabilities this gateway supports
+        """
+        capabilities = []
+        for resource_type, operations in self._resource_handlers.items():
+            resource_name = self._get_resource_name(resource_type)
+            for operation in operations:
+                capabilities.append(f"{operation}:{resource_name}")
+        return capabilities
+
+    def get_gateway_status(self) -> Dict[str, Any]:
+        """
+        Get operational status and metadata for this gateway.
+
+        This provides gateway-specific operational information.
+
+        Returns:
+            Dict containing gateway operational status and metadata
+        """
+        status = {
+            "gateway_type": "FHIRGateway",
+            "version": "1.0.0",  # TODO: Extract from package
+            "status": "active",
+            "timestamp": datetime.now().isoformat() + "Z",
+            # Source connectivity
+            "sources": {
+                "count": len(self.connection_manager.sources),
+                "names": list(self.connection_manager.sources.keys()),
+            },
+            # Connection pool status
+            "connection_pool": self.get_pool_status(),
+            # Supported operations
+            "supported_operations": {
+                "resources": self.supported_resources,
+                "operations": self.get_capabilities(),
+                "endpoints": {
+                    "transform": len(
+                        [
+                            r
+                            for r, ops in self._resource_handlers.items()
+                            if "transform" in ops
+                        ]
+                    ),
+                    "aggregate": len(
+                        [
+                            r
+                            for r, ops in self._resource_handlers.items()
+                            if "aggregate" in ops
+                        ]
+                    ),
+                },
+            },
+            # Event system status
+            "events": {
+                "enabled": self.use_events,
+                "dispatcher_configured": self.event_dispatcher is not None,
+            },
+        }
+
+        return status
 
     def _register_resource_handler(
         self,
@@ -713,22 +833,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
 
         return decorator
 
-    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
-        """
-        Set the event dispatcher for this gateway.
-
-        Args:
-            event_dispatcher: The event dispatcher to use
-
-        Returns:
-            Self, for method chaining
-        """
-        # Directly set the attribute instead of using super() to avoid inheritance issues
-        self.event_dispatcher = event_dispatcher
-        # Register default handlers if needed
-        self._register_default_handlers()
-        return self
-
     def _emit_fhir_event(
         self, operation: str, resource_type: str, resource_id: str, resource: Any = None
     ):
@@ -756,24 +860,6 @@ class FHIRGateway(BaseGateway, FHIRGatewayProtocol):
         event = create_fhir_event(operation, resource_type, resource_id, resource)
         if event:
             self._run_async_publish(event)
-
-    @property
-    def supported_resources(self) -> List[str]:
-        """Get list of supported FHIR resource types."""
-        return list(self._resource_handlers.keys())
-
-    def get_capabilities(self) -> List[str]:
-        """
-        Get list of supported FHIR operations and resources.
-
-        Returns:
-            List of capabilities this gateway supports
-        """
-        capabilities = []
-        for resource_type, operations in self._resource_handlers.items():
-            for operation in operations:
-                capabilities.append(f"{operation}:{resource_type}")
-        return capabilities
 
     def get_pool_status(self) -> Dict[str, Any]:
         """
