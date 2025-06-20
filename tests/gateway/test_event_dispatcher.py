@@ -5,7 +5,7 @@ Focuses on pub/sub behavior, handler registration, and event publishing patterns
 """
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 from fastapi import FastAPI
 from datetime import datetime
 
@@ -184,3 +184,45 @@ async def test_event_publishing_awaits_dispatch_result(
         sample_ehr_event.model_dump(),
         middleware_id=event_dispatcher.middleware_id,
     )
+
+
+def test_emit_method_handles_sync_context(event_dispatcher, sample_ehr_event):
+    """EventDispatcher.emit creates a new loop when not in async context."""
+    # Mock all the asyncio components
+    with patch.object(
+        event_dispatcher, "publish", new_callable=AsyncMock
+    ) as mock_publish:
+        with patch(
+            "asyncio.get_running_loop", side_effect=RuntimeError("No running loop")
+        ):
+            with patch("asyncio.new_event_loop") as mock_new_loop:
+                mock_loop = Mock()
+                mock_new_loop.return_value = mock_loop
+
+                # Call emit from sync context
+                event_dispatcher.emit(sample_ehr_event, middleware_id=42)
+
+                # Verify behavior
+                mock_new_loop.assert_called_once()
+                mock_loop.run_until_complete.assert_called_once()
+                mock_loop.close.assert_called_once()
+                mock_publish.assert_called_once_with(sample_ehr_event, 42)
+
+
+def test_emit_method_handles_async_context(event_dispatcher, sample_ehr_event):
+    """EventDispatcher.emit correctly handles existing async context."""
+    # Mock the async publish method
+    with patch.object(
+        event_dispatcher, "publish", new_callable=AsyncMock
+    ) as mock_publish:
+        # Test async context - should use create_task
+        with patch("asyncio.get_running_loop") as mock_get_loop:
+            with patch("asyncio.create_task") as mock_create_task:
+                mock_loop = Mock()
+                mock_get_loop.return_value = mock_loop
+
+                event_dispatcher.emit(sample_ehr_event)
+
+                # Verify create_task was used (async context)
+                mock_create_task.assert_called_once()
+                mock_publish.assert_called_once_with(sample_ehr_event, None)

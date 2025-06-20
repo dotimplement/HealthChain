@@ -9,7 +9,7 @@ This module tests the fundamental base classes that define the gateway architect
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import Mock, AsyncMock
 from typing import Dict, Any
 
 from healthchain.gateway.core.base import (
@@ -67,29 +67,15 @@ def test_event_capability_configuration_and_chaining(mock_event_dispatcher):
     assert result == capability  # Method chaining
 
 
-@patch("asyncio.get_running_loop")
-@patch("asyncio.create_task")
-async def test_event_capability_async_publishing(
-    mock_create_task, mock_get_loop, mock_event_dispatcher
-):
-    """EventCapability handles async event publishing correctly."""
+def test_event_capability_delegated_publishing(mock_event_dispatcher):
+    """EventCapability delegates to dispatcher's emit method."""
     capability = EventCapability()
     capability.set_dispatcher(mock_event_dispatcher)
 
-    # Test async context (running loop exists)
-    mock_get_loop.return_value = Mock()
-    capability.publish({"type": "test_event"})
-    mock_create_task.assert_called_once()
+    test_event = {"type": "test_event"}
+    capability.publish(test_event)
 
-    # Test sync context (no running loop)
-    mock_get_loop.side_effect = RuntimeError("No running loop")
-    with patch("asyncio.new_event_loop") as mock_new_loop:
-        mock_loop = Mock()
-        mock_new_loop.return_value = mock_loop
-
-        capability.publish({"type": "test_event"})
-        mock_loop.run_until_complete.assert_called_once()
-        mock_loop.close.assert_called_once()
+    mock_event_dispatcher.emit.assert_called_once_with(test_event)
 
 
 async def test_protocol_handler_supports_sync_and_async_handlers():

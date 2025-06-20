@@ -155,51 +155,23 @@ class HealthChainAPI(FastAPI):
         use_events: Optional[bool] = None,
         **options,
     ) -> None:
-        """
-        Generic method to register gateways or services.
+        """Register a healthcare component (gateway or service)."""
 
-        Args:
-            component: The component class or instance to register
-            component_type: Either 'gateway' or 'service'
-            path: Optional override for the component's mount path
-            use_events: Whether to enable events for this component
-            **options: Options to pass to the constructor
-        """
-        try:
-            # Determine if events should be used
-            component_use_events = (
-                self.enable_events if use_events is None else use_events
-            )
+        use_events = use_events if use_events is not None else self.enable_events
+        registry, endpoints_registry, base_class = self._get_component_config(
+            component_type
+        )
 
-            # Get registries and base class for this component type
-            registry, endpoints_registry, base_class = self._get_component_config(
-                component_type
-            )
+        component_instance = self._get_component_instance(
+            component, base_class, use_events, **options
+        )
 
-            # Create or validate the component instance
-            component_instance, component_name = self._prepare_component_instance(
-                component, base_class, component_use_events, **options
-            )
+        registry[component_instance.__class__.__name__] = component_instance
 
-            # Register the component in our internal registry
-            registry[component_name] = component_instance
-
-            # Connect event dispatcher if needed
-            self._connect_component_events(component_instance, component_use_events)
-
-            # Add component routes to the FastAPI app
-            self._add_component_routes(
-                component_instance, component_type, endpoints_registry, path
-            )
-
-        except Exception as e:
-            component_name = getattr(component, "__name__", None) or getattr(
-                component, "__class__", {}
-            ).get("__name__", "Unknown")
-            logger.error(
-                f"Failed to register {component_type} {component_name}: {str(e)}"
-            )
-            raise
+        self._get_component_events(component_instance, use_events)
+        self._add_component_routes(
+            component_instance, component_type, endpoints_registry, path
+        )
 
     def _get_component_config(self, component_type: str) -> tuple:
         """Get the appropriate registries and base class for a component type."""
@@ -208,28 +180,26 @@ class HealthChainAPI(FastAPI):
         else:  # service
             return self.services, self.service_endpoints, BaseProtocolHandler
 
-    def _prepare_component_instance(
+    def _get_component_instance(
         self,
         component: Union[Type, object],
         base_class: Type,
         use_events: bool,
         **options,
-    ) -> tuple:
+    ) -> object:
         """Create or validate a component instance and return it with its name."""
         if isinstance(component, base_class):
             # Already an instance
             component_instance = component
-            component_name = component.__class__.__name__
         else:
             # Create a new instance from the class
             if "use_events" not in options:
                 options["use_events"] = use_events
             component_instance = component(**options)
-            component_name = component.__class__.__name__
 
-        return component_instance, component_name
+        return component_instance
 
-    def _connect_component_events(
+    def _get_component_events(
         self, component_instance: object, use_events: bool
     ) -> None:
         """Connect the event dispatcher to a component if events are enabled."""
@@ -248,15 +218,8 @@ class HealthChainAPI(FastAPI):
         endpoints_registry: Dict[str, set],
         path: Optional[str] = None,
     ) -> None:
-        """
-        Unified method to add routes for both gateways and services.
+        """Add routes for a component."""
 
-        Args:
-            component: The component (gateway or service) to add routes for
-            component_type: Either 'gateway' or 'service'
-            endpoints_registry: The registry to track endpoints in
-            path: Optional override for the mount path
-        """
         component_name = component.__class__.__name__
         endpoints_registry[component_name] = set()
 
@@ -296,18 +259,9 @@ class HealthChainAPI(FastAPI):
         endpoints_registry: Dict[str, set],
         path: Optional[str] = None,
     ) -> None:
-        """
-        Register an APIRouter component (gateway or service).
-
-        Args:
-            router: The APIRouter to register
-            component_name: Name of the component
-            endpoints_registry: Registry to track endpoints
-            path: Optional path override
-        """
-        # Use provided path or router's prefix
+        """Register an APIRouter component."""
         mount_path = path or router.prefix
-        if mount_path and path:
+        if path:
             router.prefix = mount_path
 
         self.include_router(router)
@@ -330,31 +284,17 @@ class HealthChainAPI(FastAPI):
         endpoints_registry: Dict[str, set],
         path: Optional[str] = None,
     ) -> None:
-        """
-        Register a WSGI service.
-
-        Args:
-            service: The service to register
-            service_name: Name of the service
-            endpoints_registry: Registry to track endpoints
-            path: Optional path override
-        """
+        """Register a WSGI service."""
         # Create WSGI app
         wsgi_app = service.create_wsgi_app()
 
-        # Determine mount path
-        mount_path = path
-        if mount_path is None and hasattr(service, "config"):
-            # Try to get the default path from the service config
-            mount_path = getattr(service.config, "default_mount_path", None)
-            if not mount_path:
-                mount_path = getattr(service.config, "base_path", None)
-
-        if not mount_path:
-            # Fallback path based on service name
-            mount_path = (
-                f"/{service_name.lower().replace('service', '').replace('gateway', '')}"
-            )
+        # Determine mount path with fallback chain
+        mount_path = (
+            path
+            or getattr(service.config, "default_mount_path", None)
+            or getattr(service.config, "base_path", None)
+            or f"/{service_name.lower().replace('service', '').replace('gateway', '')}"
+        )
 
         # Mount the WSGI app
         self.mount(mount_path, WSGIMiddleware(wsgi_app))
@@ -381,19 +321,6 @@ class HealthChainAPI(FastAPI):
         """Register a service with the API and mount its endpoints."""
         self._register_component(service, "service", path, use_events, **options)
 
-    def register_router(self, router: APIRouter, **options) -> None:
-        """
-        Register an APIRouter with the API.
-
-        Args:
-            router: The APIRouter instance to register
-            **options: Options to pass to include_router
-        """
-        if not isinstance(router, APIRouter):
-            raise TypeError(f"Expected APIRouter instance, got {type(router)}")
-
-        self.include_router(router, **options)
-
     def _add_default_routes(self) -> None:
         """Add default routes for the API."""
 
@@ -416,27 +343,24 @@ class HealthChainAPI(FastAPI):
         @self.get("/metadata")
         async def metadata():
             """Provide capability statement for the API."""
-            gateway_info = {}
-            for name, gateway in self.gateways.items():
-                # Try to get metadata if available
-                if hasattr(gateway, "get_metadata") and callable(gateway.get_metadata):
-                    gateway_info[name] = gateway.get_metadata()
-                else:
-                    gateway_info[name] = {
-                        "type": name,
-                        "endpoints": list(self.gateway_endpoints.get(name, set())),
-                    }
 
-            service_info = {}
-            for name, service in self.services.items():
-                # Try to get metadata if available
-                if hasattr(service, "get_metadata") and callable(service.get_metadata):
-                    service_info[name] = service.get_metadata()
-                else:
-                    service_info[name] = {
-                        "type": name,
-                        "endpoints": list(self.service_endpoints.get(name, set())),
-                    }
+            def get_component_info(components, endpoints_registry):
+                """Helper function to get metadata for components."""
+                info = {}
+                for name, component in components.items():
+                    if hasattr(component, "get_metadata") and callable(
+                        component.get_metadata
+                    ):
+                        info[name] = component.get_metadata()
+                    else:
+                        info[name] = {
+                            "type": name,
+                            "endpoints": list(endpoints_registry.get(name, set())),
+                        }
+                return info
+
+            gateway_info = get_component_info(self.gateways, self.gateway_endpoints)
+            service_info = get_component_info(self.services, self.service_endpoints)
 
             return {
                 "resourceType": "CapabilityStatement",

@@ -54,23 +54,8 @@ class EventCapability:
         if not self.dispatcher:
             return
 
-        try:
-            # Try to get the running loop (only works in async context)
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, so create_task works
-                asyncio.create_task(self.dispatcher.publish(event))
-            except RuntimeError:
-                # We're not in an async context, create a new loop
-                loop = asyncio.new_event_loop()
-                try:
-                    # Run the coroutine to completion in the new loop
-                    loop.run_until_complete(self.dispatcher.publish(event))
-                finally:
-                    # Clean up the loop
-                    loop.close()
-        except Exception as e:
-            logger.error(f"Failed to publish event: {str(e)}", exc_info=True)
+        # Delegate to dispatcher's sync-friendly publish method
+        self.dispatcher.emit(event)
 
     def set_dispatcher(self, dispatcher) -> "EventCapability":
         """

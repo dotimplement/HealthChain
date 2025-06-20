@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import AsyncMock
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, HTTPException
 from fastapi.testclient import TestClient
 from fastapi.exceptions import RequestValidationError
 
@@ -13,7 +13,7 @@ from healthchain.gateway.api.dependencies import (
     get_all_gateways,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
-from healthchain.gateway.core.base import BaseGateway, BaseProtocolHandler
+from healthchain.gateway.core.base import BaseGateway
 
 
 class MockGateway(BaseGateway):
@@ -121,12 +121,6 @@ def test_dependency_injection(app, mock_dispatcher, mock_gateway):
         assert client.get("/test-all-gateways").json() == {"success": True}
 
 
-def test_registry_access(app, mock_gateway):
-    """Test direct access to registries."""
-    assert app.gateways["MockGateway"] is mock_gateway
-    assert app.services == {}
-
-
 def test_endpoints(client):
     """Test default API endpoints."""
     # Root endpoint
@@ -151,29 +145,6 @@ def test_register_gateway(app):
     gateway = TestGateway()
     app.register_gateway(gateway)
     assert "TestGateway" in app.gateways
-
-
-def test_register_router(app):
-    """Test router registration."""
-    router = APIRouter(prefix="/test")
-
-    @router.get("/route")
-    def test_route():
-        return {"test": "ok"}
-
-    app.register_router(router)
-
-    with TestClient(app) as client:
-        assert client.get("/test/route").json() == {"test": "ok"}
-
-
-def test_register_router_validation(app):
-    """Test router registration validates input types."""
-    with pytest.raises(TypeError, match="Expected APIRouter instance"):
-        app.register_router("not a router")
-
-    with pytest.raises(TypeError, match="Expected APIRouter instance"):
-        app.register_router(None)
 
 
 def test_exception_handling(app):
@@ -205,33 +176,3 @@ def test_event_dispatcher_integration(mock_dispatcher):
     app = HealthChainAPI(enable_events=True, event_dispatcher=mock_dispatcher)
     app.register_gateway(gateway)
     assert gateway.events.dispatcher is mock_dispatcher
-
-
-def test_error_handling_graceful():
-    """Test startup and shutdown handle component errors gracefully."""
-
-    class FailingService(BaseProtocolHandler):
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self.startup_called = False
-            self.shutdown_called = False
-
-        async def startup(self):
-            self.startup_called = True
-            raise Exception("Startup failed")
-
-        async def shutdown(self):
-            self.shutdown_called = True
-            raise Exception("Shutdown failed")
-
-    app = HealthChainAPI()
-    service = FailingService()
-    app.register_service(service)
-
-    # Should not raise exception despite component failure
-    with TestClient(app) as client:
-        assert client.get("/health").status_code == 200
-
-    # Verify lifecycle methods were called
-    assert service.startup_called
-    assert service.shutdown_called

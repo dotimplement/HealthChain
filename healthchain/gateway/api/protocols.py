@@ -128,6 +128,9 @@ class HealthChainAPIProtocol(Protocol):
         ...
 
 
+# Protocols below are primarily used for testing
+
+
 class FHIRConnectionManagerProtocol(Protocol):
     """Protocol for FHIR connection management."""
 
@@ -184,20 +187,4 @@ class FHIRServerInterfaceProtocol(Protocol):
 
     async def capabilities(self) -> Any:
         """Get server capabilities."""
-        ...
-
-
-class FHIRClientPoolProtocol(Protocol):
-    """Protocol for FHIR client pooling."""
-
-    async def get_client(self, connection_string: str) -> FHIRServerInterfaceProtocol:
-        """Get a client for the given connection string."""
-        ...
-
-    async def close(self) -> None:
-        """Close all clients in the pool."""
-        ...
-
-    def get_stats(self) -> Dict[str, Any]:
-        """Get pool statistics."""
         ...

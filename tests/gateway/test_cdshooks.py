@@ -224,8 +224,7 @@ def test_cdshooks_gateway_event_emission():
     # Handle the request
     gateway.handle_request(request)
 
-    # Verify event was dispatched (the dispatcher should have been called via events.publish)
-    assert mock_dispatcher.publish.called
+    assert mock_dispatcher.emit.called
 
 
 def test_cdshooks_gateway_hook_invalid_hook_type():

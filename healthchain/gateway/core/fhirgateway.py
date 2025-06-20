@@ -260,14 +260,11 @@ class FHIRGateway(BaseGateway):
             "version": "1.0.0",  # TODO: Extract from package
             "status": "active",
             "timestamp": datetime.now().isoformat() + "Z",
-            # Source connectivity
             "sources": {
                 "count": len(self.connection_manager.sources),
                 "names": list(self.connection_manager.sources.keys()),
             },
-            # Connection pool status
             "connection_pool": self.get_pool_status(),
-            # Supported operations
             "supported_operations": {
                 "resources": self.supported_resources,
                 "operations": self.get_capabilities(),
@@ -288,7 +285,6 @@ class FHIRGateway(BaseGateway):
                     ),
                 },
             },
-            # Event system status
             "events": {
                 "enabled": self.use_events,
                 "dispatcher_configured": self.events.dispatcher is not None,
