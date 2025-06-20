@@ -8,7 +8,7 @@ integration with EHR systems.
 import logging
 
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
-from fastapi import Body, Depends
+from fastapi import APIRouter, Body, Depends
 from pydantic import BaseModel
 
 from healthchain.gateway.core.base import BaseProtocolHandler
@@ -37,7 +37,7 @@ class CDSHooksConfig(BaseModel):
     allowed_hooks: List[str] = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
 
 
-class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
+class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], APIRouter):
     """
     Service for CDS Hooks protocol integration.
 
@@ -86,15 +86,65 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
             **options: Additional options for the service
         """
         # Initialize the base protocol handler
-        super().__init__(use_events=use_events, **options)
+        BaseProtocolHandler.__init__(self, use_events=use_events, **options)
 
         # Initialize specific configuration
         self.config = config or CDSHooksConfig()
+
+        # Initialize APIRouter with configuration
+        APIRouter.__init__(self, prefix=self.config.base_path, tags=["CDS Hooks"])
+
         self._handler_metadata = {}
 
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
             self.events.set_dispatcher(event_dispatcher)
+
+        self._register_base_routes()
+
+    def _get_service_dependency(self):
+        """Create a dependency function that returns this service instance."""
+
+        def get_self_service():
+            return self
+
+        return get_self_service
+
+    def _register_base_routes(self):
+        """Register base routes for CDS Hooks service."""
+        get_self_service = self._get_service_dependency()
+
+        # Discovery endpoint
+        discovery_path = self.config.discovery_path.lstrip("/")
+
+        @self.get(f"/{discovery_path}", response_model_exclude_none=True)
+        async def discovery_handler(cds: "CDSHooksService" = Depends(get_self_service)):
+            """CDS Hooks discovery endpoint."""
+            return cds.handle_discovery()
+
+    def _register_hook_route(self, hook_id: str):
+        """Register a route for a specific hook ID."""
+        get_self_service = self._get_service_dependency()
+        service_path = self.config.service_path.lstrip("/")
+        endpoint = f"/{service_path}/{hook_id}"
+
+        async def service_handler(
+            request: CDSRequest = Body(...),
+            cds: "CDSHooksService" = Depends(get_self_service),
+        ):
+            """CDS Hook service endpoint."""
+            return cds.handle_request(request)
+
+        self.add_api_route(
+            path=endpoint,
+            endpoint=service_handler,
+            methods=["POST"],
+            response_model_exclude_none=True,
+            summary=f"CDS Hook: {hook_id}",
+            description=f"Execute CDS Hook service: {hook_id}",
+        )
+
+        logger.debug(f"Registered CDS Hook endpoint: {self.prefix}{endpoint}")
 
     def hook(
         self,
@@ -134,6 +184,9 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
                 "description": description,
                 "usage_requirements": usage_requirements,
             }
+
+            # Register the route for this hook
+            self._register_hook_route(id)
 
             return handler
 
@@ -336,74 +389,3 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse]):
             )
 
         return metadata
-
-    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
-        """
-        Get routes for the CDS Hooks service.
-
-        Args:
-            path: Optional path to add the service at (uses config if None)
-
-        Returns:
-            List of route tuples (path, methods, handler, kwargs)
-        """
-        routes = []
-
-        # Create a dependency for this specific service instance
-        def get_self_cds():
-            return self
-
-        base_path = path or self.config.base_path
-        if base_path:
-            base_path = base_path.rstrip("/")
-
-        # Register the discovery endpoint
-        discovery_path = self.config.discovery_path.lstrip("/")
-        discovery_endpoint = (
-            f"{base_path}/{discovery_path}" if base_path else f"/{discovery_path}"
-        )
-
-        # Create handlers with dependency injection
-        async def discovery_handler(cds: "CDSHooksService" = Depends(get_self_cds)):
-            return cds.handle_discovery()
-
-        routes.append(
-            (
-                discovery_endpoint,
-                ["GET"],
-                discovery_handler,
-                {"response_model_exclude_none": True},
-            )
-        )
-
-        # Register service endpoints for each hook
-        service_path = self.config.service_path.lstrip("/")
-        for metadata in self.get_metadata():
-            hook_id = metadata.get("id")
-            if hook_id:
-                service_endpoint = (
-                    f"{base_path}/{service_path}/{hook_id}"
-                    if base_path
-                    else f"/{service_path}/{hook_id}"
-                )
-
-                # Create a handler factory to properly capture hook_id in closure
-                def create_handler_for_hook():
-                    async def service_handler(
-                        request: CDSRequest = Body(...),
-                        cds: "CDSHooksService" = Depends(get_self_cds),
-                    ):
-                        return cds.handle_request(request)
-
-                    return service_handler
-
-                routes.append(
-                    (
-                        service_endpoint,
-                        ["POST"],
-                        create_handler_for_hook(),
-                        {"response_model_exclude_none": True},
-                    )
-                )
-
-        return routes

@@ -144,7 +144,7 @@ def test_cdshooks_gateway_handle_discovery():
 
 
 def test_cdshooks_gateway_routing_and_custom_paths():
-    """CDSHooksService generates correct routes for both default and custom configurations."""
+    """CDSHooksService works as APIRouter with correct route registration."""
     # Test default paths
     gateway = CDSHooksService()
 
@@ -152,21 +152,26 @@ def test_cdshooks_gateway_routing_and_custom_paths():
     def handle_patient_view(request):
         return CDSResponse(cards=[])
 
-    routes = gateway.get_routes()
-    assert len(routes) >= 2
+    # Verify gateway is now an APIRouter
+    from fastapi import APIRouter
 
-    # Verify discovery endpoint
-    discovery_routes = [r for r in routes if "GET" in r[1]]
-    assert len(discovery_routes) >= 1
-    discovery_route = discovery_routes[0]
-    assert discovery_route[1] == ["GET"]
+    assert isinstance(gateway, APIRouter)
 
-    # Verify hook endpoint
-    hook_routes = [r for r in routes if "POST" in r[1]]
-    assert len(hook_routes) >= 1
-    hook_route = hook_routes[0]
-    assert hook_route[1] == ["POST"]
-    assert "test-patient-view" in hook_route[0]
+    # Verify routes are registered directly in the router
+    assert hasattr(gateway, "routes")
+    assert len(gateway.routes) >= 2
+
+    # Check that routes have been registered
+    route_paths = [route.path for route in gateway.routes]
+    route_methods = [list(route.methods)[0] for route in gateway.routes]
+
+    # Should have discovery endpoint
+    assert any("cds-discovery" in path for path in route_paths)
+    assert "GET" in route_methods
+
+    # Should have hook service endpoint
+    assert any("test-patient-view" in path for path in route_paths)
+    assert "POST" in route_methods
 
     # Test custom paths
     custom_config = CDSHooksConfig(
@@ -180,12 +185,16 @@ def test_cdshooks_gateway_routing_and_custom_paths():
     def handle_custom_patient_view(request):
         return CDSResponse(cards=[])
 
-    custom_routes = custom_gateway.get_routes()
-    custom_discovery_route = [r for r in custom_routes if "GET" in r[1]][0]
-    custom_service_route = [r for r in custom_routes if "POST" in r[1]][0]
+    # Verify custom gateway has correct prefix
+    assert custom_gateway.prefix == "/custom-cds"
 
-    assert custom_discovery_route[0] == "/custom-cds/custom-discovery"
-    assert "/custom-cds/custom-services/test-service" in custom_service_route[0]
+    # Verify routes exist
+    custom_route_paths = [route.path for route in custom_gateway.routes]
+    assert any("custom-discovery" in path for path in custom_route_paths)
+    assert any("test-service" in path for path in custom_route_paths)
+
+    # Verify get_routes() method no longer exists
+    assert not hasattr(gateway, "get_routes")
 
 
 def test_cdshooks_gateway_event_emission():

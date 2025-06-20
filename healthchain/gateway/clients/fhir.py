@@ -11,6 +11,7 @@ import httpx
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Union, Type
 from urllib.parse import urljoin, urlencode
+from functools import lru_cache
 
 from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
@@ -201,6 +202,7 @@ class AsyncFHIRClient(FHIRServerInterface):
 
         return data
 
+    @lru_cache(maxsize=128)
     def _resolve_resource_type(
         self, resource_type: Union[str, Type[Resource]]
     ) -> tuple[str, Type[Resource]]:

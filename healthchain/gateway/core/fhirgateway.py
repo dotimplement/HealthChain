@@ -388,6 +388,16 @@ class FHIRGateway(BaseGateway):
         """Create a route handler for the given resource type and operation."""
         get_self_gateway = self._get_gateway_dependency()
 
+        def _execute_handler(fhir: "FHIRGateway", *args) -> Any:
+            """Common handler execution logic with error handling."""
+            try:
+                handler_func = fhir._resource_handlers[resource_type][operation]
+                result = handler_func(*args)
+                return result
+            except Exception as e:
+                logger.error(f"Error in {operation} handler: {str(e)}")
+                raise HTTPException(status_code=500, detail=str(e))
+
         if operation == "transform":
 
             async def handler(
@@ -398,13 +408,7 @@ class FHIRGateway(BaseGateway):
                 fhir: "FHIRGateway" = Depends(get_self_gateway),
             ):
                 """Transform a resource with registered handler."""
-                try:
-                    handler_func = fhir._resource_handlers[resource_type]["transform"]
-                    result = handler_func(id, source)
-                    return result
-                except Exception as e:
-                    logger.error(f"Error in transform handler: {str(e)}")
-                    raise HTTPException(status_code=500, detail=str(e))
+                return _execute_handler(fhir, id, source)
 
         elif operation == "aggregate":
 
@@ -416,13 +420,10 @@ class FHIRGateway(BaseGateway):
                 fhir: "FHIRGateway" = Depends(get_self_gateway),
             ):
                 """Aggregate resources with registered handler."""
-                try:
-                    handler_func = fhir._resource_handlers[resource_type]["aggregate"]
-                    result = handler_func(id, sources)
-                    return result
-                except Exception as e:
-                    logger.error(f"Error in aggregate handler: {str(e)}")
-                    raise HTTPException(status_code=500, detail=str(e))
+                return _execute_handler(fhir, id, sources)
+
+        else:
+            raise ValueError(f"Unsupported operation: {operation}")
 
         return handler
 

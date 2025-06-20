@@ -1,47 +1,35 @@
 """
 Dependency providers for HealthChainAPI.
 
-This module contains FastAPI dependency injection providers that can be
+This module contains dependency functions that can be
 used in route handlers to access HealthChainAPI components.
 """
 
-from typing import Dict, Optional, TypeVar, cast, Callable
-from fastapi import Depends
+from fastapi import Depends, HTTPException
+from typing import Dict, Optional, Any
 
 from healthchain.gateway.api.protocols import (
     HealthChainAPIProtocol,
     EventDispatcherProtocol,
 )
-from healthchain.gateway.core.base import BaseGateway
-
-# Type variable for type hinting
-T = TypeVar("T", bound=BaseGateway)
 
 
-# Application instance dependency
 def get_app() -> HealthChainAPIProtocol:
     """Get the current HealthChainAPI application instance.
 
-    This is a dependency that returns the current application instance.
-    It should be overridden during application startup.
+    This is a placeholder that should be overridden by the actual
+    HealthChainAPI instance through dependency_overrides.
 
     Returns:
         The HealthChainAPI instance
     """
-    raise RuntimeError(
-        "get_app dependency has not been overridden. "
-        "This usually happens when you try to use the dependency outside "
-        "of a request context or before the application has been initialized."
-    )
+    raise RuntimeError("HealthChainAPI instance not available")
 
 
 def get_event_dispatcher(
     app: HealthChainAPIProtocol = Depends(get_app),
 ) -> Optional[EventDispatcherProtocol]:
-    """Get the event dispatcher from the app.
-
-    This is a dependency that can be used in route handlers to access
-    the event dispatcher.
+    """Get the event dispatcher from the current application.
 
     Args:
         app: The HealthChainAPI instance
@@ -54,29 +42,23 @@ def get_event_dispatcher(
 
 def get_gateway(
     gateway_name: str, app: HealthChainAPIProtocol = Depends(get_app)
-) -> Optional[BaseGateway]:
-    """Get a specific gateway from the app.
-
-    This is a dependency that can be used in route handlers to access
-    a specific gateway.
+) -> Optional[Any]:
+    """Get a specific gateway by name.
 
     Args:
         gateway_name: The name of the gateway to retrieve
         app: The HealthChainAPI instance
 
     Returns:
-        The gateway or None if not found
+        The gateway instance or None if not found
     """
-    return app.get_gateway(gateway_name)
+    return app.gateways.get(gateway_name)
 
 
 def get_all_gateways(
     app: HealthChainAPIProtocol = Depends(get_app),
-) -> Dict[str, BaseGateway]:
-    """Get all registered gateways from the app.
-
-    This is a dependency that can be used in route handlers to access
-    all gateways.
+) -> Dict[str, Any]:
+    """Get all registered gateways.
 
     Args:
         app: The HealthChainAPI instance
@@ -84,31 +66,79 @@ def get_all_gateways(
     Returns:
         Dictionary of all registered gateways
     """
-    return app.get_all_gateways()
+    return app.gateways
 
 
-def get_typed_gateway(
-    gateway_name: str, gateway_type: type[T]
-) -> Callable[[], Optional[T]]:
-    """Create a dependency that returns a gateway of a specific type.
-
-    This creates a dependency that returns a gateway cast to a specific type,
-    which is useful when you need a specific gateway protocol.
+def get_service(
+    service_name: str, app: HealthChainAPIProtocol = Depends(get_app)
+) -> Optional[Any]:
+    """Get a specific service by name.
 
     Args:
-        gateway_name: Name of the gateway to retrieve
-        gateway_type: The expected gateway type/protocol
+        service_name: The name of the service to retrieve
+        app: The HealthChainAPI instance
 
     Returns:
-        A dependency function that returns the typed gateway
+        The service instance or None if not found
+    """
+    return app.services.get(service_name)
+
+
+def get_all_services(
+    app: HealthChainAPIProtocol = Depends(get_app),
+) -> Dict[str, Any]:
+    """Get all registered services.
+
+    Args:
+        app: The HealthChainAPI instance
+
+    Returns:
+        Dictionary of all registered services
+    """
+    return app.services
+
+
+def get_gateway_by_name(gateway_name: str):
+    """Dependency factory for getting a specific gateway by name.
+
+    Args:
+        gateway_name: The name of the gateway to retrieve
+
+    Returns:
+        A dependency function that returns the gateway
     """
 
-    def _get_typed_gateway(
+    def _get_gateway_dependency(
         app: HealthChainAPIProtocol = Depends(get_app),
-    ) -> Optional[T]:  # type: ignore
-        gateway = app.get_gateway(gateway_name)
+    ) -> Any:
+        gateway = app.gateways.get(gateway_name)
         if gateway is None:
-            return None
-        return cast(T, gateway)
+            raise HTTPException(
+                status_code=404, detail=f"Gateway '{gateway_name}' not found"
+            )
+        return gateway
 
-    return _get_typed_gateway
+    return _get_gateway_dependency
+
+
+def get_service_by_name(service_name: str):
+    """Dependency factory for getting a specific service by name.
+
+    Args:
+        service_name: The name of the service to retrieve
+
+    Returns:
+        A dependency function that returns the service
+    """
+
+    def _get_service_dependency(
+        app: HealthChainAPIProtocol = Depends(get_app),
+    ) -> Any:
+        service = app.services.get(service_name)
+        if service is None:
+            raise HTTPException(
+                status_code=404, detail=f"Service '{service_name}' not found"
+            )
+        return service
+
+    return _get_service_dependency

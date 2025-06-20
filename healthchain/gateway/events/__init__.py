@@ -11,5 +11,4 @@ __all__ = [
     "EventDispatcher",
     "EHREvent",
     "EHREventType",
-    "EHREventPublisher",
 ]

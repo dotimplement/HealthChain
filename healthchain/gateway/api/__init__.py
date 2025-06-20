@@ -1,33 +1,38 @@
 """
-HealthChain API module.
+API module for HealthChain Gateway.
 
-This module provides API components for the HealthChain gateway.
+This module provides the FastAPI application wrapper and dependency injection
+for healthcare integrations.
 """
 
-from healthchain.gateway.api.app import HealthChainAPI, create_app
+from healthchain.gateway.api.app import HealthChainAPI
 from healthchain.gateway.api.dependencies import (
     get_app,
     get_event_dispatcher,
     get_gateway,
     get_all_gateways,
-    get_typed_gateway,
+    get_service,
+    get_all_services,
+    get_gateway_by_name,
+    get_service_by_name,
 )
 from healthchain.gateway.api.protocols import (
     HealthChainAPIProtocol,
     EventDispatcherProtocol,
+    FHIRConnectionManagerProtocol,
 )
 
 __all__ = [
-    # Classes
     "HealthChainAPI",
-    # Functions
-    "create_app",
     "get_app",
     "get_event_dispatcher",
     "get_gateway",
     "get_all_gateways",
-    "get_typed_gateway",
-    # Protocols
+    "get_service",
+    "get_all_services",
+    "get_gateway_by_name",
+    "get_service_by_name",
     "HealthChainAPIProtocol",
     "EventDispatcherProtocol",
+    "FHIRConnectionManagerProtocol",
 ]

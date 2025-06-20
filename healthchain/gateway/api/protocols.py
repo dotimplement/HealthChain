@@ -21,7 +21,7 @@ from typing import (
 from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
 
 if TYPE_CHECKING:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, APIRouter
 
 
 class EventDispatcherProtocol(Protocol):
@@ -84,44 +84,6 @@ class HealthChainAPIProtocol(Protocol):
         """
         ...
 
-    def get_gateway(self, gateway_name: str) -> Optional[Any]:
-        """Get a gateway by name.
-
-        Args:
-            gateway_name: The name of the gateway
-
-        Returns:
-            The gateway or None if not found
-        """
-        ...
-
-    def get_all_gateways(self) -> Dict[str, Any]:
-        """Get all registered gateways.
-
-        Returns:
-            Dictionary of all registered gateways
-        """
-        ...
-
-    def get_service(self, service_name: str) -> Optional[Any]:
-        """Get a service by name.
-
-        Args:
-            service_name: The name of the service
-
-        Returns:
-            The service or None if not found
-        """
-        ...
-
-    def get_all_services(self) -> Dict[str, Any]:
-        """Get all registered services.
-
-        Returns:
-            Dictionary of all registered services
-        """
-        ...
-
     def register_gateway(
         self,
         gateway: Union[Type[Any], Any],
@@ -156,11 +118,11 @@ class HealthChainAPIProtocol(Protocol):
         """
         ...
 
-    def register_router(self, router: Any, **options) -> None:
+    def register_router(self, router: "APIRouter", **options) -> None:
         """Register a router.
 
         Args:
-            router: The router to register
+            router: The APIRouter instance to register
             **options: Additional options
         """
         ...

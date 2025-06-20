@@ -1,47 +1,19 @@
-"""
-Tests for the HealthChainAPI class with dependency injection.
-
-This module contains tests for the HealthChainAPI class, focusing on
-testing with dependency injection.
-"""
+"""Tests for the HealthChainAPI class."""
 
 import pytest
 from unittest.mock import AsyncMock
 from fastapi import Depends, APIRouter, HTTPException
 from fastapi.testclient import TestClient
-from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
-from healthchain.gateway.api.app import create_app, HealthChainAPI
+from healthchain.gateway.api.app import HealthChainAPI
 from healthchain.gateway.api.dependencies import (
-    get_app,
     get_event_dispatcher,
     get_gateway,
     get_all_gateways,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
-from healthchain.gateway.core.base import BaseGateway
-
-
-# Custom create_app function for testing
-def create_app_for_testing(enable_events=True, event_dispatcher=None, app_class=None):
-    """Create a test app with optional custom app class."""
-    if app_class is None:
-        # Use the default HealthChainAPI class
-        return create_app(
-            enable_events=enable_events, event_dispatcher=event_dispatcher
-        )
-
-    # Use a custom app class
-    app_config = {
-        "title": "Test HealthChain API",
-        "description": "Test API",
-        "version": "0.1.0",
-        "docs_url": "/docs",
-        "redoc_url": "/redoc",
-        "enable_events": enable_events,
-        "event_dispatcher": event_dispatcher,
-    }
-    return app_class(**app_config)
+from healthchain.gateway.core.base import BaseGateway, BaseProtocolHandler
 
 
 class MockGateway(BaseGateway):
@@ -50,17 +22,17 @@ class MockGateway(BaseGateway):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.name = "MockGateway"
+        self.startup_called = False
+        self.shutdown_called = False
+
+    async def startup(self):
+        self.startup_called = True
+
+    async def shutdown(self):
+        self.shutdown_called = True
 
     def get_metadata(self):
         return {"type": "mock", "version": "1.0.0"}
-
-
-class AnotherMockGateway(BaseGateway):
-    """Another mock gateway for testing."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.name = "AnotherMockGateway"
 
 
 class MockEventDispatcher(EventDispatcher):
@@ -75,216 +47,191 @@ class MockEventDispatcher(EventDispatcher):
 
 
 @pytest.fixture
-def mock_event_dispatcher():
-    """Create a mock event dispatcher."""
+def mock_dispatcher():
     return MockEventDispatcher()
 
 
 @pytest.fixture
 def mock_gateway():
-    """Create a mock gateway."""
     return MockGateway()
 
 
 @pytest.fixture
-def test_app(mock_event_dispatcher, mock_gateway):
-    """Create a test app with mocked dependencies."""
-
-    # Create a test subclass that overrides _shutdown to avoid termination
-    class SafeHealthChainAPI(HealthChainAPI):
-        def _shutdown(self):
-            # Override to avoid termination
-            return JSONResponse(content={"message": "Server is shutting down..."})
-
-    # Create the app with the safe implementation
-    app = create_app_for_testing(
+def app(mock_dispatcher, mock_gateway):
+    """Create test app with mocked dependencies."""
+    app = HealthChainAPI(
+        title="Test API",
+        version="0.1.0",
         enable_events=True,
-        event_dispatcher=mock_event_dispatcher,
-        app_class=SafeHealthChainAPI,
+        event_dispatcher=mock_dispatcher,
     )
     app.register_gateway(mock_gateway)
     return app
 
 
 @pytest.fixture
-def client(test_app):
-    """Create a test client."""
-    return TestClient(test_app)
+def client(app):
+    return TestClient(app)
 
 
-def test_app_creation():
-    """Test that the app can be created with custom dependencies."""
-
-    # Create a test subclass that overrides _shutdown to avoid termination
-    class SafeHealthChainAPI(HealthChainAPI):
-        def _shutdown(self):
-            # Override to avoid termination
-            return JSONResponse(content={"message": "Server is shutting down..."})
-
-    mock_dispatcher = MockEventDispatcher()
-    app = create_app_for_testing(
-        enable_events=True,
-        event_dispatcher=mock_dispatcher,
-        app_class=SafeHealthChainAPI,
-    )
-
+def test_app_creation(mock_dispatcher):
+    """Test app creation with custom dependencies."""
+    app = HealthChainAPI(enable_events=True, event_dispatcher=mock_dispatcher)
     assert app.get_event_dispatcher() is mock_dispatcher
     assert app.enable_events is True
 
 
-def test_dependency_injection_get_app(test_app):
-    """Test that get_app dependency returns the app."""
-    # Override dependency to return our test app
-    test_app.dependency_overrides[get_app] = lambda: test_app
+def test_lifespan_startup_shutdown():
+    """Test lifespan events call startup and shutdown."""
+    gateway = MockGateway()
+    app = HealthChainAPI()
+    app.register_gateway(gateway)
 
-    with TestClient(test_app) as client:
-        response = client.get("/health")
-        assert response.status_code == 200
+    with TestClient(app) as client:
+        assert gateway.startup_called
+        assert client.get("/health").status_code == 200
+
+    assert gateway.shutdown_called
 
 
-def test_dependency_injection_event_dispatcher(test_app, mock_event_dispatcher):
-    """Test that get_event_dispatcher dependency returns the event dispatcher."""
+def test_dependency_injection(app, mock_dispatcher, mock_gateway):
+    """Test dependency injection works correctly."""
 
-    # Create a test route that uses the dependency
-    @test_app.get("/test-event-dispatcher")
-    def test_route(dispatcher=Depends(get_event_dispatcher)):
-        assert dispatcher is mock_event_dispatcher
+    @app.get("/test-dispatcher")
+    def test_dispatcher(dispatcher=Depends(get_event_dispatcher)):
+        assert dispatcher is mock_dispatcher
         return {"success": True}
 
-    with TestClient(test_app) as client:
-        response = client.get("/test-event-dispatcher")
-        assert response.status_code == 200
-        assert response.json() == {"success": True}
-
-
-def test_dependency_injection_gateway(test_app, mock_gateway):
-    """Test that get_gateway dependency returns the gateway."""
-
-    # Create a test route that uses the dependency
-    @test_app.get("/test-gateway/{gateway_name}")
-    def test_route(gateway_name: str, gateway=Depends(get_gateway)):
+    @app.get("/test-gateway")
+    def test_gateway(gateway=Depends(get_gateway)):
         assert gateway is mock_gateway
         return {"success": True}
 
-    with TestClient(test_app) as client:
-        response = client.get("/test-gateway/MockGateway")
-        assert response.status_code == 200
-        assert response.json() == {"success": True}
-
-
-def test_dependency_injection_all_gateways(test_app, mock_gateway):
-    """Test that get_all_gateways dependency returns all gateways."""
-
-    # Create a test route that uses the dependency
-    @test_app.get("/test-all-gateways")
-    def test_route(gateways=Depends(get_all_gateways)):
+    @app.get("/test-all-gateways")
+    def test_all_gateways(gateways=Depends(get_all_gateways)):
         assert "MockGateway" in gateways
         assert gateways["MockGateway"] is mock_gateway
         return {"success": True}
 
-    with TestClient(test_app) as client:
-        response = client.get("/test-all-gateways")
-        assert response.status_code == 200
-        assert response.json() == {"success": True}
+    with TestClient(app) as client:
+        assert client.get("/test-dispatcher").json() == {"success": True}
+        assert client.get("/test-gateway?gateway_name=MockGateway").json() == {
+            "success": True
+        }
+        assert client.get("/test-all-gateways").json() == {"success": True}
 
 
-def test_root_endpoint(client):
-    """Test the root endpoint returns gateway information."""
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "MockGateway" in response.json()["gateways"]
+def test_registry_access(app, mock_gateway):
+    """Test direct access to registries."""
+    assert app.gateways["MockGateway"] is mock_gateway
+    assert app.services == {}
 
 
-def test_metadata_endpoint(client):
-    """Test the metadata endpoint returns gateway information."""
-    response = client.get("/metadata")
-    assert response.status_code == 200
+def test_endpoints(client):
+    """Test default API endpoints."""
+    # Root endpoint
+    root = client.get("/").json()
+    assert "MockGateway" in root["gateways"]
 
-    data = response.json()
-    assert data["resourceType"] == "CapabilityStatement"
-    assert "MockGateway" in data["gateways"]
-    assert data["gateways"]["MockGateway"]["type"] == "mock"
+    # Health endpoint
+    assert client.get("/health").json() == {"status": "healthy"}
 
-
-def test_register_gateway(test_app):
-    """Test registering a gateway."""
-    # Create a gateway instance
-    another_gateway = AnotherMockGateway()
-
-    # Register it with the app
-    test_app.register_gateway(another_gateway)
-
-    # Verify it was registered
-    assert "AnotherMockGateway" in test_app.gateways
-    assert test_app.gateways["AnotherMockGateway"] is another_gateway
+    # Metadata endpoint
+    metadata = client.get("/metadata").json()
+    assert metadata["resourceType"] == "CapabilityStatement"
+    assert "MockGateway" in metadata["gateways"]
 
 
-def test_register_router(test_app):
-    """Test registering a router."""
-    # Create a router
-    router = APIRouter(prefix="/test-router", tags=["test"])
+def test_register_gateway(app):
+    """Test gateway registration."""
 
-    @router.get("/test")
+    class TestGateway(BaseGateway):
+        pass
+
+    gateway = TestGateway()
+    app.register_gateway(gateway)
+    assert "TestGateway" in app.gateways
+
+
+def test_register_router(app):
+    """Test router registration."""
+    router = APIRouter(prefix="/test")
+
+    @router.get("/route")
     def test_route():
-        return {"message": "Router test"}
+        return {"test": "ok"}
 
-    # Register the router
-    test_app.register_router(router)
+    app.register_router(router)
 
-    # Test the route
-    with TestClient(test_app) as client:
-        response = client.get("/test-router/test")
-        assert response.status_code == 200
-        assert response.json() == {"message": "Router test"}
+    with TestClient(app) as client:
+        assert client.get("/test/route").json() == {"test": "ok"}
 
 
-def test_exception_handling(test_app):
-    """Test the exception handling middleware."""
+def test_register_router_validation(app):
+    """Test router registration validates input types."""
+    with pytest.raises(TypeError, match="Expected APIRouter instance"):
+        app.register_router("not a router")
 
-    # Add a route that raises an exception
-    @test_app.get("/test-error")
-    def error_route():
+    with pytest.raises(TypeError, match="Expected APIRouter instance"):
+        app.register_router(None)
+
+
+def test_exception_handling(app):
+    """Test unified exception handling."""
+
+    @app.get("/http-error")
+    def http_error():
         raise HTTPException(status_code=400, detail="Test error")
 
-    # Add a route that raises an unexpected exception
-    @test_app.get("/test-unexpected-error")
-    def unexpected_error_route():
-        raise ValueError("Unexpected test error")
+    @app.get("/validation-error")
+    def validation_error():
+        raise RequestValidationError([{"msg": "test validation error"}])
 
-    with TestClient(test_app) as client:
-        # Test HTTP exception handling
-        response = client.get("/test-error")
+    with TestClient(app) as client:
+        # HTTP exception
+        response = client.get("/http-error")
         assert response.status_code == 400
         assert response.json() == {"detail": "Test error"}
 
-        # Test unexpected exception handling
-        with pytest.raises(ValueError):
-            response = client.get("/test-unexpected-error")
-            assert response.status_code == 500
-            assert response.json() == {"detail": "Internal server error"}
+        # Validation exception
+        response = client.get("/validation-error")
+        assert response.status_code == 422
+        assert "detail" in response.json()
 
 
-def test_gateway_event_dispatcher_integration(mock_event_dispatcher):
-    """Test that gateways receive the event dispatcher when registered."""
-
-    # Create a test subclass that overrides _shutdown to avoid termination
-    class SafeHealthChainAPI(HealthChainAPI):
-        def _shutdown(self):
-            # Override to avoid termination
-            return JSONResponse(content={"message": "Server is shutting down..."})
-
-    # Create a gateway
+def test_event_dispatcher_integration(mock_dispatcher):
+    """Test gateway receives event dispatcher."""
     gateway = MockGateway()
-
-    # Create app with events enabled
-    app = create_app_for_testing(
-        enable_events=True,
-        event_dispatcher=mock_event_dispatcher,
-        app_class=SafeHealthChainAPI,
-    )
-
-    # Register gateway
+    app = HealthChainAPI(enable_events=True, event_dispatcher=mock_dispatcher)
     app.register_gateway(gateway)
+    assert gateway.events.dispatcher is mock_dispatcher
 
-    # Check that gateway received the event dispatcher
-    assert gateway.events.dispatcher is mock_event_dispatcher
+
+def test_error_handling_graceful():
+    """Test startup and shutdown handle component errors gracefully."""
+
+    class FailingService(BaseProtocolHandler):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.startup_called = False
+            self.shutdown_called = False
+
+        async def startup(self):
+            self.startup_called = True
+            raise Exception("Startup failed")
+
+        async def shutdown(self):
+            self.shutdown_called = True
+            raise Exception("Shutdown failed")
+
+    app = HealthChainAPI()
+    service = FailingService()
+    app.register_service(service)
+
+    # Should not raise exception despite component failure
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+
+    # Verify lifecycle methods were called
+    assert service.startup_called
+    assert service.shutdown_called
