@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
-from healthchain.models import CDSRequest
+from healthchain.models import CDSRequest, CDSResponse
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.sandbox.base import BaseClient, BaseRequestConstructor
 from healthchain.sandbox.workflows import Workflow
@@ -92,7 +92,13 @@ class EHRClient(BaseClient):
                             timeout=timeout,
                         )
                         response.raise_for_status()
-                        responses.append(response.json())
+                        response_data = response.json()
+                        try:
+                            cds_response = CDSResponse(**response_data)
+                            responses.append(cds_response.model_dump(exclude_none=True))
+                        except Exception:
+                            # Fallback to raw response if parsing fails
+                            responses.append(response_data)
                 except httpx.HTTPStatusError as exc:
                     log.error(
                         f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.json()}"

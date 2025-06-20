@@ -6,20 +6,14 @@ integration with EHR systems.
 """
 
 import logging
-from datetime import datetime
 
-from typing import Dict, List, Optional, Any, Callable, Union, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from fastapi import APIRouter, Body, Depends
 from pydantic import BaseModel
-from fastapi import Depends, Body
 
-from healthchain.gateway.core.base import BaseGateway
-from healthchain.gateway.events.dispatcher import (
-    EventDispatcher,
-    EHREvent,
-    EHREventType,
-)
-from healthchain.gateway.api.protocols import GatewayProtocol
-
+from healthchain.gateway.core.base import BaseProtocolHandler
+from healthchain.gateway.events.cdshooks import create_cds_hook_event
+from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsdiscovery import CDSService, CDSServiceInformation
 from healthchain.models.responses.cdsresponse import CDSResponse
@@ -29,20 +23,12 @@ logger = logging.getLogger(__name__)
 
 
 # Type variable for self-referencing return types
-T = TypeVar("T", bound="CDSHooksGateway")
+T = TypeVar("T", bound="CDSHooksService")
 
 
-HOOK_TO_EVENT = {
-    "patient-view": EHREventType.CDS_PATIENT_VIEW,
-    "encounter-discharge": EHREventType.CDS_ENCOUNTER_DISCHARGE,
-    "order-sign": EHREventType.CDS_ORDER_SIGN,
-    "order-select": EHREventType.CDS_ORDER_SELECT,
-}
-
-
-# Configuration options for CDS Hooks gateway
+# Configuration options for CDS Hooks service
 class CDSHooksConfig(BaseModel):
-    """Configuration options for CDS Hooks gateway"""
+    """Configuration options for CDS Hooks service"""
 
     system_type: str = "CDS-HOOKS"
     base_path: str = "/cds"
@@ -51,21 +37,21 @@ class CDSHooksConfig(BaseModel):
     allowed_hooks: List[str] = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
 
 
-class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
+class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], APIRouter):
     """
-    Gateway for CDS Hooks protocol integration.
+    Service for CDS Hooks protocol integration.
 
-    This gateway implements the CDS Hooks standard for integrating clinical decision
+    This service implements the CDS Hooks standard for integrating clinical decision
     support with EHR systems. It provides discovery and hook execution endpoints
     that conform to the CDS Hooks specification.
 
     Example:
         ```python
-        # Create a CDS Hooks gateway
-        cds_gateway = CDSHooksGateway()
+        # Create a CDS Hooks service
+        cds_service = CDSHooksService()
 
         # Register a hook handler
-        @cds_gateway.hook("patient-view", id="patient-summary")
+        @cds_service.hook("patient-view", id="patient-summary")
         def handle_patient_view(request: CDSRequest) -> CDSResponse:
             # Create cards based on the patient context
             return CDSResponse(
@@ -78,8 +64,8 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
                 ]
             )
 
-        # Register the gateway with the API
-        app.register_gateway(cds_gateway)
+        # Register the service with the API
+        app.register_service(cds_service)
         ```
     """
 
@@ -91,40 +77,74 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
         **options,
     ):
         """
-        Initialize a new CDS Hooks gateway.
+        Initialize a new CDS Hooks service.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the service
             event_dispatcher: Optional event dispatcher for publishing events
             use_events: Whether to enable event dispatching functionality
-            **options: Additional options for the gateway
+            **options: Additional options for the service
         """
-        # Initialize the base gateway
-        super().__init__(use_events=use_events, **options)
+        # Initialize the base protocol handler
+        BaseProtocolHandler.__init__(self, use_events=use_events, **options)
 
         # Initialize specific configuration
         self.config = config or CDSHooksConfig()
+
+        # Initialize APIRouter with configuration
+        APIRouter.__init__(self, prefix=self.config.base_path, tags=["CDS Hooks"])
+
         self._handler_metadata = {}
 
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
-            self.set_event_dispatcher(event_dispatcher)
+            self.events.set_dispatcher(event_dispatcher)
 
-    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
-        """
-        Set the event dispatcher for this gateway.
+        self._register_base_routes()
 
-        Args:
-            event_dispatcher: The event dispatcher to use
+    def _get_service_dependency(self):
+        """Create a dependency function that returns this service instance."""
 
-        Returns:
-            Self, for method chaining
-        """
-        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
-        self.event_dispatcher = event_dispatcher
-        # Register default handlers if needed
-        self._register_default_handlers()
-        return self
+        def get_self_service():
+            return self
+
+        return get_self_service
+
+    def _register_base_routes(self):
+        """Register base routes for CDS Hooks service."""
+        get_self_service = self._get_service_dependency()
+
+        # Discovery endpoint
+        discovery_path = self.config.discovery_path.lstrip("/")
+
+        @self.get(f"/{discovery_path}", response_model_exclude_none=True)
+        async def discovery_handler(cds: "CDSHooksService" = Depends(get_self_service)):
+            """CDS Hooks discovery endpoint."""
+            return cds.handle_discovery()
+
+    def _register_hook_route(self, hook_id: str):
+        """Register a route for a specific hook ID."""
+        get_self_service = self._get_service_dependency()
+        service_path = self.config.service_path.lstrip("/")
+        endpoint = f"/{service_path}/{hook_id}"
+
+        async def service_handler(
+            request: CDSRequest = Body(...),
+            cds: "CDSHooksService" = Depends(get_self_service),
+        ):
+            """CDS Hook service endpoint."""
+            return cds.handle_request(request)
+
+        self.add_api_route(
+            path=endpoint,
+            endpoint=service_handler,
+            methods=["POST"],
+            response_model_exclude_none=True,
+            summary=f"CDS Hook: {hook_id}",
+            description=f"Execute CDS Hook service: {hook_id}",
+        )
+
+        logger.debug(f"Registered CDS Hook endpoint: {self.prefix}{endpoint}")
 
     def hook(
         self,
@@ -164,6 +184,9 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
                 "description": description,
                 "usage_requirements": usage_requirements,
             }
+
+            # Register the route for this hook
+            self._register_hook_route(id)
 
             return handler
 
@@ -208,7 +231,7 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
         response = self.handle(hook_type, request=request)
 
         # If we have an event dispatcher, emit an event for the hook execution
-        if self.event_dispatcher and self.use_events:
+        if self.events.dispatcher and self.use_events:
             try:
                 self._emit_hook_event(hook_type, request, response)
             except Exception as e:
@@ -336,37 +359,13 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
             request: The CDSRequest object
             response: The CDSResponse object
         """
-        # Skip if events are disabled or no dispatcher
-        if not self.event_dispatcher or not self.use_events:
-            return
-
-        # Use custom event creator if provided
-        if self._event_creator:
-            event = self._event_creator(hook_type, request, response)
-            if event:
-                self._run_async_publish(event)
-            return
-
-        # Get the event type from the mapping
-        event_type = HOOK_TO_EVENT.get(hook_type, EHREventType.EHR_GENERIC)
-
-        # Create a standard event
-        event = EHREvent(
-            event_type=event_type,
-            source_system="CDS-Hooks",
-            timestamp=datetime.now(),
-            payload={
-                "hook": hook_type,
-                "hook_instance": request.hookInstance,
-                "context": dict(request.context),
-            },
-            metadata={
-                "cards_count": len(response.cards) if response.cards else 0,
-            },
+        self.events.emit_event(
+            create_cds_hook_event,
+            hook_type,
+            request,
+            response,
+            use_events=self.use_events,
         )
-
-        # Publish the event
-        self._run_async_publish(event)
 
     def get_metadata(self) -> List[Dict[str, Any]]:
         """
@@ -390,74 +389,3 @@ class CDSHooksGateway(BaseGateway[CDSRequest, CDSResponse], GatewayProtocol):
             )
 
         return metadata
-
-    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
-        """
-        Get routes for the CDS Hooks gateway.
-
-        Args:
-            path: Optional path to add the gateway at (uses config if None)
-
-        Returns:
-            List of route tuples (path, methods, handler, kwargs)
-        """
-        routes = []
-
-        # Create a dependency for this specific gateway instance
-        def get_self_cds():
-            return self
-
-        base_path = path or self.config.base_path
-        if base_path:
-            base_path = base_path.rstrip("/")
-
-        # Register the discovery endpoint
-        discovery_path = self.config.discovery_path.lstrip("/")
-        discovery_endpoint = (
-            f"{base_path}/{discovery_path}" if base_path else f"/{discovery_path}"
-        )
-
-        # Create handlers with dependency injection
-        async def discovery_handler(cds: GatewayProtocol = Depends(get_self_cds)):
-            return cds.handle_discovery()
-
-        routes.append(
-            (
-                discovery_endpoint,
-                ["GET"],
-                discovery_handler,
-                {"response_model_exclude_none": True},
-            )
-        )
-
-        # Register service endpoints for each hook
-        service_path = self.config.service_path.lstrip("/")
-        for metadata in self.get_metadata():
-            hook_id = metadata.get("id")
-            if hook_id:
-                service_endpoint = (
-                    f"{base_path}/{service_path}/{hook_id}"
-                    if base_path
-                    else f"/{service_path}/{hook_id}"
-                )
-
-                # Create a handler factory to properly capture hook_id in closure
-                def create_handler_for_hook():
-                    async def service_handler(
-                        request: CDSRequest = Body(...),
-                        cds: GatewayProtocol = Depends(get_self_cds),
-                    ):
-                        return cds.handle_request(request)
-
-                    return service_handler
-
-                routes.append(
-                    (
-                        service_endpoint,
-                        ["POST"],
-                        create_handler_for_hook(),
-                        {"response_model_exclude_none": True},
-                    )
-                )
-
-        return routes

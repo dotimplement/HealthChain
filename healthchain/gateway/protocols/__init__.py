@@ -8,12 +8,12 @@ These gateways handle the details of each protocol while presenting a consistent
 interface for registration, event handling, and endpoint management.
 """
 
-from .cdshooks import CDSHooksGateway
-from .notereader import NoteReaderGateway
+from .cdshooks import CDSHooksService
+from .notereader import NoteReaderService
 from .apiprotocol import ApiProtocol
 
 __all__ = [
-    "CDSHooksGateway",
-    "NoteReaderGateway",
+    "CDSHooksService",
+    "NoteReaderService",
     "ApiProtocol",
 ]
