@@ -115,10 +115,11 @@ class OAuth2TokenManager:
         self._token: Optional[TokenInfo] = None
         self._refresh_lock: Optional[asyncio.Lock] = None
 
-    @property
-    def refresh_lock(self) -> asyncio.Lock:
-        """Lazily initialize the refresh lock when event loop is available."""
+    def _get_refresh_lock(self) -> asyncio.Lock:
+        """Get or create the refresh lock when an event loop is running."""
         if self._refresh_lock is None:
+            # Only create the lock when we have a running event loop
+            # This ensures Python 3.9 compatibility
             self._refresh_lock = asyncio.Lock()
         return self._refresh_lock
 
@@ -129,7 +130,7 @@ class OAuth2TokenManager:
         Returns:
             Valid Bearer access token
         """
-        async with self.refresh_lock:
+        async with self._get_refresh_lock():
             if self._token is None or self._token.is_expired(
                 self.refresh_buffer_seconds
             ):
