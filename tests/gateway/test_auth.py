@@ -18,8 +18,8 @@ from healthchain.gateway.clients.auth import (
     parse_fhir_auth_connection_string,
 )
 
-# Configure pytest-anyio for async tests
-pytestmark = pytest.mark.anyio
+# Configure pytest-asyncio for async tests - OAuth2 requires asyncio specifically
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
