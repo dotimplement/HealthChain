@@ -95,5 +95,8 @@ async def test_connection_manager_client_retrieval_and_default_selection(
     assert client_default == mock_fhir_client
     call_args = connection_manager.client_pool.get_client.call_args
     from urllib.parse import urlparse
+
     parsed_url = urlparse(call_args[0][0])
-    assert parsed_url.hostname == "first.com"  # Should use first source's connection string
+    assert (
+        parsed_url.hostname == "first.com"
+    )  # Should use first source's connection string

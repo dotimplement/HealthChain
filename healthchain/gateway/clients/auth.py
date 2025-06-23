@@ -113,7 +113,14 @@ class OAuth2TokenManager:
         self.config = config
         self.refresh_buffer_seconds = refresh_buffer_seconds
         self._token: Optional[TokenInfo] = None
-        self._refresh_lock = asyncio.Lock()
+        self._refresh_lock: Optional[asyncio.Lock] = None
+
+    @property
+    def refresh_lock(self) -> asyncio.Lock:
+        """Lazily initialize the refresh lock when event loop is available."""
+        if self._refresh_lock is None:
+            self._refresh_lock = asyncio.Lock()
+        return self._refresh_lock
 
     async def get_access_token(self) -> str:
         """
@@ -122,7 +129,7 @@ class OAuth2TokenManager:
         Returns:
             Valid Bearer access token
         """
-        async with self._refresh_lock:
+        async with self.refresh_lock:
             if self._token is None or self._token.is_expired(
                 self.refresh_buffer_seconds
             ):
