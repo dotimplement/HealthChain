@@ -115,8 +115,6 @@ class AsyncFHIRClient(FHIRServerInterface):
     - Async-first with httpx
     """
 
-    # TODO: pass kwargs to httpx client
-
     def __init__(
         self,
         auth_config: FHIRAuthConfig,
@@ -129,7 +127,7 @@ class AsyncFHIRClient(FHIRServerInterface):
         Args:
             auth_config: OAuth2.0 authentication configuration
             limits: httpx connection limits for pooling
-            **kwargs: Additional parameters
+            **kwargs: Additional parameters passed to httpx.AsyncClient
         """
         self.base_url = auth_config.base_url.rstrip("/") + "/"
         self.timeout = auth_config.timeout
@@ -142,10 +140,13 @@ class AsyncFHIRClient(FHIRServerInterface):
             "Content-Type": "application/fhir+json",
         }
 
-        # Create httpx client with connection pooling
+        # Create httpx client with connection pooling and additional kwargs
         client_kwargs = {"timeout": self.timeout, "verify": self.verify_ssl}
         if limits is not None:
             client_kwargs["limits"] = limits
+
+        # Pass through additional kwargs to httpx.AsyncClient
+        client_kwargs.update(kwargs)
 
         self.client = httpx.AsyncClient(**client_kwargs)
 
@@ -207,7 +208,7 @@ class AsyncFHIRClient(FHIRServerInterface):
         self, resource_type: Union[str, Type[Resource]]
     ) -> tuple[str, Type[Resource]]:
         """
-        Resolve resource type to both string name and class.
+        Resolve FHIR resource type to string name and class. Cached with LRU.
 
         Args:
             resource_type: FHIR resource type or class

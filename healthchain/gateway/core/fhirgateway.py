@@ -51,7 +51,6 @@ class FHIRResponse(JSONResponse):
 
 
 class FHIRGateway(BaseGateway):
-    # TODO: move to documentation
     """
     FHIR Gateway for HealthChain.
 
@@ -209,7 +208,7 @@ class FHIRGateway(BaseGateway):
                 "name": "HealthChain FHIR Gateway",
                 "version": "1.0.0",  # TODO: Extract from package
             },
-            "fhirVersion": "4.0.1",  # TODO: Extract from package
+            "fhirVersion": "4.0.1",
             "format": ["application/fhir+json"],
             "rest": [
                 {
