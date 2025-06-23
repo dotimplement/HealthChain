@@ -15,7 +15,7 @@ from healthchain.gateway.events.dispatcher import (
     EHREventType,
 )
 
-pytestmark = pytest.mark.anyio
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture

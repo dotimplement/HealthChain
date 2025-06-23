@@ -18,7 +18,7 @@ from healthchain.gateway.clients.fhir import (
 )
 from healthchain.gateway.clients.auth import FHIRAuthConfig
 
-pytestmark = pytest.mark.anyio
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture

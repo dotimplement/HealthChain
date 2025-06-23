@@ -6,7 +6,7 @@ from unittest.mock import Mock, AsyncMock
 from healthchain.gateway.clients.pool import FHIRClientPool
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
-pytestmark = pytest.mark.anyio
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -167,15 +167,14 @@ async def test_concurrent_client_creation(client_pool):
         client.close = AsyncMock()
         return client
 
-    import anyio
+    import asyncio
 
     async def get_client():
         return await client_pool.get_client(connection_string, counting_factory)
 
-    async with anyio.create_task_group() as _:
-        results = []
-        for _ in range(3):
-            results.append(await get_client())
+    # Create concurrent tasks
+    tasks = [get_client() for _ in range(3)]
+    results = await asyncio.gather(*tasks)
 
     # All clients should be the same instance
     assert all(client is results[0] for client in results)

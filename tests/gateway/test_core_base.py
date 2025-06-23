@@ -20,8 +20,8 @@ from healthchain.gateway.core.base import (
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
 
-# Configure pytest-anyio for async tests
-pytestmark = pytest.mark.anyio
+# Configure pytest-asyncio for async tests
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture

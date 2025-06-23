@@ -14,8 +14,8 @@ from healthchain.gateway.core.connection import FHIRConnectionManager
 from healthchain.gateway.core.errors import FHIRConnectionError
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
-# Configure pytest-anyio for async tests
-pytestmark = pytest.mark.anyio
+# Configure pytest-asyncio for async tests
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ from fhir.resources.bundle import Bundle
 
 from healthchain.gateway.core.fhirgateway import FHIRGateway
 
-pytestmark = pytest.mark.anyio
+pytestmark = pytest.mark.asyncio
 
 
 class MockConnectionManager:

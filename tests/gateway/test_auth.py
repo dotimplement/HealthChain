@@ -18,8 +18,7 @@ from healthchain.gateway.clients.auth import (
     parse_fhir_auth_connection_string,
 )
 
-# Configure pytest-asyncio for async tests - OAuth2 requires asyncio specifically
-pytestmark = pytest.mark.asyncio
+# Configure pytest-asyncio for async tests only (sync tests don't need the mark)
 
 
 @pytest.fixture
@@ -176,6 +175,7 @@ def test_token_info_expiration_logic():
     )  # 2 min buffer, expires in 4
 
 
+@pytest.mark.asyncio
 @patch("httpx.AsyncClient.post")
 async def test_oauth2_token_manager_standard_flow(
     mock_post, token_manager, mock_token_response
@@ -201,6 +201,7 @@ async def test_oauth2_token_manager_standard_flow(
     assert "client_assertion" not in request_data
 
 
+@pytest.mark.asyncio
 @patch("healthchain.gateway.clients.auth.OAuth2TokenManager._create_jwt_assertion")
 @patch("httpx.AsyncClient.post")
 async def test_oauth2_token_manager_jwt_flow(
@@ -230,6 +231,7 @@ async def test_oauth2_token_manager_jwt_flow(
     assert "client_secret" not in request_data
 
 
+@pytest.mark.asyncio
 @patch("httpx.AsyncClient.post")
 async def test_oauth2_token_manager_caching_and_refresh(
     mock_post, token_manager, mock_token_response
@@ -266,6 +268,7 @@ async def test_oauth2_token_manager_caching_and_refresh(
     mock_post.assert_called_once()
 
 
+@pytest.mark.asyncio
 @patch("httpx.AsyncClient.post")
 async def test_oauth2_token_manager_error_handling(mock_post, token_manager):
     """OAuth2TokenManager handles HTTP errors gracefully."""

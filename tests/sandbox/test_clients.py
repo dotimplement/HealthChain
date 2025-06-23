@@ -26,7 +26,7 @@ def test_generate_request(ehr_client, mock_strategy):
     assert len(ehr_client.request_data) == 1
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 @patch.object(
     httpx.AsyncClient,
     "post",
@@ -38,7 +38,7 @@ async def test_send_request(ehr_client):
     assert all(response["status"] == "success" for response in responses)
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_logging_on_send_request_error(caplog, ehr_client):
     with patch.object(httpx.AsyncClient, "post") as mock_post:
         mock_post.return_value = Mock()
