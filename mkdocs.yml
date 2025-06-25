@@ -18,6 +18,11 @@ nav:
       - NoteReader Sandbox: cookbook/notereader_sandbox.md
   - Docs:
       - Welcome: reference/index.md
+      - Gateway:
+        - Overview: reference/gateway/gateway.md
+        - HealthChainAPI: reference/gateway/api.md
+        - FHIR Gateway: reference/gateway/fhir_gateway.md
+        - Events: reference/gateway/events.md
       - Pipeline:
         - Overview: reference/pipeline/pipeline.md
         - Data Container: reference/pipeline/data_container.md
