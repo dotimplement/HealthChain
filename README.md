@@ -10,32 +10,115 @@
 
 </div>
 
-Build simple, portable, and scalable AI and NLP applications in a healthcare context 💫 🏥.
+Connect your AI models to any healthcare system with a few lines of Python 💫 🏥.
 
-Integrating electronic health record systems (EHRs) data is complex, and so is designing reliable, reactive algorithms involving unstructured healthcare data. Let's try to change that.
+Integrating AI with electronic health records (EHRs) is complex, manual, and time-consuming. Let's try to change that.
+
 
 ```bash
 pip install healthchain
 ```
 First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain/) page!
 
-Came here from NHS RPySOC 2024 ✨?
-[CDS sandbox walkthrough](https://dotimplement.github.io/HealthChain/cookbook/cds_sandbox/)
-[Slides](https://speakerdeck.com/jenniferjiangkells/building-healthcare-context-aware-applications-with-healthchain)
 
 ## Features
-- [x] 🔥 Build FHIR-native pipelines or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and ML tasks
-- [x] 🔌 Connect pipelines to any EHR system with built-in [CDA and FHIR Connectors](https://dotimplement.github.io/HealthChain/reference/pipeline/connectors/connectors/)
-- [x] 🔄 Convert between FHIR, CDA, and HL7v2 with the [InteropEngine](https://dotimplement.github.io/HealthChain/reference/interop/interop/)
-- [x] 🧪 Test your pipelines in full healthcare-context aware [sandbox](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) environments
-- [x] 🗃️ Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) for testing and development
-- [x] 🚀 Deploy sandbox servers locally with [FastAPI](https://fastapi.tiangolo.com/)
+- [x] 🔌 **Gateway**: Connect to multiple EHR systems with [unified API](https://dotimplement.github.io/HealthChain/reference/gateway/gateway/) supporting FHIR, CDS Hooks, and SOAP/CDA protocols
+- [x] 🔥 **Pipelines**: Build FHIR-native ML workflows or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and AI tasks
+- [x] 🔄 **InteropEngine**: Convert between FHIR, CDA, and HL7v2 with a [template-based engine](https://dotimplement.github.io/HealthChain/reference/interop/interop/)
+- [x] 🔒 Type-safe healthcare data with full type hints and Pydantic validation for [FHIR resources](https://dotimplement.github.io/HealthChain/reference/utilities/fhir_helpers/)
+- [x] ⚡ Event-driven architecture with real-time event handling and [audit trails](https://dotimplement.github.io/HealthChain/reference/gateway/events/) built-in
+- [x] 🚀 Deploy production-ready applications with [HealthChainAPI](https://dotimplement.github.io/HealthChain/reference/gateway/api/) and FastAPI integration
+- [x] 🧪 Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) and [sandbox testing](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) utilities
 
 ## Why use HealthChain?
--  **EHR integrations are manual and time-consuming** - HealthChain abstracts away complexities so you can focus on AI development, not EHR configurations.
--  **It's difficult to track and evaluate multiple integration instances** - HealthChain provides a framework to test the real-world resilience of your whole system, not just your models.
--  [**Most healthcare data is unstructured**](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/) - HealthChain is optimized for real-time AI and NLP applications that deal with realistic healthcare data.
-- **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible.
+-  **EHR integrations are manual and time-consuming** - **HealthChainAPI** abstracts away complexities so you can focus on AI development, not learning FHIR APIs, CDS Hooks, and authentication schemes.
+-  **Healthcare data is fragmented and complex** - **InteropEngine** handles the conversion between FHIR, CDA, and HL7v2 so you don't have to become an expert in healthcare data standards.
+-  [**Most healthcare data is unstructured**](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/) - HealthChain **Pipelines** are optimized for real-time AI and NLP applications that deal with realistic healthcare data.
+- **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible with built-in compliance and audit features.
+
+## HealthChainAPI
+
+The HealthChainAPI provides a secure, asynchronous integration layer that coordinates multiple healthcare systems in a single application.
+
+### Multi-Protocol Support
+
+Connect to multiple healthcare data sources and protocols:
+
+```python
+from healthchain.gateway import (
+    HealthChainAPI, FHIRGateway,
+    CDSHooksService, NoteReaderService
+)
+
+# Create your healthcare application
+app = HealthChainAPI(
+    title="My Healthcare AI App",
+    description="AI-powered patient care platform"
+)
+
+# FHIR for patient data from multiple EHRs
+fhir = FHIRGateway()
+fhir.add_source("epic", "fhir://fhir.epic.com/r4?client_id=...")
+fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
+
+# CDS Hooks for real-time clinical decision support
+cds = CDSHooksService()
+
+@cds.hook("patient-view", id="allergy-alerts")
+def check_allergies(request):
+    # Your AI logic here
+    return {"cards": [...]}
+
+# SOAP for clinical document processing
+notes = NoteReaderService()
+
+@notes.method("ProcessDocument")
+def process_note(request):
+    # Your NLP pipeline here
+    return processed_document
+
+# Register everything
+app.register_gateway(fhir)
+app.register_service(cds)
+app.register_service(notes)
+
+# Your API now handles:
+# /fhir/* - Patient data, observations, etc.
+# /cds/* - Real-time clinical alerts
+# /soap/* - Clinical document processing
+```
+
+### FHIR Operations with AI Enhancement
+
+```python
+from healthchain.gateway import FHIRGateway
+from fhir.resources.patient import Patient
+
+gateway = FHIRGateway()
+gateway.add_source("epic", "fhir://fhir.epic.com/r4?...")
+
+# Add AI transformations to FHIR data
+@gateway.transform(Patient)
+async def enhance_patient(id: str, source: str = None) -> Patient:
+    async with gateway.modify(Patient, id, source) as patient:
+        # Get lab results and process with AI
+        lab_results = await gateway.search(
+            Observation,
+            {"patient": id, "category": "laboratory"},
+            source
+        )
+        insights = nlp_pipeline.process(patient, lab_results)
+
+        # Add AI summary to patient record
+        patient.extension = patient.extension or []
+        patient.extension.append({
+            "url": "http://healthchain.org/fhir/summary",
+            "valueString": insights.summary
+        })
+        return patient
+
+# Automatically available at: GET /fhir/transform/Patient/123?source=epic
+```
 
 ## Pipeline
 Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with complex healthcare systems.
@@ -139,116 +222,40 @@ cda_data = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 
 ## Sandbox
 
-Sandboxes provide a staging environment for testing and validating your pipeline in a realistic healthcare context.
-
-### Clinical Decision Support (CDS)
-[CDS Hooks](https://cds-hooks.org/) is an [HL7](https://cds-hooks.hl7.org) published specification for clinical decision support.
-
-**When is this used?** CDS hooks are triggered at certain events during a clinician's workflow in an electronic health record (EHR), e.g. when a patient record is opened, when an order is elected.
-
-**What information is sent**: the context of the event and [FHIR](https://hl7.org/fhir/) resources that are requested by your service, for example, the patient ID and information on the encounter and conditions they are being seen for.
-
-**What information is returned**: “cards” displaying text, actionable suggestions, or links to launch a [SMART](https://smarthealthit.org/) app from within the workflow.
-
+Test your AI applications in realistic healthcare contexts with [CDS Hooks](https://cds-hooks.org/) sandbox environments.
 
 ```python
 import healthchain as hc
-
-from healthchain.pipeline import SummarizationPipeline
 from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-from healthchain.models import Card, Prefetch, CDSRequest
-from healthchain.data_generator import CdsDataGenerator
-from typing import List
 
 @hc.sandbox
 class MyCDS(ClinicalDecisionSupport):
-    def __init__(self) -> None:
-        self.pipeline = SummarizationPipeline.from_model_id(
-            "facebook/bart-large-cnn", source="huggingface"
-        )
-        self.data_generator = CdsDataGenerator()
+    def __init__(self):
+        self.pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn")
 
-    # Sets up an instance of a mock EHR client of the specified workflow
     @hc.ehr(workflow="encounter-discharge")
-    def ehr_database_client(self) -> Prefetch:
+    def ehr_database_client(self):
         return self.data_generator.generate_prefetch()
 
-    # Define your application logic here
-    @hc.api
-    def my_service(self, data: CDSRequest) -> CDSRequest:
-        result = self.pipeline(data)
-        return result
-```
-
-### Clinical Documentation
-
-The `ClinicalDocumentation` use case implements a real-time Clinical Documentation Improvement (CDI) service. It helps convert free-text medical documentation into coded information that can be used for billing, quality reporting, and clinical decision support.
-
-**When is this used?** Triggered when a clinician opts in to a CDI functionality (e.g. Epic NoteReader) and signs or pends a note after writing it.
-
-**What information is sent**: A [CDA (Clinical Document Architecture)](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) document which contains continuity of care data and free-text data, e.g. a patient's problem list and the progress note that the clinician has entered in the EHR.
-
-```python
-import healthchain as hc
-
-from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.models import CdaRequest, CdaResponse
-from fhir.resources.documentreference import DocumentReference
-
-@hc.sandbox
-class NotereaderSandbox(ClinicalDocumentation):
-    def __init__(self):
-        self.pipeline = MedicalCodingPipeline.from_model_id(
-            "en_core_sci_md", source="spacy"
-        )
-
-    # Load an existing CDA file
-    @hc.ehr(workflow="sign-note-inpatient")
-    def load_data_in_client(self) -> DocumentReference:
-        with open("/path/to/cda/data.xml", "r") as file:
-            xml_string = file.read()
-
-        cda_document_reference = create_document_reference(
-            data=xml_string,
-            content_type="text/xml",
-            description="Original CDA Document loaded from my sandbox",
-        )
-        return cda_document_reference
-
-    @hc.api
-    def my_service(self, data: CdaRequest) -> CdaResponse:
-        annotated_ccd = self.pipeline(data)
-        return annotated_ccd
-```
-### Running a sandbox
-
-Ensure you run the following commands in your `mycds.py` file:
-
-```python
 cds = MyCDS()
 cds.start_sandbox()
-```
-This will populate your EHR client with the data generation method you have defined, send requests to your server for processing, and save the data in the `./output` directory.
 
-Then run:
-```bash
-healthchain run mycds.py
+# Run with: healthchain run mycds.py
 ```
-By default, the server runs at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`.
 
 ## Road Map
-- [x] 🔄 Transform and validate healthcare HL7v2, CDA to FHIR with template-based interop engine
-- [ ] 🏥 Runtime connection health and EHR integration management - connect to FHIR APIs and legacy systems
+- [ ] 🔒 Built-in HIPAA compliance validation and PHI detection
 - [ ] 📊 Track configurations, data provenance, and monitor model performance with MLFlow integration
 - [ ] 🚀 Compliance monitoring, auditing at deployment as a sidecar service
-- [ ] 🔒 Built-in HIPAA compliance validation and PHI detection
-- [ ] 🧠 Multi-modal pipelines that that have built-in NLP to utilize unstructured data
+- [ ] 🔄 HL7v2 parsing and FHIR profile conversion support
+- [ ] 🧠 Multi-modal pipelines
+
 
 ## Contribute
 We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
 - 💡 Let's chat! [Discord](https://discord.gg/UQC6uAepUz)
 - 🛠️ [Contribution Guidelines](CONTRIBUTING.md)
 
-## Acknowledgement
-This repository makes use of [fhir.resources](https://github.com/nazrulworld/fhir.resources), and [CDS Hooks](https://cds-hooks.org/) developed by [HL7](https://www.hl7.org/) and [Boston Children’s Hospital](https://www.childrenshospital.org/).
+
+## Acknowledgements 🤗
+This project builds on [fhir.resources](https://github.com/nazrulworld/fhir.resources) and [CDS Hooks](https://cds-hooks.org/) standards developed by [HL7](https://www.hl7.org/) and [Boston Children's Hospital](https://www.childrenshospital.org/).
