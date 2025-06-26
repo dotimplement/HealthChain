@@ -18,6 +18,14 @@ nav:
       - NoteReader Sandbox: cookbook/notereader_sandbox.md
   - Docs:
       - Welcome: reference/index.md
+      - Gateway:
+        - Overview: reference/gateway/gateway.md
+        - HealthChainAPI: reference/gateway/api.md
+        - FHIR Gateway: reference/gateway/fhir_gateway.md
+        - Events: reference/gateway/events.md
+        - Protocols:
+          - CDS Hooks: reference/gateway/cdshooks.md
+          - SOAP/CDA: reference/gateway/soap_cda.md
       - Pipeline:
         - Overview: reference/pipeline/pipeline.md
         - Data Container: reference/pipeline/data_container.md
@@ -42,16 +50,9 @@ nav:
         - Parsers: reference/interop/parsers.md
         - Generators: reference/interop/generators.md
         - Working with xmltodict: reference/interop/xmltodict.md
-      - Sandbox:
-        - Overview: reference/sandbox/sandbox.md
-        - Client: reference/sandbox/client.md
-        - Service: reference/sandbox/service.md
-        - Use Cases:
-          - Overview: reference/sandbox/use_cases/use_cases.md
-          - Clinical Decision Support: reference/sandbox/use_cases/cds.md
-          - Clinical Documentation: reference/sandbox/use_cases/clindoc.md
       - Utilities:
         - FHIR Helpers: reference/utilities/fhir_helpers.md
+        - Sandbox: reference/sandbox/sandbox.md
         - Data Generator: reference/utilities/data_generator.md
   - API Reference:
       - api/index.md

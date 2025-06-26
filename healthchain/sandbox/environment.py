@@ -2,7 +2,6 @@ import asyncio
 import logging
 import uuid
 import httpx
-import requests
 
 from pathlib import Path
 from typing import Dict, Optional
@@ -127,9 +126,3 @@ class SandboxEnvironment:
                 extension,
             )
             log.info(f"Saved response data at {response_path}/")
-
-    # TODO: may not be relevant anymore
-    def stop_sandbox(self) -> None:
-        """Shuts down sandbox instance"""
-        log.info("Shutting down server...")
-        requests.get(str(self.api.join("/shutdown")))

@@ -16,7 +16,7 @@ All protocol implementations extend `BaseGateway` to provide protocol-specific f
 ```python
 from healthchain.gateway import (
     HealthChainAPI, BaseGateway,
-    FHIRGateway, CDSHooksGateway, NoteReaderGateway
+    FHIRGateway, CDSHooksService, NoteReaderService
 )
 
 # Create the application
@@ -24,8 +24,8 @@ app = HealthChainAPI()
 
 # Create gateways for different protocols
 fhir = FHIRGateway(base_url="https://fhir.example.com/r4")
-cds = CDSHooksGateway()
-soap = NoteReaderGateway()
+cds = CDSHooksService()
+soap = NoteReaderService()
 
 # Register protocol-specific handlers
 @fhir.read(Patient)
@@ -49,12 +49,12 @@ app.register_gateway(soap)
 ## Core Types
 
 - `BaseGateway`: The central abstraction for all protocol gateway implementations
-- `EventDispatcherMixin`: A reusable mixin that provides event dispatching
+- `EventCapability`: A component that provides event dispatching
 - `HealthChainAPI`: FastAPI wrapper for healthcare gateway registration
 - Concrete gateway implementations:
   - `FHIRGateway`: FHIR REST API protocol
-  - `CDSHooksGateway`: CDS Hooks protocol
-  - `NoteReaderGateway`: SOAP/CDA protocol
+  - `CDSHooksService`: CDS Hooks protocol
+  - `NoteReaderService`: SOAP/CDA protocol
 
 ## Quick Start
 
@@ -87,9 +87,9 @@ The gateway module uses Python's Protocol typing for robust interface definition
 
 ```python
 # Register gateways with explicit types
-app.register_gateway(fhir)  # Implements FHIRGatewayProtocol
-app.register_gateway(cds)   # Implements CDSHooksGatewayProtocol
-app.register_gateway(soap)  # Implements SOAPGatewayProtocol
+app.register_gateway(fhir)  # Implements FHIRGateway
+app.register_gateway(cds)   # Implements CDSHooksService
+app.register_gateway(soap)  # Implements NoteReaderService
 
 # Get typed gateway dependencies in API routes
 @app.get("/api/patient/{id}")
@@ -106,3 +106,26 @@ This approach provides:
 - Clear interface definition for gateway implementations
 - Runtime type safety with detailed error messages
 - Better testability through protocol-based mocking
+
+## Context Managers
+
+Context managers are a powerful tool for managing resource lifecycles in a safe and predictable way. They are particularly useful for:
+
+- Standalone CRUD operations
+- Creating new resources
+- Bulk operations
+- Cross-resource transactions
+- When you need guaranteed cleanup/connection management
+
+The decorator pattern is more for processing existing resources, while context managers are for managing resource lifecycles.
+
+```python
+@fhir.read(Patient)
+async def read_patient_and_create_note(patient):
+    # Use context manager to create related resources
+    async with fhir.resource_context("DiagnosticReport") as report:
+        report["subject"] = {"reference": f"Patient/{patient.id}"}
+        report["status"] = "final"
+
+    return patient
+```

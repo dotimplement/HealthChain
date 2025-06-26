@@ -1,15 +1,10 @@
 # Data Generator
 
-Healthcare data is interoperable, but not composable - every deployment site will have different ways of configuring data and terminology. This matters when you develop applications that need to integrate into these systems, especially when you need to reliably extract data for your model to consume.
+Healthcare systems use standardized data formats, but each hospital or clinic configures their data differently. This creates challenges when building applications that need to work across multiple healthcare systems.
 
-The aim of the data generator is not to generate realistic data suitable for use cases such as patient population studies, but rather to generate data that is structurally compliant with what is expected of EHR configurations, and to be able to test and handle variations in this.
+The data generator creates test data that matches the structure and format expected by Electronic Health Record (EHR) systems. It's designed for testing your applications, not for research studies that need realistic patient populations.
 
-For this reason the data generator is opinionated by specific workflows and use cases.
-
-!!! note
-    We're aware we may not cover everyone's use cases, so if you have strong opinions about this, please [reach out](https://discord.gg/UQC6uAepUz)!
-
-On the synthetic data spectrum defined by [this UK ONS methodology working paper](https://www.ons.gov.uk/methodology/methodologicalpublications/generalmethodology/onsworkingpaperseries/onsmethodologyworkingpaperseriesnumber16syntheticdatapilot#:~:text=Synthetic%20data%20at%20ONS&text=Synthetic%20data%20is%20created%20by,that%20provided%20the%20original%20data.%E2%80%9D), HealthChain generates level 1: synthetic structural data.
+According to the [UK ONS synthetic data classification](https://www.ons.gov.uk/methodology/methodologicalpublications/generalmethodology/onsworkingpaperseries/onsmethodologyworkingpaperseriesnumber16syntheticdatapilot#:~:text=Synthetic%20data%20at%20ONS&text=Synthetic%20data%20is%20created%20by,that%20provided%20the%20original%20data.%E2%80%9D), HealthChain generates "level 1: synthetic structural data" - data that follows the correct format but contains fictional information.
 
 ![Synthetic data](../../assets/images/synthetic_data_ons.png)
 
@@ -28,7 +23,7 @@ Current implemented workflows:
 | [order-sign](https://cds-hooks.org/hooks/order-sign/)| :material-check: Partial | Future: `MedicationRequest`, `ProcedureRequest`, `ServiceRequest` |
 | [order-select](https://cds-hooks.org/hooks/order-select/) | :material-check: Partial | Future: `MedicationRequest`, `ProcedureRequest`, `ServiceRequest` |
 
-For more information on CDS workflows, see the [CDS Use Case](../sandbox/use_cases/cds.md) documentation.
+For more information on CDS workflows, see the [CDS Hooks Protocol](../gateway/cdshooks.md) documentation.
 
 You can use the data generator within a client function or on its own.
 

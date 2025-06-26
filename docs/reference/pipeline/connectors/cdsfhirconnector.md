@@ -2,7 +2,7 @@
 
 The `CdsFhirConnector` handles FHIR data in the context of Clinical Decision Support (CDS) services, specifically using the [CDS Hooks specification](https://cds-hooks.org/).
 
-[(Full Documentation on Clinical Decision Support)](../../sandbox/use_cases/cds.md)
+[(Full Documentation on Clinical Decision Support)](../../gateway/cdshooks.md)
 
 ## Input and Output
 

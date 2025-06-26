@@ -6,33 +6,32 @@ Epic's CDA document processing services.
 """
 
 import logging
-from typing import Optional, Dict, Any, Callable, TypeVar, Union
 
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
+
+from pydantic import BaseModel
 from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
-from pydantic import BaseModel
-from datetime import datetime
 
-from healthchain.gateway.events.dispatcher import EHREvent, EHREventType
-from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.core.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
+from healthchain.gateway.events.notereader import create_notereader_event
 from healthchain.gateway.soap.epiccdsservice import CDSServices
-from healthchain.models.requests import CdaRequest
-from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.gateway.soap.model.epicclientfault import ClientFault
 from healthchain.gateway.soap.model.epicserverfault import ServerFault
-from healthchain.gateway.api.protocols import SOAPGatewayProtocol
+from healthchain.models.requests.cdarequest import CdaRequest
+from healthchain.models.responses.cdaresponse import CdaResponse
 
 logger = logging.getLogger(__name__)
 
 
 # Type variable for self-referencing return types
-T = TypeVar("T", bound="NoteReaderGateway")
+T = TypeVar("T", bound="NoteReaderService")
 
 
 class NoteReaderConfig(BaseModel):
-    """Configuration options for NoteReader gateway"""
+    """Configuration options for NoteReader service"""
 
     service_name: str = "ICDSServices"
     namespace: str = "urn:epic-com:Common.2013.Services"
@@ -40,9 +39,9 @@ class NoteReaderConfig(BaseModel):
     default_mount_path: str = "/notereader"
 
 
-class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtocol):
+class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
     """
-    Gateway for Epic NoteReader SOAP protocol integration.
+    Service for Epic NoteReader SOAP protocol integration.
 
     Provides SOAP integration with healthcare systems, particularly
     Epic's NoteReader CDA document processing and other SOAP-based
@@ -50,11 +49,11 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
 
     Example:
         ```python
-        # Create NoteReader gateway with default configuration
-        gateway = NoteReaderGateway()
+        # Create NoteReader service with default configuration
+        service = NoteReaderService()
 
         # Register method handler with decorator
-        @gateway.method("ProcessDocument")
+        @service.method("ProcessDocument")
         def process_document(request: CdaRequest) -> CdaResponse:
             # Process the document
             return CdaResponse(
@@ -62,8 +61,8 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
                 error=None
             )
 
-        # Register the gateway with the API
-        app.register_gateway(gateway)
+        # Register the service with the API
+        app.register_service(service)
         ```
     """
 
@@ -75,15 +74,15 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
         **options,
     ):
         """
-        Initialize a new NoteReader gateway.
+        Initialize a new NoteReader service.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the service
             event_dispatcher: Optional event dispatcher for publishing events
             use_events: Whether to enable event dispatching functionality
-            **options: Additional options for the gateway
+            **options: Additional options for the service
         """
-        # Initialize the base gateway
+        # Initialize the base protocol handler
         super().__init__(use_events=use_events, **options)
 
         # Initialize specific configuration
@@ -92,23 +91,7 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
 
         # Set event dispatcher if provided
         if event_dispatcher and use_events:
-            self.set_event_dispatcher(event_dispatcher)
-
-    def set_event_dispatcher(self, event_dispatcher: Optional[EventDispatcher] = None):
-        """
-        Set the event dispatcher for this gateway.
-
-        Args:
-            event_dispatcher: The event dispatcher to use
-
-        Returns:
-            Self, for method chaining
-        """
-        # TODO: This is a hack to avoid inheritance issues. Should find a solution to this.
-        self.event_dispatcher = event_dispatcher
-        # Register default handlers if needed
-        self._register_default_handlers()
-        return self
+            self.events.set_dispatcher(event_dispatcher)
 
     def method(self, method_name: str) -> Callable:
         """
@@ -251,7 +234,7 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
             raise ValueError(
                 "No ProcessDocument handler registered. "
                 "You must register a handler before creating the WSGI app. "
-                "Use @gateway.method('ProcessDocument') to register a handler."
+                "Use @service.method('ProcessDocument') to register a handler."
             )
 
         # Create adapter for SOAP service integration
@@ -264,7 +247,7 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
                 processed_result = self._process_result(result)
 
                 # Emit event if we have an event dispatcher
-                if self.event_dispatcher and self.use_events:
+                if self.events.dispatcher and self.use_events:
                     self._emit_document_event(
                         "ProcessDocument", cda_request, processed_result
                     )
@@ -300,48 +283,27 @@ class NoteReaderGateway(BaseGateway[CdaRequest, CdaResponse], SOAPGatewayProtoco
             request: The CdaRequest object
             response: The CdaResponse object
         """
-        # Skip if events are disabled or no dispatcher
-        if not self.event_dispatcher or not self.use_events:
-            return
-
-        # Use custom event creator if provided
-        if self._event_creator:
-            event = self._event_creator(operation, request, response)
-            if event:
-                self._run_async_publish(event)
-            return
-
-        # Create a standard event
-        event = EHREvent(
-            event_type=EHREventType.NOTEREADER_PROCESS_NOTE,
-            source_system="NoteReader",
-            timestamp=datetime.now(),
-            payload={
-                "operation": operation,
-                "work_type": request.work_type,
-                "session_id": request.session_id,
-                "has_error": response.error is not None,
-            },
-            metadata={
-                "service": "NoteReaderService",
-                "system_type": self.config.system_type,
-            },
+        self.events.emit_event(
+            create_notereader_event,
+            operation,
+            request,
+            response,
+            use_events=self.use_events,
+            system_type=self.config.system_type,
         )
-
-        # Publish the event
-        self._run_async_publish(event)
 
     def get_metadata(self) -> Dict[str, Any]:
         """
-        Get metadata for this gateway.
+        Get metadata for this service.
 
         Returns:
-            Dictionary of gateway metadata
+            Dictionary of service metadata
         """
         return {
-            "gateway_type": self.__class__.__name__,
+            "service_type": self.__class__.__name__,
             "operations": self.get_capabilities(),
             "system_type": self.config.system_type,
             "soap_service": self.config.service_name,
+            "namespace": self.config.namespace,
             "mount_path": self.config.default_mount_path,
         }

@@ -11,11 +11,15 @@ import asyncio
 from abc import ABC
 from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
+from fastapi import APIRouter
+
+from healthchain.gateway.api.protocols import EventDispatcherProtocol
 
 logger = logging.getLogger(__name__)
 
 # Type variables for self-referencing return types and generic gateways
 G = TypeVar("G", bound="BaseGateway")
+P = TypeVar("P", bound="BaseProtocolHandler")
 T = TypeVar("T")  # For generic request types
 R = TypeVar("R")  # For generic response types
 
@@ -27,54 +31,35 @@ class GatewayConfig(BaseModel):
     system_type: str = "GENERIC"
 
 
-class EventDispatcherMixin:
+class EventCapability:
     """
-    Mixin class that provides event dispatching capabilities.
+    Encapsulates event dispatching functionality.
 
-    This mixin encapsulates all event-related functionality to allow for cleaner separation
-    of concerns and optional event support in gateways.
     """
 
     def __init__(self):
-        """
-        Initialize event dispatching capabilities.
-        """
-        self.event_dispatcher = None
-        self._event_creator = None
+        """Initialize event dispatching capabilities."""
+        self.dispatcher: Optional[EventDispatcherProtocol] = (
+            None  # EventDispatcherProtocol
+        )
+        self._event_creator: Optional[Callable] = None
 
-    def _run_async_publish(self, event):
+    def publish(self, event):
         """
-        Safely run the async publish method in a way that works in both sync and async contexts.
+        Publish an event using the configured dispatcher.
 
         Args:
             event: The event to publish
         """
-        if not self.event_dispatcher:
+        if not self.dispatcher:
             return
 
-        try:
-            # Try to get the running loop (only works in async context)
-            try:
-                loop = asyncio.get_running_loop()
-                # We're in an async context, so create_task works
-                asyncio.create_task(self.event_dispatcher.publish(event))
-            except RuntimeError:
-                # We're not in an async context, create a new loop
-                loop = asyncio.new_event_loop()
-                try:
-                    # Run the coroutine to completion in the new loop
-                    loop.run_until_complete(self.event_dispatcher.publish(event))
-                finally:
-                    # Clean up the loop
-                    loop.close()
-        except Exception as e:
-            logger.error(f"Failed to publish event: {str(e)}", exc_info=True)
+        # Delegate to dispatcher's sync-friendly publish method
+        self.dispatcher.emit(event)
 
-    def set_event_dispatcher(self, dispatcher):
+    def set_dispatcher(self, dispatcher) -> "EventCapability":
         """
-        Set the event dispatcher for this gateway.
-
-        This allows the gateway to publish events and register handlers.
+        Set the event dispatcher.
 
         Args:
             dispatcher: The event dispatcher instance
@@ -82,19 +67,12 @@ class EventDispatcherMixin:
         Returns:
             Self, to allow for method chaining
         """
-        self.event_dispatcher = dispatcher
-
-        # Register default handlers
-        self._register_default_handlers()
-
+        self.dispatcher = dispatcher
         return self
 
-    def set_event_creator(self, creator_function: Callable):
+    def set_event_creator(self, creator_function: Callable) -> "EventCapability":
         """
         Set a custom function to map gateway-specific events to EHREvents.
-
-        The creator function will be called instead of any default event creation logic,
-        allowing users to define custom event creation without subclassing.
 
         Args:
             creator_function: Function that accepts gateway-specific arguments
@@ -106,18 +84,7 @@ class EventDispatcherMixin:
         self._event_creator = creator_function
         return self
 
-    def _register_default_handlers(self):
-        """
-        Register default event handlers for this gateway.
-
-        Override this method in subclasses to register default handlers
-        for specific event types relevant to the gateway.
-        """
-        # Base implementation does nothing
-        # Subclasses should override this method to register their default handlers
-        pass
-
-    def register_event_handler(self, event_type, handler=None):
+    def register_handler(self, event_type, handler=None):
         """
         Register a custom event handler for a specific event type.
 
@@ -128,40 +95,75 @@ class EventDispatcherMixin:
             handler: The handler function (optional if used as decorator)
 
         Returns:
-            Decorator function if handler is None, self otherwise
+            Decorator function if handler is None, the capability object otherwise
         """
-        if not self.event_dispatcher:
-            raise ValueError("Event dispatcher not set for this gateway")
+        if not self.dispatcher:
+            raise ValueError("Event dispatcher not set")
 
         # If used as a decorator (no handler provided)
         if handler is None:
-            return self.event_dispatcher.register_handler(event_type)
+            return self.dispatcher.register_handler(event_type)
 
         # If called directly with a handler
-        self.event_dispatcher.register_handler(event_type)(handler)
+        self.dispatcher.register_handler(event_type)(handler)
         return self
 
+    def emit_event(
+        self, creator_function: Callable, *args, use_events: bool = True, **kwargs
+    ) -> None:
+        """
+        Emit an event using the standard custom/fallback pattern.
 
-class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
+        This method implements the common event emission pattern used across
+        all protocol handlers: try custom event creator first, then fallback
+        to standard event creator.
+
+        Args:
+            creator_function: Standard event creator function to use as fallback
+            *args: Positional arguments to pass to the event creator
+            use_events: Whether events are enabled for this operation
+            **kwargs: Keyword arguments to pass to the event creator
+
+        Example:
+            # In a protocol handler
+            self.events.emit_event(
+                create_fhir_event,
+                operation, resource_type, resource_id, resource
+            )
+        """
+        # Skip if events are disabled or no dispatcher
+        if not self.dispatcher or not use_events:
+            return
+
+        # Use custom event creator if provided
+        if self._event_creator:
+            event = self._event_creator(*args)
+            if event:
+                self.publish(event)
+            return
+
+        # Create a standard event using the provided creator function
+        event = creator_function(*args, **kwargs)
+        if event:
+            self.publish(event)
+
+
+class BaseProtocolHandler(ABC, Generic[T, R]):
     """
-    Base class for healthcare standard gateways that handle communication with external systems.
+    Base class for protocol handlers that process specific request/response types.
 
-    Gateways provide a consistent interface for interacting with healthcare standards
-    and protocols through the decorator pattern for handler registration.
-
-    Type Parameters:
-        T: The request type this gateway handles
-        R: The response type this gateway returns
+    This is designed for CDS Hooks, SOAP, and other protocol-specific handlers.
+    Register handlers with the register_handler method.
     """
 
     def __init__(
         self, config: Optional[GatewayConfig] = None, use_events: bool = True, **options
     ):
         """
-        Initialize a new gateway.
+        Initialize a new protocol handler.
 
         Args:
-            config: Configuration options for the gateway
+            config: Configuration options for the handler
             use_events: Whether to enable event dispatching
             **options: Additional configuration options
         """
@@ -173,11 +175,9 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
         self.return_errors = self.config.return_errors or options.get(
             "return_errors", False
         )
+        self.events = EventCapability()
 
-        # Initialize event dispatcher mixin
-        EventDispatcherMixin.__init__(self)
-
-    def register_handler(self, operation: str, handler: Callable) -> G:
+    def register_handler(self, operation: str, handler: Callable) -> P:
         """
         Register a handler function for a specific operation.
 
@@ -280,54 +280,12 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
 
     def get_capabilities(self) -> List[str]:
         """
-        Get list of operations this gateway supports.
+        Get list of operations this handler supports.
 
         Returns:
             List of supported operation names
         """
         return list(self._handlers.keys())
-
-    def get_routes(self, path: Optional[str] = None) -> List[tuple]:
-        """
-        Get routes that this gateway wants to register with the FastAPI app.
-
-        This method returns a list of tuples with the following structure:
-        (path, methods, handler, kwargs) where:
-        - path is the URL path for the endpoint
-        - methods is a list of HTTP methods this endpoint supports
-        - handler is the function to be called when the endpoint is accessed
-        - kwargs are additional arguments to pass to the add_api_route method
-
-        Args:
-            path: Optional base path to prefix all routes
-
-        Returns:
-            List of route tuples (path, methods, handler, kwargs)
-        """
-        # Default implementation returns empty list
-        # Specific gateway classes should override this
-        return []
-
-    def get_metadata(self) -> Dict[str, Any]:
-        """
-        Get metadata for this gateway, including capabilities and configuration.
-
-        Returns:
-            Dictionary of gateway metadata
-        """
-        # Default implementation returns basic info
-        # Specific gateway classes should override this
-        metadata = {
-            "gateway_type": self.__class__.__name__,
-            "operations": self.get_capabilities(),
-            "system_type": self.config.system_type,
-        }
-
-        # Add event-related metadata if events are enabled
-        if self.event_dispatcher:
-            metadata["event_enabled"] = True
-
-        return metadata
 
     @classmethod
     def create(cls, **options) -> G:
@@ -341,3 +299,66 @@ class BaseGateway(ABC, Generic[T, R], EventDispatcherMixin):
             New gateway instance
         """
         return cls(**options)
+
+
+class BaseGateway(ABC, APIRouter):
+    """
+    Base class for healthcare integration gateways.
+
+    Combines FastAPI routing capabilities with event dispatching using composition.
+    """
+
+    def __init__(
+        self,
+        config: Optional[GatewayConfig] = None,
+        use_events: bool = True,
+        prefix: str = "/api",
+        tags: Optional[List[str]] = None,
+        **options,
+    ):
+        """
+        Initialize a new gateway.
+
+        Args:
+            config: Configuration options for the gateway
+            use_events: Whether to enable event dispatching
+            prefix: URL prefix for API routes
+            tags: OpenAPI tags
+            **options: Additional configuration options
+        """
+        # Initialize APIRouter
+        APIRouter.__init__(self, prefix=prefix, tags=tags or [])
+
+        self.options = options
+        self.config = config or GatewayConfig()
+        self.use_events = use_events
+        # Default to raising exceptions unless configured otherwise
+        self.return_errors = self.config.return_errors or options.get(
+            "return_errors", False
+        )
+        self.events = EventCapability()
+
+    def get_gateway_status(self) -> Dict[str, Any]:
+        """
+        Get operational status and metadata for this gateway.
+
+        Returns:
+            Dictionary of gateway operational status and metadata
+        """
+        # Default implementation returns basic info
+        # Specific gateway classes should override this
+        status = {
+            "gateway_type": self.__class__.__name__,
+            "system_type": self.config.system_type,
+            "status": "active",
+            "return_errors": self.return_errors,
+        }
+
+        # Add event-related metadata if events are enabled
+        if self.use_events:
+            status["events"] = {
+                "enabled": True,
+                "dispatcher_configured": self.events.dispatcher is not None,
+            }
+
+        return status

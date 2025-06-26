@@ -165,3 +165,5 @@ scrap/
 .vscode/
 .ruff_cache/
 .python-version
+.cursor/
+scripts/

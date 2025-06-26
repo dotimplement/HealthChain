@@ -1,6 +1,6 @@
-# Welcome to HealthChain
+# Welcome to HealthChain 💫 🏥
 
-HealthChain 💫🏥 is an open-source Python framework designed to streamline the development, testing, and validation of AI, Natural Language Processing, and Machine Learning applications in a healthcare context.
+HealthChain is an open-source Python framework for building real-time AI applications in a healthcare context.
 
 [ :fontawesome-brands-discord: Join our Discord](https://discord.gg/UQC6uAepUz){ .md-button .md-button--primary }
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -19,19 +19,19 @@ HealthChain 💫🏥 is an open-source Python framework designed to streamline t
 
     [:octicons-arrow-right-24: Pipeline](reference/pipeline/pipeline.md)
 
--   :octicons-beaker-24:{ .lg .middle } __Test in a sandbox__
+-   :material-connection:{ .lg .middle } __Connect to multiple data sources__
 
     ---
 
-    Test your models in a full health-context aware environment from day 1
+    Connect to multiple healthcare data sources and protocols with **HealthChainAPI**.
 
-    [:octicons-arrow-right-24: Sandbox](reference/sandbox/sandbox.md)
+    [:octicons-arrow-right-24: Gateway](reference/gateway/gateway.md)
 
 -   :material-database:{ .lg .middle } __Interoperability__
 
     ---
 
-    Configuration-driven InteropEngine to convert between FHIR, CDA, and HL7v2
+    Configuration-driven **InteropEngine** to convert between FHIR, CDA, and HL7v2
 
     [:octicons-arrow-right-24: Interoperability](reference/interop/interop.md)
 
@@ -49,16 +49,17 @@ HealthChain 💫🏥 is an open-source Python framework designed to streamline t
 
 ## Why HealthChain?
 
-You've probably heard every *AI will revolutionize healthcare* pitch by now, but if you're one of the people who think: wait, can we go beyond just vibe-checking and *actually* build products that are reliable, reactive, and easy to scale in complex healthcare systems? Then HealthChain is probably for you.
+Healthcare AI development has a **missing middleware layer**. Traditional enterprise integration engines move data around, EHR platforms serve end users, but there's nothing in between for developers building AI applications that need to talk to multiple healthcare systems. Few solutions are open-source, and even fewer are built in modern Python where most ML/AI libraries thrive.
 
-Specifically, HealthChain addresses two challenges:
+HealthChain fills that gap with:
 
-1. **Scaling Electronic Health Record system (EHRs) integrations of real-time AI, NLP, and ML applications is a manual and time-consuming process.**
+- **🔥 FHIR-native ML pipelines** - Pre-built NLP/ML pipelines optimized for structured / unstructured healthcare data, or build your own with familiar Python libraries such as 🤗 Hugging Face, 🤖 LangChain, and 📚 spaCy
+- **🔒 Type-safe healthcare data** - Full type hints and Pydantic validation for FHIR resources with automatic data validation and error handling
+- **🔌 Multi-protocol connectivity** - Handle FHIR, CDS Hooks, and SOAP/CDA in the same codebase with OAuth2 authentication and connection pooling
+- **⚡ Event-driven architecture** - Real-time event handling with audit trails and workflow automation built-in
+- **🔄 Built-in interoperability** - Convert between FHIR, CDA, and HL7v2 using a template-based engine
+- **🚀 Production-ready deployment** - FastAPI integration for scalable, real-time applications
 
-2. **Testing and evaluating unstructured data in complex, outcome focused systems is a challenging and labour-intensive task.**
-
-We believe more efficient end-to-end pipeline and integration testing at an early stage in development will give you back time to focus on what actually matters: developing safer, more effective and more explainable models that scale to real-world *adoption*. Building products for healthcare in a process that is *human*-centric.
-
-HealthChain is made by a (very) small team with experience in software engineering, machine learning, and healthcare NLP. We understand that good data science is about more than just building models, and that good engineering is about more than just building systems. This rings especially true in healthcare, where people, processes, and technology all play a role in making an impact.
+HealthChain is made by a small team with experience in software engineering, machine learning, and healthcare NLP. We understand that good data science is about more than just building models, and that good engineering is about more than just building systems. This rings especially true in healthcare, where people, processes, and technology all play a role in making an impact.
 
 For inquiries and collaborations, please get [in touch](mailto:jenniferjiangkells@gmail.com)!

@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Optional
@@ -42,38 +43,21 @@ class EHREvent(BaseModel):
 class EventDispatcher:
     """Event dispatcher for handling EHR system events using fastapi-events.
 
-    This class provides a simple way to work with fastapi-events for dispatching
-    healthcare-related events in a FastAPI application.
+    Provides a simple interface for dispatching healthcare-related events in FastAPI applications.
+    Supports both request-scoped and application-scoped event handling.
 
     Example:
         ```python
-        from fastapi import FastAPI
-        from fastapi_events.handlers.local import local_handler
-        from fastapi_events.middleware import EventHandlerASGIMiddleware
-
         app = FastAPI()
         dispatcher = EventDispatcher()
-
-        # Register with the app
         dispatcher.init_app(app)
 
-        # Register a handler for a specific event type
-        @local_handler.register(event_name="patient.admission")
-        async def handle_admission(event):
-            # Process admission event
+        @dispatcher.register_handler(EHREventType.FHIR_READ)
+        async def handle_fhir_read(event):
             event_name, payload = event
-            print(f"Processing admission for {payload}")
-            pass
+            print(f"Processing FHIR read: {payload}")
 
-        # Register a default handler for all events
-        @local_handler.register(event_name="*")
-        async def log_all_events(event):
-            # Log all events
-            event_name, payload = event
-            print(f"Event logged: {event_name}")
-            pass
-
-        # Publish an event (from anywhere in your application)
+        event = create_fhir_event(EHREventType.FHIR_READ, "test-system", {"resource_id": "123"})
         await dispatcher.publish(event)
         ```
     """
@@ -149,3 +133,32 @@ class EventDispatcher:
         result = dispatch(event_name, event_data, middleware_id=mid)
         if result is not None:
             await result
+
+    def emit(self, event: EHREvent, middleware_id: Optional[int] = None):
+        """Publish an event from synchronous code by handling async context automatically.
+
+        This method handles the complexity of managing event loops when called from
+        synchronous contexts, while delegating to the async publish method when
+        already in an async context.
+
+        Args:
+            event (EHREvent): The event to publish
+            middleware_id (Optional[int]): Custom middleware ID, defaults to self.middleware_id
+        """
+        try:
+            # Try to get the running loop (only works in async context)
+            try:
+                loop = asyncio.get_running_loop()
+                # We're in an async context, so create_task works
+                asyncio.create_task(self.publish(event, middleware_id))
+            except RuntimeError:
+                # We're not in an async context, create a new loop
+                loop = asyncio.new_event_loop()
+                try:
+                    # Run the coroutine to completion in the new loop
+                    loop.run_until_complete(self.publish(event, middleware_id))
+                finally:
+                    # Clean up the loop
+                    loop.close()
+        except Exception as e:
+            logger.error(f"Failed to publish event: {str(e)}", exc_info=True)

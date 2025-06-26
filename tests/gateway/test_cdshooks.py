@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from healthchain.gateway.protocols.cdshooks import (
-    CDSHooksGateway,
+    CDSHooksService,
     CDSHooksConfig,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
@@ -11,70 +11,90 @@ from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.responses.cdsdiscovery import CDSServiceInformation
 
 
-def test_cdshooks_gateway_initialization():
-    """Test CDSHooksGateway initialization with default config"""
-    gateway = CDSHooksGateway()
+@pytest.mark.parametrize(
+    "config_args,expected_paths",
+    [
+        # Default config
+        (
+            {},
+            {
+                "base_path": "/cds",
+                "discovery_path": "/cds-discovery",
+                "service_path": "/cds-services",
+            },
+        ),
+        # Custom config
+        (
+            {
+                "base_path": "/custom-cds",
+                "discovery_path": "/custom-discovery",
+                "service_path": "/custom-services",
+            },
+            {
+                "base_path": "/custom-cds",
+                "discovery_path": "/custom-discovery",
+                "service_path": "/custom-services",
+            },
+        ),
+    ],
+)
+def test_cdshooks_service_configuration(config_args, expected_paths):
+    """CDSHooksService supports both default and custom path configurations."""
+    if config_args:
+        config = CDSHooksConfig(**config_args)
+        gateway = CDSHooksService(config=config)
+    else:
+        gateway = CDSHooksService.create()
+
+    assert isinstance(gateway, CDSHooksService)
     assert isinstance(gateway.config, CDSHooksConfig)
     assert gateway.config.system_type == "CDS-HOOKS"
-    assert gateway.config.base_path == "/cds"
-    assert gateway.config.discovery_path == "/cds-discovery"
-    assert gateway.config.service_path == "/cds-services"
+
+    for path_name, expected_value in expected_paths.items():
+        assert getattr(gateway.config, path_name) == expected_value
 
 
-def test_cdshooks_gateway_create():
-    """Test CDSHooksGateway.create factory method"""
-    gateway = CDSHooksGateway.create()
-    assert isinstance(gateway, CDSHooksGateway)
-    assert isinstance(gateway.config, CDSHooksConfig)
+def test_cdshooks_hook_decorator_with_metadata_variants():
+    """Hook decorator supports default and custom metadata configurations."""
+    gateway = CDSHooksService()
 
-
-def test_cdshooks_gateway_hook_decorator():
-    """Test hook decorator for registering handlers"""
-    gateway = CDSHooksGateway()
-
+    # Default metadata
     @gateway.hook("patient-view", id="test-patient-view")
-    def handle_patient_view(request):
+    def handle_patient_view_default(request):
         return CDSResponse(cards=[])
 
-    # Verify handler is registered
-    assert "patient-view" in gateway._handlers
-    assert "patient-view" in gateway._handler_metadata
-    assert gateway._handler_metadata["patient-view"]["id"] == "test-patient-view"
-    assert gateway._handler_metadata["patient-view"]["title"] == "Patient View"
-    assert (
-        gateway._handler_metadata["patient-view"]["description"]
-        == "CDS Hook service created by HealthChain"
-    )
-
-
-def test_cdshooks_gateway_hook_with_custom_metadata():
-    """Test hook decorator with custom metadata"""
-    gateway = CDSHooksGateway()
-
+    # Custom metadata
     @gateway.hook(
-        "patient-view",
+        "order-select",
         id="custom-id",
         title="Custom Title",
         description="Custom description",
         usage_requirements="Requires patient context",
     )
-    def handle_patient_view(request):
+    def handle_order_select_custom(request):
         return CDSResponse(cards=[])
 
-    assert gateway._handler_metadata["patient-view"]["id"] == "custom-id"
-    assert gateway._handler_metadata["patient-view"]["title"] == "Custom Title"
-    assert (
-        gateway._handler_metadata["patient-view"]["description"] == "Custom description"
-    )
-    assert (
-        gateway._handler_metadata["patient-view"]["usage_requirements"]
-        == "Requires patient context"
-    )
+    # Verify both handlers registered correctly
+    assert "patient-view" in gateway._handlers
+    assert "order-select" in gateway._handlers
+
+    # Check default metadata
+    default_meta = gateway._handler_metadata["patient-view"]
+    assert default_meta["id"] == "test-patient-view"
+    assert default_meta["title"] == "Patient View"
+    assert default_meta["description"] == "CDS Hook service created by HealthChain"
+
+    # Check custom metadata
+    custom_meta = gateway._handler_metadata["order-select"]
+    assert custom_meta["id"] == "custom-id"
+    assert custom_meta["title"] == "Custom Title"
+    assert custom_meta["description"] == "Custom description"
+    assert custom_meta["usage_requirements"] == "Requires patient context"
 
 
 def test_cdshooks_gateway_handle_request(test_cds_request):
     """Test request handler endpoint"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register a handler with the hook decorator
     @gateway.hook("patient-view", id="test-patient-view")
@@ -96,7 +116,7 @@ def test_cdshooks_gateway_handle_request(test_cds_request):
 
 def test_cdshooks_gateway_handle_discovery():
     """Test discovery endpoint handler"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Register sample hooks
     @gateway.hook("patient-view", id="test-patient-view", title="Patient View")
@@ -123,56 +143,58 @@ def test_cdshooks_gateway_handle_discovery():
     assert hooks["order-select"].title == "Order Select"
 
 
-def test_cdshooks_gateway_get_routes():
-    """Test that CDSHooksGateway correctly returns routes with get_routes method"""
-    gateway = CDSHooksGateway()
+def test_cdshooks_gateway_routing_and_custom_paths():
+    """CDSHooksService works as APIRouter with correct route registration."""
+    # Test default paths
+    gateway = CDSHooksService()
 
-    # Register sample hooks
     @gateway.hook("patient-view", id="test-patient-view")
     def handle_patient_view(request):
         return CDSResponse(cards=[])
 
-    # Get routes from gateway
-    routes = gateway.get_routes()
+    # Verify gateway is now an APIRouter
+    from fastapi import APIRouter
 
-    # Should return at least 2 routes (discovery endpoint and hook endpoint)
-    assert len(routes) >= 2
+    assert isinstance(gateway, APIRouter)
 
-    # Verify discovery endpoint
-    discovery_routes = [r for r in routes if "GET" in r[1]]
-    assert len(discovery_routes) >= 1
-    discovery_route = discovery_routes[0]
-    assert discovery_route[1] == ["GET"]  # HTTP method is GET
+    # Verify routes are registered directly in the router
+    assert hasattr(gateway, "routes")
+    assert len(gateway.routes) >= 2
 
-    # Verify hook endpoint
-    hook_routes = [r for r in routes if "POST" in r[1]]
-    assert len(hook_routes) >= 1
-    hook_route = hook_routes[0]
-    assert hook_route[1] == ["POST"]  # HTTP method is POST
-    assert "test-patient-view" in hook_route[0]  # Route path contains hook ID
+    # Check that routes have been registered
+    route_paths = [route.path for route in gateway.routes]
+    route_methods = [list(route.methods)[0] for route in gateway.routes]
 
+    # Should have discovery endpoint
+    assert any("cds-discovery" in path for path in route_paths)
+    assert "GET" in route_methods
 
-def test_cdshooks_gateway_custom_base_path():
-    """Test CDSHooksGateway with custom base path"""
-    config = CDSHooksConfig(
+    # Should have hook service endpoint
+    assert any("test-patient-view" in path for path in route_paths)
+    assert "POST" in route_methods
+
+    # Test custom paths
+    custom_config = CDSHooksConfig(
         base_path="/custom-cds",
         discovery_path="/custom-discovery",
         service_path="/custom-services",
     )
-    gateway = CDSHooksGateway(config=config)
+    custom_gateway = CDSHooksService(config=custom_config)
 
-    @gateway.hook("patient-view", id="test-service")
-    def handle_patient_view(request):
+    @custom_gateway.hook("patient-view", id="test-service")
+    def handle_custom_patient_view(request):
         return CDSResponse(cards=[])
 
-    routes = gateway.get_routes()
+    # Verify custom gateway has correct prefix
+    assert custom_gateway.prefix == "/custom-cds"
 
-    # Check that custom paths are used in routes
-    discovery_route = [r for r in routes if "GET" in r[1]][0]
-    assert discovery_route[0] == "/custom-cds/custom-discovery"
+    # Verify routes exist
+    custom_route_paths = [route.path for route in custom_gateway.routes]
+    assert any("custom-discovery" in path for path in custom_route_paths)
+    assert any("test-service" in path for path in custom_route_paths)
 
-    service_route = [r for r in routes if "POST" in r[1]][0]
-    assert "/custom-cds/custom-services/test-service" in service_route[0]
+    # Verify get_routes() method no longer exists
+    assert not hasattr(gateway, "get_routes")
 
 
 def test_cdshooks_gateway_event_emission():
@@ -181,7 +203,7 @@ def test_cdshooks_gateway_event_emission():
     mock_dispatcher = MagicMock(spec=EventDispatcher)
 
     # Create gateway with event dispatcher
-    gateway = CDSHooksGateway(event_dispatcher=mock_dispatcher)
+    gateway = CDSHooksService(event_dispatcher=mock_dispatcher)
 
     # Register a handler
     @gateway.hook("patient-view", id="test-service")
@@ -202,13 +224,12 @@ def test_cdshooks_gateway_event_emission():
     # Handle the request
     gateway.handle_request(request)
 
-    # Verify event was dispatched
-    assert mock_dispatcher.publish.called or mock_dispatcher.publish_async.called
+    assert mock_dispatcher.emit.called
 
 
 def test_cdshooks_gateway_hook_invalid_hook_type():
     """Test hook decorator with invalid hook type"""
-    gateway = CDSHooksGateway()
+    gateway = CDSHooksService()
 
     # Try to register an invalid hook type
     with pytest.raises(ValueError):
@@ -216,63 +237,3 @@ def test_cdshooks_gateway_hook_invalid_hook_type():
         @gateway.hook("invalid-hook-type", id="test")
         def handle_invalid(request):
             return CDSResponse(cards=[])
-
-
-def test_cdshooks_gateway_handle_with_direct_request():
-    """Test handling a CDSRequest directly with the handle method"""
-    gateway = CDSHooksGateway()
-
-    # Register a handler
-    @gateway.hook("patient-view", id="test-service")
-    def handle_patient_view(request):
-        return CDSResponse(
-            cards=[
-                Card(summary="Direct test", indicator="info", source={"label": "Test"})
-            ]
-        )
-
-    # Create a test request
-    request = CDSRequest(
-        hook="patient-view",
-        hookInstance="test-instance",
-        context={"patientId": "123", "userId": "456"},
-    )
-
-    # Handle the request directly with the handle method
-    result = gateway.handle("patient-view", request=request)
-
-    # Verify response
-    assert isinstance(result, CDSResponse)
-    assert len(result.cards) == 1
-    assert result.cards[0].summary == "Direct test"
-
-
-def test_cdshooks_gateway_get_metadata():
-    """Test retrieving metadata for registered hooks"""
-    gateway = CDSHooksGateway()
-
-    # Register handlers with different metadata
-    @gateway.hook("patient-view", id="patient-service", title="Patient Service")
-    def handle_patient_view(request):
-        return CDSResponse(cards=[])
-
-    @gateway.hook("order-select", id="order-service", description="Custom description")
-    def handle_order_select(request):
-        return CDSResponse(cards=[])
-
-    # Get metadata
-    metadata = gateway.get_metadata()
-
-    # Verify metadata contains both services
-    assert len(metadata) == 2
-
-    # Find each service by hook type
-    patient_metadata = next(item for item in metadata if item["hook"] == "patient-view")
-    order_metadata = next(item for item in metadata if item["hook"] == "order-select")
-
-    # Verify metadata values
-    assert patient_metadata["id"] == "patient-service"
-    assert patient_metadata["title"] == "Patient Service"
-
-    assert order_metadata["id"] == "order-service"
-    assert order_metadata["description"] == "Custom description"

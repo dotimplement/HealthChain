@@ -15,7 +15,7 @@ HealthChain comes with a set of prebuilt pipelines that are out-of-the-box imple
 | **QAPipeline** [TODO] | `Document` | N/A | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
 | **ClassificationPipeline** [TODO] | `Tabular` | `CdsFhirConnector` | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
 
-Prebuilt pipelines are end-to-end workflows with Connectors built into them. They interact with raw data received from EHR interfaces, usually CDA or FHIR data from specific [use cases](../sandbox/use_cases/use_cases.md).
+Prebuilt pipelines are end-to-end workflows with Connectors built into them. They interact with raw data received from EHR interfaces, usually CDA or FHIR data from specific [protocols](../gateway/gateway.md).
 
 You can load your models directly as a pipeline object, from local files or from a remote model repository such as Hugging Face.
 
