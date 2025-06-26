@@ -1,60 +1,105 @@
-# Sandbox
+# Sandbox Testing
 
-Designing your pipeline to integrate well in a healthcare context is an essential step to turning it into an application that
-could potentially be adapted for real-world use. As a developer who has years of experience deploying healthcare NLP solutions into hospitals, I know how painful and slow this process can be.
+Sandbox environments provide testing utilities for validating your HealthChain applications in realistic healthcare contexts. These are primarily used for development and testing rather than production deployment.
 
-A sandbox makes this process easier. It provides a staging environment to debug, test, track, and interact with your application in realistic deployment scenarios without having to gain access to such environments, especially ones that are tightly integrated with local EHR configurations. Think of it as integration testing in healthcare systems.
+!!! info "For production applications, use [HealthChainAPI](../gateway/api.md) instead"
 
-For a given sandbox run:
+    Sandbox is a testing utility. For production healthcare AI applications, use the [Gateway](../gateway/gateway.md) with [HealthChainAPI](../gateway/api.md).
 
-1. Data is generated or loaded into a client (EHR)
+## Quick Example
 
-2. Data is wrapped and sent as standardized API requests the designated service
-
-3. Data is processed by the service (you application)
-
-4. Processed result is wrapped and sent back to the service as a standardized API response
-
-5. Data is received by the client which could be rendered in a UI interface
-
-To create a sandbox, initialize a class that inherits from a type of `UseCase` and decorate it with the `@hc.sandbox` decorator. `UseCase` loads in the blueprint of the API endpoints for the specified use case, and `@hc.sandbox` orchestrates these interactions.
-
-Every sandbox also requires a [**Client**](./client.md) function marked by `@hc.ehr` and a [**Service**](./service.md) function marked by `@hc.api`. Every client function must specify a **workflow** that informs the sandbox how your data will be formatted. For more information on workflows, see the [Use Cases](./use_cases/use_cases.md) documentation.
-
-!!! success "For each sandbox you need to specify..."
-
-    - Use case
-    - service function
-    - client function
-    - workflow of client
-
+Test CDS Hooks workflows with synthetic data:
 
 ```python
 import healthchain as hc
-
-from healthchain.pipeline import SummarizationPipeline
 from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-from healthchain.data_generators import CdsDataGenerator
-from healthchain.models import CDSRequest, Prefetch, CDSResponse
-
 
 @hc.sandbox
-class MyCoolSandbox(ClinicalDecisionSupport):
+class TestCDS(ClinicalDecisionSupport):
     def __init__(self):
-        self.data_generator = CdsDataGenerator()
-        self.pipeline = SummarizationPipeline('gpt-4o')
+        self.pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn")
 
     @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> Prefetch:
-        prefetch = self.data_generator.generate_prefetch()
-        return prefetch
+    def ehr_database_client(self):
+        return self.data_generator.generate_prefetch()
 
-    @hc.api
-    def my_service(self, request: CDSRequest) -> CDSResponse:
-        cds_response = self.pipeline(request)
-        return cds_response
-
-if __name__ == "__main__":
-    cds = MyCoolSandbox()
-    cds.start_sandbox()
+# Run with: healthchain run test_cds.py
 ```
+
+## Available Testing Scenarios
+
+- **[CDS Hooks](../gateway/cdshooks.md)**: `ClinicalDecisionSupport` - Test clinical decision support workflows
+- **[Clinical Documentation](../gateway/soap_cda.md)**: `ClinicalDocumentation` - Test SOAP/CDA document processing workflows
+
+## EHR Client Simulation
+
+The `@hc.ehr` decorator simulates EHR client behavior for testing. You must specify a **workflow** that determines how your data will be formatted.
+
+Data should be wrapped in a [Prefetch](../../../api/data_models.md#healthchain.models.data.prefetch) object for CDS workflows, or return appropriate FHIR resources for document workflows.
+
+=== "Clinical Decision Support"
+    ```python
+    import healthchain as hc
+    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
+    from healthchain.models import Prefetch
+    from fhir.resources.patient import Patient
+
+    @hc.sandbox
+    class MyCoolSandbox(ClinicalDecisionSupport):
+        @hc.ehr(workflow="patient-view", num=10)
+        def load_data_in_client(self) -> Prefetch:
+            # Load your test data here
+            return Prefetch(prefetch={"patient": Patient(id="123")})
+    ```
+
+=== "Clinical Documentation"
+    ```python
+    import healthchain as hc
+    from healthchain.sandbox.use_cases import ClinicalDocumentation
+    from healthchain.fhir import create_document_reference
+    from fhir.resources.documentreference import DocumentReference
+
+    @hc.sandbox
+    class MyCoolSandbox(ClinicalDocumentation):
+        @hc.ehr(workflow="sign-note-inpatient", num=10)
+        def load_data_in_client(self) -> DocumentReference:
+            # Load your test data here
+            return create_document_reference(data="", content_type="text/xml")
+    ```
+
+**Parameters:**
+
+- `workflow`: The healthcare workflow to simulate (e.g., "patient-view", "sign-note-inpatient")
+- `num`: Optional number of requests to generate for testing
+
+## Migration to Production
+
+!!! warning "Sandbox Decorators are Deprecated"
+    `@hc.api` is deprecated. Use [HealthChainAPI](../gateway/api.md) for production.
+
+**Quick Migration:**
+
+```python
+# Before (Testing) - Shows deprecation warning
+@hc.sandbox
+class TestCDS(ClinicalDecisionSupport):
+    @hc.api  # ⚠️ DEPRECATED
+    def my_service(self, request): ...
+
+# After (Production)
+from healthchain.gateway import HealthChainAPI, CDSHooksService
+
+app = HealthChainAPI()
+cds = CDSHooksService()
+
+@cds.hook("patient-view")
+def my_service(request): ...
+
+app.register_service(cds)
+```
+
+**Next Steps:**
+
+1. **Testing**: Continue using sandbox utilities with deprecation warnings
+2. **Production**: Migrate to [HealthChainAPI Gateway](../gateway/gateway.md)
+3. **Protocols**: See [CDS Hooks](../gateway/cdshooks.md) and [SOAP/CDA](../gateway/soap_cda.md)

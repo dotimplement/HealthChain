@@ -177,5 +177,5 @@ async def admin_status(
 ## See Also
 
 - **[FHIR Gateway](fhir_gateway.md)**: Complete FHIR operations reference
-- **[CDS Hooks Service](../sandbox/use_cases/cds.md)**: Complete CDS Hooks service reference
-- **[NoteReader Service](../sandbox/use_cases/clindoc.md)**: Complete NoteReader service reference
+- **[CDS Hooks Service](cdshooks.md)**: Complete CDS Hooks service reference
+- **[NoteReader Service](soap_cda.md)**: Complete NoteReader service reference

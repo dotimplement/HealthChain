@@ -23,8 +23,8 @@ Each connector can be mapped to a specific use case in the sandbox module.
 
 | Connector | Use Case |
 |-----------|----------|
-| `CdaConnector` | [**Clinical Documentation**](../../sandbox/use_cases/clindoc.md) |
-| `CdsFhirConnector` | [**Clinical Decision Support**](../../sandbox/use_cases/cds.md) |
+| `CdaConnector` | [**Clinical Documentation**](../../gateway/soap_cda.md) |
+| `CdsFhirConnector` | [**Clinical Decision Support**](../../gateway/cdshooks.md) |
 
 ## Adding connectors to your pipeline
 

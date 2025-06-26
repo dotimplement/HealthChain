@@ -127,4 +127,4 @@ pipeline.add_component(CdsCardCreator(
 ## Related Documentation
 
 - [CDS Hooks Specification](https://cds-hooks.org/)
-- [Clinical Decision Support Documentation](../../sandbox/use_cases/cds.md)
+- [Clinical Decision Support Documentation](../../gateway/cdshooks.md)

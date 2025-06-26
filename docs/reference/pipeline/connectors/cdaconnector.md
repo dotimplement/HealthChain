@@ -4,7 +4,7 @@ The `CdaConnector` parses CDA documents, extracting free-text notes and relevant
 
 This connector is particularly useful for clinical documentation improvement (CDI) workflows where a document needs to be processed and updated with additional structured data.
 
-[(Full Documentation on Clinical Documentation)](../../sandbox/use_cases/clindoc.md)
+[(Full Documentation on Clinical Documentation)](../../gateway/soap_cda.md)
 
 
 ## Input and Output

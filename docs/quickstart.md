@@ -2,7 +2,40 @@
 
 After [installing HealthChain](installation.md), get up to speed quickly with the core components before diving further into the [full documentation](reference/index.md)!
 
+HealthChain provides three core tools for healthcare AI integration: **Gateway** for connecting to multiple healthcare systems, **Pipelines** for FHIR-native AI workflows, and **InteropEngine** for healthcare data format conversion between FHIR, CDA, and HL7v2.
+
 ## Core Components
+
+### HealthChainAPI Gateway 🔌
+
+The HealthChainAPI provides a unified interface for connecting your AI models to multiple healthcare systems through a single API. Handle FHIR, CDS Hooks, and SOAP/CDA protocols with OAuth2 authentication and connection pooling.
+
+[(Full Documentation on Gateway)](./reference/gateway/gateway.md)
+
+```python
+from healthchain.gateway import HealthChainAPI, FHIRGateway
+
+# Create your healthcare application
+app = HealthChainAPI(title="My Healthcare AI App")
+
+# Connect to multiple FHIR servers
+fhir = FHIRGateway()
+fhir.add_source("epic", "fhir://fhir.epic.com/r4?client_id=...")
+fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
+
+# Add AI transformations to FHIR data
+@fhir.transform(Patient)
+async def enhance_patient(id: str, source: str = None) -> Patient:
+    async with fhir.modify(Patient, id, source) as patient:
+        # Your AI logic here
+        patient.active = True
+        return patient
+
+# Register and run
+app.register_gateway(fhir)
+
+# Available at: GET /fhir/transform/Patient/123?source=epic
+```
 
 ### Pipeline 🛠️
 
@@ -149,71 +182,29 @@ The interop module provides a flexible, template-based approach to healthcare fo
 For more details, see the [conversion examples](cookbook/interop/basic_conversion.md).
 
 
-### Sandbox 🧪
-Once you've built your pipeline, you might want to experiment with how it interacts with different healthcare systems. A sandbox helps you stage and test the end-to-end workflow of your pipeline application where real-time EHR integrations are involved.
+## Utilities ⚙️
 
-Running a sandbox will start a [FastAPI](https://fastapi.tiangolo.com/) server with pre-defined standardized endpoints and create a sandboxed environment for you to interact with your application.
+### Sandbox Testing
 
-To create a sandbox, initialize a class that inherits from a type of [UseCase](./reference/sandbox/use_cases/use_cases.md) and decorate it with the `@hc.sandbox` decorator.
+Test your AI applications in realistic healthcare contexts with sandbox environments for CDS Hooks and clinical documentation workflows.
 
-Every sandbox also requires a **client** function marked by `@hc.ehr` and a **service** function marked by `@hc.api`. A **workflow** must be specified when creating an EHR client.
-
-[(Full Documentation on Sandbox and Use Cases)](./reference/sandbox/sandbox.md)
+[(Full Documentation on Sandbox)](./reference/sandbox/sandbox.md)
 
 ```python
 import healthchain as hc
-
-from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.models import CdaRequest, CdaResponse
-from healthchain.fhir import create_document_reference
-
-from fhir.resources.documentreference import DocumentReference
+from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 
 @hc.sandbox
-class MyCoolSandbox(ClinicalDocumentation):
-    def __init__(self) -> None:
-        # Load your pipeline
-        self.pipeline = MedicalCodingPipeline.from_local_model(
-            "./path/to/model", source="spacy"
-        )
+class MyCDS(ClinicalDecisionSupport):
+    def __init__(self):
+        self.pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn")
 
-    @hc.ehr(workflow="sign-note-inpatient")
-    def load_data_in_client(self) -> DocumentReference:
-        # Load your data
-        with open('/path/to/data.xml', "r") as file:
-          xml_string = file.read()
+    @hc.ehr(workflow="encounter-discharge")
+    def ehr_database_client(self):
+        return self.data_generator.generate_prefetch()
 
-        cda_document_reference = create_document_reference(
-            data=xml_string,
-            content_type="text/xml",
-            description="Original CDA Document loaded from my sandbox",
-        )
-
-        return cda_document_reference
-
-    @hc.api
-    def my_service(self, request: CdaRequest) -> CdaResponse:
-        # Run your pipeline
-        results = self.pipeline(request)
-        return results
-
-if __name__ == "__main__":
-    clindoc = MyCoolSandbox()
-    clindoc.start_sandbox()
+# Run with: healthchain run mycds.py
 ```
-
-#### Deploy sandbox locally with FastAPI 🚀
-
-To run your sandbox:
-
-```bash
-healthchain run my_sandbox.py
-```
-
-This will start a server by default at `http://127.0.0.1:8000`, and you can interact with the exposed endpoints at `/docs`. Data generated from your sandbox runs is saved at `./output/` by default.
-
-## Utilities ⚙️
 
 ### FHIR Helpers
 

@@ -1,10 +1,10 @@
 # Use Cases
 
-Use cases are the core building blocks of sandboxes. They define the API endpoints and the data formats for a given workflow.
+Use cases have been moved to [Gateway Protocols](../../gateway/gateway.md) for production applications.
 
-We currently support:
+For testing purposes, sandbox utilities support:
 
-- [Clinical Decision Support](./cds.md)
-- [Clinical Documentation](./clindoc.md)
+- **[CDS Hooks](../../gateway/cdshooks.md)**: Clinical Decision Support workflows
+- **[SOAP/CDA](../../gateway/soap_cda.md)**: Clinical Documentation workflows
 
-More documentation on the pros and cons of each use case will be added soon. For now, you can refer to the source code for more details.
+See the main [Sandbox](../sandbox.md) documentation for testing examples.

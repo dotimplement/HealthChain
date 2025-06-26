@@ -20,8 +20,8 @@ The Gateway handles the complex parts of healthcare integration:
 |-----------|-------------|----------|
 | [**HealthChainAPI**](api.md) | FastAPI app with gateway and service registration | Main app that coordinates everything |
 | [**FHIRGateway**](fhir_gateway.md) | FHIR client with connection pooling and authentication| Reading/writing patient data from EHRs (Epic, Cerner, etc.) or application FHIR servers (Medplum, Hapi etc.) |
-| [**CDSHooksService**](../sandbox/use_cases/cds.md) | Clinical Decision Support hooks service | Real-time alerts and recommendations |
-| [**NoteReaderService**](../sandbox/use_cases/clindoc.md) | SOAP/CDA document processing service | Processing clinical documents and notes |
+| [**CDSHooksService**](cdshooks.md) | Clinical Decision Support hooks service | Real-time alerts and recommendations |
+| [**NoteReaderService**](soap_cda.md) | SOAP/CDA document processing service | Processing clinical documents and notes |
 | [**Event System**](events.md) | Event-driven integration | Audit trails, workflow automation |
 
 
@@ -55,6 +55,8 @@ app.register_gateway(fhir)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
+
+# Default: http://127.0.0.1:8000/
 ```
 
 You can also register multiple services of different protocols!
