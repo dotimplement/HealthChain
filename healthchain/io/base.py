@@ -1,40 +1,77 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
-from healthchain.io.containers import DataContainer
+from typing import Generic, TypeVar, Optional, Any
+from healthchain.io.containers import Document
 
-T = TypeVar("T")
+RequestType = TypeVar("RequestType")
+ResponseType = TypeVar("ResponseType")
 
 
-class BaseConnector(Generic[T], ABC):
+class BaseAdapter(Generic[RequestType, ResponseType], ABC):
     """
-    Abstract base class for all connectors in the pipeline.
+    Abstract base class for all adapters in HealthChain.
 
-    This class should be subclassed to create specific connectors.
-    Subclasses must implement the input and output methods.
+    Adapters handle conversion between external healthcare data formats
+    (CDA, CDS Hooks, etc.) and HealthChain's internal Document objects.
+
+    This class should be subclassed to create specific adapters.
+    Subclasses must implement the parse and format methods.
     """
 
-    @abstractmethod
-    def input(self, data: DataContainer[T]) -> DataContainer[T]:
+    def __init__(self, engine: Optional[Any] = None):
         """
-        Convert input data to the pipeline's internal format.
+        Initialize BaseAdapter with optional interop engine.
 
         Args:
-            data (DataContainer[T]): The input data to be converted.
+            engine (Optional[Any]): Optional interoperability engine for format conversions.
+                                   Only used by adapters that require format conversion (e.g., CDA).
+        """
+        self.engine = engine
+
+    @abstractmethod
+    def parse(self, request: RequestType) -> Document:
+        """
+        Parse external format data into HealthChain's internal Document format.
+
+        Args:
+            request (RequestType): The external format request to be parsed.
 
         Returns:
-            DataContainer[T]: The converted data.
+            Document: The parsed data as a Document object.
         """
         pass
 
     @abstractmethod
-    def output(self, data: DataContainer[T]) -> DataContainer[T]:
+    def format(self, document: Document) -> ResponseType:
         """
-        Convert pipeline's internal format to output data.
+        Format HealthChain's internal Document into external format response.
 
         Args:
-            data (DataContainer[T]): The data to be converted for output.
+            document (Document): The Document object to be formatted.
 
         Returns:
-            DataContainer[T]: The converted output data.
+            ResponseType: The formatted response in external format.
+        """
+        pass
+
+
+# Legacy connector class for backwards compatibility
+class BaseConnector(Generic[RequestType], ABC):
+    """
+    DEPRECATED: Use BaseAdapter instead.
+
+    Abstract base class for legacy connectors.
+    """
+
+    @abstractmethod
+    def input(self, data: RequestType) -> Document:
+        """
+        DEPRECATED: Use BaseAdapter.parse() instead.
+        """
+        pass
+
+    @abstractmethod
+    def output(self, data: Document) -> ResponseType:
+        """
+        DEPRECATED: Use BaseAdapter.format() instead.
         """
         pass
