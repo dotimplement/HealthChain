@@ -1,8 +1,10 @@
-# CDA Connector
+# CDA Connector (Legacy)
+
+> **⚠️ Deprecated:** `CdaConnector` is deprecated. Use [`CdaAdapter`](../adapters/cdaadapter.md) for new projects, which provides explicit control over data conversion and enables pure `Document → Document` pipeline processing.
 
 The `CdaConnector` parses CDA documents, extracting free-text notes and relevant structured clinical data into FHIR resources in the `Document` container, and returns an annotated CDA document as output. It will also extract the text from the note section of the document and store it in the `Document.text` attribute.
 
-This connector is particularly useful for clinical documentation improvement (CDI) workflows where a document needs to be processed and updated with additional structured data.
+**For new projects, use [`CdaAdapter`](../adapters/cdaadapter.md) instead.**
 
 [(Full Documentation on Clinical Documentation)](../../gateway/soap_cda.md)
 

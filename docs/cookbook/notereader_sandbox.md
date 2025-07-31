@@ -10,7 +10,7 @@ import healthchain as hc
 from healthchain.io import Document
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses import CdaResponse
-from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
+from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.sandbox.use_cases import ClinicalDocumentation
 from healthchain.fhir import create_document_reference
 
@@ -64,7 +64,7 @@ class NotereaderSandbox(ClinicalDocumentation):
 
     @hc.api
     def my_service(self, request: CdaRequest) -> CdaResponse:
-        result = self.pipeline(request)
+        result = self.pipeline.process_request(request)
 
         return result
 

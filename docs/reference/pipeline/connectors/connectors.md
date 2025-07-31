@@ -1,10 +1,38 @@
-# Connectors
+# Connectors (Legacy)
+
+> **⚠️ Deprecated:** Connectors are being replaced by the new [Adapter pattern](../adapters/adapters.md). For new projects, use Adapters for cleaner separation between ML processing and healthcare format handling.
 
 Connectors transform your data into a format that can be understood by healthcare systems such as EHRs. They allow your pipelines to work directly with data in HL7 interoperability standard formats, such as [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) or [FHIR](https://hl7.org/fhir/), without the headache of parsing and validating the data yourself.
 
-Connectors are what give you the power to build *end-to-end* pipelines that interact with real-time healthcare systems.
+**For new projects, consider using [Adapters](../adapters/adapters.md) instead**, which provide explicit control over data conversion and enable pure `Document → Document` pipeline processing.
 
-## Available connectors
+## Migration to Adapters
+
+| Legacy Connector | New Adapter | Migration Guide |
+|------------------|-------------|-----------------|
+| `CdaConnector` | [`CdaAdapter`](../adapters/cdaadapter.md) | Remove `add_input()` and `add_output()` calls, use explicit `parse()` and `format()` methods |
+| `CdsFhirConnector` | [`CdsFhirAdapter`](../adapters/cdsfhiradapter.md) | Remove `add_input()` and `add_output()` calls, use explicit `parse()` and `format()` methods |
+
+### Quick Migration Example
+
+**Before (Connectors):**
+```python
+pipeline.add_input(CdaConnector())
+pipeline.add_output(CdaConnector())
+response = pipeline(cda_request)
+```
+
+**After (Adapters):**
+```python
+adapter = CdaAdapter()
+doc = adapter.parse(cda_request)
+doc = pipeline(doc)
+response = adapter.format(doc)
+```
+
+[→ Full Adapter Documentation](../adapters/adapters.md)
+
+## Available connectors (Legacy)
 
 Connectors parse data from a specific format into FHIR resources and store them in a `Document` container.
 
