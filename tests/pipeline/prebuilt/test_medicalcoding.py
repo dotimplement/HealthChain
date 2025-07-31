@@ -3,12 +3,12 @@ from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.pipeline.base import ModelConfig, ModelSource
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
+from healthchain.io.containers import Document
 
 
-def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
+def test_coding_pipeline(mock_spacy_nlp, test_document):
+    """Test pure pipeline processing (Document → Document)"""
     with patch(
-        "healthchain.pipeline.medicalcodingpipeline.CdaConnector", mock_cda_connector
-    ), patch(
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_spacy_nlp,
     ):
@@ -21,19 +21,13 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
         )
         pipeline.configure_pipeline(config)
 
-        # Create a sample CdaRequest
-        test_cda_request = CdaRequest(document="<xml>Sample CDA</xml>")
+        # Process Document through pure pipeline
+        result_doc = pipeline(test_document)
 
-        # Process the request through the pipeline
-        cda_response = pipeline(test_cda_request)
-
-        # Assertions
-        assert isinstance(cda_response, CdaResponse)
-        assert cda_response.document == "<xml>Updated CDA</xml>"
-
-        # Verify that CdaConnector methods were called correctly
-        mock_cda_connector.return_value.input.assert_called_once_with(test_cda_request)
-        mock_cda_connector.return_value.output.assert_called_once()
+        # Assertions - pipeline should return processed Document
+        assert isinstance(result_doc, Document)
+        assert result_doc.data == "Test note"
+        assert result_doc.fhir.problem_list[0].code.coding[0].display == "Hypertension"
 
         # Verify that the Model was called
         mock_spacy_nlp.assert_called_once_with(
@@ -47,25 +41,45 @@ def test_coding_pipeline(mock_cda_connector, mock_spacy_nlp):
         )
         mock_spacy_nlp.return_value.assert_called_once()
 
-        # Verify the pipeline used the mocked input and output
-        input_doc = mock_cda_connector.return_value.input.return_value
-        assert input_doc.data == "Test note"
-        assert input_doc.fhir.problem_list[0].code.coding[0].display == "Hypertension"
-        assert (
-            input_doc.fhir.medication_list[0].medication.concept.coding[0].display
-            == "Aspirin"
-        )
-        assert (
-            input_doc.fhir.allergy_list[0].code.coding[0].display
-            == "Allergy to peanuts"
-        )
-
         # Verify stages are set correctly
         assert len(pipeline._stages) == 1
         assert "ner+l" in pipeline._stages
 
 
+def test_coding_pipeline_process_request(mock_spacy_nlp, mock_cda_adapter):
+    """Test process_request method with adapter"""
+    with patch(
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_spacy_nlp,
+    ), patch("healthchain.io.CdaAdapter", mock_cda_adapter):
+        pipeline = MedicalCodingPipeline()
+        config = ModelConfig(
+            source=ModelSource.SPACY,
+            pipeline_object="en_core_sci_sm",
+            path=None,
+            kwargs={},
+        )
+        pipeline.configure_pipeline(config)
+
+        # Create a sample CdaRequest
+        test_cda_request = CdaRequest(document="<xml>Sample CDA</xml>")
+
+        # Process via convenience method
+        cda_response = pipeline.process_request(test_cda_request)
+
+        # Assertions
+        assert isinstance(cda_response, CdaResponse)
+
+        # Verify adapter was used correctly
+        mock_cda_adapter.return_value.parse.assert_called_once_with(test_cda_request)
+        mock_cda_adapter.return_value.format.assert_called_once()
+
+        # Verify model was called
+        mock_spacy_nlp.return_value.assert_called_once()
+
+
 def test_full_coding_pipeline_integration(mock_spacy_nlp, test_cda_request):
+    """Test integration with process_request method"""
     with patch(
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_spacy_nlp,
@@ -74,7 +88,8 @@ def test_full_coding_pipeline_integration(mock_spacy_nlp, test_cda_request):
             "./spacy/path/to/production/model", source="spacy"
         )
 
-        cda_response = pipeline(test_cda_request)
+        # Use process_request for end-to-end processing
+        cda_response = pipeline.process_request(test_cda_request)
 
         assert isinstance(cda_response, CdaResponse)
 

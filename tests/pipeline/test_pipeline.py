@@ -187,25 +187,6 @@ def test_build_and_execute_pipeline(mock_basic_pipeline):
         mock_basic_pipeline.build()
 
 
-def test_pipeline_with_connectors(mock_basic_pipeline):
-    # Test with input and output connectors
-    class MockConnector:
-        def input(self, data):
-            data.data += 10
-            return data
-
-        def output(self, data):
-            data.data *= 2
-            return data
-
-    mock_basic_pipeline.add_input(MockConnector())
-    mock_basic_pipeline.add_node(mock_component)
-    mock_basic_pipeline.add_output(MockConnector())
-
-    result = mock_basic_pipeline(DataContainer(1))
-    assert result.data == 24  # (1 + 10 + 1) * 2
-
-
 # Test input and output model validation
 def test_input_output_validation(mock_basic_pipeline):
     def validated_component(data: DataContainer) -> DataContainer:

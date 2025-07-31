@@ -137,6 +137,47 @@ def mock_cda_connector(test_document):
         yield mock
 
 
+# Adapter fixtures
+
+
+@pytest.fixture
+def mock_cda_adapter():
+    with patch("healthchain.io.cdaadapter.CdaAdapter") as mock:
+        adapter_instance = mock.return_value
+
+        # Mock parse method
+        adapter_instance.parse.return_value = Document(data="Test note")
+
+        # Mock format method
+        adapter_instance.format.return_value = CdaResponse(
+            document="<xml>Updated CDA</xml>"
+        )
+
+        yield mock
+
+
+@pytest.fixture
+def mock_cds_fhir_adapter():
+    with patch("healthchain.io.cdsfhiradapter.CdsFhirAdapter") as mock:
+        adapter_instance = mock.return_value
+
+        # Mock parse method
+        adapter_instance.parse.return_value = Document(data="Test CDS data")
+
+        # Mock format method
+        adapter_instance.format.return_value = CDSResponse(
+            cards=[
+                Card(
+                    summary="Summarized discharge information",
+                    indicator="info",
+                    source={"label": "Test Source"},
+                )
+            ]
+        )
+
+        yield mock
+
+
 # NLP component fixtures
 
 
