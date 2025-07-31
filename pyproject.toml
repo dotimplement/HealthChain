@@ -16,7 +16,11 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-include = ["healthchain/templates/*"]
+include = [
+    "healthchain/templates/*",
+    "healthchain/configs/**/*.yaml",
+    "healthchain/configs/**/*.liquid"
+]
 
 [project.urls]
 "Homepage" = "https://dotimplement.github.io/HealthChain/"

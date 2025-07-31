@@ -1,0 +1,37 @@
+# Production Environment Configuration
+# This file contains settings specific to the production environment
+# TODO: Implement
+
+# Logging settings for production
+logging:
+  level: "WARNING"
+  include_timestamps: true
+  console_output: false
+  file_output: true
+  file_path: "/var/log/healthchain/interop.log"
+  rotate_logs: true
+  max_log_size_mb: 10
+  backup_count: 5
+
+# Error handling for production
+errors:
+  retry_count: 3
+  fail_on_critical: true
+  verbose_errors: false
+
+# Performance settings for production
+performance:
+  cache_templates: true   # Enable caching for better performance
+  cache_mappings: true    # Enable caching for better performance
+  batch_size: 100         # Larger batch size for better throughput
+
+# Default resource fields for production
+defaults:
+  common:
+    id_prefix: "hc-"      # Production ID prefix
+    subject:
+      reference: "Patient/example"
+
+# Template settings for production
+templates:
+  reload_on_change: false  # Don't reload templates in production

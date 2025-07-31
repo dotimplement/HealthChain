@@ -1,0 +1,111 @@
+{
+  "substanceAdministration": {
+    "@classCode": "SBADM",
+    "@moodCode": "INT",
+    "templateId": [
+    {% for template_id in config.template.substance_admin.template_id %}
+      {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+    {% endfor %}
+    ],
+    {% if resource.id %}
+    "id": {"@root": "{{ resource.id }}"},
+    {% endif %}
+    "statusCode": {"@code": "{{ config.template.substance_admin.status_code }}"},
+    {% if resource.dosage and resource.dosage[0].doseAndRate %}
+    "doseQuantity": {
+      "@value": "{{ resource.dosage[0].doseAndRate[0].doseQuantity.value }}",
+      "@unit": "{{ resource.dosage[0].doseAndRate[0].doseQuantity.unit }}"
+    },
+    {% endif %}
+    {% if resource.dosage and resource.dosage[0].route %}
+    "routeCode": {
+      "@code": "{{ resource.dosage[0].route.coding[0].code }}",
+      "@codeSystem": "{{ resource.dosage[0].route.coding[0].system | map_system: 'fhir_to_cda' }}",
+      "@displayName": "{{ resource.dosage[0].route.coding[0].display }}"
+    },
+    {% endif %}
+    {% if resource.dosage and resource.dosage[0].timing or resource.effectivePeriod %}
+    "effectiveTime": [
+      {% if resource.dosage and resource.dosage[0].timing %}
+      {
+        "@xsi:type": "PIVL_TS",
+        "@institutionSpecified": true,
+        "@operator": "A",
+        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "period": {
+          "@unit": "{{ resource.dosage[0].timing.repeat.periodUnit }}",
+          "@value": "{{ resource.dosage[0].timing.repeat.period }}"
+        }
+      }{% if resource.effectivePeriod %},{% endif %}
+      {% endif %}
+      {% if resource.effectivePeriod %}
+      {
+        "@xsi:type": "IVL_TS",
+        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        {% if resource.effectivePeriod.start %}
+        "low": {
+          "@value": "{{ resource.effectivePeriod.start | format_date }}"
+        },
+        {% else %}
+        "low": {"@nullFlavor": "UNK"},
+        {% endif %}
+        {% if resource.effectivePeriod.end %}
+        "high": {
+          "@value": "{{ resource.effectivePeriod.end }}"
+        }
+        {% else %}
+        "high": {"@nullFlavor": "UNK"}
+        {% endif %}
+      }
+      {% endif %}
+    ],
+    {% endif %}
+    "consumable": {
+      "@typeCode": "CSM",
+      "manufacturedProduct": {
+        "@classCode": "MANU",
+        "templateId": [
+        {% for template_id in config.template.manufactured_product.template_id %}
+          {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+        {% endfor %}
+        ],
+        "manufacturedMaterial": {
+          "code": {
+            "@code": "{{ resource.medication.concept.coding[0].code }}",
+            "@codeSystem": "{{ resource.medication.concept.coding[0].system | map_system: 'fhir_to_cda' }}",
+            "@displayName": "{{ resource.medication.concept.coding[0].display }}",
+            "originalText": {
+              "reference": {"@value": "{{ text_reference_name }}"}
+            }
+          }
+        }
+      }
+    },
+    "entryRelationship": {
+      "@typeCode": "REFR",
+      "observation": {
+        "@classCode": "OBS",
+        "@moodCode": "EVN",
+        "templateId": {"@root": "{{ config.template.clinical_status_obs.template_id }}"},
+        "code": {
+          "@code": "{{ config.template.clinical_status_obs.code }}",
+          "@codeSystem": "{{ config.template.clinical_status_obs.code_system }}",
+          "@codeSystemName": "{{ config.template.clinical_status_obs.code_system_name }}",
+          "@displayName": "{{ config.template.clinical_status_obs.display_name }}"
+        },
+        "value": {
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@code": "{{ config.template.clinical_status_obs.value.code }}",
+          "@codeSystem": "{{ config.template.clinical_status_obs.value.code_system }}",
+          "@codeSystemName": "{{ config.template.clinical_status_obs.value.code_system_name }}",
+          "@xsi:type": "CE",
+          "@displayName": "{{ config.template.clinical_status_obs.value.display_name }}"
+        },
+        "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code }}"},
+        "effectiveTime": {
+          "low": {"@value": "{{ timestamp }}"}
+        }
+      }
+    }
+  }
+}

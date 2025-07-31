@@ -1,0 +1,12 @@
+# Clinical status codes (FHIR to CDA)
+"active":
+  code: "55561003"
+  display: "Active"
+
+"resolved":
+  code: "413322009"
+  display: "Resolved"
+
+"inactive":
+  code: "73425007"
+  display: "Inactive"

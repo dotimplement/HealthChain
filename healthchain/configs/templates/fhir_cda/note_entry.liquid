@@ -1,0 +1,23 @@
+{
+  "component": {
+    "section": {
+      "templateId": [
+        {% for template_id in config.template.note_section.template_id %}
+        {"@root": "{{ template_id }}"} {% if forloop.last != true %},{% endif %}
+        {% endfor %}
+      ],
+      "code": {
+        "@code": "{{ resource.type.coding[0].code | default: config.template.note_section.code }}",
+        "@codeSystem": "{{ resource.type.coding[0].system | map_system: 'fhir_to_cda' | default: config.template.note_section.code_system }}",
+        "@displayName": "{{ resource.type.coding[0].display | default: config.template.note_section.display_name }}"
+      },
+      "title": "{{ resource.content[0].attachment.title }}",
+      {% if resource.date %}
+      "effectiveTime": {
+        "@value": "{{ resource.date | format_date: 'cda' }}"
+      },
+      {% endif %}
+      "text": {{ resource.content[0].attachment.data | from_base64 | json }}
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "act": {
+    "@classCode": "ACT",
+    "@moodCode": "EVN",
+    "templateId": [
+    {% for template_id in config.template.act.template_id %}
+      {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+    {% endfor %}
+    ],
+    {% if resource.id %}
+    "id": {"@root": "{{ resource.id }}"},
+    {% endif %}
+    "code": {"@nullFlavor": "NA"},
+    "statusCode": {
+      "@code": "{{ config.template.act.status_code }}"
+    },
+    "effectiveTime": {
+      "low": {"@value": "{{ timestamp }}"}
+    },
+    "entryRelationship": {
+      "@typeCode": "{{ config.template.problem_obs.type_code }}",
+      "@inversionInd": {{ config.template.problem_obs.inversion_ind }},
+      "observation": {
+        "@classCode": "OBS",
+        "@moodCode": "EVN",
+        "templateId": [
+        {% for template_id in config.template.problem_obs.template_id %}
+          {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+        {% endfor %}
+        ],
+        {% if resource.id %}
+        "id": {"@root": "{{ resource.id }}_obs"},
+        {% endif %}
+        "code": {
+          "@code": "{{ config.template.problem_obs.code }}",
+          "@codeSystem": "{{ config.template.problem_obs.code_system }}",
+          "@codeSystemName": "{{ config.template.problem_obs.code_system_name }}",
+          "@displayName": "{{ config.template.problem_obs.display_name }}"
+        },
+        "text": {
+          "reference": {"@value": "{{ text_reference_name }}"}
+        },
+        "statusCode": {"@code": "{{ config.template.problem_obs.status_code }}"},
+        "effectiveTime": {
+          {% if resource.onsetDateTime and resource.abatementDateTime %}
+            "low": {"@value": "{{ resource.onsetDateTime }}"},
+            "high": {"@value": "{{ resource.abatementDateTime }}"}
+          {% elsif resource.onsetDateTime %}
+            "low": {"@value": "{{ resource.onsetDateTime }}"}
+          {% elsif resource.abatementDateTime %}
+            "high": {"@value": "{{ resource.abatementDateTime }}"}
+          {% endif %}
+        },
+        "value": {
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@xsi:type": "CD",
+          "@code": "{{ resource.code.coding[0].code }}",
+          "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
+          "@displayName": "{{ resource.code.coding[0].display }}",
+          "originalText": {
+            "reference": {"@value": "{{ text_reference_name }}"}
+          }
+        },
+        "entryRelationship": {
+          "@typeCode": "REFR",
+          "observation": {
+            "@classCode": "OBS",
+            "@moodCode": "EVN",
+            "templateId": {"@root": "{{ config.template.clinical_status_obs.template_id }}"},
+            "code": {
+              "@code": "{{ config.template.clinical_status_obs.code }}",
+              "@codeSystem": "{{ config.template.clinical_status_obs.code_system }}",
+              "@codeSystemName": "{{config.template.clinical_status_obs.code_system_name }}",
+              "@displayName": "{{ config.template.clinical_status_obs.display_name }}"
+            },
+            "value": {
+              "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+              "@code": "{{ resource.clinicalStatus.coding[0].code | map_status: 'fhir_to_cda' }}",
+              "@codeSystem": "{{ resource.clinicalStatus.coding[0].system | map_system: 'fhir_to_cda' }}",
+              "@displayName": "{{ resource.clinicalStatus.coding[0].display }}",
+              "@xsi:type": "CE"
+            },
+            "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code }}"},
+            "effectiveTime": {
+              "low": {"@value": "{{ timestamp }}"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

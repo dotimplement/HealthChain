@@ -1,0 +1,204 @@
+{
+  "act": {
+    "@classCode": "ACT",
+    "@moodCode": "EVN",
+    "templateId": [
+    {% for template_id in config.template.act.template_id %}
+      {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+    {% endfor %}
+    ],
+    {% if resource.id %}
+    "id": {"@root": "{{ resource.id }}"},
+    {% endif %}
+    "code": {"@nullFlavor": "NA"},
+    "statusCode": {
+      "@code": "{{ config.template.act.status_code }}"
+    },
+    "effectiveTime": {
+      "low": {"@value": "{{ timestamp }}"}
+    },
+    "entryRelationship": {
+      "@typeCode": "{{ config.template.allergy_obs.type_code }}",
+      "@inversionInd": {{ config.template.allergy_obs.inversion_ind }},
+      "observation": {
+        "@classCode": "OBS",
+        "@moodCode": "EVN",
+        "templateId": [
+        {% for template_id in config.template.allergy_obs.template_id %}
+          {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+        {% endfor %}
+        ],
+        {% if resource.id %}
+        "id": {"@root": "{{ resource.id }}_obs"},
+        {% endif %}
+        "text": {
+          "reference": {"@value": "{{ text_reference_name }}"}
+        },
+        "statusCode": {"@code": "{{ config.template.allergy_obs.status_code }}"},
+        "effectiveTime": {
+          "low": {"@value": "{{ timestamp }}"}
+        },
+        {% if resource.type %}
+        "code": {
+          "@code": "{{ resource.type.coding[0].code }}",
+          "@codeSystem": "{{ resource.type.coding[0].system | map_system: 'fhir_to_cda' }}",
+          "@displayName": "{{ resource.type.coding[0].display }}"
+        },
+        {% else %}
+        "code": {
+          "@code": "{{ config.template.allergy_obs.code }}",
+          "@codeSystem": "{{ config.template.allergy_obs.code_system }}",
+          "@codeSystemName": "{{ config.template.allergy_obs.code_system_name }}",
+          "@displayName": "{{ config.template.allergy_obs.display_name }}"
+        },
+        {% endif %}
+        "value": {
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@xsi:type": "CD",
+          "@code": "{{ resource.code.coding[0].code }}",
+          "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
+          "@displayName": "{{ resource.code.coding[0].display }}",
+          "originalText": {
+            "reference": {"@value": "{{ text_reference_name }}"}
+          }
+        },
+        "participant": {
+          "@typeCode": "CSM",
+          "participantRole": {
+            "@classCode": "MANU",
+            "playingEntity": {
+              "@classCode": "MMAT",
+              "code": {
+                "originalText": {
+                  "reference": {"@value": "{{ text_reference_name }}"}
+                },
+                "@code": "{{ resource.code.coding[0].code }}",
+                "@codeSystem": "{{ resource.code.coding[0].system | map_system: 'fhir_to_cda' }}",
+                "@displayName": "{{ resource.code.coding[0].display }}"
+              },
+              "name": "{{ resource.code.coding[0].display }}"
+            }
+          }
+        }{% if resource.clinicalStatus or resource.reaction %},{% endif %}
+
+        {% if resource.reaction %}
+        "entryRelationship": [
+          {
+            "@typeCode": "REFR",
+            "@inversionInd": true,
+            "observation": {
+              "@classCode": "OBS",
+              "@moodCode": "EVN",
+              "templateId": {"@root": "{{config.template.clinical_status_obs.template_id}}"},
+              "code": {
+                "@code": "{{ config.template.clinical_status_obs.code }}",
+                "@codeSystem": "{{ config.template.clinical_status_obs.code_system }}",
+                "@displayName": "{{ config.template.clinical_status_obs.display_name }}"
+              },
+              "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code }}"},
+              "value": {
+                "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "@xsi:type": "CE",
+                "@code": "{{ resource.clinicalStatus.coding[0].code | map_status: 'fhir_to_cda' }}",
+                "@codeSystem": "{{ resource.clinicalStatus.coding[0].system | map_system: 'fhir_to_cda' }}",
+                "@displayName": "{{ resource.clinicalStatus.coding[0].display }}"
+              }
+            }
+          },
+          {
+            "@typeCode": "MFST",
+            "observation": {
+              "@classCode": "OBS",
+              "@moodCode": "EVN",
+              "templateId": [
+              {% for template_id in config.template.reaction_obs.template_id %}
+                {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+              {% endfor %}
+              ],
+              "id": {"@root": "{{ resource.id }}_reaction"},
+              "code": {"@code": "{{ config.template.reaction_obs.code }}"},
+              "text": {
+                "reference": {"@value": "{{ text_reference_name }}reaction"}
+              },
+              "statusCode": {"@code": "{{ config.template.reaction_obs.status_code }}"},
+              "effectiveTime": {
+                "low": {"@value": "{{ timestamp }}"}
+              },
+              "value": {
+                "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "@xsi:type": "CD",
+                "@code": "{{ resource.reaction[0].manifestation[0].concept.coding[0].code }}",
+                "@codeSystem": "{{ resource.reaction[0].manifestation[0].concept.coding[0].system | map_system: 'fhir_to_cda' }}",
+                "@displayName": "{{ resource.reaction[0].manifestation[0].concept.coding[0].display }}",
+                "originalText": {
+                  "reference": {"@value": "{{ text_reference_name }}reaction"}
+                }
+              }{% if resource.reaction[0].severity %},
+              "entryRelationship": {
+                "@typeCode": "SUBJ",
+                "observation": {
+                  "@classCode": "OBS",
+                  "@moodCode": "EVN",
+                  "templateId": [
+                  {% for template_id in config.template.severity_obs.template_id %}
+                    {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+                  {% endfor %}
+                  ],
+                  "code": {
+                    "@code": "{{ config.template.severity_obs.code }}",
+                    "@codeSystem": "{{ config.template.severity_obs.code_system }}",
+                    "@codeSystemName": "{{ config.template.severity_obs.code_system_name }}",
+                    "@displayName": "{{ config.template.severity_obs.display_name }}"
+                  },
+                  "text": {
+                    "reference": {"@value": "{{ text_reference_name }}severity"}
+                  },
+                  "statusCode": {"@code": "{{ config.template.severity_obs.status_code }}"},
+                  "value": {
+                    "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                    "@xsi:type": "CD",
+                    "@code": "{{ resource.reaction[0].severity | map_severity: 'fhir_to_cda'}}",
+                    "@codeSystem": "{{ config.template.severity_obs.value.code_system }}",
+                    "@codeSystemName": "{{ config.template.severity_obs.value.code_system_name }}",
+                    "@displayName": "{{ resource.reaction[0].severity | map_severity: 'fhir_to_cda'}}"
+                  }
+                }
+              }
+              {% endif %}
+            }
+          }
+        ]
+        {% else %}
+        {% if resource.clinicalStatus %}
+        "entryRelationship": {
+          "@typeCode": "REFR",
+          "@inversionInd": true,
+          "observation": {
+            "@classCode": "OBS",
+            "@moodCode": "EVN",
+            "templateId": [
+            {% for template_id in config.template.clinical_status_obs.template_id %}
+              {"@root": "{{template_id}}"} {% if forloop.last != true %},{% endif %}
+            {% endfor %}
+            ],
+            "code": {
+              "@code": "{{ config.template.clinical_status_obs.code }}",
+              "@codeSystem": "{{ config.template.clinical_status_obs.code_system }}",
+              "@displayName": "{{ config.template.clinical_status_obs.display_name }}"
+            },
+            "statusCode": {"@code": "{{ config.template.clinical_status_obs.status_code }}"},
+            "value": {
+              "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+              "@xsi:type": "CE",
+              "@code": "{{ resource.clinicalStatus.coding[0].code }}",
+              "@codeSystem": "{{ resource.clinicalStatus.coding[0].system | map_system: 'fhir_to_cda' }}",
+              "@displayName": "{{ resource.clinicalStatus.coding[0].display }}"
+            }
+          }
+        }
+        {% endif %}
+        {% endif %}
+      }
+    }
+  }
+}

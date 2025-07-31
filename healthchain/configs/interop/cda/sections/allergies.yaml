@@ -1,0 +1,89 @@
+# Allergies Section Configuration
+# ========================
+
+# Metadata for both extraction and rendering processes
+resource: "AllergyIntolerance"
+resource_template: "cda_fhir/allergy_intolerance"
+entry_template: "fhir_cda/allergy_entry"
+
+# Section identifiers (used for extraction)
+identifiers:
+  template_id: "2.16.840.1.113883.10.20.1.2"
+  code: "48765-2"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Allergies"
+  reaction:
+    template_id: "1.3.6.1.4.1.19376.1.5.3.1.4.5"
+  severity:
+    template_id: "1.3.6.1.4.1.19376.1.5.3.1.4.1"
+
+# Template configuration (used for rendering/generation)
+template:
+  # Act element configuration
+  act:
+    template_id:
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5.1"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5.3"
+      - "2.16.840.1.113883.3.88.11.32.6"
+      - "2.16.840.1.113883.3.88.11.83.6"
+    status_code: "active"
+
+  # Allergy observation configuration
+  allergy_obs:
+    type_code: "SUBJ"
+    inversion_ind: false
+    template_id:
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.6"
+      - "2.16.840.1.113883.10.20.1.18"
+      - "1.3.6.1.4.1.19376.1.5.3.1"
+      - "2.16.840.1.113883.10.20.1.28"
+    code: "420134006"
+    code_system: "2.16.840.1.113883.6.96"
+    code_system_name: "SNOMED CT"
+    display_name: "Propensity to adverse reactions"
+    status_code: "completed"
+
+  # Reaction observation configuration
+  reaction_obs:
+    template_id:
+      - "2.16.840.1.113883.10.20.1.54"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.5"
+    code: "RXNASSESS"
+    status_code: "completed"
+
+  # Severity observation configuration
+  severity_obs:
+    template_id:
+      - "2.16.840.1.113883.10.20.1.55"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.1"
+    code: "SEV"
+    code_system: "2.16.840.1.113883.5.4"
+    code_system_name: "ActCode"
+    display_name: "Severity"
+    status_code: "completed"
+    value:
+      code_system: "2.16.840.1.113883.5.1063"
+      code_system_name: "SeverityObservation"
+
+  # Clinical status observation configuration
+  clinical_status_obs:
+    template_id:
+      - "2.16.840.1.113883.10.20.1.39"
+    code: "33999-4"
+    code_system: "2.16.840.1.113883.6.1"
+    code_system_name: "LOINC"
+    display_name: "Status"
+    status_code: "completed"
+
+# Rendering configuration (not used)
+rendering:
+  narrative:
+    include: true
+    template: "narratives/allergy_narrative"
+  entry:
+    include_status: true
+    include_reaction: true
+    include_severity: true
+    include_dates: true
