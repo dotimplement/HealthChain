@@ -3,7 +3,7 @@ from typing import Optional
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseAdapter
-from healthchain.interop import create_engine, FormatType, InteropEngine
+from healthchain.interop import create_interop, FormatType, InteropEngine
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.fhir import (
@@ -50,7 +50,7 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
                                             If None, creates a default engine.
         """
         # Initialize engine with default if not provided
-        initialized_engine = engine or create_engine()
+        initialized_engine = engine or create_interop()
         super().__init__(engine=initialized_engine)
         self.engine = initialized_engine
         self.original_cda = None

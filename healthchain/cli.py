@@ -20,8 +20,8 @@ def init_configs(target_dir: str):
         print("\n📖 Next steps:")
         print("  1. Customize the configuration files in the created directory")
         print("  2. Use them in your code:")
-        print("     from healthchain.interop import create_engine")
-        print(f"     engine = create_engine(config_dir='{target_dir}')")
+        print("     from healthchain.interop import create_interop")
+        print(f"     engine = create_interop(config_dir='{target_dir}')")
         print("\n📚 See documentation for configuration options")
 
     except FileExistsError as e:

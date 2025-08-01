@@ -78,14 +78,14 @@ def init_config_templates(target_dir: str = "./healthchain_configs") -> Path:
     try:
         shutil.copytree(source, target)
         print(f"✅ Configuration templates copied to {target}")
-        print(f"📝 Customize them, then use: create_engine(config_dir='{target}')")
+        print(f"📝 Customize them, then use: create_interop(config_dir='{target}')")
         print("📚 See documentation for configuration options")
         return target
     except Exception as e:
         raise OSError(f"Failed to copy configuration templates: {str(e)}")
 
 
-def create_engine(
+def create_interop(
     config_dir: Optional[Union[str, Path]] = None,
     validation_level: str = "strict",
     environment: str = "development",
@@ -147,6 +147,6 @@ __all__ = [
     "CDAGenerator",
     "FHIRGenerator",
     # Factory functions
-    "create_engine",
+    "create_interop",
     "init_config_templates",
 ]
