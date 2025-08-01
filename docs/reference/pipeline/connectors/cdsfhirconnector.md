@@ -1,6 +1,10 @@
-# CDS FHIR Connector
+# CDS FHIR Connector (Legacy)
+
+> **⚠️ Deprecated:** `CdsFhirConnector` is deprecated. Use [`CdsFhirAdapter`](../adapters/cdsfhiradapter.md) for new projects, which provides explicit control over data conversion and enables pure `Document → Document` pipeline processing.
 
 The `CdsFhirConnector` handles FHIR data in the context of Clinical Decision Support (CDS) services, specifically using the [CDS Hooks specification](https://cds-hooks.org/).
+
+**For new projects, use [`CdsFhirAdapter`](../adapters/cdsfhiradapter.md) instead.**
 
 [(Full Documentation on Clinical Decision Support)](../../gateway/cdshooks.md)
 

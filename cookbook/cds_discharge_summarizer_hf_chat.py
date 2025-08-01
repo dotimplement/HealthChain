@@ -57,7 +57,7 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
     @hc.api
     def my_service(self, request: CDSRequest) -> CDSResponse:
         # Process the request through our pipeline
-        result = self.pipeline(request)
+        result = self.pipeline.process_request(request)
         return result
 
 

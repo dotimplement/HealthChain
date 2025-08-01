@@ -1,0 +1,12 @@
+# Allergy and reaction severity codes (FHIR to CDA)
+"severe":
+  code: "H"
+  display: "Severe"
+
+"moderate":
+  code: "M"
+  display: "Moderate"
+
+"mild":
+  code: "L"
+  display: "Mild"

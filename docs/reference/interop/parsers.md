@@ -24,10 +24,10 @@ The input data should be in the format `{<section_key>}: {<section_entries>}`.
 ### Usage Examples
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Parse a CDA document directly to FHIR
 with open("tests/data/test_cda.xml", "r") as f:
@@ -193,7 +193,7 @@ cda:
 You can create a custom parser by implementing a class that inherits from `BaseParser` and registering it with the engine (this will replace the default parser for the format type):
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.interop.config_manager import InteropConfigManager
 from healthchain.interop.parsers.base import BaseParser
 
@@ -206,6 +206,6 @@ class CustomParser(BaseParser):
         return {"structured_data": "example"}
 
 # Register the custom parser with the engine
-engine = create_engine()
+engine = create_interop()
 engine.register_parser(FormatType.CDA, CustomParser(engine.config))
 ```

@@ -94,10 +94,10 @@ The `severity_codes.yaml` file maps severity designations between formats:
 The `InteropEngine` automatically loads and applies mappings during the conversion process. You can also access mappings directly through the configuration manager:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Get all mappings
 mappings = engine.config.get_mappings()

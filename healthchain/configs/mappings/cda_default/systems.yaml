@@ -1,0 +1,23 @@
+"http://snomed.info/sct":
+  oid: "2.16.840.1.113883.6.96"
+  name: "SNOMED CT"
+
+"http://loinc.org":
+  oid: "2.16.840.1.113883.6.1"
+  name: "LOINC"
+
+"http://www.nlm.nih.gov/research/umls/rxnorm":
+  oid: "2.16.840.1.113883.6.88"
+  name: "RxNorm"
+
+"http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl":
+  oid: "2.16.840.1.113883.3.26.1.1"
+  name: "NCI Thesaurus"
+
+"http://terminology.hl7.org/CodeSystem/condition-clinical":
+  oid: "2.16.840.1.113883.6.96"
+  name: "SNOMED CT"
+
+"http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical":
+  oid: "2.16.840.1.113883.6.96"
+  name: "SNOMED CT"

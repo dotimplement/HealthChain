@@ -1,0 +1,33 @@
+# Development Environment Configuration
+# This file contains settings specific to the development environment
+# TODO: Implement
+
+# Logging settings for development
+logging:
+  level: "DEBUG"
+  include_timestamps: true
+  console_output: true
+  file_output: false
+
+# Error handling for development
+errors:
+  retry_count: 1
+  fail_on_critical: true
+  verbose_errors: true
+
+# Performance settings for development
+performance:
+  cache_templates: false  # Disable caching for easier template development
+  cache_mappings: false   # Disable caching for easier mapping development
+  batch_size: 10          # Smaller batch size for easier debugging
+
+# Default resource fields for development
+defaults:
+  common:
+    id_prefix: "dev-"     # Development-specific ID prefix
+    subject:
+      reference: "Patient/Foo"
+
+# Template settings for development
+templates:
+  reload_on_change: true  # Automatically reload templates when they change

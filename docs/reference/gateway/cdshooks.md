@@ -103,3 +103,59 @@ When registered with HealthChainAPI, the following endpoints are automatically c
 - `MedicationRequest`
 
 For more information, see the [official CDS Hooks documentation](https://cds-hooks.org/).
+
+## Advanced Workflow Example
+
+This example demonstrates how to build a custom CDS Hooks workflow that performs advanced clinical analysis and generates tailored decision support cards. By combining adapters and a custom pipeline, you can process incoming FHIR data, apply your own logic (such as risk assessment), and return dynamic CDS cards to the EHR.
+
+```python
+from healthchain.io import CdsFhirAdapter, Document
+from healthchain.pipeline import Pipeline
+from healthchain.pipeline.components import CdsCardCreator
+from healthchain.models import CDSRequest, CDSResponse
+from healthchain.gateway import HealthChainAPI, CDSHooksService
+
+# Build custom pipeline with analysis and card creation
+pipeline = Pipeline([Document])
+
+@pipeline.add_node
+def analyze_patient_data(doc: Document) -> Document:
+    """Custom function to analyze patient data and document content"""
+    # Access FHIR prefetch resources
+    patient = doc.fhir.get_prefetch_resources("patient")
+    document_ref = doc.fhir.get_prefetch_resources("document")
+
+    # Perform custom analysis
+    if patient:
+        age = 2024 - int(patient.birthDate[:4])  # Simple age calculation
+        if age > 65:
+            doc._custom_analysis = {"high_risk": True, "reason": "Age > 65"}
+        else:
+            doc._custom_analysis = {"high_risk": False}
+    return doc
+
+# Add card creator to format output
+pipeline.add_node(CdsCardCreator(
+    template='{"summary": "Risk Assessment", "detail": "Patient risk level: {{ high_risk }}"}'
+))
+
+pipe = pipeline.build()
+
+# Set up CDS service with custom workflow
+app = HealthChainAPI()
+cds = CDSHooksService()
+
+@cds.hook("encounter-discharge", id="risk-assessment")
+def assess_patient_risk(request: CDSRequest) -> CDSResponse:
+    # Use adapter for explicit format conversion
+    adapter = CdsFhirAdapter()
+
+    # Manual conversion with full document access
+    doc = adapter.parse(request)        # CDSRequest → Document
+    processed_doc = pipe(doc)           # Custom analysis + card creation
+
+    # Convert back to CDS response
+    return adapter.format(processed_doc)  # Document → CDSResponse
+
+app.register_service(cds, path="/cds")
+```

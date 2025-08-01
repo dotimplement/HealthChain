@@ -2,19 +2,16 @@ from unittest.mock import patch
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.pipeline.base import ModelConfig, ModelSource
 from healthchain.pipeline.summarizationpipeline import SummarizationPipeline
+from healthchain.io.containers import Document
 
 
 def test_summarization_pipeline(
-    mock_cds_fhir_connector,
     mock_hf_transformer,
     mock_cds_card_creator,
-    test_cds_request,
-    test_condition,
+    test_document,
 ):
+    """Test pure pipeline processing (Document → Document)"""
     with patch(
-        "healthchain.pipeline.summarizationpipeline.CdsFhirConnector",
-        mock_cds_fhir_connector,
-    ), patch(
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
         mock_hf_transformer,
     ), patch(
@@ -31,19 +28,11 @@ def test_summarization_pipeline(
         )
         pipeline.configure_pipeline(config)
 
-        # Process the request through the pipeline
-        cds_response = pipeline(test_cds_request)
+        # Process Document through pure pipeline
+        result_doc = pipeline(test_document)
 
-        # Assertions
-        assert isinstance(cds_response, CDSResponse)
-        assert len(cds_response.cards) == 1
-        assert cds_response.cards[0].summary == "Summarized discharge information"
-
-        # Verify that CdsFhirConnector methods were called correctly
-        mock_cds_fhir_connector.return_value.input.assert_called_once_with(
-            test_cds_request
-        )
-        mock_cds_fhir_connector.return_value.output.assert_called_once()
+        # Assertions - pipeline should return processed Document
+        assert isinstance(result_doc, Document)
 
         # Verify that the LLM was called
         mock_hf_transformer.assert_called_once_with(
@@ -65,20 +54,59 @@ def test_summarization_pipeline(
             delimiter="\n",
         )
 
-        # Verify the pipeline used the mocked input and output
-        input_data = mock_cds_fhir_connector.return_value.input.return_value
-
-        assert input_data.fhir.get_prefetch_resources("problem") == test_condition
-
         # Verify stages are set correctly
         assert len(pipeline._stages) == 2
         assert "summarization" in pipeline._stages
         assert "card-creation" in pipeline._stages
 
 
+def test_summarization_pipeline_process_request(
+    mock_hf_transformer,
+    mock_cds_card_creator,
+    mock_cds_fhir_adapter,
+    test_cds_request,
+):
+    """Test process_request method with adapter"""
+    with patch(
+        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+        mock_hf_transformer,
+    ), patch(
+        "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
+        mock_cds_card_creator,
+    ), patch(
+        "healthchain.io.CdsFhirAdapter",
+        mock_cds_fhir_adapter,
+    ):
+        pipeline = SummarizationPipeline()
+        config = ModelConfig(
+            source=ModelSource.HUGGINGFACE,
+            pipeline_object="llama3",
+            task="summarization",
+            path=None,
+            kwargs={},
+        )
+        pipeline.configure_pipeline(config)
+
+        # Process via convenience method
+        cds_response = pipeline.process_request(test_cds_request)
+
+        # Assertions
+        assert isinstance(cds_response, CDSResponse)
+
+        # Verify adapter was used correctly
+        mock_cds_fhir_adapter.return_value.parse.assert_called_once_with(
+            test_cds_request
+        )
+        mock_cds_fhir_adapter.return_value.format.assert_called_once()
+
+        # Verify model was called
+        mock_hf_transformer.return_value.assert_called_once()
+
+
 def test_full_summarization_pipeline_integration(
     mock_hf_transformer, test_cds_request, tmp_path
 ):
+    """Test integration with process_request method"""
     # Use mock LLM object for now
     with patch(
         "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
@@ -100,7 +128,8 @@ def test_full_summarization_pipeline_integration(
             "llama3", source="huggingface", template_path=template_file
         )
 
-        cds_response = pipeline(test_cds_request)
+        # Use process_request for end-to-end processing
+        cds_response = pipeline.process_request(test_cds_request)
 
         assert isinstance(cds_response, CDSResponse)
         assert len(cds_response.cards) == 1

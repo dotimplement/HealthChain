@@ -1,0 +1,72 @@
+# Medications Section Configuration
+# ========================
+
+# Metadata for both extraction and rendering processes
+resource: "MedicationStatement"
+resource_template: "cda_fhir/medication_statement"
+entry_template: "fhir_cda/medication_entry"
+
+# Section identifiers (used for extraction)
+identifiers:
+  template_id: "2.16.840.1.113883.10.20.1.8"
+  code: "10160-0"
+  code_system: "2.16.840.1.113883.6.1"
+  code_system_name: "LOINC"
+  display: "Medications"
+  clinical_status:
+    template_id: "2.16.840.1.113883.10.20.1.47"
+    code: "33999-4"
+
+# Template configuration (used for rendering/generation)
+template:
+  # Substance administration configuration
+  substance_admin:
+    template_id:
+      - "2.16.840.1.113883.10.20.1.24"
+      - "2.16.840.1.113883.3.88.11.83.8"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.7"
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.7.1"
+      - "2.16.840.1.113883.3.88.11.32.8"
+    status_code: "completed"
+
+  # Manufactured product configuration
+  manufactured_product:
+    template_id:
+      - "1.3.6.1.4.1.19376.1.5.3.1.4.7.2"
+      - "2.16.840.1.113883.10.20.1.53"
+      - "2.16.840.1.113883.3.88.11.32.9"
+      - "2.16.840.1.113883.3.88.11.83.8.2"
+
+  # Clinical status observation configuration
+  clinical_status_obs:
+    template_id: "2.16.840.1.113883.10.20.1.47"
+    status_code: "completed"
+    code: "33999-4"
+    code_system: "2.16.840.1.113883.6.1"
+    code_system_name: "LOINC"
+    display_name: "Status"
+    value:
+      code: "755561003"
+      code_system: "2.16.840.1.113883.6.96"
+      code_system_name: "SNOMED CT"
+      display_name: "Active"
+
+# Rendering configuration
+rendering:
+  narrative:
+    include: true
+    template: "narratives/medication_narrative"
+  entry:
+    include_status: true
+    include_dates: true
+    include_dosage: true
+    include_route: true
+    include_frequency: true
+
+# Default values for template
+defaults:
+  status_code: "active"
+  type_code: "REFR"
+  medication_status_code: "755561003"
+  medication_status_display: "Active"
+  medication_status_system: "2.16.840.1.113883.6.96"

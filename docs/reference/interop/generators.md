@@ -20,11 +20,11 @@ The CDA Generator produces Clinical Document Architecture (CDA) XML documents fr
 ### Usage Examples
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.fhir import create_condition
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Use the FHIR helper functions to create a condition resource
 condition = create_condition(
@@ -50,10 +50,10 @@ The FHIR Generator transforms data from other formats into FHIR resources. It cu
 ### Usage Examples
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # CDA section entries in dictionary format (@ is used to represent XML attributes)
 cda_section_entries = {
@@ -203,7 +203,7 @@ The HL7v2 Generator produces HL7 version 2 messages from FHIR resources (Coming 
 You can create a custom generator by implementing a class that inherits from `BaseGenerator` and registering it with the engine (this will replace the default generator for the format type):
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.interop.config_manager import InteropConfigManager
 from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.generators import BaseGenerator
@@ -221,6 +221,6 @@ class CustomGenerator(BaseGenerator):
         return "Custom output format"
 
 # Register the custom generator with the engine
-engine = create_engine()
+engine = create_interop()
 engine.register_generator(FormatType.CDA, CustomGenerator(engine.config, engine.template_registry))
 ```

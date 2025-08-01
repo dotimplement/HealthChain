@@ -49,10 +49,10 @@ The main conversion methods are (hold on to your hats):
 - `.from_fhir()` - Convert FHIR resources to a destination format
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
 # Create an interoperability engine
-engine = create_engine()
+engine = create_interop()
 
 # Convert CDA XML to FHIR resources
 with open('patient_ccd.xml', 'r') as f:
@@ -98,7 +98,7 @@ You can customize the engine's behavior for different environments:
 
 ```python
 # Create an engine with specific environment settings
-engine = create_engine(
+engine = create_interop(
     config_dir=Path("/path/to/custom/configs"),
     validation_level="warn",  # Options: strict, warn, ignore
     environment="production"  # Options: development, testing, production

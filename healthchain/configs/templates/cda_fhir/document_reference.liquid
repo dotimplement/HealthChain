@@ -1,0 +1,22 @@
+{
+  "resourceType": "DocumentReference",
+  "status": "current",
+  "type": {
+    "coding": [{
+      "system": "{{ entry.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ entry.code['@code'] }}",
+      "display": "{{ entry.code['@displayName'] }}"
+    }]
+  },
+  {% if entry.effectiveTime %}
+  "date": "{{ entry.effectiveTime['@value'] | format_timestamp }}",
+  {% endif %}
+  "description": "{{ config.rendering.narrative.description }}",
+  "content": [{
+    "attachment": {
+      "contentType": "text/plain",
+      "data": "{{ entry.text | xmldict_to_html | to_base64 }}",
+      "title": "{{ entry.title }}"
+    }
+  }]
+}

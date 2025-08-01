@@ -2,7 +2,7 @@ import logging
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseConnector
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.fhir import (
@@ -43,7 +43,7 @@ class CdaConnector(BaseConnector):
     """
 
     def __init__(self, config_dir: str = None):
-        self.engine = create_engine(config_dir=config_dir)
+        self.engine = create_interop(config_dir=config_dir)
         self.original_cda = None
         self.note_document_reference = None
 

@@ -35,7 +35,7 @@ If you are using a chat model, we recommend you initialize the pipeline with the
 
 === "Non-chat model"
     ```python
-    from healthchain.pipelines import SummarizationPipeline
+    from healthchain.pipeline import SummarizationPipeline
 
     pipeline = SummarizationPipeline.from_model_id(
       "google/pegasus-xsum", source="huggingface", task="summarization"
@@ -45,7 +45,7 @@ If you are using a chat model, we recommend you initialize the pipeline with the
 
 === "Chat model"
     ```python
-    from healthchain.pipelines import SummarizationPipeline
+    from healthchain.pipeline import SummarizationPipeline
 
     from langchain_huggingface.llms import HuggingFaceEndpoint
     from langchain_huggingface import ChatHuggingFace
@@ -96,7 +96,7 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
 
     @hc.api
     def my_service(self, request: CDSRequest) -> CDSResponse:
-        result = self.pipeline(request)
+        result = self.pipeline.process_request(request)
         return result
 ```
 
@@ -147,7 +147,7 @@ class DischargeNoteSummarizer(ClinicalDecisionSupport):
 
   @hc.api
   def my_service(self, request: CDSRequest) -> CDSResponse:
-    result = self.pipeline(request)
+    result = self.pipeline.process_request(request)
     return result
 
   @hc.ehr(workflow="encounter-discharge")

@@ -5,7 +5,7 @@ from healthchain.io.containers import Document
 from fhir.resources.documentreference import DocumentReference
 
 
-@patch("healthchain.io.cdaconnector.create_engine")
+@patch("healthchain.io.cdaconnector.create_interop")
 @patch("healthchain.io.cdaconnector.create_document_reference")
 @patch("healthchain.io.cdaconnector.read_content_attachment")
 @patch("healthchain.io.cdaconnector.set_problem_list_item_category")
@@ -15,7 +15,7 @@ def test_input(
     mock_set_problem_category,
     mock_read_content,
     mock_create_doc_ref,
-    mock_create_engine,
+    mock_create_interop,
     cda_connector,
     test_condition,
     test_medication,
@@ -23,7 +23,7 @@ def test_input(
 ):
     # Create mock engine
     mock_engine = Mock()
-    mock_create_engine.return_value = mock_engine
+    mock_create_interop.return_value = mock_engine
 
     # Mock document reference content extraction
     mock_read_content.return_value = [{"data": "Extracted note text"}]
@@ -108,13 +108,13 @@ def test_input(
     assert result is mock_doc
 
 
-@patch("healthchain.io.cdaconnector.create_engine")
+@patch("healthchain.io.cdaconnector.create_interop")
 def test_output(
-    mock_create_engine, cda_connector, test_condition, test_medication, test_allergy
+    mock_create_interop, cda_connector, test_condition, test_medication, test_allergy
 ):
     # Create mock engine
     mock_engine = Mock()
-    mock_create_engine.return_value = mock_engine
+    mock_create_interop.return_value = mock_engine
 
     # Configure mock engine to return CDA XML
     mock_engine.from_fhir.return_value = "<xml>Updated CDA</xml>"

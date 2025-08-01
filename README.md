@@ -163,27 +163,32 @@ result = nlp(Document("Patient has a history of heart attack and high blood pres
 print(f"Entities: {result.nlp.get_entities()}")
 ```
 
-#### Adding connectors
-Connectors give your pipelines the ability to interface with EHRs.
+#### Working with healthcare data formats
+Adapters handle conversion between healthcare formats (CDA, FHIR) and internal Document objects for seamless EHR integration.
 
 ```python
-from healthchain.io import CdaConnector
+from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
 
-cda_connector = CdaConnector()
+adapter = CdaAdapter()
 
-pipeline.add_input(cda_connector)
-pipeline.add_output(cda_connector)
+# Parse healthcare data into Document
+cda_request = CdaRequest(document="<CDA XML content>")
+doc = adapter.parse(cda_request)
 
-pipe = pipeline.build()
+# Process with your pipeline
+processed_doc = nlp_pipeline(doc)
 
-cda_data = CdaRequest(document="<CDA XML content>")
-output = pipe(cda_data)
-# output: CdsResponse model
+# Access extracted clinical data
+print(f"Problems: {processed_doc.fhir.problem_list}")
+print(f"Medications: {processed_doc.fhir.medication_list}")
+
+# Convert back to healthcare format
+response = adapter.format(processed_doc)
 ```
 
 ### Using pre-built pipelines
-Pre-built pipelines are use case specific end-to-end workflows that already have connectors and models built-in.
+Pre-built pipelines are use case specific end-to-end workflows optimized for common healthcare AI tasks.
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
@@ -194,11 +199,17 @@ pipeline = MedicalCodingPipeline.from_model_id(
     model="blaze999/Medical-NER", task="token-classification", source="huggingface"
 )
 
-# Or load from local model
-pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
+# Simple end-to-end processing
+cda_request = CdaRequest(document="<CDA XML content>")
+response = pipeline.process_request(cda_request)
 
-cda_data = CdaRequest(document="<CDA XML content>")
-output = pipeline(cda_data)
+# Or manual control for document access
+from healthchain.io import CdaAdapter
+adapter = CdaAdapter()
+doc = adapter.parse(cda_request)
+doc = pipeline(doc)
+# Access: doc.fhir.problem_list, doc.fhir.medication_list
+response = adapter.format(doc)
 ```
 
 ## Interoperability
@@ -206,9 +217,9 @@ output = pipeline(cda_data)
 The InteropEngine is a template-based system that allows you to convert between FHIR, CDA, and HL7v2.
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
-engine = create_engine()
+engine = create_interop()
 
 with open("tests/data/test_cda.xml", "r") as f:
     cda_data = f.read()

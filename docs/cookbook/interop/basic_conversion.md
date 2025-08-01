@@ -13,12 +13,12 @@ This tutorial demonstrates how to use the HealthChain interoperability module to
 First, let's import the required modules and create an interoperability engine:
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from pathlib import Path
 import json
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 ```
 
 ## Converting CDA to FHIR
