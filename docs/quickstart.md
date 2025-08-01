@@ -155,10 +155,10 @@ The HealthChain Interoperability module provides tools for converting between di
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
 # Create an interoperability engine
-engine = create_engine()
+engine = create_interop()
 
 # Load a CDA document
 with open("tests/data/test_cda.xml", "r") as f:
@@ -169,6 +169,16 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 
 # Convert FHIR resources back to CDA
 cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
+```
+
+**Need to customize?** Use the CLI to create editable configuration templates:
+
+```bash
+# Create customizable config templates
+healthchain init-configs ./my_configs
+
+# Then use them in your code
+engine = create_interop(config_dir="./my_configs")
 ```
 
 The interop module provides a flexible, template-based approach to healthcare format conversion:

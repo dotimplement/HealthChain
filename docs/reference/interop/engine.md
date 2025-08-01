@@ -5,10 +5,10 @@ The `InteropEngine` is the core component of the HealthChain interoperability mo
 ## Basic Usage
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
 # Create an interoperability engine
-engine = create_engine()
+engine = create_interop()
 
 # Convert CDA XML to FHIR resources
 fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
@@ -22,22 +22,33 @@ fhir_resources = engine.to_fhir(hl7v2_message, src_format=FormatType.HL7V2)
 
 ## Creating an Engine
 
-The `create_engine()` function is the recommended way to create an engine instance:
+The `create_interop()` function is the recommended way to create an engine instance:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create with default configuration
-engine = create_engine()
-
-# Create with custom configuration directory
-from pathlib import Path
-config_dir = Path("/path/to/configs")
-engine = create_engine(config_dir=config_dir)
-
-# Create with custom validation level
-engine = create_engine(validation_level="warn")
+engine = create_interop()
 ```
+
+### Custom Configuration
+
+```python
+# Use custom config directory
+engine = create_interop(config_dir="/path/to/custom/configs")
+
+# Create with custom validation level and environment
+engine = create_interop(validation_level="warn", environment="production")
+```
+
+
+> **💡 Tip:**
+> To create editable configuration templates, run:
+>
+> ```bash
+> healthchain init-configs ./my_configs
+> ```
+> This will create a `my_configs` directory with editable default configuration templates.
 
 ## Conversion Methods
 

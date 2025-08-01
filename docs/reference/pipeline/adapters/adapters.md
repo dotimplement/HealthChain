@@ -75,10 +75,10 @@ Both CDA and CDS adapters can be configured with custom interoperability engines
 
 ```python
 from healthchain.io import CdaAdapter
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Custom engine with specific configuration
-custom_engine = create_engine(config_dir="/path/to/custom/config")
+custom_engine = create_interop(config_dir="/path/to/custom/config")
 adapter = CdaAdapter(engine=custom_engine)
 ```
 For more information on the InteropEngine, see the [InteropEngine documentation](../../interop/interop.md).

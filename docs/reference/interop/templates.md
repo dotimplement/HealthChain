@@ -97,11 +97,11 @@ Example template for a CDA to FHIR conversion:
 The Interoperability Engine API provides a high-level interface (`.to_fhir()` and `.from_fhir()`) for transforming healthcare data between different formats using templates.
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.fhir import create_condition
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Create a FHIR resource
 condition = create_condition(
@@ -124,10 +124,10 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 For advanced use cases, you can access the template system directly:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Access the template registry
 registry = engine.template_registry
@@ -229,13 +229,13 @@ For more information on using filters, see Liquid's [official documentation](htt
 You can add custom filters to the template system:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 def custom_filter(value):
     return f"CUSTOM:{value}"
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Add a custom filter
 engine.template_registry.add_filter("custom", custom_filter)

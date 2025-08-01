@@ -217,9 +217,9 @@ response = adapter.format(doc)
 The InteropEngine is a template-based system that allows you to convert between FHIR, CDA, and HL7v2.
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 
-engine = create_engine()
+engine = create_interop()
 
 with open("tests/data/test_cda.xml", "r") as f:
     cda_data = f.read()
