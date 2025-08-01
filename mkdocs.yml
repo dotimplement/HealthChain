@@ -32,6 +32,7 @@ nav:
         - Components:
           - Overview: reference/pipeline/components/components.md
           - CdsCardCreator: reference/pipeline/components/cdscardcreator.md
+          - FHIRProblemListExtractor: reference/pipeline/components/fhirproblemextractor.md
         - Adapters:
           - Overview: reference/pipeline/adapters/adapters.md
           - CDA Adapter: reference/pipeline/adapters/cdaadapter.md

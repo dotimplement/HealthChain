@@ -8,9 +8,9 @@ Components are the building blocks of the healthchain pipeline. They are designe
 | Component | Description | Methods |
 |-----------|-------------|---------|
 | `TextPreprocessor` | Handles text preprocessing tasks | `tokenizer`: Specifies the tokenization method (e.g., `"basic"` or `"spacy"`) <br> `lowercase`: Converts text to lowercase if `True` <br> `remove_punctuation`: Removes punctuation if `True` <br> `standardize_spaces`: Standardizes spaces if `True` <br> `regex`: List of custom regex patterns and replacements |
-| `LLM` | Wraps local LLMs for use in the pipeline [TODO] | `load_model`: Loads the specified model |
 | `TextPostProcessor` | Handles text postprocessing tasks | `postcoordination_lookup`: Dictionary for entity refinement lookups |
-| `CdsCardCreator` | Formats model outputs into CDS cards for clinical decision support | `create_card`: Creates a CDS card |
+| [CdsCardCreator](cdscardcreator.md) | Formats model outputs into CDS cards for clinical decision support | `create_card`: Creates a CDS card |
+| [FHIRProblemListExtractor](fhirproblemextractor.md) | Extracts entities with medical codes and creates FHIR Condition resources with the problem_list extension | `__call__`: Extracts the problem list |
 
 ## Creating Custom Components
 
