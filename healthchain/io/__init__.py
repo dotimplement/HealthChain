@@ -1,7 +1,5 @@
 from .containers import DataContainer, Document, Tabular
-from .base import BaseConnector, BaseAdapter
-from .cdaconnector import CdaConnector
-from .cdsfhirconnector import CdsFhirConnector
+from .base import BaseAdapter
 from .cdaadapter import CdaAdapter
 from .cdsfhiradapter import CdsFhirAdapter
 
@@ -10,11 +8,7 @@ __all__ = [
     "DataContainer",
     "Document",
     "Tabular",
-    # Connectors (legacy)
-    "BaseConnector",
-    "CdaConnector",
-    "CdsFhirConnector",
-    # Adapters (new)
+    # Adapters
     "BaseAdapter",
     "CdaAdapter",
     "CdsFhirAdapter",

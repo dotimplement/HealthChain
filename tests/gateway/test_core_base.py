@@ -21,7 +21,6 @@ from healthchain.gateway.core.base import (
 from healthchain.gateway.events.dispatcher import EventDispatcher
 
 # Configure pytest-asyncio for async tests
-pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
@@ -78,6 +77,7 @@ def test_event_capability_delegated_publishing(mock_event_dispatcher):
     mock_event_dispatcher.emit.assert_called_once_with(test_event)
 
 
+@pytest.mark.asyncio
 async def test_protocol_handler_supports_sync_and_async_handlers():
     """BaseProtocolHandler supports both synchronous and asynchronous handlers."""
     handler = ConcreteProtocolHandler()
@@ -108,6 +108,7 @@ async def test_protocol_handler_supports_sync_and_async_handlers():
         (True, False, {"success": False, "raises": False, "error_in_response": True}),
     ],
 )
+@pytest.mark.asyncio
 async def test_protocol_handler_error_handling_behavior(
     return_errors, operation_exists, expected_behavior
 ):
@@ -135,6 +136,7 @@ async def test_protocol_handler_error_handling_behavior(
             assert result == {"result": "test"}
 
 
+@pytest.mark.asyncio
 async def test_protocol_handler_exception_handling_in_handlers():
     """BaseProtocolHandler handles exceptions in registered handlers appropriately."""
     # Test with return_errors=False (should raise)

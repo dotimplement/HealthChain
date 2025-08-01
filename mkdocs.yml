@@ -36,10 +36,6 @@ nav:
           - Overview: reference/pipeline/adapters/adapters.md
           - CDA Adapter: reference/pipeline/adapters/cdaadapter.md
           - CDS FHIR Adapter: reference/pipeline/adapters/cdsfhiradapter.md
-        - Connectors (Legacy):
-          - Overview: reference/pipeline/connectors/connectors.md
-          - CDA Connector: reference/pipeline/connectors/cdaconnector.md
-          - CDS FHIR Connector: reference/pipeline/connectors/cdsfhirconnector.md
         - Prebuilt Pipelines:
           - Medical Coding: reference/pipeline/prebuilt_pipelines/medicalcoding.md
           - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md
@@ -64,7 +60,6 @@ nav:
       - api/component.md
       - api/containers.md
       - api/adapters.md
-      - api/connectors.md
       - api/use_cases.md
       - api/cds_hooks.md
       - api/service.md
