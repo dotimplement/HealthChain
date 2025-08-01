@@ -8,24 +8,24 @@ Depending on your need, you can either go top down, where you use prebuilt pipel
 
 HealthChain comes with a set of prebuilt pipelines that are out-of-the-box implementations of common healthcare data processing tasks:
 
-| Pipeline | Container | Compatible Connector | Description | Example Use Case |
-|----------|-----------|-----------|-------------|------------------|
-| [**MedicalCodingPipeline**](./prebuilt_pipelines/medicalcoding.md) | `Document` | `CdaConnector` | An NLP pipeline that processes free-text clinical notes into structured data | Automatically generating SNOMED CT codes from clinical notes |
-| [**SummarizationPipeline**](./prebuilt_pipelines/summarization.md) | `Document` | `CdsFhirConnector` | An NLP pipeline for summarizing clinical notes | Generating discharge summaries from patient history and notes |
-| **QAPipeline** [TODO] | `Document` | N/A | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
-| **ClassificationPipeline** [TODO] | `Tabular` | `CdsFhirConnector` | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
+| Pipeline | Container | Use Case | Description | Example Application |
+|----------|-----------|----------|-------------|---------------------|
+| [**MedicalCodingPipeline**](./prebuilt_pipelines/medicalcoding.md) | `Document` | Clinical Documentation | An NLP pipeline that processes free-text clinical notes into structured data | Automatically generating SNOMED CT codes from clinical notes |
+| [**SummarizationPipeline**](./prebuilt_pipelines/summarization.md) | `Document` | Clinical Decision Support | An NLP pipeline for summarizing clinical notes | Generating discharge summaries from patient history and notes |
+| **QAPipeline** [TODO] | `Document` | Conversational AI | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
+| **ClassificationPipeline** [TODO] | `Tabular` | Predictive Analytics | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
 
-Prebuilt pipelines are end-to-end workflows with Connectors built into them. They interact with raw data received from EHR interfaces, usually CDA or FHIR data from specific [protocols](../gateway/gateway.md).
+Prebuilt pipelines are end-to-end workflows optimized for specific healthcare AI tasks. They can be used with adapters for seamless integration with EHR systems via [protocols](../gateway/gateway.md).
 
 You can load your models directly as a pipeline object, from local files or from a remote model repository such as Hugging Face.
 
 ```python
-from healthchain.pipeline import Pipeline
+from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
 
 # Load from Hugging Face
 pipeline = MedicalCodingPipeline.from_model_id(
-    'gpt2', source="huggingface"
+    'blaze999/Medical-NER', task="token-classification", source="huggingface"
 )
 # Load from local model files
 pipeline = MedicalCodingPipeline.from_local_model(
@@ -34,8 +34,17 @@ pipeline = MedicalCodingPipeline.from_local_model(
 # Load from a pipeline object
 pipeline = MedicalCodingPipeline.load(pipeline_object)
 
+# Simple end-to-end processing
 cda_request = CdaRequest(document="<Clinical Document>")
-cda_response = pipeline(cda_request)
+cda_response = pipeline.process_request(cda_request)
+
+# Or manual adapter control for more granular control
+from healthchain.io import CdaAdapter
+adapter = CdaAdapter()
+doc = adapter.parse(cda_request)
+doc = pipeline(doc)
+# Access: doc.fhir.problem_list, doc.fhir.medication_list
+response = adapter.format(doc)
 ```
 
 ### Customizing Prebuilt Pipelines
@@ -135,18 +144,26 @@ pipeline.add_node(RemoveStopwords(stopwords))
 
 [(BaseComponent API Reference)](../../api/component.md#healthchain.pipeline.components.base.BaseComponent)
 
-### Adding Connectors 🔗
+### Working with Healthcare Data Formats 🔄
 
-Connectors are added to the pipeline using the `.add_input()` and `.add_output()` methods. You can learn more about connectors at the [Connectors](./connectors/connectors.md) documentation page.
+Use adapters to handle conversion between healthcare formats (CDA, FHIR) and HealthChain's internal Document objects. Adapters enable clean separation between ML processing and format handling.
 
 ```python
-from healthchain.io import CdaConnector
+from healthchain.io import CdaAdapter, Document
 
-cda_connector = CdaConnector()
+adapter = CdaAdapter()
 
-pipeline.add_input(cda_connector)
-pipeline.add_output(cda_connector)
+# Parse healthcare data into Document
+doc = adapter.parse(cda_request)
+
+# Process with pure pipeline
+processed_doc = pipeline(doc)
+
+# Convert back to healthcare format
+response = adapter.format(processed_doc)
 ```
+
+You can learn more about adapters at the [Adapters](./adapters/adapters.md) documentation page.
 
 ## Pipeline Management 🔨
 

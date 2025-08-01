@@ -1,10 +1,10 @@
 import logging
-from typing import Optional
+from typing import Optional, Any
 
 from fhir.resources.documentreference import DocumentReference
 
 from healthchain.io.containers import Document
-from healthchain.io.base import BaseConnector
+from healthchain.io.base import BaseAdapter
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.fhir import read_content_attachment
@@ -13,26 +13,40 @@ from healthchain.models.hooks.prefetch import Prefetch
 log = logging.getLogger(__name__)
 
 
-class CdsFhirConnector(BaseConnector):
+class CdsFhirAdapter(BaseAdapter[CDSRequest, CDSResponse]):
     """
-    CdsFhirConnector class for handling FHIR (Fast Healthcare Interoperability Resources) documents
+    CdsFhirAdapter class for handling FHIR (Fast Healthcare Interoperability Resources) documents
     for CDS Hooks.
 
-    This connector facilitates the conversion between CDSRequest objects and Document objects,
-    as well as the creation of CDSResponse objects from processed Documents.
+    This adapter facilitates the conversion between CDSRequest objects and Document objects,
+    as well as the creation of CDSResponse objects from processed Documents. Unlike CdaAdapter,
+    this adapter works directly with FHIR data and does not require interop conversion.
 
     Attributes:
         hook_name (str): The name of the CDS Hook being used.
+        engine (Optional[Any]): Optional interoperability engine (not used by this adapter).
+
+    Methods:
+        parse: Converts a CDSRequest object into a Document object.
+        format: Converts a Document object into a CDSResponse object.
     """
 
-    def __init__(self, hook_name: str):
+    def __init__(self, hook_name: str = None, engine: Optional[Any] = None):
+        """
+        Initialize CdsFhirAdapter with hook name and optional engine.
+
+        Args:
+            hook_name (str): The name of the CDS Hook being used. Defaults to None.
+            engine (Optional[Any]): Optional interoperability engine (not used by this adapter).
+        """
+        super().__init__(engine=engine)
         self.hook_name = hook_name
 
-    def input(
+    def parse(
         self, cds_request: CDSRequest, prefetch_document_key: Optional[str] = "document"
     ) -> Document:
         """
-        Converts a CDSRequest object into a Document object.
+        Convert a CDSRequest object into a Document object.
 
         Takes a CDSRequest containing FHIR resources and extracts them into a Document object.
         The Document will contain all prefetched FHIR resources in its fhir.prefetch_resources.
@@ -97,7 +111,7 @@ class CdsFhirConnector(BaseConnector):
 
         return doc
 
-    def output(self, document: Document) -> CDSResponse:
+    def format(self, document: Document) -> CDSResponse:
         """
         Convert Document to CDSResponse.
 

@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from dataclasses import dataclass, field
 from enum import Enum
 
-from healthchain.io.base import BaseConnector
 from healthchain.io.containers import DataContainer
 from healthchain.pipeline.components.base import BaseComponent
 
@@ -80,8 +79,7 @@ class BasePipeline(Generic[T], ABC):
 
     The BasePipeline class provides a framework for building modular data processing pipelines
     by allowing users to add, remove, and configure components with defined dependencies and
-    execution order. Components can be added at specific positions, grouped into stages, and
-    connected via input/output connectors.
+    execution order. Components can be added at specific positions and grouped into stages.
 
     This is an abstract base class that should be subclassed to create specific pipeline
     implementations.
@@ -90,28 +88,24 @@ class BasePipeline(Generic[T], ABC):
         _components (List[PipelineNode[T]]): Ordered list of pipeline components
         _stages (Dict[str, List[Callable]]): Components grouped by processing stage
         _built_pipeline (Optional[Callable]): Compiled pipeline function
-        _input_connector (Optional[BaseConnector[T]]): Connector for processing input data
-        _output_connector (Optional[BaseConnector[T]]): Connector for processing output data
         _output_template (Optional[str]): Template string for formatting pipeline outputs
-        _model_config (Optional[ModelConfig]): Configuration for the pipeline model
+        _output_template_path (Optional[Path]): Path to template file for formatting pipeline outputs
 
     Example:
-        >>> class MyPipeline(BasePipeline[str]):
+        >>> class MyPipeline(BasePipeline[Document]):
         ...     def configure_pipeline(self, config: ModelConfig) -> None:
         ...         self.add_node(preprocess, stage="preprocessing")
         ...         self.add_node(process, stage="processing")
         ...         self.add_node(postprocess, stage="postprocessing")
         ...
         >>> pipeline = MyPipeline()
-        >>> result = pipeline("input text")
+        >>> result = pipeline(document)  # Document → Document
     """
 
     def __init__(self):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
         self._built_pipeline: Optional[Callable] = None
-        self._input_connector: Optional[BaseConnector[T]] = None
-        self._output_connector: Optional[BaseConnector[T]] = None
         self._output_template: Optional[str] = None
         self._output_template_path: Optional[Path] = None
 
@@ -350,10 +344,9 @@ class BasePipeline(Generic[T], ABC):
         This method should be implemented by subclasses to add specific components
         and configure the pipeline according to the given model configuration.
         The configuration typically involves:
-        1. Setting up input/output connectors
-        2. Adding model components based on the model source
-        3. Adding any additional processing nodes
-        4. Configuring the pipeline stages and execution order
+        1. Adding model components based on the model source
+        2. Adding any additional processing nodes
+        3. Configuring the pipeline stages and execution order
 
         Args:
             model_config (ModelConfig): Configuration object containing:
@@ -371,17 +364,12 @@ class BasePipeline(Generic[T], ABC):
 
         Example:
             >>> def configure_pipeline(self, config: ModelConfig):
-            ...     # Add FHIR connector for input/output
-            ...     connector = FhirConnector()
-            ...     self.add_input(connector)
-            ...
             ...     # Add model component
             ...     model = self.get_model_component(config)
             ...     self.add_node(model, stage="processing")
             ...
             ...     # Add output formatting
             ...     self.add_node(OutputFormatter(), stage="formatting")
-            ...     self.add_output(connector)
         """
         raise NotImplementedError("This method must be implemented by subclasses.")
 
@@ -418,44 +406,6 @@ class BasePipeline(Generic[T], ABC):
                                                     and values are lists of callable components.
         """
         self._stages = new_stages
-
-    def add_input(self, connector: BaseConnector[T]) -> None:
-        """
-        Adds an input connector to the pipeline.
-
-        This method sets the input connector for the pipeline, which is responsible
-        for processing the input data before it's passed to the pipeline components.
-
-        Args:
-            connector (Connector[T]): The input connector to be added to the pipeline.
-
-        Returns:
-            None
-
-        Note:
-            Only one input connector can be set for the pipeline. If this method is
-            called multiple times, the last connector will overwrite the previous ones.
-        """
-        self._input_connector = connector
-
-    def add_output(self, connector: BaseConnector[T]) -> None:
-        """
-        Adds an output connector to the pipeline.
-
-        This method sets the output connector for the pipeline, which is responsible
-        for processing the output data after it has passed through all pipeline components.
-
-        Args:
-            connector (Connector[T]): The output connector to be added to the pipeline.
-
-        Returns:
-            None
-
-        Note:
-            Only one output connector can be set for the pipeline. If this method is
-            called multiple times, the last connector will overwrite the previous ones.
-        """
-        self._output_connector = connector
 
     def add_node(
         self,
@@ -771,15 +721,10 @@ class BasePipeline(Generic[T], ABC):
         ordered_components = resolve_dependencies()
 
         def pipeline(data: Union[T, DataContainer[T]]) -> DataContainer[T]:
-            if self._input_connector:
-                data = self._input_connector.input(data)
-
             if not isinstance(data, DataContainer):
                 data = DataContainer(data)
 
             data = reduce(lambda d, comp: comp(d), ordered_components, data)
-            if self._output_connector:
-                data = self._output_connector.output(data)
 
             return data
 

@@ -643,40 +643,93 @@ class Document(BaseDocument):
         """
         return len(self._nlp._tokens)
 
-    def update_problem_list_from_nlp(self):
+    def update_problem_list_from_nlp(
+        self,
+        patient_ref: str = "Patient/123",
+        coding_system: str = "http://snomed.info/sct",
+        code_attribute: str = "cui",
+    ):
         """
-        Updates the document's problem list by extracting medical entities from the spaCy annotations.
+        Updates the document's problem list by extracting medical entities from NLP annotations.
 
-        This method looks for entities in the document's spaCy annotations that have associated
-        SNOMED CT concept IDs (CUIs). For each valid entity found, it creates a new FHIR Condition
-        resource and adds it to the document's problem list.
+        This method looks for entities with associated medical codes and creates FHIR Condition
+        resources from them. It supports a two-step process:
+        1. NER: Extract entities from text (spaCy, HuggingFace, etc.)
+        2. Entity Linking: Add medical codes to those entities
+        3. Problem List Creation: Convert linked entities to FHIR conditions (this method)
 
-        The method requires that:
-        1. A spaCy doc has been added to the document's NLP annotations
-        2. The entities in the spaCy doc have the 'cui' extension attribute set
+        The method extracts from:
+        1. spaCy entities with extension attributes (e.g., ent._.cui)
+        2. Generic entities in the NLP annotations container (framework-agnostic)
+
+        Args:
+            patient_ref: FHIR reference to the patient (default: "Patient/123")
+            coding_system: Coding system URI for the conditions (default: SNOMED CT)
+            code_attribute: Name of the attribute containing the medical code (default: "cui")
 
         Note:
-            - Currently defaults to using SNOMED CT coding system
-            - Uses a hardcoded patient reference "Patient/123"
             - Preserves any existing conditions in the problem list
+            - For non-spaCy entities, codes should be stored as keys in entity dictionaries
+            - Different code attributes: "cui", "snomed_id", "icd10", etc.
         """
-        conditions = self.fhir.problem_list
-        # TODO: Make this configurable
-        for ent in self.nlp._spacy_doc.ents:
-            if not Span.has_extension("cui") or ent._.cui is None:
-                logger.debug(f"No CUI found for entity {ent.text}")
-                continue
-            condition = create_condition(
-                subject="Patient/123",
-                code=ent._.cui,
-                display=ent.text,
-                system="http://snomed.info/sct",
-            )
-            logger.debug(f"Adding condition {condition.model_dump()}")
-            conditions.append(condition)
+        # Start with existing conditions to preserve them
+        existing_conditions = self.fhir.problem_list.copy()
+        new_conditions = []
 
-        # Add to document concepts
-        self.fhir.problem_list = conditions
+        # 1. Extract from spaCy entities (if available)
+        if self.nlp._spacy_doc and self.nlp._spacy_doc.ents:
+            for ent in self.nlp._spacy_doc.ents:
+                if not Span.has_extension(code_attribute):
+                    logger.debug(
+                        f"Extension '{code_attribute}' not found for spaCy entity {ent.text}"
+                    )
+                    continue
+
+                code_value = getattr(ent._, code_attribute, None)
+                if code_value is None:
+                    logger.debug(
+                        f"No {code_attribute} found for spaCy entity {ent.text}"
+                    )
+                    continue
+
+                condition = create_condition(
+                    subject=patient_ref,
+                    code=code_value,
+                    display=ent.text,
+                    system=coding_system,
+                )
+                logger.debug(f"Adding condition from spaCy: {condition.model_dump()}")
+                new_conditions.append(condition)
+
+        # 2. Extract from generic NLP entities (framework-agnostic)
+        generic_entities = self.nlp.get_entities()
+        if generic_entities:
+            for ent_dict in generic_entities:
+                # Skip if no linked code
+                code_value = ent_dict.get(code_attribute)
+                if code_value is None:
+                    logger.debug(
+                        f"No {code_attribute} found for entity {ent_dict.get('text', 'unknown')}"
+                    )
+                    continue
+
+                entity_text = ent_dict.get("text", "unknown")
+
+                condition = create_condition(
+                    subject=patient_ref,
+                    code=code_value,
+                    display=entity_text,
+                    system=coding_system,
+                )
+                logger.debug(
+                    f"Adding condition from entities: {condition.model_dump()}"
+                )
+                new_conditions.append(condition)
+
+        # Update problem list with combined conditions (replace to avoid duplication)
+        if new_conditions:
+            all_conditions = existing_conditions + new_conditions
+            self.fhir.add_resources(all_conditions, "Condition", replace=True)
 
     def __iter__(self) -> Iterator[str]:
         return iter(self._nlp._tokens)

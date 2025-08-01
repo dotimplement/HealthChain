@@ -102,30 +102,31 @@ doc = Document("Patient presents with hypertension.")
 output = pipe(doc)
 ```
 
-Let's go one step further! You can use [Connectors](./reference/pipeline/connectors/connectors.md) to work directly with [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) and [FHIR](https://hl7.org/fhir/) data received from healthcare system APIs. Add Connectors to your pipeline with the `.add_input()` and `.add_output()` methods.
+Let's go one step further! You can use [Adapters](./reference/pipeline/adapters/adapters.md) to work directly with [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) and [FHIR](https://hl7.org/fhir/) data received from healthcare system APIs. Adapters handle format conversion while keeping your pipeline pure ML processing.
 
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.pipeline.components import SpacyNLP
-from healthchain.io import CdaConnector
+from healthchain.io import CdaAdapter
 from healthchain.models import CdaRequest
 
 pipeline = Pipeline()
-cda_connector = CdaConnector()
-
-pipeline.add_input(cda_connector)
 pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
-pipeline.add_output(cda_connector)
-
 pipe = pipeline.build()
 
-cda_data = CdaRequest(document="<CDA XML content>")
-output = pipe(cda_data)
+# Use adapter for format conversion
+adapter = CdaAdapter()
+cda_request = CdaRequest(document="<CDA XML content>")
+
+# Parse, process, format
+doc = adapter.parse(cda_request)
+processed_doc = pipe(doc)
+output = adapter.format(processed_doc)
 ```
 
 #### 3. Use Prebuilt Pipelines
 
-Prebuilt pipelines are pre-configured collections of Components, Models, and Connectors. They are built for specific use cases, offering the highest level of abstraction. This is the easiest way to get started if you already know the use case you want to build for.
+Prebuilt pipelines are pre-configured collections of Components and Models optimized for specific healthcare AI use cases. They offer the highest level of abstraction and are the easiest way to get started.
 
 For a full list of available prebuilt pipelines and details on how to configure and customize them, see the [Pipelines](./reference/pipeline/pipeline.md) documentation page.
 
@@ -143,8 +144,8 @@ pipeline = MedicalCodingPipeline.from_model_id("facebook/bart-large-cnn", source
 # Or load from local model
 pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
 
-cda_data = CdaRequest(document="<CDA XML content>")
-output = pipeline(cda_data)
+cda_request = CdaRequest(document="<CDA XML content>")
+output = pipeline.process_request(cda_request)
 ```
 
 ### Interoperability 🔄

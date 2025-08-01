@@ -1,6 +1,5 @@
 # CdsCardCreator
 
-More detailed documentation coming soon!
 
 The `CdsCardCreator` is a pipeline component that creates CDS Hooks cards from either model outputs or static content. These cards can be displayed in Electronic Health Record (EHR) systems as part of clinical decision support workflows.
 
@@ -95,26 +94,16 @@ The created cards have the following properties:
 - `overrideReasons`: Optional override reasons
 - `links`: Optional external links
 
-## Error Handling
 
-The component includes error handling for:
-
-- Invalid template files
-- Template rendering errors
-- JSON parsing errors
-- Missing model output
-
-Errors are logged using the standard Python logging module.
-
-## Integration with Pipeline
+## Integration with SummarizationPipeline
 
 The CdsCardCreator can be used as part of a larger pipeline:
 
 ```python
-from healthchain.pipeline import Pipeline
+from healthchain.pipeline import SummarizationPipeline
 from healthchain.pipeline.components import CdsCardCreator
 
-pipeline = Pipeline()
+pipeline = SummarizationPipeline()
 pipeline.add_component(CdsCardCreator(
     source="huggingface",
     task="summarization",
@@ -122,7 +111,6 @@ pipeline.add_component(CdsCardCreator(
     delimiter="\n"
 ))
 ```
-
 
 ## Related Documentation
 

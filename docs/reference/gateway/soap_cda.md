@@ -4,17 +4,23 @@ The SOAP/CDA protocol enables real-time Clinical Documentation Improvement (CDI)
 
 ## Overview
 
-Clinical Documentation workflows communicate using [CDA (Clinical Document Architecture)](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/). CDAs are standardized electronic documents for exchanging clinical information between different healthcare systems. They provide a common structure for capturing and sharing patient data like medical history, medications, and care plans between different healthcare systems and providers. Think of it as a collaborative Google Doc that you can add, amend, and remove entries from.
+Clinical Documentation workflows communicate using [CDA (Clinical Document Architecture)](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/). CDAs are standardized electronic documents for exchanging clinical information between different healthcare systems. They provide a common structure for capturing and sharing patient data like medical history, medications, and care plans between different healthcare systems and providers. Think of it as a collaborative Google Doc that you can add, amend, and remove entries from. CDA support is currently limited to [Epic systems](https://open.epic.com/clinical/ehrtoehr), but we plan to add support for other IHE SOAP/CDA services in the future.
+
+### Epic NoteReader CDI
 
 The Epic NoteReader CDI is a SOAP/CDA-based NLP service that extracts structured data from clinical notes. Like CDS Hooks, it operates in real-time and is triggered when a clinician opts into CDI functionality and signs or pends a note.
 
 The primary use case for Epic NoteReader is to convert free-text medical documentation into coded information that can be used for billing, quality reporting, continuity of care, and clinical decision support at the point-of-care ([case study](https://www.researchsquare.com/article/rs-4925228/v1)).
 
-It is a vendor-specific component (Epic), but we plan to add support for other IHE SOAP/CDA services in the future.
-
 | When      | Where | What you receive            | What you send back         |
 | :-------- | :-----| :-------------------------- |----------------------------|
 | Triggered when a clinician opts in to CDI functionality and signs or pends a note | EHR documentation modules (e.g. NoteReader in Epic) | A CDA document containing continuity of care data and free-text clinical notes | A CDA document with additional structured data extracted by your CDI service |
+
+
+### CDA Services
+
+CDA services facilitate the [exchange of clinical information between different healthcare systems](https://gkc.himss.org/resource-environmental-scan/care-everywhere) and are governed by the [IHE](https://www.ihe.net/uploadedFiles/Documents/PCC/IHE_PCC_Suppl_CDA_Content_Modules.pdf) standard. The Epic HIE (Health Information Exchange) platform is [CareEverywhere](https://www.epic.com/careeverywhere/).
+
 
 ## HealthChainAPI Integration
 
@@ -154,4 +160,4 @@ The response includes additional structured sections extracted from the clinical
 | Gateway Receives | `CdaRequest` | Processed by your service |
 | Gateway Returns | Your processed result | `CdaResponse` |
 
-You can use the [CdaConnector](../pipeline/connectors/cdaconnector.md) to handle conversion between CDA documents and HealthChain pipeline data containers.
+You can use the [CdaAdapter](../pipeline/adapters/cdaadapter.md) to handle conversion between CDA documents and HealthChain pipeline data containers.

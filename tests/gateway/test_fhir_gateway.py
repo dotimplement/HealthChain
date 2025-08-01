@@ -7,8 +7,6 @@ from fhir.resources.bundle import Bundle
 
 from healthchain.gateway.core.fhirgateway import FHIRGateway
 
-pytestmark = pytest.mark.asyncio
-
 
 class MockConnectionManager:
     """Mock FHIR connection manager for testing."""
@@ -157,6 +155,7 @@ def test_supported_operations_tracking(fhir_gateway):
     assert "Patient" in updated_status["supported_operations"]["resources"]
 
 
+@pytest.mark.asyncio
 async def test_read_operation_with_client_delegation(fhir_gateway, test_patient):
     """Read operation delegates to client and handles results correctly."""
     with patch.object(
@@ -174,6 +173,7 @@ async def test_read_operation_with_client_delegation(fhir_gateway, test_patient)
         assert result == test_patient
 
 
+@pytest.mark.asyncio
 async def test_read_operation_raises_on_not_found(fhir_gateway):
     """Read operation raises ValueError when resource not found."""
     with patch.object(fhir_gateway, "_execute_with_client", return_value=None):
@@ -181,6 +181,7 @@ async def test_read_operation_raises_on_not_found(fhir_gateway):
             await fhir_gateway.read(Patient, "123")
 
 
+@pytest.mark.asyncio
 async def test_create_operation_with_validation(fhir_gateway, test_patient):
     """Create operation validates input and returns created resource."""
     created_patient = Patient(id="456", active=True)
@@ -198,6 +199,7 @@ async def test_create_operation_with_validation(fhir_gateway, test_patient):
         assert result == created_patient
 
 
+@pytest.mark.asyncio
 async def test_update_operation_requires_resource_id(fhir_gateway):
     """Update operation validates that resource has ID."""
     patient_without_id = Patient(active=True)  # No ID
@@ -206,6 +208,7 @@ async def test_update_operation_requires_resource_id(fhir_gateway):
         await fhir_gateway.update(patient_without_id)
 
 
+@pytest.mark.asyncio
 async def test_search_operation_with_parameters(fhir_gateway):
     """Search operation passes parameters correctly to client."""
     mock_bundle = Bundle(type="searchset", total=1)
@@ -226,6 +229,7 @@ async def test_search_operation_with_parameters(fhir_gateway):
         assert result == mock_bundle
 
 
+@pytest.mark.asyncio
 async def test_modify_context_for_existing_resource(fhir_gateway, test_patient):
     """Modify context manager fetches, yields, and updates existing resources."""
     mock_client = AsyncMock()
@@ -241,6 +245,7 @@ async def test_modify_context_for_existing_resource(fhir_gateway, test_patient):
         mock_client.update.assert_called_once_with(test_patient)
 
 
+@pytest.mark.asyncio
 async def test_modify_context_for_new_resource(fhir_gateway):
     """Modify context manager creates new resources when no ID provided."""
     created_patient = Patient(id="456", active=True)
@@ -257,6 +262,7 @@ async def test_modify_context_for_new_resource(fhir_gateway):
         assert patient.id == "456"
 
 
+@pytest.mark.asyncio
 async def test_execute_with_client_handles_client_errors(fhir_gateway):
     """_execute_with_client properly handles and re-raises client errors."""
     mock_client = AsyncMock()

@@ -6,7 +6,7 @@ from healthchain.interop.generators.base import BaseGenerator
 
 
 # Create a concrete subclass for testing the abstract base class
-class TestGenerator(BaseGenerator):
+class ConcreteTestGenerator(BaseGenerator):
     def transform(self, data, **kwargs):
         """Concrete implementation for testing"""
         return f"transformed: {data}"
@@ -41,13 +41,13 @@ def mock_config():
 
 @pytest.fixture
 def test_generator(mock_config, mock_template_registry):
-    """Create a concrete TestGenerator instance with mocked dependencies."""
-    return TestGenerator(mock_config, mock_template_registry)
+    """Create a concrete ConcreteTestGenerator instance with mocked dependencies."""
+    return ConcreteTestGenerator(mock_config, mock_template_registry)
 
 
 def test_initialization(mock_config, mock_template_registry):
     """Test basic initialization of BaseGenerator."""
-    generator = TestGenerator(mock_config, mock_template_registry)
+    generator = ConcreteTestGenerator(mock_config, mock_template_registry)
     assert generator.config is mock_config
     assert generator.template_registry is mock_template_registry
 
