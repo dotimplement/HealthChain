@@ -5,6 +5,7 @@ from .components import (
     TextPreProcessor,
     TextPostProcessor,
     CdsCardCreator,
+    FHIRProblemListExtractor,
 )
 from .mixins import ModelRoutingMixin
 from .summarizationpipeline import SummarizationPipeline
@@ -21,4 +22,5 @@ __all__ = [
     "CdsCardCreator",
     "MedicalCodingPipeline",
     "SummarizationPipeline",
+    "FHIRProblemListExtractor",
 ]

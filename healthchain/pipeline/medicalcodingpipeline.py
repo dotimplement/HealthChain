@@ -1,5 +1,8 @@
 from healthchain.pipeline.base import BasePipeline, ModelConfig
 from healthchain.pipeline.mixins import ModelRoutingMixin
+from healthchain.pipeline.components.fhirproblemextractor import (
+    FHIRProblemListExtractor,
+)
 
 
 class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
@@ -8,10 +11,26 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
 
     Stages:
         1. NER+L: Extracts and links medical concepts from document text.
+        2. Problem Extraction (last): Converts medical entities to FHIR problem list.
 
     Usage Examples:
-        # With SpaCy
+        # Basic usage - extracts CUI codes to SNOMED conditions
         >>> pipeline = MedicalCodingPipeline.from_model_id("en_core_sci_sm", source="spacy")
+
+        # Custom patient reference
+        >>> pipeline = MedicalCodingPipeline.from_model_id(
+        ...     "en_core_sci_sm", source="spacy", patient_ref="Patient/demo-123"
+        ... )
+
+        # Different code attribute (e.g., for models that output SNOMED IDs)
+        >>> pipeline = MedicalCodingPipeline.from_model_id(
+        ...     "en_core_sci_sm", source="spacy", code_attribute="snomed_id"
+        ... )
+
+        # Skip automatic problem extraction
+        >>> pipeline = MedicalCodingPipeline.from_model_id(
+        ...     "en_core_sci_sm", source="spacy", extract_problems=False
+        ... )
 
         # With Hugging Face
         >>> pipeline = MedicalCodingPipeline.from_model_id("bert-base-uncased", task="ner")
@@ -21,12 +40,28 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
         >>> pipeline = MedicalCodingPipeline.load(chain)
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        extract_problems: bool = True,
+        patient_ref: str = "Patient/123",
+        code_attribute: str = "cui",
+    ):
+        """
+        Initialize MedicalCodingPipeline.
+
+        Args:
+            extract_problems: Whether to automatically extract FHIR problem list (default: True)
+            patient_ref: Patient reference for created conditions (default: "Patient/123")
+            code_attribute: Name of the spaCy extension attribute containing medical codes (default: "cui")
+        """
         BasePipeline.__init__(self)
         ModelRoutingMixin.__init__(self)
+        self.extract_problems = extract_problems
+        self.patient_ref = patient_ref
+        self.code_attribute = code_attribute
 
     def configure_pipeline(self, config: ModelConfig) -> None:
-        """Configure pipeline with NER+L model.
+        """Configure pipeline with NER+L model and optional problem extraction.
 
         Args:
             config (ModelConfig): Configuration for the NER+L model
@@ -35,6 +70,16 @@ class MedicalCodingPipeline(BasePipeline, ModelRoutingMixin):
         model = self.get_model_component(config)
 
         self.add_node(model, stage="ner+l")
+
+        # Automatically add problem list extraction by default
+        if self.extract_problems:
+            self.add_node(
+                FHIRProblemListExtractor(
+                    patient_ref=self.patient_ref, code_attribute=self.code_attribute
+                ),
+                stage="problem-extraction",
+                position="last",
+            )
 
     def process_request(self, request, adapter=None):
         """
