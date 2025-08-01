@@ -1,4 +1,4 @@
 # Adapters
 
-::: healthchain.io.cdaadapter
-::: healthchain.io.cdsfhiradapter
+::: healthchain.io.adapters.cdaadapter
+::: healthchain.io.adapters.cdsfhiradapter

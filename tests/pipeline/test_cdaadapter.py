@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.io.containers import Document
-from healthchain.io.cdaadapter import CdaAdapter
+from healthchain.io.adapters import CdaAdapter
 from healthchain.interop import FormatType
 from fhir.resources.documentreference import DocumentReference
 
@@ -13,11 +13,11 @@ def cda_adapter():
     return CdaAdapter()
 
 
-@patch("healthchain.io.cdaadapter.create_engine")
-@patch("healthchain.io.cdaadapter.create_document_reference")
-@patch("healthchain.io.cdaadapter.read_content_attachment")
-@patch("healthchain.io.cdaadapter.set_problem_list_item_category")
-@patch("healthchain.io.cdaadapter.Document", autospec=True)
+@patch("healthchain.io.adapters.cdaadapter.create_engine")
+@patch("healthchain.io.adapters.cdaadapter.create_document_reference")
+@patch("healthchain.io.adapters.cdaadapter.read_content_attachment")
+@patch("healthchain.io.adapters.cdaadapter.set_problem_list_item_category")
+@patch("healthchain.io.adapters.cdaadapter.Document", autospec=True)
 def test_parse(
     mock_document_class,
     mock_set_problem_category,
@@ -116,7 +116,7 @@ def test_parse(
     assert result is mock_doc
 
 
-@patch("healthchain.io.cdaadapter.create_engine")
+@patch("healthchain.io.adapters.cdaadapter.create_engine")
 def test_format(
     mock_create_engine, cda_adapter, test_condition, test_medication, test_allergy
 ):
