@@ -38,7 +38,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 
 ## HealthChainAPI
 
-The HealthChainAPI provides a secure, asynchronous integration layer that coordinates multiple healthcare systems in a single application.
+The HealthChainAPI provides a secure integration layer that coordinates multiple healthcare systems in a single application.
 
 ### Multi-Protocol Support
 

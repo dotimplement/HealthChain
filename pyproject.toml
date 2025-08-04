@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "healthchain"
 version = "0.0.0"
-description = "Remarkably simple testing and validation of AI/NLP applications in healthcare context."
+description = "Python toolkit that makes it easier to connect your AI/ML pipelines to healthcare systems"
 authors = ["Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>", "Adam Kells <adamjkells93@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
