@@ -154,10 +154,14 @@ The HealthChain Interoperability module provides tools for converting between di
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
+
+**Choose your setup based on your needs:**
+
+✅ **Default configs** - For basic testing and prototyping only:
 ```python
 from healthchain.interop import create_interop, FormatType
 
-# Create an interoperability engine
+# Uses bundled configs - basic CDA ↔ FHIR conversion
 engine = create_interop()
 
 # Load a CDA document
@@ -171,26 +175,31 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 ```
 
-**Need to customize?** Use the CLI to create editable configuration templates:
+> ⚠️ **Default configs are limited** - Only supports problems, medications, and notes. No allergies, custom mappings, or organization-specific templates.
 
+🛠️ **Custom configs** - **Required for real-world use**:
 ```bash
-# Create customizable config templates
+# Create editable configuration templates
 healthchain init-configs ./my_configs
-
-# Then use them in your code
-engine = create_interop(config_dir="./my_configs")
 ```
 
-The interop module provides a flexible, template-based approach to healthcare format conversion:
+```python
+# Use your customized configs
+engine = create_interop(config_dir="./my_configs")
 
-| Feature | Description |
-|---------|-------------|
-| Format conversion | Convert legacy formats (CDA, HL7v2) to FHIR resources and back |
-| Template-based generation | Customize syntactic output using [Liquid](https://shopify.github.io/liquid/) templates |
-| Configuration | Configure terminology mappings, validation rules, and environments |
-| Extension | Register custom parsers, generators, and validators |
+# Now you can customize:
+# • Add experimental features (allergies, procedures)
+# • Modify terminology mappings (SNOMED, LOINC codes)
+# • Customize templates for your organization's CDA format
+# • Configure validation rules and environments
+```
 
-For more details, see the [conversion examples](cookbook/interop/basic_conversion.md).
+**When you need custom configs:**
+- 🏥 **Production healthcare applications**
+- 🔧 **Organization-specific CDA templates**
+- 🧪 **Experimental features** (allergies, procedures)
+- 🗺️ **Custom terminology mappings**
+- 🛡️ **Specific validation requirements**
 
 
 ## Utilities ⚙️
