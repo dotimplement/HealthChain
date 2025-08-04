@@ -1,22 +1,30 @@
+import pytest
 from unittest.mock import Mock, patch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.io.containers import Document
+from healthchain.io.adapters import CdaAdapter
+from healthchain.interop import FormatType
 from fhir.resources.documentreference import DocumentReference
 
 
-@patch("healthchain.io.cdaconnector.create_interop")
-@patch("healthchain.io.cdaconnector.create_document_reference")
-@patch("healthchain.io.cdaconnector.read_content_attachment")
-@patch("healthchain.io.cdaconnector.set_problem_list_item_category")
-@patch("healthchain.io.cdaconnector.Document", autospec=True)
-def test_input(
+@pytest.fixture
+def cda_adapter():
+    return CdaAdapter()
+
+
+@patch("healthchain.io.adapters.cdaadapter.create_interop")
+@patch("healthchain.io.adapters.cdaadapter.create_document_reference")
+@patch("healthchain.io.adapters.cdaadapter.read_content_attachment")
+@patch("healthchain.io.adapters.cdaadapter.set_problem_list_item_category")
+@patch("healthchain.io.adapters.cdaadapter.Document", autospec=True)
+def test_parse(
     mock_document_class,
     mock_set_problem_category,
     mock_read_content,
     mock_create_doc_ref,
     mock_create_interop,
-    cda_connector,
+    cda_adapter,
     test_condition,
     test_medication,
     test_allergy,
@@ -63,13 +71,13 @@ def test_input(
     ]
 
     # Call the method
-    cda_connector.engine = mock_engine
+    cda_adapter.engine = mock_engine
     input_data = CdaRequest(document="<xml>Test CDA</xml>")
-    result = cda_connector.input(input_data)
+    result = cda_adapter.parse(input_data)
 
     # 1. Verify the engine was called correctly to convert CDA to FHIR
     mock_engine.to_fhir.assert_called_once_with(
-        "<xml>Test CDA</xml>", src_format=mock_engine.to_fhir.call_args[1]["src_format"]
+        "<xml>Test CDA</xml>", src_format=FormatType.CDA
     )
 
     # 2. Verify document reference was created for original CDA
@@ -81,7 +89,7 @@ def test_input(
     )
 
     # 3. Verify note_document_reference was set correctly
-    assert cda_connector.note_document_reference == note_doc_ref
+    assert cda_adapter.note_document_reference == note_doc_ref
 
     # 4. Verify document references were added to the Document
     assert mock_doc.fhir.add_document_reference.call_count == 2
@@ -108,9 +116,9 @@ def test_input(
     assert result is mock_doc
 
 
-@patch("healthchain.io.cdaconnector.create_interop")
-def test_output(
-    mock_create_interop, cda_connector, test_condition, test_medication, test_allergy
+@patch("healthchain.io.adapters.cdaadapter.create_interop")
+def test_format(
+    mock_create_interop, cda_adapter, test_condition, test_medication, test_allergy
 ):
     # Create mock engine
     mock_engine = Mock()
@@ -119,14 +127,14 @@ def test_output(
     # Configure mock engine to return CDA XML
     mock_engine.from_fhir.return_value = "<xml>Updated CDA</xml>"
 
-    # Set the connector's engine and original CDA
-    cda_connector.engine = mock_engine
-    cda_connector.original_cda = "<xml>Original CDA</xml>"
+    # Set the adapter's engine and original CDA
+    cda_adapter.engine = mock_engine
+    cda_adapter.original_cda = "<xml>Original CDA</xml>"
 
     # Create a mock document reference for the note
     note_doc_ref = Mock()
     note_doc_ref.id = "note-doc-ref"
-    cda_connector.note_document_reference = note_doc_ref
+    cda_adapter.note_document_reference = note_doc_ref
 
     # Create a document with FHIR resources
     out_data = Document(data="Updated note")
@@ -134,18 +142,19 @@ def test_output(
     out_data.fhir.medication_list = [test_medication]
     out_data.fhir.allergy_list = [test_allergy]
 
-    # Call the output method
-    result = cda_connector.output(out_data)
+    # Call the format method
+    result = cda_adapter.format(out_data)
 
     # 1. Verify the correct response type is returned
     assert isinstance(result, CdaResponse)
     assert result.document == "<xml>Updated CDA</xml>"
 
     # 2. Verify the engine was called correctly to convert FHIR to CDA
-    mock_engine.from_fhir.assert_called_once()
+    call_args = mock_engine.from_fhir.call_args
+    assert call_args[1]["dest_format"] == FormatType.CDA
 
     # 3. Verify all resources were passed to from_fhir including the note document reference
-    resources_passed = mock_engine.from_fhir.call_args[0][0]
+    resources_passed = call_args[0][0]
     assert len(resources_passed) == 4  # 3 clinical resources + 1 document reference
     assert test_condition in resources_passed
     assert test_medication in resources_passed

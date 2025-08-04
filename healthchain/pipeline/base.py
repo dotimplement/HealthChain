@@ -89,6 +89,7 @@ class BasePipeline(Generic[T], ABC):
         _stages (Dict[str, List[Callable]]): Components grouped by processing stage
         _built_pipeline (Optional[Callable]): Compiled pipeline function
         _output_template (Optional[str]): Template string for formatting pipeline outputs
+        _output_template_path (Optional[Path]): Path to template file for formatting pipeline outputs
 
     Example:
         >>> class MyPipeline(BasePipeline[Document]):

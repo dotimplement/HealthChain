@@ -14,9 +14,6 @@ from healthchain.gateway.core.connection import FHIRConnectionManager
 from healthchain.gateway.core.errors import FHIRConnectionError
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
-# Configure pytest-asyncio for async tests
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def connection_manager():
@@ -70,6 +67,7 @@ def test_connection_manager_source_validation_and_parsing(
             connection_manager.add_source("test_source", connection_string)
 
 
+@pytest.mark.asyncio
 async def test_connection_manager_client_retrieval_and_default_selection(
     connection_manager, mock_fhir_client
 ):

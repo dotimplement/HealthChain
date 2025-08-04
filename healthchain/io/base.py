@@ -52,26 +52,3 @@ class BaseAdapter(Generic[RequestType, ResponseType], ABC):
             ResponseType: The formatted response in external format.
         """
         pass
-
-
-# Legacy connector class for backwards compatibility
-class BaseConnector(Generic[RequestType], ABC):
-    """
-    DEPRECATED: Use BaseAdapter instead.
-
-    Abstract base class for legacy connectors.
-    """
-
-    @abstractmethod
-    def input(self, data: RequestType) -> Document:
-        """
-        DEPRECATED: Use BaseAdapter.parse() instead.
-        """
-        pass
-
-    @abstractmethod
-    def output(self, data: Document) -> ResponseType:
-        """
-        DEPRECATED: Use BaseAdapter.format() instead.
-        """
-        pass

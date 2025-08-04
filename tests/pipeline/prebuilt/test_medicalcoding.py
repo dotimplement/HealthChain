@@ -42,8 +42,9 @@ def test_coding_pipeline(mock_spacy_nlp, test_document):
         mock_spacy_nlp.return_value.assert_called_once()
 
         # Verify stages are set correctly
-        assert len(pipeline._stages) == 1
+        assert len(pipeline._stages) == 2
         assert "ner+l" in pipeline._stages
+        assert "problem-extraction" in pipeline._stages
 
 
 def test_coding_pipeline_process_request(mock_spacy_nlp, mock_cda_adapter):

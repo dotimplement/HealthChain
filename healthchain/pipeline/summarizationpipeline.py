@@ -39,7 +39,7 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
             CdsCardCreator(
                 source=config.source.value,
                 task="summarization",
-                template=self._output_template,
+                template=self._output_template,  # TODO: assess where this should be configured
                 template_path=self._output_template_path,
                 delimiter="\n",
             ),

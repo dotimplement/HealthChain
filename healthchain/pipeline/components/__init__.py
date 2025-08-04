@@ -2,6 +2,7 @@ from .base import BaseComponent, Component
 from .preprocessors import TextPreProcessor
 from .postprocessors import TextPostProcessor
 from .cdscardcreator import CdsCardCreator
+from .fhirproblemextractor import FHIRProblemListExtractor
 from .integrations import SpacyNLP, HFTransformer, LangChainLLM
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "SpacyNLP",
     "HFTransformer",
     "LangChainLLM",
+    "FHIRProblemListExtractor",
 ]

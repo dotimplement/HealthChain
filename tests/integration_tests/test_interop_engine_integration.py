@@ -264,16 +264,16 @@ def test_round_trip_equivalence(interop_engine, test_cda_xml):
     # assert resources_result[2].code.coding[0].code == resources[2].code.coding[0].code
 
 
-def test_cda_connector_with_interop_engine(
-    cda_connector, interop_engine, test_cda_request, test_condition
+def test_cda_adapter_with_interop_engine(
+    cda_adapter, interop_engine, test_cda_request, test_condition
 ):
-    """Test integration of CdaConnector with InteropEngine using real data"""
+    """Test integration of CdaAdapter with InteropEngine using real data"""
 
     # Set the engine directly for testing
-    cda_connector.engine = interop_engine
+    cda_adapter.engine = interop_engine
 
     # Process the input - real CDA document from the fixture
-    result = cda_connector.input(test_cda_request)
+    result = cda_adapter.parse(test_cda_request)
 
     # Verify document structure
     assert result is not None
@@ -287,17 +287,17 @@ def test_cda_connector_with_interop_engine(
     assert result.fhir.problem_list[0].code.coding[0].code == "38341003"
     assert (
         result.fhir.problem_list[0].category[0].coding[0].code == "problem-list-item"
-    )  # Should be set by the connector
+    )  # Should be set by the adapter
     assert result.fhir.medication_list[0].medication.concept.coding[0].code == "314076"
     assert result.fhir.allergy_list[0].code.coding[0].code == "102263004"
 
     # Check document references
     assert result.data == "<paragraph>test</paragraph>"
     assert isinstance(
-        cda_connector.note_document_reference.content[0].attachment.data, bytes
+        cda_adapter.note_document_reference.content[0].attachment.data, bytes
     )
 
-    assert cda_connector.note_document_reference in result.fhir.get_resources(
+    assert cda_adapter.note_document_reference in result.fhir.get_resources(
         "DocumentReference"
     )
     doc_refs = result.fhir.get_resources("DocumentReference")
@@ -305,7 +305,7 @@ def test_cda_connector_with_interop_engine(
         len(doc_refs) == 2
     )  # Should have one for the original CDA and one for the note
     for doc_ref in doc_refs:
-        if doc_ref.id == cda_connector.note_document_reference.id:
+        if doc_ref.id == cda_adapter.note_document_reference.id:
             assert doc_ref.type.coding[0].code == "51847-2"
             assert "DocumentReference/hc-" in doc_ref.relatesTo[0].target.reference
 
@@ -313,8 +313,8 @@ def test_cda_connector_with_interop_engine(
     result.fhir.problem_list = [test_condition]
     assert len(result.fhir.problem_list) == 2
 
-    # Test the output method
-    response = cda_connector.output(result)
+    # Test the format method
+    response = cda_adapter.format(result)
 
     # Verify response content
     assert response is not None

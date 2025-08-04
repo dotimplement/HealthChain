@@ -1,8 +1,9 @@
 import logging
+from typing import Optional
 
 from healthchain.io.containers import Document
-from healthchain.io.base import BaseConnector
-from healthchain.interop import create_interop, FormatType
+from healthchain.io.base import BaseAdapter
+from healthchain.interop import create_interop, FormatType, InteropEngine
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.fhir import (
@@ -19,37 +20,45 @@ from fhir.resources.documentreference import DocumentReference
 log = logging.getLogger(__name__)
 
 
-class CdaConnector(BaseConnector):
+class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
     """
-    CDAConnector class for handling CDA (Clinical Document Architecture) documents.
+    CdaAdapter class for handling CDA (Clinical Document Architecture) documents.
 
-    This connector is responsible for parsing CDA documents, extracting relevant
-    clinical data, and updating the document with new information. It serves as
-    both an input and output connector in the pipeline.
-
-    The connector uses the InteropEngine to convert between CDA and FHIR formats,
-    preserving the clinical content while allowing for manipulation of the data
-    within the HealthChain pipeline.
+    This adapter facilitates parsing CDA documents into Document objects and formatting
+    Document objects back into CDA responses. It uses the InteropEngine to convert
+    between CDA and FHIR formats, preserving clinical content while allowing for
+    manipulation of the data within HealthChain pipelines.
 
     Attributes:
         engine (InteropEngine): The interoperability engine for CDA conversions.
+        If not provided, the default engine is used.
         original_cda (str): The original CDA document for use in output.
         note_document_reference (DocumentReference): Reference to the note document
                                                     extracted from the CDA.
 
     Methods:
-        input: Parses the input CDA document and extracts clinical data.
-        output: Updates the CDA document with new data and returns the response.
+        parse: Parses a CDA document and extracts clinical data into a Document.
+        format: Converts a Document back to CDA format and returns a CdaResponse.
     """
 
-    def __init__(self, config_dir: str = None):
-        self.engine = create_interop(config_dir=config_dir)
+    def __init__(self, engine: Optional[InteropEngine] = None):
+        """
+        Initialize CdaAdapter with optional interop engine.
+
+        Args:
+            engine (Optional[InteropEngine]): Custom interop engine for CDA conversions.
+                                            If None, creates a default engine.
+        """
+        # Initialize engine with default if not provided
+        initialized_engine = engine or create_interop()
+        super().__init__(engine=initialized_engine)
+        self.engine = initialized_engine
         self.original_cda = None
         self.note_document_reference = None
 
-    def input(self, cda_request: CdaRequest) -> Document:
+    def parse(self, cda_request: CdaRequest) -> Document:
         """
-        Parse the input CDA document and extract clinical data into a HealthChain Document object.
+        Parse a CDA document and extract clinical data into a HealthChain Document object.
 
         This method takes a CdaRequest object as input, parses it using the InteropEngine to convert
         CDA to FHIR resources, and creates a Document object with the extracted data. It creates a
@@ -66,7 +75,7 @@ class CdaConnector(BaseConnector):
                   - problem_list: List of Condition resources
                   - medication_list: List of MedicationStatement resources
                   - allergy_list: List of AllergyIntolerance resources
-                - DocumentReference resources for the original CDA and extracted notes with a parent-child relationship
+                - DocumentReference resources for the original CDA and extracted notes
 
         Note:
             If a DocumentReference resource is found in the converted FHIR resources,
@@ -138,9 +147,9 @@ class CdaConnector(BaseConnector):
 
         return doc
 
-    def output(self, document: Document) -> CdaResponse:
+    def format(self, document: Document) -> CdaResponse:
         """
-        Convert FHIR resources back to CDA format and return the response.
+        Convert a Document object back to CDA format and return the response.
 
         This method takes a Document object containing FHIR resources (problems,
         medications, allergies) and converts them back to CDA format using the
