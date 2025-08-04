@@ -32,10 +32,11 @@ nav:
         - Components:
           - Overview: reference/pipeline/components/components.md
           - CdsCardCreator: reference/pipeline/components/cdscardcreator.md
-        - Connectors:
-          - Overview: reference/pipeline/connectors/connectors.md
-          - CDA Connector: reference/pipeline/connectors/cdaconnector.md
-          - CDS FHIR Connector: reference/pipeline/connectors/cdsfhirconnector.md
+          - FHIRProblemListExtractor: reference/pipeline/components/fhirproblemextractor.md
+        - Adapters:
+          - Overview: reference/pipeline/adapters/adapters.md
+          - CDA Adapter: reference/pipeline/adapters/cdaadapter.md
+          - CDS FHIR Adapter: reference/pipeline/adapters/cdsfhiradapter.md
         - Prebuilt Pipelines:
           - Medical Coding: reference/pipeline/prebuilt_pipelines/medicalcoding.md
           - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md
@@ -59,7 +60,7 @@ nav:
       - api/pipeline.md
       - api/component.md
       - api/containers.md
-      - api/connectors.md
+      - api/adapters.md
       - api/use_cases.md
       - api/cds_hooks.md
       - api/service.md

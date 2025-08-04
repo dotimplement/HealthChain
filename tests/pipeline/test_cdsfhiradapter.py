@@ -7,12 +7,12 @@ from fhir.resources.resource import Resource
 from fhir.resources.documentreference import DocumentReference
 
 
-def test_input_with_no_document_reference(cds_fhir_connector, test_cds_request):
+def test_parse_with_no_document_reference(cds_fhir_adapter, test_cds_request):
     # Use the valid prefetch data from test_cds_request
     input_data = test_cds_request
 
     # Call the input method
-    result = cds_fhir_connector.input(input_data)
+    result = cds_fhir_adapter.parse(input_data)
 
     # Assert the result
     assert isinstance(result, Document)
@@ -25,14 +25,14 @@ def test_input_with_no_document_reference(cds_fhir_connector, test_cds_request):
     )
 
 
-def test_input_with_document_reference(
-    cds_fhir_connector, test_cds_request, doc_ref_with_content
+def test_parse_with_document_reference(
+    cds_fhir_adapter, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data
     test_cds_request.prefetch["document"] = doc_ref_with_content.model_dump()
 
     # Call the input method
-    result = cds_fhir_connector.input(test_cds_request)
+    result = cds_fhir_adapter.parse(test_cds_request)
 
     # Assert the result
     assert isinstance(result, Document)
@@ -40,14 +40,14 @@ def test_input_with_document_reference(
     assert result.data == "Test document content"
 
 
-def test_input_with_multiple_attachments(
-    cds_fhir_connector, test_cds_request, doc_ref_with_multiple_content
+def test_parse_with_multiple_attachments(
+    cds_fhir_adapter, test_cds_request, doc_ref_with_multiple_content
 ):
     # Add DocumentReference to prefetch data
     test_cds_request.prefetch["document"] = doc_ref_with_multiple_content.model_dump()
 
     # Call the input method
-    result = cds_fhir_connector.input(test_cds_request)
+    result = cds_fhir_adapter.parse(test_cds_request)
 
     # Assert the result
     assert isinstance(result, Document)
@@ -69,14 +69,14 @@ def test_input_with_multiple_attachments(
     )
 
 
-def test_input_with_custom_document_key(
-    cds_fhir_connector, test_cds_request, doc_ref_with_content
+def test_parse_with_custom_document_key(
+    cds_fhir_adapter, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data with custom key
     test_cds_request.prefetch["custom_key"] = doc_ref_with_content.model_dump()
 
     # Call the input method with custom key
-    result = cds_fhir_connector.input(
+    result = cds_fhir_adapter.parse(
         test_cds_request, prefetch_document_key="custom_key"
     )
 
@@ -86,14 +86,14 @@ def test_input_with_custom_document_key(
     assert isinstance(result.fhir._prefetch_resources["custom_key"], DocumentReference)
 
 
-def test_input_with_document_reference_error(
-    cds_fhir_connector, test_cds_request, doc_ref_without_content, caplog
+def test_parse_with_document_reference_error(
+    cds_fhir_adapter, test_cds_request, doc_ref_without_content, caplog
 ):
     # Add invalid DocumentReference to prefetch data
     test_cds_request.prefetch["document"] = doc_ref_without_content.model_dump()
 
     # Call the input method
-    result = cds_fhir_connector.input(test_cds_request)
+    result = cds_fhir_adapter.parse(test_cds_request)
 
     # Assert the result
     assert isinstance(result, Document)
@@ -101,11 +101,11 @@ def test_input_with_document_reference_error(
     assert "Error extracting text from DocumentReference" in caplog.text
 
 
-def test_input_with_missing_document_reference(
-    cds_fhir_connector, test_cds_request, caplog
+def test_parse_with_missing_document_reference(
+    cds_fhir_adapter, test_cds_request, caplog
 ):
     # Call the input method (document key doesn't exist in prefetch)
-    result = cds_fhir_connector.input(
+    result = cds_fhir_adapter.parse(
         test_cds_request, prefetch_document_key="nonexistent"
     )
 
@@ -118,7 +118,7 @@ def test_input_with_missing_document_reference(
     )
 
 
-def test_output_with_cards(cds_fhir_connector):
+def test_format_with_cards(cds_fhir_adapter):
     # Prepare test data
     cards = [
         Card(
@@ -145,7 +145,7 @@ def test_output_with_cards(cds_fhir_connector):
     out_data = Document(data="", _cds=CdsAnnotations(_cards=cards, _actions=actions))
 
     # Call the output method
-    result = cds_fhir_connector.output(out_data)
+    result = cds_fhir_adapter.format(out_data)
 
     # Assert the result
     assert isinstance(result, CDSResponse)
@@ -153,12 +153,12 @@ def test_output_with_cards(cds_fhir_connector):
     assert result.systemActions == actions
 
 
-def test_output_without_cards(cds_fhir_connector, caplog):
+def test_format_without_cards(cds_fhir_adapter, caplog):
     # Prepare test data
     out_data = Document(data="", _cds=CdsAnnotations(_cards=None, _actions=None))
 
     # Call the output method
-    result = cds_fhir_connector.output(out_data)
+    result = cds_fhir_adapter.format(out_data)
 
     # Assert the result
     assert isinstance(result, CDSResponse)
@@ -169,7 +169,7 @@ def test_output_without_cards(cds_fhir_connector, caplog):
     )
 
 
-def test_input_with_empty_request(cds_fhir_connector, test_cds_request):
+def test_parse_with_empty_request(cds_fhir_adapter, test_cds_request):
     # Prepare test data
     input_data = test_cds_request
     input_data.prefetch = None
@@ -177,7 +177,7 @@ def test_input_with_empty_request(cds_fhir_connector, test_cds_request):
 
     # Call the input method and expect a ValueError
     with pytest.raises(ValueError) as exc_info:
-        cds_fhir_connector.input(input_data)
+        cds_fhir_adapter.parse(input_data)
 
     # Assert the error message
     assert (
@@ -186,7 +186,7 @@ def test_input_with_empty_request(cds_fhir_connector, test_cds_request):
     )
 
 
-def test_input_with_fhir_server(cds_fhir_connector, test_cds_request):
+def test_parse_with_fhir_server(cds_fhir_adapter, test_cds_request):
     # Prepare test data
     input_data = test_cds_request
     input_data.prefetch = None
@@ -194,7 +194,7 @@ def test_input_with_fhir_server(cds_fhir_connector, test_cds_request):
 
     # Call the input method and expect a NotImplementedError
     with pytest.raises(NotImplementedError) as exc_info:
-        cds_fhir_connector.input(input_data)
+        cds_fhir_adapter.parse(input_data)
 
     # Assert the error message
     assert str(exc_info.value) == "FHIR server is not implemented yet!"

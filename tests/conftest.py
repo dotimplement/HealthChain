@@ -3,7 +3,7 @@ import pytest
 import yaml
 import tempfile
 
-from healthchain.io.cdaconnector import CdaConnector
+
 from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
@@ -28,8 +28,10 @@ from fhir.resources.documentreference import DocumentReference, DocumentReferenc
 
 
 @pytest.fixture
-def cda_connector():
-    return CdaConnector()
+def cda_adapter():
+    from healthchain.io import CdaAdapter
+
+    return CdaAdapter()
 
 
 # FHIR resource fixtures

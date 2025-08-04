@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from healthchain.io.cdsfhirconnector import CdsFhirConnector
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import (
     FhirData,
@@ -17,8 +16,10 @@ from healthchain.pipeline.modelrouter import ModelRouter
 
 
 @pytest.fixture
-def cds_fhir_connector():
-    return CdsFhirConnector(hook_name="patient-view")
+def cds_fhir_adapter():
+    from healthchain.io import CdsFhirAdapter
+
+    return CdsFhirAdapter(hook_name="patient-view")
 
 
 @pytest.fixture
@@ -90,21 +91,21 @@ def mock_cds_card_creator():
 
 
 @pytest.fixture
-def mock_cds_fhir_connector(test_condition):
-    with patch("healthchain.io.cdsfhirconnector.CdsFhirConnector") as mock:
-        connector_instance = mock.return_value
+def mock_cds_fhir_adapter(test_condition):
+    with patch("healthchain.io.CdsFhirAdapter") as mock:
+        adapter_instance = mock.return_value
 
-        # Mock the input method
+        # Mock the parse method
         fhir_data = FhirData()
         fhir_data.prefetch_resources = {"problem": test_condition}
 
-        connector_instance.input.return_value = Document(
+        adapter_instance.parse.return_value = Document(
             data="Original FHIR data",
             _fhir=fhir_data,
         )
 
-        # Mock the output method
-        connector_instance.output.return_value = CDSResponse(
+        # Mock the format method
+        adapter_instance.format.return_value = CDSResponse(
             cards=[
                 Card(
                     summary="Summarized discharge information",
@@ -118,23 +119,26 @@ def mock_cds_fhir_connector(test_condition):
         yield mock
 
 
-# CDA connector fixtures
+# CDA adapter fixtures
 
 
 @pytest.fixture
-def mock_cda_connector(test_document):
-    with patch("healthchain.io.cdaconnector.CdaConnector") as mock:
-        connector_instance = mock.return_value
+def mock_cda_adapter(test_document):
+    with patch("healthchain.io.CdaAdapter") as mock:
+        adapter_instance = mock.return_value
 
-        # Mock the input method
-        connector_instance.input.return_value = test_document
+        # Mock the parse method
+        adapter_instance.parse.return_value = test_document
 
-        # Mock the output method
-        connector_instance.output.return_value = CdaResponse(
+        # Mock the format method
+        adapter_instance.format.return_value = CdaResponse(
             document="<xml>Updated CDA</xml>"
         )
 
         yield mock
+
+
+# Adapter fixtures
 
 
 # NLP component fixtures

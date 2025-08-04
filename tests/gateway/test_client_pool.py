@@ -6,8 +6,6 @@ from unittest.mock import Mock, AsyncMock
 from healthchain.gateway.clients.pool import FHIRClientPool
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def mock_client_factory():
@@ -64,6 +62,7 @@ def test_client_pool_initialization(max_conn, keepalive_conn, expiry):
     assert pool._clients == {}
 
 
+@pytest.mark.asyncio
 async def test_client_creation_and_reuse(client_pool, mock_client_factory):
     """FHIRClientPool creates new clients and reuses existing ones."""
     conn1 = "fhir://server1.example.com/R4"
@@ -85,6 +84,7 @@ async def test_client_creation_and_reuse(client_pool, mock_client_factory):
     assert len(client_pool._clients) == 2
 
 
+@pytest.mark.asyncio
 async def test_close_all_clients(client_pool, mock_client_factory):
     """FHIRClientPool closes all clients and handles missing close methods."""
     conn1 = "fhir://server1.example.com/R4"
@@ -107,6 +107,7 @@ async def test_close_all_clients(client_pool, mock_client_factory):
     assert client_pool._clients == {}
 
 
+@pytest.mark.asyncio
 async def test_pool_stats(client_pool, mock_client_factory):
     """FHIRClientPool provides accurate statistics."""
     # Empty pool stats
@@ -135,6 +136,7 @@ async def test_pool_stats(client_pool, mock_client_factory):
     assert client_stats["available_connections"] == 1
 
 
+@pytest.mark.asyncio
 async def test_pool_stats_without_pool_info(client_pool):
     """FHIRClientPool handles clients without connection pool info."""
     simple_client = Mock(spec=[])
@@ -145,6 +147,7 @@ async def test_pool_stats_without_pool_info(client_pool):
     assert stats["clients"]["simple"] == {}
 
 
+@pytest.mark.asyncio
 async def test_client_factory_exceptions(client_pool):
     """FHIRClientPool propagates exceptions from client factory."""
 
@@ -155,6 +158,7 @@ async def test_client_factory_exceptions(client_pool):
         await client_pool.get_client("fhir://test.com/R4", failing_factory)
 
 
+@pytest.mark.asyncio
 async def test_concurrent_client_creation(client_pool):
     """FHIRClientPool handles concurrent requests for same connection."""
     connection_string = "fhir://test.example.com/R4"
