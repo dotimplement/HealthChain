@@ -109,14 +109,9 @@ def create_interop(
     logger = logging.getLogger(__name__)
 
     if config_dir is None:
-        # Try local configs first (for customization), fall back to bundled
-        local_configs = Path("configs")
-        if local_configs.exists():
-            config_dir = local_configs
-            logger.info("Using local configs from ./configs")
-        else:
-            config_dir = _get_bundled_configs()
-            logger.info("Using bundled default configs")
+        # Use bundled configs as default
+        config_dir = _get_bundled_configs()
+        logger.info("Using bundled default configs")
     else:
         # Convert string to Path if needed
         config_dir = Path(config_dir)
