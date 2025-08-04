@@ -53,7 +53,7 @@ nav:
         - Working with xmltodict: reference/interop/xmltodict.md
       - Utilities:
         - FHIR Helpers: reference/utilities/fhir_helpers.md
-        - Sandbox: reference/sandbox/sandbox.md
+        - Sandbox: reference/utilities/sandbox.md
         - Data Generator: reference/utilities/data_generator.md
   - API Reference:
       - api/index.md

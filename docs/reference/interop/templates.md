@@ -36,13 +36,16 @@ Using full paths is recommended for clarity and to avoid confusion when template
 
 ## Default Templates
 
-HealthChain provides default templates for the transformation of Problems, Medications, and Allergies sections in a Continuity of Care (CCD) CDA to FHIR and the reverse. They are configured to work out of the box with the default configuration. You are welcome to modify these templates at your own discretion or use them as a starting reference point for your writing your own templates.
+HealthChain provides default templates for the transformation of Problems, Medications, and Notes sections in a Continuity of Care (CCD) CDA to FHIR and the reverse. They are configured to work out of the box with the default configuration and the example CDAs [here](https://github.com/dotimplement/HealthChain/tree/main/resources).
+
+You are welcome to modify these templates at your own discretion or use them as a starting reference point for your writing your own templates. **Always verify that templates work for your use case.**
+
+**Note:** Some templates are experimental and not included in the default configs. See [Experimental Templates](experimental.md) for details on templates under development.
 
 | CDA Section | FHIR Resource |
 |-------------|---------------|
 | **Problems** | [**Condition**](https://www.hl7.org/fhir/condition.html) |
 | **Medications** | [**MedicationStatement**](https://www.hl7.org/fhir/medicationstatement.html) |
-| **Allergies** | [**AllergyIntolerance**](https://www.hl7.org/fhir/allergyintolerance.html) |
 | **Notes** | [**DocumentReference**](https://www.hl7.org/fhir/documentreference.html) |
 
 CDA to FHIR templates:
@@ -51,7 +54,6 @@ CDA to FHIR templates:
 |-------------|------------------|
 | **Problems** | `fhir_cda/problem_entry.liquid` |
 | **Medications** | `fhir_cda/medication_entry.liquid` |
-| **Allergies** | `fhir_cda/allergy_entry.liquid` |
 | **Notes** | `fhir_cda/note_entry.liquid` |
 
 FHIR to CDA templates:
@@ -60,7 +62,6 @@ FHIR to CDA templates:
 |---------------|------------------|
 | **Condition** | `cda_fhir/condition.liquid` |
 | **MedicationStatement** | `cda_fhir/medication_statement.liquid` |
-| **AllergyIntolerance** | `cda_fhir/allergy_intolerance.liquid` |
 | **DocumentReference** | `cda_fhir/document_reference.liquid` |
 
 ## Template Format
@@ -97,11 +98,11 @@ Example template for a CDA to FHIR conversion:
 The Interoperability Engine API provides a high-level interface (`.to_fhir()` and `.from_fhir()`) for transforming healthcare data between different formats using templates.
 
 ```python
-from healthchain.interop import create_engine, FormatType
+from healthchain.interop import create_interop, FormatType
 from healthchain.fhir import create_condition
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Create a FHIR resource
 condition = create_condition(
@@ -124,10 +125,10 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 For advanced use cases, you can access the template system directly:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Access the template registry
 registry = engine.template_registry
@@ -198,7 +199,6 @@ The template system provides several custom filters for common healthcare docume
 | `extract_effective_period` | Extracts effective period data from CDA effectiveTime elements |
 | `extract_effective_timing` | Extracts timing data from effectiveTime elements |
 | `extract_clinical_status` | Extracts clinical status from an observation |
-| `extract_reactions` | Extracts reactions from an observation |
 | `clean_empty` | Recursively removes empty values from dictionaries and lists |
 | `to_base64` | Encodes text to base64 |
 | `from_base64` | Decodes base64 to text |
@@ -229,13 +229,13 @@ For more information on using filters, see Liquid's [official documentation](htt
 You can add custom filters to the template system:
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 def custom_filter(value):
     return f"CUSTOM:{value}"
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Add a custom filter
 engine.template_registry.add_filter("custom", custom_filter)

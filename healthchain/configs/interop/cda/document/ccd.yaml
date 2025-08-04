@@ -37,7 +37,6 @@ structure:
     structured_body: true
     non_xml_body: false
     include_sections:
-      - "allergies"
       - "medications"
       - "problems"
       - "notes"

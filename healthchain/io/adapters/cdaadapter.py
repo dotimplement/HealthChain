@@ -3,7 +3,7 @@ from typing import Optional
 
 from healthchain.io.containers import Document
 from healthchain.io.base import BaseAdapter
-from healthchain.interop import create_engine, FormatType, InteropEngine
+from healthchain.interop import create_interop, FormatType, InteropEngine
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.fhir import (
@@ -30,8 +30,7 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
     manipulation of the data within HealthChain pipelines.
 
     Attributes:
-        engine (InteropEngine): The interoperability engine for CDA conversions.
-        If not provided, the default engine is used.
+        engine (InteropEngine): The interoperability engine for CDA conversions. If not provided, the default engine is used.
         original_cda (str): The original CDA document for use in output.
         note_document_reference (DocumentReference): Reference to the note document
                                                     extracted from the CDA.
@@ -50,7 +49,7 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
                                             If None, creates a default engine.
         """
         # Initialize engine with default if not provided
-        initialized_engine = engine or create_engine()
+        initialized_engine = engine or create_interop()
         super().__init__(engine=initialized_engine)
         self.engine = initialized_engine
         self.original_cda = None

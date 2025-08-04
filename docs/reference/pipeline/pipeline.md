@@ -12,8 +12,8 @@ HealthChain comes with a set of prebuilt pipelines that are out-of-the-box imple
 |----------|-----------|----------|-------------|---------------------|
 | [**MedicalCodingPipeline**](./prebuilt_pipelines/medicalcoding.md) | `Document` | Clinical Documentation | An NLP pipeline that processes free-text clinical notes into structured data | Automatically generating SNOMED CT codes from clinical notes |
 | [**SummarizationPipeline**](./prebuilt_pipelines/summarization.md) | `Document` | Clinical Decision Support | An NLP pipeline for summarizing clinical notes | Generating discharge summaries from patient history and notes |
-| **QAPipeline** [TODO] | `Document` | Conversational AI | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
-| **ClassificationPipeline** [TODO] | `Tabular` | Predictive Analytics | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data |
+<!-- | **QAPipeline** [TODO] | `Document` | Conversational AI | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
+| **ClassificationPipeline** [TODO] | `Tabular` | Predictive Analytics | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data | -->
 
 Prebuilt pipelines are end-to-end workflows optimized for specific healthcare AI tasks. They can be used with adapters for seamless integration with EHR systems via [protocols](../gateway/gateway.md).
 

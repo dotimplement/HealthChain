@@ -1,7 +1,7 @@
 import logging
 
 from functools import cached_property
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Any
 from pathlib import Path
 
 from fhir.resources.resource import Resource
@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 from healthchain.config.base import ValidationLevel
 from healthchain.interop.config_manager import InteropConfigManager
+from healthchain.interop.generators.base import BaseGenerator
+from healthchain.interop.parsers.base import BaseParser
 from healthchain.interop.types import FormatType, validate_format
 
 from healthchain.interop.parsers.cda import CDAParser
@@ -191,7 +193,9 @@ class InteropEngine:
 
         return self._generators[format_type]
 
-    def register_parser(self, format_type: FormatType, parser_instance):
+    def register_parser(
+        self, format_type: FormatType, parser_instance: BaseParser
+    ) -> "InteropEngine":
         """Register a custom parser for a format type. This will replace the default parser for the format type.
 
         Args:
@@ -207,7 +211,9 @@ class InteropEngine:
         self._parsers[format_type] = parser_instance
         return self
 
-    def register_generator(self, format_type: FormatType, generator_instance):
+    def register_generator(
+        self, format_type: FormatType, generator_instance: BaseGenerator
+    ) -> "InteropEngine":
         """Register a custom generator for a format type. This will replace the default generator for the format type.
 
         Args:
@@ -299,7 +305,7 @@ class InteropEngine:
         self,
         resources: Union[List[Resource], Bundle],
         dest_format: Union[str, FormatType],
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Convert FHIR resources to a target format
 

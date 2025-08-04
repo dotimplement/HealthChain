@@ -35,7 +35,6 @@ class TestCDS(ClinicalDecisionSupport):
 
 The `@hc.ehr` decorator simulates EHR client behavior for testing. You must specify a **workflow** that determines how your data will be formatted.
 
-Data should be wrapped in a [Prefetch](../../../api/data_models.md#healthchain.models.data.prefetch) object for CDS workflows, or return appropriate FHIR resources for document workflows.
 
 === "Clinical Decision Support"
     ```python

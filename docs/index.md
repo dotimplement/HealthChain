@@ -1,6 +1,6 @@
 # Welcome to HealthChain 💫 🏥
 
-HealthChain is an open-source Python framework for building real-time AI applications in a healthcare context.
+HealthChain is an open-source Python framework that makes it easier to connect your AI/ML pipelines to healthcare systems.
 
 [ :fontawesome-brands-discord: Join our Discord](https://discord.gg/UQC6uAepUz){ .md-button .md-button--primary }
 &nbsp;&nbsp;&nbsp;&nbsp;

@@ -2,6 +2,44 @@
 
 The interoperability module uses a configuration system to control its behavior. This includes mappings between different healthcare data formats, validation rules, and environment-specific settings.
 
+## Configuration Overview
+
+HealthChain works out-of-the-box with default configurations, but you can customize them for your specific needs.
+
+### Default Usage
+
+```python
+from healthchain.interop import create_interop
+
+# Uses bundled default configurations
+engine = create_interop()
+```
+
+### Custom Configuration
+
+```python
+# Use custom config directory
+engine = create_interop(config_dir="/path/to/custom/configs")
+```
+
+### Creating Custom Configs
+
+To create editable configuration templates:
+
+```bash
+# Create customizable config templates
+healthchain init-configs ./my_configs
+
+# Then use them in your code
+engine = create_interop(config_dir="./my_configs")
+```
+
+This gives you editable copies of:
+- **Templates**: CDA ↔ FHIR conversion templates
+- **Mappings**: Code system mappings (SNOMED, LOINC, etc.)
+- **Validation**: Schema validation rules
+- **Environment settings**: Development, testing, production configs
+
 ## Configuration Components
 
 | Component | Description |
@@ -188,12 +226,12 @@ defaults:
 ### Basic Configuration Access
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 # OR
-engine = create_engine(config_dir="custom_configs/")
+engine = create_interop(config_dir="custom_configs/")
 
 # Get all configurations
 engine.config.get_configs()
@@ -202,10 +240,10 @@ engine.config.get_configs()
 id_prefix = engine.config.get_config_value("defaults.common.id_prefix")
 
 # Set the environment (this reloads configuration from the specified environment)
-engine = create_engine(environment="production")
+engine = create_interop(environment="production")
 
 # Validation level is set during initialization or using set_validation_level
-engine = create_engine(validation_level="warn")
+engine = create_interop(validation_level="warn")
 # OR
 engine.config.set_validation_level("strict")
 
@@ -216,10 +254,10 @@ engine.config.set_config_value("cda.sections.problems.identifiers.code", "10160-
 ### Section Configuration
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Get all section configurations
 sections = engine.config.get_cda_section_configs()
@@ -235,10 +273,10 @@ code = problems_config["identifiers"]["code"]
 ### Mapping Access
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine
-engine = create_engine()
+engine = create_interop()
 
 # Get all mappings
 mappings = engine.config.get_mappings()
@@ -249,82 +287,19 @@ snomed = systems.get("http://snomed.info/sct", {})
 snomed_oid = snomed.get("oid")  # "2.16.840.1.113883.6.96"
 ```
 
-## Configuration Loading Order
+## Configuration Precedence
 
-The configuration system follows a hierarchical loading order, where each layer can override values from previous layers:
+Configuration values are loaded in order of precedence:
 
-```
-┌─────────────────────────────────┐
-│    1. BASE CONFIGURATION        │
-│       configs/defaults.yaml     │
-│                                 │
-│  • Default values for all envs  │
-│  • Complete set of all options  │
-│  • Lowest precedence            │
-└─────────────────┬───────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────┐
-│   2. ENVIRONMENT CONFIGURATION  │
-│  configs/environments/{env}.yaml│
-│                                 │
-│  • Environment-specific values  │
-│  • Overrides matching defaults  │
-│  • Medium precedence            │
-└─────────────────┬───────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────┐
-│   3. RUNTIME CONFIGURATION      │
-│     Programmatic overrides      │
-│                                 │
-│  • Set via API at runtime       │
-│  • For temporary changes        │
-│  • Highest precedence           │
-└─────────────────────────────────┘
-```
+1. **Base configuration** (defaults.yaml) - lowest precedence
+2. **Environment configuration** (environments/{env}.yaml) - overrides defaults
+3. **Runtime overrides** (via API) - highest precedence
 
-### Example of Configuration Override
-
-Consider the following values set across different configuration layers:
-
-1. In `defaults.yaml`:
-```yaml
-defaults:
-  common:
-    id_prefix: "hc-"
-    subject:
-      reference: "Patient/example"
-```
-
-2. In `environments/development.yaml`:
-```yaml
-defaults:
-  common:
-    id_prefix: "dev-"
-    subject:
-      reference: "Patient/Foo"
-```
-
-3. Runtime override in code:
 ```python
-from healthchain.interop import create_engine
-from healthchain.interop.types import FormatType
-
-# Create an engine
-engine = create_engine()
-
-# Override a configuration value at runtime
-engine.config.set_config_value("defaults.common.id_prefix", "test-")
-
-with open("tests/data/test_cda.xml", "r") as f:
-    cda = f.read()
-
-fhir_resources = engine.to_fhir(cda, FormatType.CDA)
-print(fhir_resources[0].id)  # Will use "test-" prefix instead of "dev-" or "hc-"
+# Example: Override configuration at runtime
+engine = create_interop()
+engine.config.set_config_value("defaults.common.id_prefix", "custom-")
 ```
-
-In this example, the final value of `id_prefix` would be `"test-"` because the runtime override has the highest precedence, followed by the environment configuration, and finally the base configuration.
 
 ## Validation Levels
 
@@ -337,10 +312,10 @@ The configuration system supports different validation levels:
 | `ignore` | Ignore configuration errors |
 
 ```python
-from healthchain.interop import create_engine
+from healthchain.interop import create_interop
 
 # Create an engine with a specific validation level
-engine = create_engine(validation_level="warn")
+engine = create_interop(validation_level="warn")
 
 # Change the validation level
 engine.config.set_validation_level("strict")
