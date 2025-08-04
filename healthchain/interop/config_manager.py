@@ -5,6 +5,7 @@ This module provides specialized configuration management for interoperability.
 """
 
 import logging
+from pathlib import Path
 from typing import Dict, Optional, List, Type
 
 from pydantic import BaseModel
@@ -43,7 +44,7 @@ class InteropConfigManager(ConfigManager):
 
     def __init__(
         self,
-        config_dir,
+        config_dir: Path,
         validation_level: str = ValidationLevel.STRICT,
         environment: Optional[str] = None,
     ):

@@ -30,8 +30,7 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
     manipulation of the data within HealthChain pipelines.
 
     Attributes:
-        engine (InteropEngine): The interoperability engine for CDA conversions.
-        If not provided, the default engine is used.
+        engine (InteropEngine): The interoperability engine for CDA conversions. If not provided, the default engine is used.
         original_cda (str): The original CDA document for use in output.
         note_document_reference (DocumentReference): Reference to the note document
                                                     extracted from the CDA.

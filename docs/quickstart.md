@@ -199,7 +199,7 @@ For more details, see the [conversion examples](cookbook/interop/basic_conversio
 
 Test your AI applications in realistic healthcare contexts with sandbox environments for CDS Hooks and clinical documentation workflows.
 
-[(Full Documentation on Sandbox)](./reference/sandbox/sandbox.md)
+[(Full Documentation on Sandbox)](./reference/utilities/sandbox.md)
 
 ```python
 import healthchain as hc

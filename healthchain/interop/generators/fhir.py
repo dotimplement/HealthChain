@@ -6,7 +6,7 @@ This module provides functionality for generating FHIR resources from templates.
 
 import uuid
 import logging
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Type, Any
 
 from fhir.resources.resource import Resource
 from liquid import Template
@@ -42,7 +42,7 @@ class FHIRGenerator(BaseGenerator):
         )
     """
 
-    def transform(self, data, **kwargs) -> str:
+    def transform(self, data: List[Dict], **kwargs: Any) -> List[Resource]:
         """Transform input data to FHIR resources.
 
         Args:
