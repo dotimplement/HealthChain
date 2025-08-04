@@ -193,7 +193,7 @@ class DocumentConfigBase(BaseModel):
 class CcdDocumentConfig(DocumentConfigBase):
     """Configuration model specific to CCD documents"""
 
-    allowed_sections: List[str] = ["problems", "medications", "allergies", "notes"]
+    allowed_sections: List[str] = ["problems", "medications", "notes"]
 
 
 class NoteSectionTemplateConfig(SectionTemplateConfigBase):
@@ -218,7 +218,6 @@ class NoteSectionTemplateConfig(SectionTemplateConfigBase):
 CDA_SECTION_CONFIG_REGISTRY = {
     "Condition": ProblemSectionTemplateConfig,
     "MedicationStatement": MedicationSectionTemplateConfig,
-    "AllergyIntolerance": AllergySectionTemplateConfig,
     "DocumentReference": NoteSectionTemplateConfig,
 }
 

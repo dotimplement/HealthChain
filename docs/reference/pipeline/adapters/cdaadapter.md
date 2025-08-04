@@ -10,7 +10,7 @@ This adapter is particularly useful for clinical documentation improvement (CDI)
 
 | Input | Output | Document Access |
 |-------|--------|-----------------|
-| [**CdaRequest**](../../../api/use_cases.md#healthchain.models.requests.cdarequest.CdaRequest) | [**CdaResponse**](../../../api/use_cases.md#healthchain.models.responses.cdaresponse.CdaResponse) | `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.fhir.allergy_list`, `Document.text` |
+| [**CdaRequest**](../../../api/use_cases.md#healthchain.models.requests.cdarequest.CdaRequest) | [**CdaResponse**](../../../api/use_cases.md#healthchain.models.responses.cdaresponse.CdaResponse) | `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.text` |
 
 ## Document Data Access
 
@@ -20,7 +20,6 @@ Data parsed from the CDA document is converted into FHIR resources and stored in
 |-------------|---------------|--------------------------|
 | Problem List | [Condition](https://www.hl7.org/fhir/condition.html) | `Document.fhir.problem_list` |
 | Medication List | [MedicationStatement](https://www.hl7.org/fhir/medicationstatement.html) | `Document.fhir.medication_list` |
-| Allergy List | [AllergyIntolerance](https://www.hl7.org/fhir/allergyintolerance.html) | `Document.fhir.allergy_list` |
 | Clinical Notes | [DocumentReference](https://www.hl7.org/fhir/documentreference.html) | `Document.text` + `Document.fhir.bundle` |
 
 All FHIR resources are Pydantic models, so you can access them using the `model_dump()` method:

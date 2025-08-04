@@ -4,7 +4,8 @@ from pathlib import Path
 
 from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
+
+# from fhir.resources.allergyintolerance import AllergyIntolerance  # Removed from bundled configs
 from fhir.resources.documentreference import DocumentReference
 
 from healthchain.interop.engine import InteropEngine
@@ -35,7 +36,7 @@ def test_cda_to_fhir_conversion(interop_engine, test_cda_xml):
 
     This test verifies that:
     - The engine successfully converts CDA to FHIR resources
-    - The expected resource types (Condition, MedicationStatement, AllergyIntolerance) are present
+    - The expected resource types (Condition, MedicationStatement) are present
     - The FHIR resources contain the correct data from the source CDA document
     """
     # Convert CDA to FHIR
@@ -48,12 +49,12 @@ def test_cda_to_fhir_conversion(interop_engine, test_cda_xml):
     # Check individual resources
     conditions = [r for r in resources if isinstance(r, Condition)]
     medications = [r for r in resources if isinstance(r, MedicationStatement)]
-    allergies = [r for r in resources if isinstance(r, AllergyIntolerance)]
+    # allergies = [r for r in resources if isinstance(r, AllergyIntolerance)]  # Removed from bundled configs
     notes = [r for r in resources if isinstance(r, DocumentReference)]
 
     assert len(conditions) > 0
     assert len(medications) > 0
-    assert len(allergies) > 0
+    # assert len(allergies) > 0  # Removed from bundled configs
     assert len(notes) > 0
 
     # Verify specific data in the resources
@@ -100,30 +101,31 @@ def test_cda_to_fhir_conversion(interop_engine, test_cda_xml):
     assert medication.dosage[0].doseAndRate[0].doseQuantity.unit == "mg"
     assert medication.effectivePeriod.end
 
-    # Allergy
-    allergy = allergies[0]
-    assert "dev-" in allergy.id
-    assert allergy.patient.reference == "Patient/Foo"
-    # TODO: fix this!!
-    # assert allergy.clinicalStatus.coding[0].code == "active"
-    assert (
-        allergy.clinicalStatus.coding[0].system
-        == "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"
-    )
-    assert allergy.type.coding[0].code == "418471000"
-    assert allergy.type.coding[0].display == "Propensity to adverse reactions to food"
-    assert allergy.type.coding[0].system == "http://snomed.info/sct"
-    assert allergy.code.coding[0].code == "102263004"
-    assert allergy.code.coding[0].display == "EGGS"
-    assert allergy.code.coding[0].system == "http://snomed.info/sct"
-    assert allergy.reaction[0].manifestation[0].concept.coding[0].code == "65124004"
-    assert allergy.reaction[0].manifestation[0].concept.coding[0].display == "Swelling"
-    assert (
-        allergy.reaction[0].manifestation[0].concept.coding[0].system
-        == "http://snomed.info/sct"
-    )
-    assert allergy.reaction[0].severity == "severe"
-    assert allergy.onsetDateTime
+    # Allergy tests removed - allergies not in bundled configs due to known bugs
+    # See dev-templates/allergies/ for experimental allergy support
+    # allergy = allergies[0]
+    # assert "dev-" in allergy.id
+    # assert allergy.patient.reference == "Patient/Foo"
+    # # TODO: fix this!!
+    # # assert allergy.clinicalStatus.coding[0].code == "active"
+    # assert (
+    #     allergy.clinicalStatus.coding[0].system
+    #     == "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical"
+    # )
+    # assert allergy.type.coding[0].code == "418471000"
+    # assert allergy.type.coding[0].display == "Propensity to adverse reactions to food"
+    # assert allergy.type.coding[0].system == "http://snomed.info/sct"
+    # assert allergy.code.coding[0].code == "102263004"
+    # assert allergy.code.coding[0].display == "EGGS"
+    # assert allergy.code.coding[0].system == "http://snomed.info/sct"
+    # assert allergy.reaction[0].manifestation[0].concept.coding[0].code == "65124004"
+    # assert allergy.reaction[0].manifestation[0].concept.coding[0].display == "Swelling"
+    # assert (
+    #     allergy.reaction[0].manifestation[0].concept.coding[0].system
+    #     == "http://snomed.info/sct"
+    # )
+    # assert allergy.reaction[0].severity == "severe"
+    # assert allergy.onsetDateTime
 
     # Note
     note = notes[0]
@@ -165,7 +167,7 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
     # Check for common elements that should be in the CDA
     assert "Problem List" in cda
     assert "Medications" in cda
-    assert "Allergies" in cda
+    # assert "Allergies" in cda  # Removed from bundled configs
     assert "Progress Notes" in cda
 
     assert '<templateId root="2.16.840.1.113883.10.20.1.27"/>' in cda
@@ -196,26 +198,26 @@ def test_fhir_to_cda_conversion(interop_engine, test_cda_xml):
         '<value xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="755561003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CE" displayName="Active"/>'
         in cda
     )
-    assert (
-        '<code code="418471000" codeSystem="2.16.840.1.113883.6.96" displayName="Propensity to adverse reactions to food"/>'
-        in cda
-    )
+    # assert (
+    #     '<code code="418471000" codeSystem="2.16.840.1.113883.6.96" displayName="Propensity to adverse reactions to food"/>'
+    #     in cda
+    # )
 
-    assert (
-        'code="102263004" codeSystem="2.16.840.1.113883.6.96" displayName="EGGS"' in cda
-    )
-    assert (
-        'code="65124004" codeSystem="2.16.840.1.113883.6.96" displayName="Swelling"'
-        in cda
-    )
-    assert (
-        '<code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity"/>'
-        in cda
-    )
-    assert (
-        'code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" displayName="H"'
-        in cda
-    )
+    # assert (
+    #     'code="102263004" codeSystem="2.16.840.1.113883.6.96" displayName="EGGS"' in cda
+    # )
+    # assert (
+    #     'code="65124004" codeSystem="2.16.840.1.113883.6.96" displayName="Swelling"'
+    #     in cda
+    # )
+    # assert (
+    #     '<code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity"/>'
+    #     in cda
+    # )
+    # assert (
+    #     'code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" displayName="H"'
+    #     in cda
+    # )
     assert "CDATA" in cda
     assert "<paragraph>test</paragraph>" in cda
 
@@ -258,10 +260,8 @@ def test_round_trip_equivalence(interop_engine, test_cda_xml):
         == original_medications[0].medication.concept.coding[0].code
     )
 
-    # TODO: allergy intolerance reverse parsing isn't quite right look into this
-    # print(resources_result[2].model_dump_json(indent=2))
-    # print(resources[2].model_dump_json(indent=2))
-    # assert resources_result[2].code.coding[0].code == resources[2].code.coding[0].code
+    # Note: Allergy tests removed - allergies not in bundled configs due to known bugs
+    # See dev-templates/allergies/ for experimental allergy support
 
 
 def test_cda_adapter_with_interop_engine(
@@ -281,7 +281,7 @@ def test_cda_adapter_with_interop_engine(
     # Verify FHIR resources were extracted
     assert len(result.fhir.problem_list) == 1
     assert len(result.fhir.medication_list) == 1
-    assert len(result.fhir.allergy_list) == 1
+    # assert len(result.fhir.allergy_list) == 1  # Removed from bundled configs
 
     # Verify types of extracted resources
     assert result.fhir.problem_list[0].code.coding[0].code == "38341003"
@@ -289,7 +289,7 @@ def test_cda_adapter_with_interop_engine(
         result.fhir.problem_list[0].category[0].coding[0].code == "problem-list-item"
     )  # Should be set by the adapter
     assert result.fhir.medication_list[0].medication.concept.coding[0].code == "314076"
-    assert result.fhir.allergy_list[0].code.coding[0].code == "102263004"
+    # assert result.fhir.allergy_list[0].code.coding[0].code == "102263004"  # Removed from bundled configs
 
     # Check document references
     assert result.data == "<paragraph>test</paragraph>"
@@ -329,7 +329,7 @@ def test_cda_adapter_with_interop_engine(
     assert "Test Condition" in response.document  # New problem
     assert "Medications" in response.document
     assert "314076" in response.document
-    assert "Allergies" in response.document
-    assert "102263004" in response.document
+    # assert "Allergies" in response.document  # Removed from bundled configs
+    # assert "102263004" in response.document  # Removed from bundled configs
     assert "Progress Notes" in response.document
     assert "<paragraph>test</paragraph>" in response.document
