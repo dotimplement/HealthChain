@@ -154,11 +154,15 @@ The HealthChain Interoperability module provides tools for converting between di
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
-```python
-from healthchain.interop import create_engine, FormatType
 
-# Create an interoperability engine
-engine = create_engine()
+**Choose your setup based on your needs:**
+
+✅ **Default configs** - For basic testing and prototyping only:
+```python
+from healthchain.interop import create_interop, FormatType
+
+# Uses bundled configs - basic CDA ↔ FHIR conversion
+engine = create_interop()
 
 # Load a CDA document
 with open("tests/data/test_cda.xml", "r") as f:
@@ -171,16 +175,31 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 ```
 
-The interop module provides a flexible, template-based approach to healthcare format conversion:
+> ⚠️ **Default configs are limited** - Only supports problems, medications, and notes. No allergies, custom mappings, or organization-specific templates.
 
-| Feature | Description |
-|---------|-------------|
-| Format conversion | Convert legacy formats (CDA, HL7v2) to FHIR resources and back |
-| Template-based generation | Customize syntactic output using [Liquid](https://shopify.github.io/liquid/) templates |
-| Configuration | Configure terminology mappings, validation rules, and environments |
-| Extension | Register custom parsers, generators, and validators |
+🛠️ **Custom configs** - **Required for real-world use**:
+```bash
+# Create editable configuration templates
+healthchain init-configs ./my_configs
+```
 
-For more details, see the [conversion examples](cookbook/interop/basic_conversion.md).
+```python
+# Use your customized configs
+engine = create_interop(config_dir="./my_configs")
+
+# Now you can customize:
+# • Add experimental features (allergies, procedures)
+# • Modify terminology mappings (SNOMED, LOINC codes)
+# • Customize templates for your organization's CDA format
+# • Configure validation rules and environments
+```
+
+**When you need custom configs:**
+- 🏥 **Production healthcare applications**
+- 🔧 **Organization-specific CDA templates**
+- 🧪 **Experimental features** (allergies, procedures)
+- 🗺️ **Custom terminology mappings**
+- 🛡️ **Specific validation requirements**
 
 
 ## Utilities ⚙️
@@ -189,7 +208,7 @@ For more details, see the [conversion examples](cookbook/interop/basic_conversio
 
 Test your AI applications in realistic healthcare contexts with sandbox environments for CDS Hooks and clinical documentation workflows.
 
-[(Full Documentation on Sandbox)](./reference/sandbox/sandbox.md)
+[(Full Documentation on Sandbox)](./reference/utilities/sandbox.md)
 
 ```python
 import healthchain as hc

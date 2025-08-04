@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Callable
 
-from liquid import Environment, FileSystemLoader
+from liquid import Environment, FileSystemLoader, Template
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class TemplateRegistry:
 
         log.info(f"Loaded {len(self._templates)} templates")
 
-    def get_template(self, template_key: str):
+    def get_template(self, template_key: str) -> Template:
         """Get a template by key
 
         Args:

@@ -13,7 +13,7 @@ def cda_adapter():
     return CdaAdapter()
 
 
-@patch("healthchain.io.adapters.cdaadapter.create_engine")
+@patch("healthchain.io.adapters.cdaadapter.create_interop")
 @patch("healthchain.io.adapters.cdaadapter.create_document_reference")
 @patch("healthchain.io.adapters.cdaadapter.read_content_attachment")
 @patch("healthchain.io.adapters.cdaadapter.set_problem_list_item_category")
@@ -23,7 +23,7 @@ def test_parse(
     mock_set_problem_category,
     mock_read_content,
     mock_create_doc_ref,
-    mock_create_engine,
+    mock_create_interop,
     cda_adapter,
     test_condition,
     test_medication,
@@ -31,7 +31,7 @@ def test_parse(
 ):
     # Create mock engine
     mock_engine = Mock()
-    mock_create_engine.return_value = mock_engine
+    mock_create_interop.return_value = mock_engine
 
     # Mock document reference content extraction
     mock_read_content.return_value = [{"data": "Extracted note text"}]
@@ -116,13 +116,13 @@ def test_parse(
     assert result is mock_doc
 
 
-@patch("healthchain.io.adapters.cdaadapter.create_engine")
+@patch("healthchain.io.adapters.cdaadapter.create_interop")
 def test_format(
-    mock_create_engine, cda_adapter, test_condition, test_medication, test_allergy
+    mock_create_interop, cda_adapter, test_condition, test_medication, test_allergy
 ):
     # Create mock engine
     mock_engine = Mock()
-    mock_create_engine.return_value = mock_engine
+    mock_create_interop.return_value = mock_engine
 
     # Configure mock engine to return CDA XML
     mock_engine.from_fhir.return_value = "<xml>Updated CDA</xml>"

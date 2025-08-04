@@ -9,7 +9,7 @@ import re
 import xmltodict
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from fhir.resources.resource import Resource
 from healthchain.interop.models.cda import ClinicalDocument
@@ -59,7 +59,7 @@ class CDAGenerator(BaseGenerator):
         )
     """
 
-    def transform(self, resources, **kwargs) -> str:
+    def transform(self, resources: List[Resource], **kwargs: Any) -> str:
         """Transform FHIR resources to CDA format.
 
         Args:
