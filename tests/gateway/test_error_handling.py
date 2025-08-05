@@ -2,7 +2,7 @@
 
 import pytest
 
-from healthchain.gateway.core.errors import (
+from healthchain.gateway.fhir.errors import (
     FHIRConnectionError,
     FHIRErrorHandler,
 )

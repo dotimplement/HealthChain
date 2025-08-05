@@ -10,8 +10,8 @@ This module tests centralized connection management for FHIR sources:
 import pytest
 from unittest.mock import Mock, AsyncMock
 
-from healthchain.gateway.core.connection import FHIRConnectionManager
-from healthchain.gateway.core.errors import FHIRConnectionError
+from healthchain.gateway.clients.fhir.sync.connection import FHIRConnectionManager
+from healthchain.gateway.fhir.errors import FHIRConnectionError
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
 

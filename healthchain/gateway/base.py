@@ -15,7 +15,9 @@ from fastapi import APIRouter
 
 from healthchain.gateway.api.protocols import EventDispatcherProtocol
 
+
 logger = logging.getLogger(__name__)
+
 
 # Type variables for self-referencing return types and generic gateways
 G = TypeVar("G", bound="BaseGateway")
@@ -336,7 +338,7 @@ class BaseGateway(ABC, APIRouter):
         self.return_errors = self.config.return_errors or options.get(
             "return_errors", False
         )
-        self.events = EventCapability()
+        self.events = EventCapability() if self.use_events else None
 
     def get_gateway_status(self) -> Dict[str, Any]:
         """

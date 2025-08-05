@@ -15,12 +15,13 @@ from healthchain.gateway.api.dependencies import (
 )
 
 # Core Components
-from healthchain.gateway.core.base import BaseGateway, BaseProtocolHandler
-from healthchain.gateway.core.fhirgateway import FHIRGateway
+from healthchain.gateway.base import BaseGateway, BaseProtocolHandler
+from healthchain.gateway.fhir.sync import FHIRGateway
+from healthchain.gateway.fhir.aio import AsyncFHIRGateway
 
 # Protocol Handlers
-from healthchain.gateway.protocols.cdshooks import CDSHooksService
-from healthchain.gateway.protocols.notereader import NoteReaderService
+from healthchain.gateway.cds import CDSHooksService
+from healthchain.gateway.soap.notereader import NoteReaderService
 
 # Event System
 from healthchain.gateway.events.dispatcher import (
@@ -30,8 +31,9 @@ from healthchain.gateway.events.dispatcher import (
 )
 
 # Client Utilities
-from healthchain.gateway.clients.fhir import AsyncFHIRClient
-from healthchain.gateway.clients.pool import FHIRClientPool
+from healthchain.gateway.clients.pool import ClientPool
+from healthchain.gateway.clients.fhir.aio import AsyncFHIRClient
+from healthchain.gateway.clients.fhir.sync import FHIRClient
 
 __all__ = [
     # API
@@ -44,6 +46,7 @@ __all__ = [
     "BaseGateway",
     "BaseProtocolHandler",
     "FHIRGateway",
+    "AsyncFHIRGateway",
     # Protocols
     "CDSHooksService",
     "NoteReaderService",
@@ -53,5 +56,6 @@ __all__ = [
     "EHREventType",
     # Clients
     "AsyncFHIRClient",
-    "FHIRClientPool",
+    "FHIRClient",
+    "ClientPool",
 ]

@@ -13,7 +13,9 @@ from datetime import datetime, timedelta
 from healthchain.gateway.clients.auth import (
     OAuth2Config,
     TokenInfo,
-    OAuth2TokenManager,
+    AsyncOAuth2TokenManager,
+)
+from healthchain.gateway.clients.fhir.base import (
     FHIRAuthConfig,
     parse_fhir_auth_connection_string,
 )
@@ -49,13 +51,13 @@ def oauth2_config_jwt():
 @pytest.fixture
 def token_manager(oauth2_config):
     """Create an OAuth2TokenManager for testing."""
-    return OAuth2TokenManager(oauth2_config)
+    return AsyncOAuth2TokenManager(oauth2_config)
 
 
 @pytest.fixture
 def token_manager_jwt(oauth2_config_jwt):
     """Create an OAuth2TokenManager for JWT testing."""
-    return OAuth2TokenManager(oauth2_config_jwt)
+    return AsyncOAuth2TokenManager(oauth2_config_jwt)
 
 
 @pytest.fixture
@@ -202,7 +204,7 @@ async def test_oauth2_token_manager_standard_flow(
 
 
 @pytest.mark.asyncio
-@patch("healthchain.gateway.clients.auth.OAuth2TokenManager._create_jwt_assertion")
+@patch("healthchain.gateway.clients.auth.AsyncOAuth2TokenManager._create_jwt_assertion")
 @patch("httpx.AsyncClient.post")
 async def test_oauth2_token_manager_jwt_flow(
     mock_post, mock_create_jwt, token_manager_jwt, mock_token_response

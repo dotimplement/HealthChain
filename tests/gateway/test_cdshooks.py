@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import MagicMock
 
-from healthchain.gateway.protocols.cdshooks import (
+from healthchain.gateway.cds import CDSHooksConfig
+from healthchain.gateway.cds import (
     CDSHooksService,
-    CDSHooksConfig,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.models.requests.cdsrequest import CDSRequest

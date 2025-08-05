@@ -12,11 +12,9 @@ from fhir.resources.patient import Patient
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
 
-from healthchain.gateway.clients.fhir import (
-    AsyncFHIRClient,
-    FHIRClientError,
-)
-from healthchain.gateway.clients.auth import FHIRAuthConfig
+from healthchain.gateway.clients.fhir.aio import AsyncFHIRClient
+from healthchain.gateway.clients.fhir.base import FHIRClientError
+from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 
 
 @pytest.fixture
@@ -37,7 +35,7 @@ def mock_auth_config():
 def fhir_client(mock_auth_config):
     """Create a FHIR client for testing."""
     with patch(
-        "healthchain.gateway.clients.fhir.OAuth2TokenManager"
+        "healthchain.gateway.clients.auth.OAuth2TokenManager"
     ) as mock_manager_class:
         mock_manager = Mock()
         # For sync access during initialization, use a regular Mock
@@ -58,7 +56,7 @@ def fhir_client_with_limits(mock_auth_config):
         keepalive_expiry=30.0,
     )
     with patch(
-        "healthchain.gateway.clients.fhir.OAuth2TokenManager"
+        "healthchain.gateway.clients.auth.OAuth2TokenManager"
     ) as mock_manager_class:
         mock_manager = Mock()
         # For sync access during initialization, use a regular Mock
@@ -82,7 +80,7 @@ def mock_httpx_response():
 
 def test_fhir_client_initialization_and_configuration(mock_auth_config):
     """AsyncFHIRClient initializes with correct configuration and headers."""
-    with patch("healthchain.gateway.clients.fhir.OAuth2TokenManager"):
+    with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
         client = AsyncFHIRClient(auth_config=mock_auth_config)
 
         # Test configuration

@@ -18,7 +18,7 @@ from termcolor import colored
 
 from typing import Dict, Optional, Type, Union
 
-from healthchain.gateway.core.base import BaseGateway, BaseProtocolHandler
+from healthchain.gateway.base import BaseGateway, BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.api.dependencies import get_app
 

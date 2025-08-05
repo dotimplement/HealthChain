@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from healthchain.gateway.protocols.notereader import (
+from healthchain.gateway.soap.notereader import (
     NoteReaderService,
     NoteReaderConfig,
 )
@@ -110,8 +110,8 @@ def test_notereader_gateway_process_result():
     assert result.document == "test_dict"
 
 
-@patch("healthchain.gateway.protocols.notereader.Application")
-@patch("healthchain.gateway.protocols.notereader.WsgiApplication")
+@patch("healthchain.gateway.soap.notereader.Application")
+@patch("healthchain.gateway.soap.notereader.WsgiApplication")
 def test_notereader_gateway_create_wsgi_app(mock_wsgi, mock_application):
     """Test WSGI app creation for SOAP service"""
     mock_wsgi_instance = MagicMock()

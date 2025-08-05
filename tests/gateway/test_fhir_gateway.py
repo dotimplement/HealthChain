@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from fhir.resources.patient import Patient
 from fhir.resources.bundle import Bundle
 
-from healthchain.gateway.core.fhirgateway import FHIRGateway
+from healthchain.gateway.fhir import FHIRGateway
 
 
 class MockConnectionManager:
@@ -40,7 +40,7 @@ def mock_connection_manager():
 def fhir_gateway(mock_connection_manager):
     """Fixture providing a FHIRGateway with mocked dependencies."""
     with patch(
-        "healthchain.gateway.core.fhirgateway.FHIRConnectionManager",
+        "healthchain.gateway.clients.fhir.sync.connection.FHIRConnectionManager",
         return_value=mock_connection_manager,
     ):
         return FHIRGateway(use_events=False)
@@ -270,7 +270,7 @@ async def test_execute_with_client_handles_client_errors(fhir_gateway):
 
     with patch.object(fhir_gateway, "get_client", return_value=mock_client):
         with patch(
-            "healthchain.gateway.core.fhirgateway.FHIRErrorHandler.handle_fhir_error"
+            "healthchain.gateway.fhir.errors.FHIRErrorHandler.handle_fhir_error"
         ) as mock_handler:
             mock_handler.side_effect = Exception("Handled error")
 

@@ -1,13 +1,27 @@
-from .fhir import FHIRServerInterface, AsyncFHIRClient, create_fhir_client
-from .auth import OAuth2TokenManager, FHIRAuthConfig, parse_fhir_auth_connection_string
-from .pool import FHIRClientPool
+from .fhir.base import (
+    FHIRAuthConfig,
+    FHIRClientError,
+    FHIRServerInterface,
+    parse_fhir_auth_connection_string,
+)
+from .auth import (
+    OAuth2TokenManager,
+    AsyncOAuth2TokenManager,
+)
+from .fhir.aio import AsyncFHIRClient, create_async_fhir_client
+from .fhir.sync import FHIRClient, create_fhir_client
+from .pool import ClientPool
 
 __all__ = [
-    "FHIRServerInterface",
     "AsyncFHIRClient",
-    "create_fhir_client",
-    "OAuth2TokenManager",
+    "AsyncOAuth2TokenManager",
     "FHIRAuthConfig",
+    "FHIRClient",
+    "FHIRClientError",
+    "ClientPool",
+    "FHIRServerInterface",
+    "OAuth2TokenManager",
+    "create_fhir_client",
+    "create_async_fhir_client",
     "parse_fhir_auth_connection_string",
-    "FHIRClientPool",
 ]
