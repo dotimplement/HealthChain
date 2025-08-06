@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from healthchain.gateway.clients.auth import (
     OAuth2Config,
     TokenInfo,
-    OAuth2TokenManager,
+    AsyncOAuth2TokenManager,
 )
 from healthchain.gateway.clients.fhir.base import (
     FHIRAuthConfig,
@@ -49,13 +49,13 @@ def oauth2_config_jwt():
 @pytest.fixture
 def token_manager(oauth2_config):
     """Create an OAuth2TokenManager for testing."""
-    return OAuth2TokenManager(oauth2_config)
+    return AsyncOAuth2TokenManager(oauth2_config)
 
 
 @pytest.fixture
 def token_manager_jwt(oauth2_config_jwt):
     """Create an OAuth2TokenManager for JWT testing."""
-    return OAuth2TokenManager(oauth2_config_jwt)
+    return AsyncOAuth2TokenManager(oauth2_config_jwt)
 
 
 @pytest.fixture
@@ -175,8 +175,9 @@ def test_token_info_expiration_logic():
     )  # 2 min buffer, expires in 4
 
 
-@patch("httpx.Client.post")
-def test_oauth2_token_manager_standard_flow(
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.post")
+async def test_oauth2_token_manager_standard_flow(
     mock_post, token_manager, mock_token_response
 ):
     """OAuth2TokenManager performs standard client credentials flow correctly."""
@@ -186,7 +187,7 @@ def test_oauth2_token_manager_standard_flow(
     mock_response.raise_for_status.return_value = None
     mock_post.return_value = mock_response
 
-    token = token_manager.get_access_token()
+    token = await token_manager.get_access_token()
 
     # Verify token returned
     assert token == "test_access_token"
@@ -200,9 +201,10 @@ def test_oauth2_token_manager_standard_flow(
     assert "client_assertion" not in request_data
 
 
-@patch("healthchain.gateway.clients.auth.OAuth2TokenManager._create_jwt_assertion")
-@patch("httpx.Client.post")
-def test_oauth2_token_manager_jwt_flow(
+@pytest.mark.asyncio
+@patch("healthchain.gateway.clients.auth.AsyncOAuth2TokenManager._create_jwt_assertion")
+@patch("httpx.AsyncClient.post")
+async def test_oauth2_token_manager_jwt_flow(
     mock_post, mock_create_jwt, token_manager_jwt, mock_token_response
 ):
     """OAuth2TokenManager performs JWT assertion flow correctly."""
@@ -214,7 +216,7 @@ def test_oauth2_token_manager_jwt_flow(
     mock_response.raise_for_status.return_value = None
     mock_post.return_value = mock_response
 
-    token = token_manager_jwt.get_access_token()
+    token = await token_manager_jwt.get_access_token()
     assert token == "test_access_token"
 
     # Verify JWT-specific request data
@@ -229,8 +231,9 @@ def test_oauth2_token_manager_jwt_flow(
     assert "client_secret" not in request_data
 
 
-@patch("httpx.Client.post")
-def test_oauth2_token_manager_caching_and_refresh(
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.post")
+async def test_oauth2_token_manager_caching_and_refresh(
     mock_post, token_manager, mock_token_response
 ):
     """OAuth2TokenManager caches valid tokens and refreshes expired ones."""
@@ -242,7 +245,7 @@ def test_oauth2_token_manager_caching_and_refresh(
     )
 
     # Should use cached token
-    token = token_manager.get_access_token()
+    token = await token_manager.get_access_token()
     assert token == "cached_token"
     mock_post.assert_not_called()
 
@@ -260,13 +263,14 @@ def test_oauth2_token_manager_caching_and_refresh(
     mock_post.return_value = mock_response
 
     # Should refresh token
-    token = token_manager.get_access_token()
+    token = await token_manager.get_access_token()
     assert token == "test_access_token"
     mock_post.assert_called_once()
 
 
-@patch("httpx.Client.post")
-def test_oauth2_token_manager_error_handling(mock_post, token_manager):
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient.post")
+async def test_oauth2_token_manager_error_handling(mock_post, token_manager):
     """OAuth2TokenManager handles HTTP errors gracefully."""
     from httpx import HTTPStatusError, Request
 
@@ -279,7 +283,7 @@ def test_oauth2_token_manager_error_handling(mock_post, token_manager):
     )
 
     with pytest.raises(Exception, match="Failed to refresh token: 401"):
-        token_manager.get_access_token()
+        await token_manager.get_access_token()
 
 
 @patch("jwt.JWT.encode")
@@ -418,136 +422,3 @@ def test_connection_string_parsing_handles_complex_parameters():
     assert config.audience == "https://example.com/fhir"
     assert config.timeout == 60
     assert not config.verify_ssl
-
-
-def test_oauth2_token_manager_thread_safety():
-    """OAuth2TokenManager handles concurrent token requests safely using threading.Lock."""
-    import time
-    from concurrent.futures import ThreadPoolExecutor
-
-    config = OAuth2Config(
-        client_id="test_client",
-        client_secret="test_secret",
-        token_url="https://test.fhir.org/oauth/token",
-    )
-
-    token_manager = OAuth2TokenManager(config)
-
-    # Mock the token refresh to track calls
-    refresh_calls = []
-    token_manager._refresh_token
-
-    def tracked_refresh():
-        refresh_calls.append(time.time())
-        # Simulate network delay
-        time.sleep(0.1)
-        # Create a mock token that won't expire during test
-        from datetime import datetime, timedelta
-
-        token_manager._token = TokenInfo(
-            access_token="test_token",
-            expires_in=3600,  # Long expiry to avoid expiration during test
-            token_type="Bearer",
-            expires_at=datetime.now() + timedelta(seconds=3600),
-        )
-
-    token_manager._refresh_token = tracked_refresh
-
-    # Test concurrent access with multiple threads
-    def get_token():
-        return token_manager.get_access_token()
-
-    # Run multiple threads concurrently trying to get token
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(get_token) for _ in range(5)]
-        tokens = [future.result() for future in futures]
-
-    # All threads should get the same token
-    assert all(token == "test_token" for token in tokens)
-
-    # Only one refresh should have occurred due to thread safety
-    assert len(refresh_calls) == 1, f"Expected 1 refresh call, got {len(refresh_calls)}"
-
-
-def test_oauth2_token_manager_uses_threading_lock():
-    """OAuth2TokenManager uses threading.Lock for synchronization."""
-    import threading
-
-    config = OAuth2Config(
-        client_id="test_client",
-        client_secret="test_secret",
-        token_url="https://test.fhir.org/oauth/token",
-    )
-
-    token_manager = OAuth2TokenManager(config)
-
-    # Verify that the token manager has a threading lock
-    assert hasattr(token_manager, "_refresh_lock")
-    assert isinstance(token_manager._refresh_lock, type(threading.Lock()))
-
-
-def test_sync_token_manager_methods_are_not_async():
-    """Sync OAuth2TokenManager methods are synchronous, not async."""
-    import inspect
-
-    config = OAuth2Config(
-        client_id="test_client",
-        client_secret="test_secret",
-        token_url="https://test.fhir.org/oauth/token",
-    )
-
-    token_manager = OAuth2TokenManager(config)
-
-    # Verify get_access_token is not a coroutine function
-    assert not inspect.iscoroutinefunction(token_manager.get_access_token)
-    assert not inspect.iscoroutinefunction(token_manager._refresh_token)
-
-    # Test that calling the method doesn't return a coroutine
-    # Mock the token refresh method directly to avoid HTTP calls
-    from datetime import datetime, timedelta
-
-    with patch.object(token_manager, "_refresh_token") as mock_refresh:
-
-        def mock_refresh_side_effect():
-            token_manager._token = TokenInfo(
-                access_token="test_token",
-                expires_in=3600,
-                token_type="Bearer",
-                expires_at=datetime.now() + timedelta(seconds=3600),
-            )
-
-        mock_refresh.side_effect = mock_refresh_side_effect
-
-        result = token_manager.get_access_token()
-
-        # Result should be a string, not a coroutine
-        assert isinstance(result, str)
-        assert not inspect.iscoroutine(result)
-        assert result == "test_token"
-
-
-def test_sync_vs_async_token_manager_distinction():
-    """OAuth2TokenManager (sync) and AsyncOAuth2TokenManager (async) have distinct behaviors."""
-    from healthchain.gateway.clients.auth import AsyncOAuth2TokenManager
-    import inspect
-
-    config = OAuth2Config(
-        client_id="test_client",
-        client_secret="test_secret",
-        token_url="https://test.fhir.org/oauth/token",
-    )
-
-    sync_manager = OAuth2TokenManager(config)
-    async_manager = AsyncOAuth2TokenManager(config)
-
-    # Sync manager should have threading.Lock
-    assert hasattr(sync_manager, "_refresh_lock")
-    assert isinstance(sync_manager._refresh_lock, type(__import__("threading").Lock()))
-
-    # Async manager should have asyncio.Lock (or None initially)
-    assert hasattr(async_manager, "_refresh_lock")
-    assert async_manager._refresh_lock is None  # Created lazily
-
-    # Method signatures should be different
-    assert not inspect.iscoroutinefunction(sync_manager.get_access_token)
-    assert inspect.iscoroutinefunction(async_manager.get_access_token)

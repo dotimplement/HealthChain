@@ -7,12 +7,12 @@ Focuses on HTTP operations, authentication, error handling, and response process
 import pytest
 import json
 import httpx
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, AsyncMock, patch
 from fhir.resources.patient import Patient
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
 
-from healthchain.gateway.clients.fhir.sync import FHIRClient
+from healthchain.gateway.clients.fhir.aio import AsyncFHIRClient
 from healthchain.gateway.clients.fhir.base import FHIRClientError
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 
@@ -39,17 +39,17 @@ def fhir_client(mock_auth_config):
     ) as mock_manager_class:
         mock_manager = Mock()
         # For sync access during initialization, use a regular Mock
-        mock_manager.get_access_token = Mock(return_value="test_token")
+        mock_manager.get_access_token = AsyncMock(return_value="test_token")
         mock_manager_class.return_value = mock_manager
 
-        client = FHIRClient(auth_config=mock_auth_config)
+        client = AsyncFHIRClient(auth_config=mock_auth_config)
         client.token_manager = mock_manager
         return client
 
 
 @pytest.fixture
 def fhir_client_with_limits(mock_auth_config):
-    """Create an FHIRClient with connection limits for testing."""
+    """Create an AsyncFHIRClient with connection limits for testing."""
     limits = httpx.Limits(
         max_connections=50,
         max_keepalive_connections=10,
@@ -60,10 +60,10 @@ def fhir_client_with_limits(mock_auth_config):
     ) as mock_manager_class:
         mock_manager = Mock()
         # For sync access during initialization, use a regular Mock
-        mock_manager.get_access_token = Mock(return_value="test_token")
+        mock_manager.get_access_token = AsyncMock(return_value="test_token")
         mock_manager_class.return_value = mock_manager
 
-        client = FHIRClient(auth_config=mock_auth_config, limits=limits)
+        client = AsyncFHIRClient(auth_config=mock_auth_config, limits=limits)
         client.token_manager = mock_manager
         return client
 
@@ -79,9 +79,9 @@ def mock_httpx_response():
 
 
 def test_fhir_client_initialization_and_configuration(mock_auth_config):
-    """FHIRClient initializes with correct configuration and headers."""
+    """AsyncFHIRClient initializes with correct configuration and headers."""
     with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
-        client = FHIRClient(auth_config=mock_auth_config)
+        client = AsyncFHIRClient(auth_config=mock_auth_config)
 
         # Test configuration
         assert client.base_url == "https://test.fhir.org/R4/"
@@ -94,7 +94,7 @@ def test_fhir_client_initialization_and_configuration(mock_auth_config):
 
 
 def test_async_fhir_client_conforms_to_protocol(fhir_client):
-    """FHIRClient implements the required protocol methods."""
+    """AsyncFHIRClient implements the required protocol methods."""
     # Check that client has all required protocol methods
     assert hasattr(fhir_client, "read")
     assert hasattr(fhir_client, "search")
@@ -109,21 +109,22 @@ def test_async_fhir_client_conforms_to_protocol(fhir_client):
     assert callable(getattr(fhir_client, "search"))
 
 
-def test_fhir_client_authentication_and_headers(fhir_client):
-    """FHIRClient manages OAuth tokens and includes proper headers."""
+@pytest.mark.asyncio
+async def test_fhir_client_authentication_and_headers(fhir_client):
+    """AsyncFHIRClient manages OAuth tokens and includes proper headers."""
     # Test first call includes token and headers
-    headers = fhir_client._get_headers()
+    headers = await fhir_client._get_headers()
     assert headers["Authorization"] == "Bearer test_token"
     assert headers["Accept"] == "application/fhir+json"
     assert headers["Content-Type"] == "application/fhir+json"
 
     # Test token refresh on subsequent calls
-    fhir_client._get_headers()
+    await fhir_client._get_headers()
     assert fhir_client.token_manager.get_access_token.call_count == 2
 
 
 def test_fhir_client_url_building(fhir_client):
-    """FHIRClient builds URLs correctly with and without parameters."""
+    """AsyncFHIRClient builds URLs correctly with and without parameters."""
     # Without parameters
     url = fhir_client._build_url("Patient/123")
     assert url == "https://test.fhir.org/R4/Patient/123"
@@ -150,7 +151,7 @@ def test_fhir_client_url_building(fhir_client):
 def test_fhir_client_response_handling(
     fhir_client, status_code, is_success, should_raise
 ):
-    """FHIRClient handles HTTP status codes and error responses appropriately."""
+    """AsyncFHIRClient handles HTTP status codes and error responses appropriately."""
     mock_response = Mock(spec=httpx.Response)
     mock_response.is_success = is_success
     mock_response.status_code = status_code
@@ -166,7 +167,7 @@ def test_fhir_client_response_handling(
 
 
 def test_fhir_client_error_extraction_and_invalid_json(fhir_client):
-    """FHIRClient extracts error diagnostics and handles invalid JSON."""
+    """AsyncFHIRClient extracts error diagnostics and handles invalid JSON."""
     # Test error extraction from OperationOutcome
     mock_response = Mock(spec=httpx.Response)
     mock_response.is_success = False
@@ -191,8 +192,9 @@ def test_fhir_client_error_extraction_and_invalid_json(fhir_client):
     assert "Invalid JSON response" in str(exc_info.value)
 
 
-def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
-    """FHIRClient performs CRUD operations correctly."""
+@pytest.mark.asyncio
+async def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
+    """AsyncFHIRClient performs CRUD operations correctly."""
     # Test READ operation
     with patch.object(
         fhir_client.client, "get", return_value=mock_httpx_response
@@ -200,7 +202,7 @@ def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
         with patch.object(
             fhir_client, "_get_headers", return_value={"Authorization": "Bearer token"}
         ):
-            result = fhir_client.read(Patient, "123")
+            result = await fhir_client.read(Patient, "123")
             mock_get.assert_called_once_with(
                 "https://test.fhir.org/R4/Patient/123",
                 headers={"Authorization": "Bearer token"},
@@ -222,7 +224,7 @@ def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
         with patch.object(
             fhir_client, "_get_headers", return_value={"Authorization": "Bearer token"}
         ):
-            result = fhir_client.create(patient)
+            result = await fhir_client.create(patient)
             call_args = mock_post.call_args
             assert call_args[0][0] == "https://test.fhir.org/R4/Patient"
             assert "content" in call_args[1]
@@ -238,15 +240,16 @@ def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
         fhir_client.client, "delete", return_value=mock_delete_response
     ) as mock_delete:
         with patch.object(fhir_client, "_get_headers", return_value={}):
-            result = fhir_client.delete(Patient, "123")
+            result = await fhir_client.delete(Patient, "123")
             mock_delete.assert_called_once_with(
                 "https://test.fhir.org/R4/Patient/123", headers={}
             )
             assert result is True
 
 
-def test_fhir_client_search_and_capabilities(fhir_client):
-    """FHIRClient handles search operations and server capabilities."""
+@pytest.mark.asyncio
+async def test_fhir_client_search_and_capabilities(fhir_client):
+    """AsyncFHIRClient handles search operations and server capabilities."""
     # Test SEARCH operation
     bundle_response = {
         "resourceType": "Bundle",
@@ -262,7 +265,7 @@ def test_fhir_client_search_and_capabilities(fhir_client):
     ) as mock_get:
         with patch.object(fhir_client, "_get_headers", return_value={}):
             params = {"name": "John", "active": True}
-            result = fhir_client.search(Patient, params)
+            result = await fhir_client.search(Patient, params)
 
             call_url = mock_get.call_args[0][0]
             assert "Patient?" in call_url
@@ -286,7 +289,7 @@ def test_fhir_client_search_and_capabilities(fhir_client):
         fhir_client.client, "get", return_value=mock_response
     ) as mock_get:
         with patch.object(fhir_client, "_get_headers", return_value={}):
-            result = fhir_client.capabilities()
+            result = await fhir_client.capabilities()
             mock_get.assert_called_once_with(
                 "https://test.fhir.org/R4/metadata", headers={}
             )
@@ -295,7 +298,7 @@ def test_fhir_client_search_and_capabilities(fhir_client):
 
 
 def test_fhir_client_resource_type_resolution(fhir_client):
-    """FHIRClient resolves resource types from classes, strings, and handles errors."""
+    """AsyncFHIRClient resolves resource types from classes, strings, and handles errors."""
     # Test with FHIR resource class
     type_name, resource_class = fhir_client._resolve_resource_type(Patient)
     assert type_name == "Patient"
@@ -319,19 +322,21 @@ def test_fhir_client_resource_type_resolution(fhir_client):
         fhir_client._resolve_resource_type("InvalidResource")
 
 
-def test_fhir_client_authentication_failure(fhir_client):
-    """FHIRClient handles authentication failures."""
+@pytest.mark.asyncio
+async def test_fhir_client_authentication_failure(fhir_client):
+    """AsyncFHIRClient handles authentication failures."""
     fhir_client.token_manager.get_access_token.side_effect = Exception("Auth failed")
     with pytest.raises(Exception, match="Auth failed"):
-        fhir_client._get_headers()
+        await fhir_client._get_headers()
 
 
-def test_fhir_client_http_timeout(fhir_client):
-    """FHIRClient handles HTTP timeout errors."""
+@pytest.mark.asyncio
+async def test_fhir_client_http_timeout(fhir_client):
+    """AsyncFHIRClient handles HTTP timeout errors."""
     with patch.object(fhir_client.client, "get") as mock_get:
         mock_get.side_effect = httpx.TimeoutException("Request timed out")
         with pytest.raises(httpx.TimeoutException):
-            fhir_client.read(Patient, "123")
+            await fhir_client.read(Patient, "123")
 
 
 def test_fhir_client_error_class():
@@ -342,48 +347,3 @@ def test_fhir_client_error_class():
     assert error.status_code == 400
     assert error.response_data == response_data
     assert str(error) == "Test error"
-
-
-def test_fhir_client_context_manager_lifecycle(mock_auth_config):
-    """FHIRClient context manager properly opens and closes connections."""
-    with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
-        # Test context manager entry and exit
-        with FHIRClient(auth_config=mock_auth_config) as client:
-            assert client.client is not None
-            assert hasattr(client, "close")
-
-            # Mock the close method to verify it gets called
-            client.close = Mock()
-
-        # Verify close was called on exit
-        client.close.assert_called_once()
-
-
-def test_fhir_client_context_manager_handles_exceptions(mock_auth_config):
-    """FHIRClient context manager properly closes connections even when exceptions occur."""
-    with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
-        try:
-            with FHIRClient(auth_config=mock_auth_config) as client:
-                client.close = Mock()
-                raise ValueError("Test exception")
-        except ValueError:
-            pass
-
-        # Verify close was still called despite the exception
-        client.close.assert_called_once()
-
-
-def test_fhir_client_manual_close_method(mock_auth_config):
-    """FHIRClient close method properly shuts down HTTP client."""
-    with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
-        client = FHIRClient(auth_config=mock_auth_config)
-
-        # Mock the httpx client
-        client.client = Mock()
-        client.client.close = Mock()
-
-        # Test manual close
-        client.close()
-
-        # Verify httpx client close was called
-        client.client.close.assert_called_once()

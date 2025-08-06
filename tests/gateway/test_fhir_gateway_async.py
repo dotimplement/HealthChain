@@ -1,12 +1,11 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from typing import Dict, Any, List
 
 from fhir.resources.patient import Patient
 from fhir.resources.bundle import Bundle
 
-from healthchain.gateway.fhir import FHIRGateway
-from healthchain.gateway.fhir.errors import FHIRConnectionError
+from healthchain.gateway.fhir import AsyncFHIRGateway
 
 
 class MockConnectionManager:
@@ -18,14 +17,17 @@ class MockConnectionManager:
     def add_source(self, name: str, connection_string: str) -> None:
         self.sources[name] = Mock()
 
-    def get_client(self, source: str = None):
-        return Mock()
+    async def get_client(self, source: str = None):
+        return AsyncMock()
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_pool_status(self) -> Dict[str, Any]:
         return {
             "max_connections": 100,
             "sources": {"test_source": "connected"},
         }
+
+    async def close(self) -> None:
+        pass
 
 
 @pytest.fixture
@@ -36,12 +38,12 @@ def mock_connection_manager():
 
 @pytest.fixture
 def fhir_gateway(mock_connection_manager):
-    """Fixture providing a FHIRGateway with mocked dependencies."""
+    """Fixture providing a AsyncFHIRGateway with mocked dependencies."""
     with patch(
         "healthchain.gateway.clients.fhir.sync.connection.FHIRConnectionManager",
         return_value=mock_connection_manager,
     ):
-        return FHIRGateway(use_events=False)
+        return AsyncFHIRGateway(use_events=False)
 
 
 @pytest.fixture
@@ -128,7 +130,7 @@ def test_gateway_status_structure(fhir_gateway):
     """Gateway status contains required fields with correct structure."""
     status = fhir_gateway.get_gateway_status()
 
-    assert status["gateway_type"] == "FHIRGateway"
+    assert status["gateway_type"] == "AsyncFHIRGateway"
     assert status["status"] == "active"
     assert isinstance(status["timestamp"], str)
     assert isinstance(status["version"], str)
@@ -153,12 +155,13 @@ def test_supported_operations_tracking(fhir_gateway):
     assert "Patient" in updated_status["supported_operations"]["resources"]
 
 
-def test_read_operation_with_client_delegation(fhir_gateway, test_patient):
+@pytest.mark.asyncio
+async def test_read_operation_with_client_delegation(fhir_gateway, test_patient):
     """Read operation delegates to client and handles results correctly."""
     with patch.object(
         fhir_gateway, "_execute_with_client", return_value=test_patient
     ) as mock_execute:
-        result = fhir_gateway.read(Patient, "123", "test_source")
+        result = await fhir_gateway.read(Patient, "123", "test_source")
 
         mock_execute.assert_called_once_with(
             "read",
@@ -170,20 +173,22 @@ def test_read_operation_with_client_delegation(fhir_gateway, test_patient):
         assert result == test_patient
 
 
-def test_read_operation_raises_on_not_found(fhir_gateway):
+@pytest.mark.asyncio
+async def test_read_operation_raises_on_not_found(fhir_gateway):
     """Read operation raises ValueError when resource not found."""
     with patch.object(fhir_gateway, "_execute_with_client", return_value=None):
         with pytest.raises(ValueError, match="Resource Patient/123 not found"):
-            fhir_gateway.read(Patient, "123")
+            await fhir_gateway.read(Patient, "123")
 
 
-def test_create_operation_with_validation(fhir_gateway, test_patient):
+@pytest.mark.asyncio
+async def test_create_operation_with_validation(fhir_gateway, test_patient):
     """Create operation validates input and returns created resource."""
     created_patient = Patient(id="456", active=True)
     with patch.object(
         fhir_gateway, "_execute_with_client", return_value=created_patient
     ) as mock_execute:
-        result = fhir_gateway.create(test_patient)
+        result = await fhir_gateway.create(test_patient)
 
         mock_execute.assert_called_once_with(
             "create",
@@ -194,15 +199,17 @@ def test_create_operation_with_validation(fhir_gateway, test_patient):
         assert result == created_patient
 
 
-def test_update_operation_requires_resource_id(fhir_gateway):
+@pytest.mark.asyncio
+async def test_update_operation_requires_resource_id(fhir_gateway):
     """Update operation validates that resource has ID."""
     patient_without_id = Patient(active=True)  # No ID
 
     with pytest.raises(ValueError, match="Resource must have an ID for update"):
-        fhir_gateway.update(patient_without_id)
+        await fhir_gateway.update(patient_without_id)
 
 
-def test_search_operation_with_parameters(fhir_gateway):
+@pytest.mark.asyncio
+async def test_search_operation_with_parameters(fhir_gateway):
     """Search operation passes parameters correctly to client."""
     mock_bundle = Bundle(type="searchset", total=1)
     params = {"name": "Smith", "active": "true"}
@@ -210,20 +217,55 @@ def test_search_operation_with_parameters(fhir_gateway):
     with patch.object(
         fhir_gateway, "_execute_with_client", return_value=mock_bundle
     ) as mock_execute:
-        result = fhir_gateway.search(Patient, params, "test_source")
+        result = await fhir_gateway.search(Patient, params, "test_source")
 
         mock_execute.assert_called_once_with(
             "search",
             source="test_source",
             resource_type=Patient,
-            client_args=(Patient, params),
+            client_args=(Patient,),
+            client_kwargs={"params": params},
         )
         assert result == mock_bundle
 
 
-def test_execute_with_client_handles_client_errors(fhir_gateway):
+@pytest.mark.asyncio
+async def test_modify_context_for_existing_resource(fhir_gateway, test_patient):
+    """Modify context manager fetches, yields, and updates existing resources."""
+    mock_client = AsyncMock()
+    mock_client.read.return_value = test_patient
+    mock_client.update.return_value = Patient(id="123", active=False)
+
+    with patch.object(fhir_gateway, "get_client", return_value=mock_client):
+        async with fhir_gateway.modify(Patient, "123") as patient:
+            assert patient == test_patient
+            patient.active = False
+
+        mock_client.read.assert_called_once_with(Patient, "123")
+        mock_client.update.assert_called_once_with(test_patient)
+
+
+@pytest.mark.asyncio
+async def test_modify_context_for_new_resource(fhir_gateway):
+    """Modify context manager creates new resources when no ID provided."""
+    created_patient = Patient(id="456", active=True)
+    mock_client = AsyncMock()
+    mock_client.create.return_value = created_patient
+
+    with patch.object(fhir_gateway, "get_client", return_value=mock_client):
+        async with fhir_gateway.modify(Patient) as patient:
+            assert patient.id is None  # New resource
+            patient.active = True
+
+        mock_client.create.assert_called_once()
+        # Verify the created resource was updated with returned values
+        assert patient.id == "456"
+
+
+@pytest.mark.asyncio
+async def test_execute_with_client_handles_client_errors(fhir_gateway):
     """_execute_with_client properly handles and re-raises client errors."""
-    mock_client = Mock()
+    mock_client = AsyncMock()
     mock_client.read.side_effect = Exception("Client error")
 
     with patch.object(fhir_gateway, "get_client", return_value=mock_client):
@@ -233,7 +275,7 @@ def test_execute_with_client_handles_client_errors(fhir_gateway):
             mock_handler.side_effect = Exception("Handled error")
 
             with pytest.raises(Exception, match="Handled error"):
-                fhir_gateway._execute_with_client(
+                await fhir_gateway._execute_with_client(
                     "read",
                     resource_type=Patient,
                     resource_id="123",
@@ -241,64 +283,3 @@ def test_execute_with_client_handles_client_errors(fhir_gateway):
                 )
 
             mock_handler.assert_called_once()
-
-
-def test_gateway_handles_source_initialization_errors():
-    """FHIRGateway handles errors during source initialization gracefully."""
-    # Mock connection manager to raise error on add_source
-    mock_manager = Mock()
-    mock_manager.add_source.side_effect = FHIRConnectionError(
-        code=500, message="Invalid connection string"
-    )
-
-    with patch(
-        "healthchain.gateway.clients.fhir.sync.connection.FHIRConnectionManager",
-        return_value=mock_manager,
-    ):
-        gateway = FHIRGateway(use_events=False)
-
-        # Should propagate the initialization error
-        with pytest.raises(FHIRConnectionError, match="Invalid connection string"):
-            gateway.add_source("bad_source", "invalid://connection/string")
-
-
-def test_gateway_concurrent_operation_resource_management():
-    """FHIRGateway manages resources correctly under concurrent access."""
-    import threading
-    from concurrent.futures import ThreadPoolExecutor
-
-    mock_manager = MockConnectionManager()
-
-    with patch(
-        "healthchain.gateway.clients.fhir.sync.connection.FHIRConnectionManager",
-        return_value=mock_manager,
-    ):
-        gateway = FHIRGateway(use_events=False)
-
-        # Track concurrent client usage
-        client_usage_count = 0
-        client_lock = threading.Lock()
-
-        def track_execute(*args, **kwargs):
-            nonlocal client_usage_count
-            with client_lock:
-                client_usage_count += 1
-            return Patient(id="test")
-
-        # Execute concurrent operations
-        def perform_read():
-            with patch.object(
-                gateway, "_execute_with_client", side_effect=track_execute
-            ):
-                return gateway.read(Patient, "123")
-
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(perform_read) for _ in range(5)]
-            results = [future.result() for future in futures]
-
-        # Verify all operations completed successfully
-        assert len(results) == 5
-        assert all(isinstance(result, Patient) for result in results)
-
-        # Verify concurrent access was tracked
-        assert client_usage_count == 5
