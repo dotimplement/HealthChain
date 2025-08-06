@@ -485,6 +485,9 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             resource_id: The resource ID
             resource: The resource object or data
         """
+        if not self.use_events:
+            return
+
         self.events.emit_event(
             create_fhir_event,
             operation,
