@@ -9,6 +9,7 @@ from fhir.resources.resource import Resource
 from healthchain.gateway.clients.fhir.base import FHIRServerInterface
 from healthchain.gateway.clients.fhir.sync.connection import FHIRConnectionManager
 from healthchain.gateway.fhir.base import BaseFHIRGateway
+from healthchain.gateway.fhir.errors import FHIRErrorHandler
 
 
 logger = logging.getLogger(__name__)
@@ -58,9 +59,37 @@ class FHIRGateway(BaseFHIRGateway):
         """
         return self.connection_manager.get_client(source)
 
+    def _execute_with_client(
+        self,
+        operation: str,
+        *,
+        source: str = None,
+        resource_type: Type[Resource] = None,
+        resource_id: str = None,
+        client_args: tuple = (),
+        client_kwargs: dict = None,
+    ):
+        """
+        Execute a client operation with consistent error handling.
+
+        Args:
+            operation: Operation name (read, create, update, delete, etc.)
+            source: Source name to use
+            resource_type: Resource type for error handling
+            resource_id: Resource ID for error handling (if applicable)
+            client_args: Positional arguments to pass to the client method
+            client_kwargs: Keyword arguments to pass to the client method
+        """
+        client = self.get_client(source)
+        client_kwargs = client_kwargs or {}
+        try:
+            return getattr(client, operation)(*client_args, **client_kwargs)
+        except Exception as e:
+            FHIRErrorHandler.handle_fhir_error(e, resource_type, resource_id, operation)
+
     def capabilities(self, source: str = None) -> CapabilityStatement:
         """
-        Get the capabilities of the FHIR server (sync version).
+        Get the capabilities of a FHIR server.
 
         Args:
             source: Source name to get capabilities for (uses first available if None)
@@ -68,11 +97,12 @@ class FHIRGateway(BaseFHIRGateway):
         Returns:
             CapabilityStatement: The capabilities of the FHIR server
         """
-        client = self.get_client(source)
-        capabilities = client.capabilities()
-
+        capabilities = self._execute_with_client(
+            "capabilities",
+            source=source,
+            resource_type=CapabilityStatement,
+        )
         logger.info("FHIR operation: capabilities on CapabilityStatement/None")
-
         return capabilities
 
     def transaction(self, bundle: Bundle, source: str = None) -> Bundle:
@@ -90,10 +120,12 @@ class FHIRGateway(BaseFHIRGateway):
             bundle = Bundle(type="transaction", entry=[...])
             result = gateway.transaction(bundle, "epic")
         """
-        client = self.get_client(source)
-        result = client.transaction(bundle)
-
-        # Log transaction event with entry counts
+        result = self._execute_with_client(
+            "transaction",
+            source=source,
+            resource_type=Bundle,
+            client_args=(bundle,),
+        )
         entry_count = len(bundle.entry) if bundle.entry else 0
         result_count = len(result.entry) if result.entry else 0
         logger.info(
@@ -122,9 +154,13 @@ class FHIRGateway(BaseFHIRGateway):
         Example:
             patient = gateway.read(Patient, "123", "epic")
         """
-        client = self.get_client(source)
-        resource = client.read(resource_type, fhir_id)
-
+        resource = self._execute_with_client(
+            "read",
+            source=source,
+            resource_type=resource_type,
+            resource_id=fhir_id,
+            client_args=(resource_type, fhir_id),
+        )
         if not resource:
             type_name = resource_type.__resource_type__
             raise ValueError(f"Resource {type_name}/{fhir_id} not found")
@@ -149,9 +185,12 @@ class FHIRGateway(BaseFHIRGateway):
             patient = Patient(name=[HumanName(family="Smith", given=["John"])])
             created = gateway.create(patient, "epic")
         """
-        client = self.get_client(source)
-        created = client.create(resource)
-
+        created = self._execute_with_client(
+            "create",
+            source=source,
+            resource_type=type(resource),
+            client_args=(resource,),
+        )
         type_name = resource.__resource_type__
         logger.info(f"FHIR operation: create on {type_name}/{created.id}")
 
@@ -176,9 +215,13 @@ class FHIRGateway(BaseFHIRGateway):
         if not resource.id:
             raise ValueError("Resource must have an ID for update")
 
-        client = self.get_client(source)
-        updated = client.update(resource)
-
+        updated = self._execute_with_client(
+            "update",
+            source=source,
+            resource_type=type(resource),
+            resource_id=resource.id,
+            client_args=(resource,),
+        )
         type_name = resource.__resource_type__
         logger.info(f"FHIR operation: update on {type_name}/{resource.id}")
 
@@ -204,10 +247,13 @@ class FHIRGateway(BaseFHIRGateway):
         Example:
             bundle = gateway.search(Patient, {"name": "Smith"}, "epic")
         """
-        client = self.get_client(source)
-        bundle = client.search(resource_type, params)
 
-        # Log search event with result count
+        bundle = self._execute_with_client(
+            "search",
+            source=source,
+            resource_type=resource_type,
+            client_args=(resource_type, params),
+        )
         type_name = resource_type.__resource_type__
         result_count = len(bundle.entry) if bundle.entry else 0
         logger.info(
@@ -233,9 +279,13 @@ class FHIRGateway(BaseFHIRGateway):
         Example:
             success = gateway.delete(Patient, "123", "epic")
         """
-        client = self.get_client(source)
-        success = client.delete(resource_type, fhir_id)
-
+        success = self._execute_with_client(
+            "delete",
+            source=source,
+            resource_type=resource_type,
+            resource_id=fhir_id,
+            client_args=(resource_type, fhir_id),
+        )
         if success:
             type_name = resource_type.__resource_type__
             logger.info(f"FHIR operation: delete on {type_name}/{fhir_id}")
