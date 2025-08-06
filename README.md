@@ -22,13 +22,14 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 
 
 ## Features
-- [x] 🔌 **Gateway**: Connect to multiple EHR systems with [unified API](https://dotimplement.github.io/HealthChain/reference/gateway/gateway/) supporting FHIR, CDS Hooks, and SOAP/CDA protocols
+- [x] 🔌 **Gateway**: Connect to multiple EHR systems with [unified API](https://dotimplement.github.io/HealthChain/reference/gateway/gateway/) supporting FHIR, CDS Hooks, and SOAP/CDA protocols (sync / async support)
 - [x] 🔥 **Pipelines**: Build FHIR-native ML workflows or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and AI tasks
 - [x] 🔄 **InteropEngine**: Convert between FHIR, CDA, and HL7v2 with a [template-based engine](https://dotimplement.github.io/HealthChain/reference/interop/interop/)
 - [x] 🔒 Type-safe healthcare data with full type hints and Pydantic validation for [FHIR resources](https://dotimplement.github.io/HealthChain/reference/utilities/fhir_helpers/)
-- [x] ⚡ Event-driven architecture with real-time event handling and [audit trails](https://dotimplement.github.io/HealthChain/reference/gateway/events/) built-in
+- [x] ⚡ Built-in event-driven logging and operation tracking for [audit trails](https://dotimplement.github.io/HealthChain/reference/gateway/events/)
 - [x] 🚀 Deploy production-ready applications with [HealthChainAPI](https://dotimplement.github.io/HealthChain/reference/gateway/api/) and FastAPI integration
 - [x] 🧪 Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) and [sandbox testing](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) utilities
+- [x] 🖥️ Bootstrap configurations with CLI tools
 
 ## Why use HealthChain?
 -  **EHR integrations are manual and time-consuming** - **HealthChainAPI** abstracts away complexities so you can focus on AI development, not learning FHIR APIs, CDS Hooks, and authentication schemes.
@@ -86,6 +87,11 @@ app.register_service(notes)
 # /fhir/* - Patient data, observations, etc.
 # /cds/* - Real-time clinical alerts
 # /soap/* - Clinical document processing
+
+# Deploy with uvicorn
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8888)
 ```
 
 ### FHIR Operations with AI Enhancement
@@ -99,23 +105,27 @@ gateway.add_source("epic", "fhir://fhir.epic.com/r4?...")
 
 # Add AI transformations to FHIR data
 @gateway.transform(Patient)
-async def enhance_patient(id: str, source: str = None) -> Patient:
-    async with gateway.modify(Patient, id, source) as patient:
-        # Get lab results and process with AI
-        lab_results = await gateway.search(
-            Observation,
-            {"patient": id, "category": "laboratory"},
-            source
-        )
-        insights = nlp_pipeline.process(patient, lab_results)
+def enhance_patient(id: str, source: str = None) -> Patient:
+    patient = gateway.read(Patient, id, source)
 
-        # Add AI summary to patient record
-        patient.extension = patient.extension or []
-        patient.extension.append({
-            "url": "http://healthchain.org/fhir/summary",
-            "valueString": insights.summary
-        })
-        return patient
+    # Get lab results and process with AI
+    lab_results = gateway.search(
+        Observation,
+        {"patient": id, "category": "laboratory"},
+        source
+    )
+    insights = nlp_pipeline.process(patient, lab_results)
+
+    # Add AI summary to patient record
+    patient.extension = patient.extension or []
+    patient.extension.append({
+        "url": "http://healthchain.org/fhir/summary",
+        "valueString": insights.summary
+    })
+
+    # Update the patient record
+    gateway.update(patient, source)
+    return patient
 
 # Automatically available at: GET /fhir/transform/Patient/123?source=epic
 ```

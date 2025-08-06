@@ -8,12 +8,13 @@ HealthChain provides three core tools for healthcare AI integration: **Gateway**
 
 ### HealthChainAPI Gateway 🔌
 
-The HealthChainAPI provides a unified interface for connecting your AI models to multiple healthcare systems through a single API. Handle FHIR, CDS Hooks, and SOAP/CDA protocols with OAuth2 authentication and connection pooling.
+The HealthChainAPI provides a unified interface for connecting your AI models to multiple healthcare systems through a single API. Handle FHIR, CDS Hooks, and SOAP/CDA protocols with OAuth2 authentication.
 
 [(Full Documentation on Gateway)](./reference/gateway/gateway.md)
 
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
+from fhir.resources.patient import Patient
 
 # Create your healthcare application
 app = HealthChainAPI(title="My Healthcare AI App")
@@ -25,11 +26,12 @@ fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
 
 # Add AI transformations to FHIR data
 @fhir.transform(Patient)
-async def enhance_patient(id: str, source: str = None) -> Patient:
-    async with fhir.modify(Patient, id, source) as patient:
-        # Your AI logic here
-        patient.active = True
-        return patient
+def enhance_patient(id: str, source: str = None) -> Patient:
+    patient = fhir.read(Patient, id, source)
+    # Your AI logic here
+    patient.active = True
+    fhir.update(patient, source)
+    return patient
 
 # Register and run
 app.register_gateway(fhir)
@@ -154,10 +156,6 @@ The HealthChain Interoperability module provides tools for converting between di
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
-
-**Choose your setup based on your needs:**
-
-✅ **Default configs** - For basic testing and prototyping only:
 ```python
 from healthchain.interop import create_interop, FormatType
 
@@ -174,32 +172,6 @@ fhir_resources = engine.to_fhir(cda_xml, src_format=FormatType.CDA)
 # Convert FHIR resources back to CDA
 cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 ```
-
-> ⚠️ **Default configs are limited** - Only supports problems, medications, and notes. No allergies, custom mappings, or organization-specific templates.
-
-🛠️ **Custom configs** - **Required for real-world use**:
-```bash
-# Create editable configuration templates
-healthchain init-configs ./my_configs
-```
-
-```python
-# Use your customized configs
-engine = create_interop(config_dir="./my_configs")
-
-# Now you can customize:
-# • Add experimental features (allergies, procedures)
-# • Modify terminology mappings (SNOMED, LOINC codes)
-# • Customize templates for your organization's CDA format
-# • Configure validation rules and environments
-```
-
-**When you need custom configs:**
-- 🏥 **Production healthcare applications**
-- 🔧 **Organization-specific CDA templates**
-- 🧪 **Experimental features** (allergies, procedures)
-- 🗺️ **Custom terminology mappings**
-- 🛡️ **Specific validation requirements**
 
 
 ## Utilities ⚙️
