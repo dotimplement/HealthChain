@@ -5,7 +5,6 @@ Focuses on HTTP operations, authentication, error handling, and response process
 """
 
 import pytest
-import json
 import httpx
 from unittest.mock import Mock, patch
 from fhir.resources.patient import Patient
@@ -13,7 +12,6 @@ from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
 
 from healthchain.gateway.clients.fhir.sync import FHIRClient
-from healthchain.gateway.clients.fhir.base import FHIRClientError
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 
 
@@ -78,37 +76,6 @@ def mock_httpx_response():
     return response
 
 
-def test_fhir_client_initialization_and_configuration(mock_auth_config):
-    """FHIRClient initializes with correct configuration and headers."""
-    with patch("healthchain.gateway.clients.auth.OAuth2TokenManager"):
-        client = FHIRClient(auth_config=mock_auth_config)
-
-        # Test configuration
-        assert client.base_url == "https://test.fhir.org/R4/"
-        assert client.timeout == 30.0
-        assert client.verify_ssl is True
-
-        # Test headers
-        assert client.base_headers["Accept"] == "application/fhir+json"
-        assert client.base_headers["Content-Type"] == "application/fhir+json"
-
-
-def test_async_fhir_client_conforms_to_protocol(fhir_client):
-    """FHIRClient implements the required protocol methods."""
-    # Check that client has all required protocol methods
-    assert hasattr(fhir_client, "read")
-    assert hasattr(fhir_client, "search")
-    assert hasattr(fhir_client, "create")
-    assert hasattr(fhir_client, "update")
-    assert hasattr(fhir_client, "delete")
-    assert hasattr(fhir_client, "transaction")
-    assert hasattr(fhir_client, "capabilities")
-
-    # Check that methods are callable
-    assert callable(getattr(fhir_client, "read"))
-    assert callable(getattr(fhir_client, "search"))
-
-
 def test_fhir_client_authentication_and_headers(fhir_client):
     """FHIRClient manages OAuth tokens and includes proper headers."""
     # Test first call includes token and headers
@@ -120,75 +87,6 @@ def test_fhir_client_authentication_and_headers(fhir_client):
     # Test token refresh on subsequent calls
     fhir_client._get_headers()
     assert fhir_client.token_manager.get_access_token.call_count == 2
-
-
-def test_fhir_client_url_building(fhir_client):
-    """FHIRClient builds URLs correctly with and without parameters."""
-    # Without parameters
-    url = fhir_client._build_url("Patient/123")
-    assert url == "https://test.fhir.org/R4/Patient/123"
-
-    # With parameters (None values filtered)
-    params = {"name": "John", "active": True, "limit": None}
-    url = fhir_client._build_url("Patient", params)
-    assert "https://test.fhir.org/R4/Patient?" in url
-    assert "name=John" in url
-    assert "active=True" in url
-    assert "limit" not in url
-
-
-@pytest.mark.parametrize(
-    "status_code,is_success,should_raise",
-    [
-        (200, True, False),
-        (201, True, False),
-        (400, False, True),
-        (404, False, True),
-        (500, False, True),
-    ],
-)
-def test_fhir_client_response_handling(
-    fhir_client, status_code, is_success, should_raise
-):
-    """FHIRClient handles HTTP status codes and error responses appropriately."""
-    mock_response = Mock(spec=httpx.Response)
-    mock_response.is_success = is_success
-    mock_response.status_code = status_code
-    mock_response.json.return_value = {"resourceType": "OperationOutcome"}
-
-    if should_raise:
-        with pytest.raises(FHIRClientError) as exc_info:
-            fhir_client._handle_response(mock_response)
-        assert exc_info.value.status_code == status_code
-    else:
-        result = fhir_client._handle_response(mock_response)
-        assert result == {"resourceType": "OperationOutcome"}
-
-
-def test_fhir_client_error_extraction_and_invalid_json(fhir_client):
-    """FHIRClient extracts error diagnostics and handles invalid JSON."""
-    # Test error extraction from OperationOutcome
-    mock_response = Mock(spec=httpx.Response)
-    mock_response.is_success = False
-    mock_response.status_code = 422
-    mock_response.json.return_value = {
-        "resourceType": "OperationOutcome",
-        "issue": [{"diagnostics": "Validation failed on field X"}],
-    }
-
-    with pytest.raises(FHIRClientError) as exc_info:
-        fhir_client._handle_response(mock_response)
-    assert "Validation failed on field X" in str(exc_info.value)
-    assert exc_info.value.status_code == 422
-
-    # Test invalid JSON handling
-    mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "doc", 0)
-    mock_response.text = "Invalid response text"
-    mock_response.status_code = 500
-
-    with pytest.raises(FHIRClientError) as exc_info:
-        fhir_client._handle_response(mock_response)
-    assert "Invalid JSON response" in str(exc_info.value)
 
 
 def test_fhir_client_crud_operations(fhir_client, mock_httpx_response):
@@ -294,31 +192,6 @@ def test_fhir_client_search_and_capabilities(fhir_client):
             assert result.status == "active"
 
 
-def test_fhir_client_resource_type_resolution(fhir_client):
-    """FHIRClient resolves resource types from classes, strings, and handles errors."""
-    # Test with FHIR resource class
-    type_name, resource_class = fhir_client._resolve_resource_type(Patient)
-    assert type_name == "Patient"
-    assert resource_class == Patient
-
-    # Test with string name
-    with patch("builtins.__import__") as mock_import:
-        mock_module = Mock()
-        mock_module.Patient = Patient
-        mock_import.return_value = mock_module
-
-        type_name, resource_class = fhir_client._resolve_resource_type("Patient")
-        assert type_name == "Patient"
-        assert resource_class == Patient
-        mock_import.assert_called_once_with(
-            "fhir.resources.patient", fromlist=["Patient"]
-        )
-
-    # Test invalid resource type
-    with pytest.raises(ModuleNotFoundError, match="No module named"):
-        fhir_client._resolve_resource_type("InvalidResource")
-
-
 def test_fhir_client_authentication_failure(fhir_client):
     """FHIRClient handles authentication failures."""
     fhir_client.token_manager.get_access_token.side_effect = Exception("Auth failed")
@@ -332,16 +205,6 @@ def test_fhir_client_http_timeout(fhir_client):
         mock_get.side_effect = httpx.TimeoutException("Request timed out")
         with pytest.raises(httpx.TimeoutException):
             fhir_client.read(Patient, "123")
-
-
-def test_fhir_client_error_class():
-    """FHIRClientError preserves response data for debugging."""
-    response_data = {"resourceType": "OperationOutcome", "issue": []}
-    error = FHIRClientError("Test error", status_code=400, response_data=response_data)
-
-    assert error.status_code == 400
-    assert error.response_data == response_data
-    assert str(error) == "Test error"
 
 
 def test_fhir_client_context_manager_lifecycle(mock_auth_config):

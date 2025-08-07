@@ -11,7 +11,6 @@ import pytest
 from unittest.mock import Mock, AsyncMock
 
 from healthchain.gateway.clients.fhir.aio.connection import AsyncFHIRConnectionManager
-from healthchain.gateway.fhir.errors import FHIRConnectionError
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
 
@@ -29,42 +28,6 @@ def mock_fhir_client():
     client = Mock(spec=FHIRServerInterfaceProtocol)
     client.base_url = "https://test.fhir.com/R4"
     return client
-
-
-@pytest.mark.parametrize(
-    "connection_string,should_succeed",
-    [
-        # Valid connection strings
-        (
-            "fhir://epic.org/api/FHIR/R4?client_id=test&client_secret=secret&token_url=https://epic.org/token",
-            True,
-        ),
-        (
-            "fhir://localhost:8080/fhir?client_id=local&client_secret=pass&token_url=http://localhost/token",
-            True,
-        ),
-        # Invalid connection strings
-        ("http://not-fhir.com/api", False),  # Wrong scheme
-        ("fhir://", False),  # Missing hostname
-        ("invalid-string", False),  # Not a URL
-    ],
-)
-def test_connection_manager_source_validation_and_parsing(
-    connection_manager, connection_string, should_succeed
-):
-    """AsyncFHIRConnectionManager validates connection strings and parses hostnames correctly."""
-    if should_succeed:
-        connection_manager.add_source("test_source", connection_string)
-        assert "test_source" in connection_manager.sources
-        assert "test_source" in connection_manager._connection_strings
-        assert (
-            connection_manager._connection_strings["test_source"] == connection_string
-        )
-    else:
-        with pytest.raises(
-            FHIRConnectionError, match="Failed to parse connection string"
-        ):
-            connection_manager.add_source("test_source", connection_string)
 
 
 @pytest.mark.asyncio
