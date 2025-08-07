@@ -1793,7 +1793,7 @@ Not responding to Antibiotics</content>
                                     <effectiveTime>
                                         <low value="20190517" />
                                     </effectiveTime>
-                                    <value code="38341003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD"
+                                    <value code="38341003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Hypertension" xsi:type="CD"
                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                                         <originalText>
                                             <reference value="#problem12name" />
@@ -1874,7 +1874,7 @@ Not responding to Antibiotics</content>
                                         <low value="20220216" />
                                         <high value="20220216" />
                                     </effectiveTime>
-                                    <value code="235919008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD"
+                                    <value code="235919008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Gallstone" xsi:type="CD"
                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                                         <originalText>
                                             <reference value="#problem13name" />
@@ -1959,7 +1959,7 @@ Not responding to Antibiotics</content>
                                     <effectiveTime>
                                         <low value="20220216" />
                                     </effectiveTime>
-                                    <value code="385093006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD"
+                                    <value code="385093006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Community acquired pneumonia" xsi:type="CD"
                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                                         <originalText>
                                             <reference value="#problem14name" />
@@ -2057,7 +2057,7 @@ Not responding to Antibiotics</content>
                                     <effectiveTime>
                                         <low value="20220929" />
                                     </effectiveTime>
-                                    <value code="59927004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD"
+                                    <value code="59927004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Hepatic failure" xsi:type="CD"
                                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                                         <originalText>
                                             <reference value="#problem15name" />
