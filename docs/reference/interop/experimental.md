@@ -6,9 +6,9 @@ This page tracks templates that are under development or have known issues. Use 
 
 | Template Type | Status | Known Issues | Location |
 |---------------|--------|--------------|----------|
-| **Problems** | ✅ **Stable** | None | Bundled in default configs |
-| **Medications** | ✅ **Stable** | None | Bundled in default configs |
-| **Notes** | ✅ **Stable** | None | Bundled in default configs |
+| **Problems** | 🟢 **Basic Stable** | None, but not fully tested for edge cases | Bundled in default configs |
+| **Medications** | 🟢 **Basic Stable** | None, but not fully tested for edge cases | Bundled in default configs |
+| **Notes** | 🟢 **Basic Stable** | None, but not fully tested for edge cases, html tags are parsed as text | Bundled in default configs |
 | **Allergies** | ⚠️ **Experimental** | Clinical status parsing bugs, round-trip issues | `dev-templates/allergies/` |
 
 ## Using Experimental Templates

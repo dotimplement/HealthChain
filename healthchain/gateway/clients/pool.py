@@ -1,13 +1,15 @@
 import httpx
 
-from typing import Any, Callable, Dict
-from healthchain.gateway.clients import FHIRServerInterface
+from typing import Any, Callable, Dict, TypeVar, Generic
+
+# Generic client interface type
+ClientInterface = TypeVar("ClientInterface")
 
 
-class FHIRClientPool:
+class ClientPool(Generic[ClientInterface]):
     """
-    Manages FHIR client instances with connection pooling using httpx.
-    Handles connection lifecycle, timeouts, and resource cleanup.
+    Generic client pool for managing client instances with connection pooling using httpx.
+    Handles connection lifecycle, timeouts, and resource cleanup for any client type.
     """
 
     def __init__(
@@ -17,14 +19,14 @@ class FHIRClientPool:
         keepalive_expiry: float = 5.0,
     ):
         """
-        Initialize the FHIR client pool.
+        Initialize the client pool.
 
         Args:
             max_connections: Maximum number of total connections
             max_keepalive_connections: Maximum number of keep-alive connections
             keepalive_expiry: How long to keep connections alive (seconds)
         """
-        self._clients: Dict[str, FHIRServerInterface] = {}
+        self._clients: Dict[str, ClientInterface] = {}
         self._client_limits = httpx.Limits(
             max_connections=max_connections,
             max_keepalive_connections=max_keepalive_connections,
@@ -33,16 +35,16 @@ class FHIRClientPool:
 
     async def get_client(
         self, connection_string: str, client_factory: Callable
-    ) -> FHIRServerInterface:
+    ) -> ClientInterface:
         """
-        Get a FHIR client for the given connection string.
+        Get a client for the given connection string.
 
         Args:
-            connection_string: FHIR connection string
+            connection_string: Connection string for the client
             client_factory: Factory function to create new clients
 
         Returns:
-            FHIRServerInterface: A FHIR client with pooled connections
+            ClientInterface: A client with pooled connections
         """
         if connection_string not in self._clients:
             # Create new client with connection pooling

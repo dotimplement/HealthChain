@@ -23,6 +23,7 @@ from healthchain.fhir import (
     create_single_codeable_concept,
     read_content_attachment,
     create_condition,
+    set_problem_list_item_category,
 )
 
 logger = logging.getLogger(__name__)
@@ -698,6 +699,7 @@ class Document(BaseDocument):
                     display=ent.text,
                     system=coding_system,
                 )
+                set_problem_list_item_category(condition)
                 logger.debug(f"Adding condition from spaCy: {condition.model_dump()}")
                 new_conditions.append(condition)
 
@@ -721,6 +723,7 @@ class Document(BaseDocument):
                     display=entity_text,
                     system=coding_system,
                 )
+                set_problem_list_item_category(condition)
                 logger.debug(
                     f"Adding condition from entities: {condition.model_dump()}"
                 )

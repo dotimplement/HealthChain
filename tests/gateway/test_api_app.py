@@ -13,7 +13,7 @@ from healthchain.gateway.api.dependencies import (
     get_all_gateways,
 )
 from healthchain.gateway.events.dispatcher import EventDispatcher
-from healthchain.gateway.core.base import BaseGateway
+from healthchain.gateway.base import BaseGateway
 
 
 class MockGateway(BaseGateway):

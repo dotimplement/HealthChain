@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, AsyncMock
 
-from healthchain.gateway.clients.pool import FHIRClientPool
+from healthchain.gateway.clients.pool import ClientPool
 from healthchain.gateway.api.protocols import FHIRServerInterfaceProtocol
 
 
@@ -32,8 +32,8 @@ def mock_client_factory():
 
 @pytest.fixture
 def client_pool():
-    """Create a FHIRClientPool for testing."""
-    return FHIRClientPool(
+    """Create a ClientPool for testing."""
+    return ClientPool(
         max_connections=50, max_keepalive_connections=10, keepalive_expiry=3.0
     )
 
@@ -46,11 +46,11 @@ def client_pool():
     ],
 )
 def test_client_pool_initialization(max_conn, keepalive_conn, expiry):
-    """FHIRClientPool initializes with custom or default limits."""
+    """ClientPool initializes with custom or default limits."""
     if max_conn == 100:  # test defaults
-        pool = FHIRClientPool()
+        pool = ClientPool()
     else:
-        pool = FHIRClientPool(
+        pool = ClientPool(
             max_connections=max_conn,
             max_keepalive_connections=keepalive_conn,
             keepalive_expiry=expiry,
@@ -64,7 +64,7 @@ def test_client_pool_initialization(max_conn, keepalive_conn, expiry):
 
 @pytest.mark.asyncio
 async def test_client_creation_and_reuse(client_pool, mock_client_factory):
-    """FHIRClientPool creates new clients and reuses existing ones."""
+    """ClientPool creates new clients and reuses existing ones."""
     conn1 = "fhir://server1.example.com/R4"
     conn2 = "fhir://server2.example.com/R4"
 
@@ -86,7 +86,7 @@ async def test_client_creation_and_reuse(client_pool, mock_client_factory):
 
 @pytest.mark.asyncio
 async def test_close_all_clients(client_pool, mock_client_factory):
-    """FHIRClientPool closes all clients and handles missing close methods."""
+    """ClientPool closes all clients and handles missing close methods."""
     conn1 = "fhir://server1.example.com/R4"
     conn2 = "fhir://server2.example.com/R4"
 
@@ -109,7 +109,7 @@ async def test_close_all_clients(client_pool, mock_client_factory):
 
 @pytest.mark.asyncio
 async def test_pool_stats(client_pool, mock_client_factory):
-    """FHIRClientPool provides accurate statistics."""
+    """ClientPool provides accurate statistics."""
     # Empty pool stats
     stats = client_pool.get_pool_stats()
     assert stats["total_clients"] == 0
@@ -138,7 +138,7 @@ async def test_pool_stats(client_pool, mock_client_factory):
 
 @pytest.mark.asyncio
 async def test_pool_stats_without_pool_info(client_pool):
-    """FHIRClientPool handles clients without connection pool info."""
+    """ClientPool handles clients without connection pool info."""
     simple_client = Mock(spec=[])
     client_pool._clients["simple"] = simple_client
 
@@ -149,7 +149,7 @@ async def test_pool_stats_without_pool_info(client_pool):
 
 @pytest.mark.asyncio
 async def test_client_factory_exceptions(client_pool):
-    """FHIRClientPool propagates exceptions from client factory."""
+    """ClientPool propagates exceptions from client factory."""
 
     def failing_factory(connection_string, limits=None):
         raise ValueError("Factory failed")
@@ -160,7 +160,7 @@ async def test_client_factory_exceptions(client_pool):
 
 @pytest.mark.asyncio
 async def test_concurrent_client_creation(client_pool):
-    """FHIRClientPool handles concurrent requests for same connection."""
+    """ClientPool handles concurrent requests for same connection."""
     connection_string = "fhir://test.example.com/R4"
     call_count = 0
 

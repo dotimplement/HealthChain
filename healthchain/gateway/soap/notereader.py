@@ -14,12 +14,11 @@ from spyne import Application
 from spyne.protocol.soap import Soap11
 from spyne.server.wsgi import WsgiApplication
 
-from healthchain.gateway.core.base import BaseProtocolHandler
+from healthchain.gateway.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
-from healthchain.gateway.events.notereader import create_notereader_event
-from healthchain.gateway.soap.epiccdsservice import CDSServices
-from healthchain.gateway.soap.model.epicclientfault import ClientFault
-from healthchain.gateway.soap.model.epicserverfault import ServerFault
+from healthchain.gateway.soap.events import create_notereader_event
+from healthchain.gateway.soap.utils.epiccds import CDSServices
+from healthchain.gateway.soap.utils.model import ClientFault, ServerFault
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 

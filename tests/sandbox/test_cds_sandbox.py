@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 import healthchain as hc
-from healthchain.gateway.protocols.cdshooks import CDSHooksService
+from healthchain.gateway.cds import CDSHooksService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse, Card

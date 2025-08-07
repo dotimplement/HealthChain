@@ -12,15 +12,8 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from contextlib import asynccontextmanager
 from termcolor import colored
 
-from healthchain.gateway.soap.wsgi import start_wsgi
-
-# Use new location but maintain old import for backward compatibility
-try:
-    from healthchain.gateway.protocols.apiprotocol import ApiProtocol
-except ImportError:
-    from .endpoints import ApiProtocol
-
-from .endpoints import Endpoint
+from healthchain.gateway.soap.utils.wsgi import start_wsgi
+from healthchain.service.endpoints import ApiProtocol, Endpoint
 
 log = logging.getLogger(__name__)
 

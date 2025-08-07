@@ -3,7 +3,7 @@ import logging
 from spyne import rpc, ServiceBase, Unicode, ByteArray
 from healthchain.models.requests.cdarequest import CdaRequest
 
-from .model import Response, ClientFault, ServerFault
+from healthchain.gateway.soap.utils.model import Response, ClientFault, ServerFault
 
 
 log = logging.getLogger(__name__)
