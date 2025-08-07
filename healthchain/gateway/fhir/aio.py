@@ -93,7 +93,7 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             - sources: Dict of source names and their connection info
             - client_stats: Detailed httpx connection pool statistics
         """
-        return self.connection_manager.get_pool_status()
+        return self.connection_manager.get_status()
 
     async def capabilities(self, source: str = None) -> CapabilityStatement:
         """
