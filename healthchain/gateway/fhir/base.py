@@ -46,7 +46,7 @@ class BaseFHIRGateway(BaseGateway):
         sources: Dict[str, FHIRServerInterface] = None,
         prefix: str = "/fhir",
         tags: List[str] = ["FHIR"],
-        use_events: bool = True,
+        use_events: bool = False,
         **options,
     ):
         """Initialize the Base FHIR Gateway."""
@@ -113,38 +113,52 @@ class BaseFHIRGateway(BaseGateway):
         """
         Build a FHIR CapabilityStatement for this gateway's value-add services.
 
-        Only includes resources and operations that this gateway provides through
-        its transform/aggregate endpoints, not the underlying FHIR sources.
+        Returns detailed capability information including registered transform/aggregate
+        handlers, available FHIR sources, and supported operations.
 
         Returns:
-            CapabilityStatement: FHIR-compliant capability statement
+            CapabilityStatement: Enhanced FHIR-compliant capability statement
         """
         # Build resource entries based on registered handlers
         resources = []
         for resource_type, operations in self._resource_handlers.items():
             interactions = []
+            operation_details = []
 
             # Add supported interactions based on registered handlers
             for operation in operations:
                 if operation == "transform":
-                    interactions.append(
-                        {"code": "read"}
-                    )  # Transform requires read access
+                    interactions.append({"code": "read"})
+                    operation_details.append(
+                        "Transform: Custom resource transformation"
+                    )
                 elif operation == "aggregate":
-                    interactions.append(
-                        {"code": "search-type"}
-                    )  # Aggregate is like search
+                    interactions.append({"code": "search-type"})
+                    operation_details.append("Aggregate: Multi-source data aggregation")
 
             if interactions:
-                # Extract the resource name from the resource type class
                 resource_name = self._get_resource_name(resource_type)
+                documentation = f"Gateway provides {', '.join(operation_details)} for {resource_name}"
                 resources.append(
                     {
                         "type": resource_name,
                         "interaction": interactions,
-                        "documentation": f"Gateway provides {', '.join(operations)} operations for {resource_name}",
+                        "documentation": documentation,
                     }
                 )
+
+        # Add available FHIR sources information
+        sources_info = []
+        if self.connection_manager and hasattr(self.connection_manager, "sources"):
+            for source_name in self.connection_manager.sources.keys():
+                sources_info.append(f"Source: {source_name}")
+
+        # Enhanced documentation with examples
+        rest_documentation = (
+            "HealthChain FHIR Gateway provides transformation and aggregation services. "
+            f"Available sources: {', '.join(self.connection_manager.sources.keys()) if self.connection_manager and hasattr(self.connection_manager, 'sources') else 'None configured'}. "
+            "Use /status endpoint for operational details."
+        )
 
         capability_data = {
             "resourceType": "CapabilityStatement",
@@ -156,17 +170,15 @@ class BaseFHIRGateway(BaseGateway):
                 "name": "HealthChain FHIR Gateway",
                 "version": "1.0.0",  # TODO: Extract from package
             },
-            "fhirVersion": "4.0.1",
+            "fhirVersion": "5.0.0",
             "format": ["application/fhir+json"],
             "rest": [
                 {
                     "mode": "server",
-                    "documentation": "HealthChain FHIR Gateway provides transformation and aggregation services",
+                    "documentation": rest_documentation,
                     "resource": resources,
                 }
-            ]
-            if resources
-            else [],
+            ],
         }
 
         return CapabilityStatement(**capability_data)
@@ -197,40 +209,65 @@ class BaseFHIRGateway(BaseGateway):
         """
         Get operational status and metadata for this gateway.
 
-        This provides gateway-specific operational information.
+        Enhanced with detailed FHIR operation discovery information.
 
         Returns:
             Dict containing gateway operational status and metadata
         """
+        # Get available operations with examples
+        available_operations = {}
+        for resource_type, operations in self._resource_handlers.items():
+            resource_name = self._get_resource_name(resource_type)
+            operation_list = []
+
+            for operation in operations:
+                if operation == "transform":
+                    operation_list.append(
+                        {
+                            "type": "transform",
+                            "endpoint": f"/transform/{resource_name}/{{id}}",
+                            "description": f"Transform {resource_name} with custom logic",
+                            "method": "GET",
+                            "parameters": ["id", "source (optional)"],
+                        }
+                    )
+                elif operation == "aggregate":
+                    operation_list.append(
+                        {
+                            "type": "aggregate",
+                            "endpoint": f"/aggregate/{resource_name}",
+                            "description": f"Aggregate {resource_name} from multiple sources",
+                            "method": "GET",
+                            "parameters": ["id (optional)", "sources (optional)"],
+                        }
+                    )
+
+            if operation_list:
+                available_operations[resource_name] = operation_list
+
         status = {
             "gateway_type": self.__class__.__name__,
             "version": "1.0.0",  # TODO: Extract from package
             "status": "active",
             "timestamp": datetime.now().isoformat() + "Z",
             "sources": {
-                "count": len(self.connection_manager.sources),
-                "names": list(self.connection_manager.sources.keys()),
+                "count": len(self.connection_manager.sources)
+                if self.connection_manager
+                and hasattr(self.connection_manager, "sources")
+                else 0,
+                "names": list(self.connection_manager.sources.keys())
+                if self.connection_manager
+                and hasattr(self.connection_manager, "sources")
+                else [],
             },
-            "connection_pool": self.connection_manager.get_status(),
-            "supported_operations": {
-                "resources": self.supported_resources,
-                "operations": self.get_capabilities(),
-                "endpoints": {
-                    "transform": len(
-                        [
-                            r
-                            for r, ops in self._resource_handlers.items()
-                            if "transform" in ops
-                        ]
-                    ),
-                    "aggregate": len(
-                        [
-                            r
-                            for r, ops in self._resource_handlers.items()
-                            if "aggregate" in ops
-                        ]
-                    ),
-                },
+            "connection_pool": self.connection_manager.get_status()
+            if self.connection_manager
+            else {"status": "not_initialized"},
+            "supported_operations": available_operations,
+            "discovery_endpoints": {
+                "/metadata": "FHIR CapabilityStatement with supported operations",
+                "/status": "Gateway operational status and available operations",
+                "/docs": "OpenAPI documentation for all endpoints",
             },
             "events": {
                 "enabled": self.use_events,

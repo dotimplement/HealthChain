@@ -105,9 +105,6 @@ class FHIRConnectionManager:
             "sources": {
                 "count": len(self.sources),
                 "configured": list(self.sources.keys()),
-                "connection_strings": {
-                    name: f"fhir://{name}/*" for name in self.sources.keys()
-                },
             },
         }
 
