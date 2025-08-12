@@ -98,7 +98,11 @@ class BaseFHIRGateway(BaseGateway):
         def capability_statement(
             fhir: "BaseFHIRGateway" = Depends(get_self_gateway),
         ):
-            """Return the FHIR capability statement for this gateway's services."""
+            """Return the FHIR capability statement for this gateway's services.
+
+            Includes both custom transform/aggregate operations (via REST endpoints)
+            and standard FHIR CRUD operations (via Python gateway methods).
+            """
             return fhir.build_capability_statement().model_dump()
 
         # Gateway status endpoint - returns operational metadata
@@ -106,7 +110,11 @@ class BaseFHIRGateway(BaseGateway):
         def gateway_status(
             fhir: "BaseFHIRGateway" = Depends(get_self_gateway),
         ):
-            """Return operational status and metadata for this gateway."""
+            """Return operational status and metadata for this gateway.
+
+            Includes information about supported FHIR CRUD operations,
+            custom transform/aggregate operations, and connected sources.
+            """
             return fhir.get_gateway_status()
 
     def build_capability_statement(self) -> CapabilityStatement:
@@ -117,7 +125,7 @@ class BaseFHIRGateway(BaseGateway):
         handlers, available FHIR sources, and supported operations.
 
         Returns:
-            CapabilityStatement: Enhanced FHIR-compliant capability statement
+            CapabilityStatement: FHIR-compliant capability statement for gateway operations
         """
         # Build resource entries based on registered handlers
         resources = []
@@ -128,12 +136,22 @@ class BaseFHIRGateway(BaseGateway):
             # Add supported interactions based on registered handlers
             for operation in operations:
                 if operation == "transform":
-                    interactions.append({"code": "read"})
+                    interactions.append(
+                        {
+                            "code": "read",
+                            "documentation": "Custom transformation via REST endpoint",
+                        }
+                    )
                     operation_details.append(
                         "Transform: Custom resource transformation"
                     )
                 elif operation == "aggregate":
-                    interactions.append({"code": "search-type"})
+                    interactions.append(
+                        {
+                            "code": "search-type",
+                            "documentation": "Multi-source aggregation via REST endpoint",
+                        }
+                    )
                     operation_details.append("Aggregate: Multi-source data aggregation")
 
             if interactions:
@@ -154,9 +172,15 @@ class BaseFHIRGateway(BaseGateway):
                 sources_info.append(f"Source: {source_name}")
 
         # Enhanced documentation with examples
+        sources_list = (
+            ", ".join(self.connection_manager.sources.keys())
+            if self.connection_manager and hasattr(self.connection_manager, "sources")
+            else "None configured"
+        )
         rest_documentation = (
             "HealthChain FHIR Gateway provides transformation and aggregation services. "
-            f"Available sources: {', '.join(self.connection_manager.sources.keys()) if self.connection_manager and hasattr(self.connection_manager, 'sources') else 'None configured'}. "
+            f"Gateway also provides standard FHIR CRUD operations (create, read, update, delete, search) to connected FHIR servers via Python API. "
+            f"Available sources: {sources_list}. "
             "Use /status endpoint for operational details."
         )
 
@@ -209,7 +233,8 @@ class BaseFHIRGateway(BaseGateway):
         """
         Get operational status and metadata for this gateway.
 
-        Enhanced with detailed FHIR operation discovery information.
+        Enhanced with detailed FHIR operation discovery information including
+        both standard CRUD operations and custom transform/aggregate operations.
 
         Returns:
             Dict containing gateway operational status and metadata
