@@ -2,5 +2,5 @@
 
 The best way to learn is by example! Here are some to get you started:
 
-- [Build a CDS sandbox](./cds_sandbox.md): Build a clinical decision support (CDS) system that uses *encounter-discharge* to summarize discharge notes.
-- [Build a Clinical Documentation sandbox](./notereader_sandbox.md): Build a NoteReader system which extracts problem, medication, and allergy concepts from free-text clinical notes.
+- [Summarize Discharge Notes with CDS Hooks](./discharge_summarizer.md): Implement a CDS Hooks service that listens for `encounter-discharge` events, automatically generates concise summaries of discharge notes, and delivers clinical recommendations directly into EHR workflows.
+- [Automate Clinical Coding and FHIR Integration](./clinical_coding.md): Build a system that extracts medical conditions from clinical documentation, maps them to SNOMED CT codes, and synchronizes structured Condition resources with external FHIR servers (Medplum) for billing and analytics.
