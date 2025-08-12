@@ -1,109 +1,17 @@
-"""
-FHIR client interfaces and implementations.
-
-This module provides standardized interfaces for different FHIR client libraries.
-"""
-
 import logging
-import json
 import httpx
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Union, Type
-from urllib.parse import urljoin, urlencode
-from functools import lru_cache
+from typing import Any, Dict, Type, Union
 
-from fhir.resources.resource import Resource
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
+from fhir.resources.resource import Resource
 
-from healthchain.gateway.clients.auth import OAuth2TokenManager, FHIRAuthConfig
+from healthchain.gateway.clients.auth import AsyncOAuth2TokenManager
+from healthchain.gateway.clients.fhir.base import FHIRAuthConfig, FHIRServerInterface
 
 
 logger = logging.getLogger(__name__)
-
-
-def create_fhir_client(
-    auth_config: FHIRAuthConfig,
-    limits: httpx.Limits = None,
-    **additional_params,
-) -> "FHIRServerInterface":
-    """
-    Factory function to create and configure a FHIR server interface using OAuth2.0
-
-    Args:
-        auth_config: OAuth2.0 authentication configuration
-        limits: httpx connection limits for pooling
-        **additional_params: Additional parameters for the client
-
-    Returns:
-        A configured FHIRServerInterface implementation
-    """
-    logger.debug(f"Creating FHIR server with OAuth2.0 for {auth_config.base_url}")
-    return AsyncFHIRClient(auth_config=auth_config, limits=limits, **additional_params)
-
-
-class FHIRClientError(Exception):
-    """Base exception for FHIR client errors."""
-
-    def __init__(
-        self, message: str, status_code: int = None, response_data: dict = None
-    ):
-        self.status_code = status_code
-        self.response_data = response_data
-        super().__init__(message)
-
-
-class FHIRServerInterface(ABC):
-    """
-    Interface for FHIR servers.
-
-    Provides a standardized interface for interacting with FHIR servers
-    using different client libraries.
-    """
-
-    @abstractmethod
-    async def read(
-        self, resource_type: Union[str, Type[Resource]], resource_id: str
-    ) -> Resource:
-        """Read a specific resource by ID."""
-        pass
-
-    @abstractmethod
-    async def create(self, resource: Resource) -> Resource:
-        """Create a new resource."""
-        pass
-
-    @abstractmethod
-    async def update(self, resource: Resource) -> Resource:
-        """Update an existing resource."""
-        pass
-
-    @abstractmethod
-    async def delete(
-        self, resource_type: Union[str, Type[Resource]], resource_id: str
-    ) -> bool:
-        """Delete a resource."""
-        pass
-
-    @abstractmethod
-    async def search(
-        self,
-        resource_type: Union[str, Type[Resource]],
-        params: Optional[Dict[str, Any]] = None,
-    ) -> Bundle:
-        """Search for resources."""
-        pass
-
-    @abstractmethod
-    async def transaction(self, bundle: Bundle) -> Bundle:
-        """Execute a transaction bundle."""
-        pass
-
-    @abstractmethod
-    async def capabilities(self) -> CapabilityStatement:
-        """Get the capabilities of the FHIR server."""
-        pass
 
 
 class AsyncFHIRClient(FHIRServerInterface):
@@ -129,16 +37,8 @@ class AsyncFHIRClient(FHIRServerInterface):
             limits: httpx connection limits for pooling
             **kwargs: Additional parameters passed to httpx.AsyncClient
         """
-        self.base_url = auth_config.base_url.rstrip("/") + "/"
-        self.timeout = auth_config.timeout
-        self.verify_ssl = auth_config.verify_ssl
-        self.token_manager = OAuth2TokenManager(auth_config.to_oauth2_config())
-
-        # Setup base headers
-        self.base_headers = {
-            "Accept": "application/fhir+json",
-            "Content-Type": "application/fhir+json",
-        }
+        super().__init__(auth_config)
+        self.token_manager = AsyncOAuth2TokenManager(auth_config.to_oauth2_config())
 
         # Create httpx client with connection pooling and additional kwargs
         client_kwargs = {"timeout": self.timeout, "verify": self.verify_ssl}
@@ -168,66 +68,6 @@ class AsyncFHIRClient(FHIRServerInterface):
         token = await self.token_manager.get_access_token()
         headers["Authorization"] = f"Bearer {token}"
         return headers
-
-    def _build_url(self, path: str, params: Dict[str, Any] = None) -> str:
-        """Build a complete URL with optional query parameters."""
-        url = urljoin(self.base_url, path)
-        if params:
-            # Filter out None values and convert to strings
-            clean_params = {k: str(v) for k, v in params.items() if v is not None}
-            if clean_params:
-                url += "?" + urlencode(clean_params)
-        return url
-
-    def _handle_response(self, response: httpx.Response) -> dict:
-        """Handle HTTP response and convert to dict."""
-        try:
-            data = response.json()
-        except json.JSONDecodeError:
-            raise FHIRClientError(
-                f"Invalid JSON response: {response.text}",
-                status_code=response.status_code,
-            )
-
-        if not response.is_success:
-            error_msg = f"FHIR request failed: {response.status_code}"
-            if isinstance(data, dict) and "issue" in data:
-                # FHIR OperationOutcome format
-                issues = data.get("issue", [])
-                if issues:
-                    error_msg += f" - {issues[0].get('diagnostics', 'Unknown error')}"
-
-            raise FHIRClientError(
-                error_msg, status_code=response.status_code, response_data=data
-            )
-
-        return data
-
-    @lru_cache(maxsize=128)
-    def _resolve_resource_type(
-        self, resource_type: Union[str, Type[Resource]]
-    ) -> tuple[str, Type[Resource]]:
-        """
-        Resolve FHIR resource type to string name and class. Cached with LRU.
-
-        Args:
-            resource_type: FHIR resource type or class
-
-        Returns:
-            Tuple of (type_name: str, resource_class: Type[Resource])
-        """
-        if hasattr(resource_type, "__name__"):
-            # It's already a class
-            type_name = resource_type.__name__
-            resource_class = resource_type
-        else:
-            # It's a string, need to dynamically import
-            type_name = str(resource_type)
-            module_name = f"fhir.resources.{type_name.lower()}"
-            module = __import__(module_name, fromlist=[type_name])
-            resource_class = getattr(module, type_name)
-
-        return type_name, resource_class
 
     async def capabilities(self) -> CapabilityStatement:
         """
@@ -387,3 +227,24 @@ class AsyncFHIRClient(FHIRServerInterface):
         data = self._handle_response(response)
 
         return Bundle(**data)
+
+
+def create_async_fhir_client(
+    auth_config: FHIRAuthConfig,
+    limits: httpx.Limits = None,
+    **additional_params,
+) -> AsyncFHIRClient:
+    """
+    Factory function to create and configure an async FHIR server interface using OAuth2.0
+
+    Args:
+        auth_config: OAuth2.0 authentication configuration
+        limits: httpx connection limits for pooling
+        **additional_params: Additional parameters for the client
+
+    Returns:
+        A configured async AsyncFHIRClient implementation
+    """
+    logger.debug(f"Creating async FHIR server with OAuth2.0 for {auth_config.base_url}")
+
+    return AsyncFHIRClient(auth_config=auth_config, limits=limits, **additional_params)

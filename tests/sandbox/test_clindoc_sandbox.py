@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 import healthchain as hc
-from healthchain.gateway.protocols.notereader import NoteReaderService
+from healthchain.gateway.soap.notereader import NoteReaderService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse

@@ -41,7 +41,7 @@ The interoperability module is built around a central `InteropEngine` that coord
 
 ## Basic Usage
 
-FHIR serves as the de facto data standard in HealthChain (and in the world of healthcare more broadly, ideally), therefore everything converts to and from FHIR resources.
+FHIR serves as the de facto modern data standard in HealthChain and in the world of healthcare more broadly, therefore everything converts to and from FHIR resources.
 
 The main conversion methods are (hold on to your hats):
 
@@ -62,6 +62,27 @@ fhir_resources = engine.to_fhir(cda_xml, src_format="cda")
 
 # Convert FHIR resources back to CDA
 cda_document = engine.from_fhir(fhir_resources, dest_format="cda")
+```
+### Custom Configs
+
+The default templates that come with the package are limited to problems, medications, and notes and are meant for basic testing and prototyping. Use the `healthchain init-configs` command to create editable configuration templates:
+
+```bash
+# Create editable configuration templates
+healthchain init-configs ./my_configs
+```
+
+Then use the `config_dir` parameter to specify the path to your custom configs:
+
+```python
+# Use your customized configs
+engine = create_interop(config_dir="./my_configs")
+
+# Now you can customize:
+# • Add experimental features (allergies, procedures)
+# • Modify terminology mappings (SNOMED, LOINC codes)
+# • Customize templates for your organization's CDA format
+# • Configure validation rules and environments
 ```
 
 ## Customization Points

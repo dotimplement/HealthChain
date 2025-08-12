@@ -12,7 +12,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock
 from typing import Dict, Any
 
-from healthchain.gateway.core.base import (
+from healthchain.gateway.base import (
     BaseGateway,
     BaseProtocolHandler,
     EventCapability,

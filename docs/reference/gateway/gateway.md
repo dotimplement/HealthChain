@@ -1,6 +1,8 @@
 # Gateway
 
-The HealthChain Gateway module provides a secure, asynchronous integration layer for connecting your NLP/ML pipelines with multiple healthcare systems. It provides a unified interface for connecting to FHIR servers, CDS Hooks, and SOAP/CDA services and is designed to be used in conjunction with the [HealthChainAPI](api.md) to create a complete healthcare integration platform.
+The HealthChain Gateway module provides a secure integration layer for connecting your NLP/ML pipelines with multiple healthcare systems.
+
+It provides a unified interface for connecting to FHIR servers, CDS Hooks, and SOAP/CDA services and is designed to be used in conjunction with the [HealthChainAPI](api.md) to create a complete healthcare integration platform.
 
 
 ## Features 🚀
@@ -19,7 +21,7 @@ The Gateway handles the complex parts of healthcare integration:
 | Component | Description | Use Case |
 |-----------|-------------|----------|
 | [**HealthChainAPI**](api.md) | FastAPI app with gateway and service registration | Main app that coordinates everything |
-| [**FHIRGateway**](fhir_gateway.md) | FHIR client with connection pooling and authentication| Reading/writing patient data from EHRs (Epic, Cerner, etc.) or application FHIR servers (Medplum, Hapi etc.) |
+| [**FHIRGateway**](fhir_gateway.md) | Sync and async FHIR client with connection pooling and authentication| Reading/writing patient data from EHRs (Epic, Cerner, etc.) or application FHIR servers (Medplum, Hapi etc.) |
 | [**CDSHooksService**](cdshooks.md) | Clinical Decision Support hooks service | Real-time alerts and recommendations |
 | [**NoteReaderService**](soap_cda.md) | SOAP/CDA document processing service | Processing clinical documents and notes |
 | [**Event System**](events.md) | Event-driven integration | Audit trails, workflow automation |
@@ -28,38 +30,59 @@ The Gateway handles the complex parts of healthcare integration:
 ## Basic Usage
 
 
-```python
-from healthchain.gateway import HealthChainAPI, FHIRGateway
-from fhir.resources.patient import Patient
+=== "Sync"
+    ```python
+    from healthchain.gateway import HealthChainAPI, FHIRGateway
+    from fhir.resources.patient import Patient
 
-# Create the application
-app = HealthChainAPI()
+    # Create the application
+    app = HealthChainAPI()
 
-# Create and configure a FHIR gateway
-fhir = FHIRGateway()
+    # Synchronous FHIR gateway
+    fhir = FHIRGateway()
+    fhir.add_source("epic", "fhir://epic.org/api/FHIR/R4?client_id=...")
 
-# Connect to your FHIR APIs
-fhir.add_source("epic", "fhir://epic.org/api/FHIR/R4?client_id=...")
-fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
-
-# Add AI enhancements to patient data
-@fhir.transform(Patient)
-async def enhance_patient(id: str, source: str = None) -> Patient:
-    async with fhir.modify(Patient, id, source) as patient:
+    @fhir.transform(Patient)
+    def enhance_patient(id: str, source: str = None) -> Patient:
+        patient = fhir.read(Patient, id, source)
         patient.active = True  # Your custom logic here
+        fhir.update(patient, source)
         return patient
 
-# Register and run
-app.register_gateway(fhir)
+    app.register_gateway(fhir)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app)
+    if __name__ == "__main__":
+        import uvicorn
+        uvicorn.run(app)
+        # Default: http://127.0.0.1:8000/
+    ```
+=== "Async"
+    ```python
+    from healthchain.gateway import HealthChainAPI, AsyncFHIRGateway
+    from fhir.resources.patient import Patient
 
-# Default: http://127.0.0.1:8000/
-```
+    # Create the application
+    app = HealthChainAPI()
 
-You can also register multiple services of different protocols!
+    # Asynchronous FHIR gateway
+    async_fhir = AsyncFHIRGateway()
+    async_fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
+
+    @async_fhir.transform(Patient)
+    async def enhance_patient_async(id: str, source: str = None) -> Patient:
+        # modify is a context manager that allows you to modify the patient resource
+        async with async_fhir.modify(Patient, id, source) as patient:
+            patient.active = True  # Your custom logic here
+            return patient
+
+    app.register_gateway(async_fhir)
+
+    if __name__ == "__main__":
+        import uvicorn
+        uvicorn.run(app)
+    ```
+
+You can also register multiple services of different protocols:
 
 ```python
 from healthchain.gateway import (
@@ -100,6 +123,6 @@ app.register_service(notes)
 
 | Protocol | Implementation | Features |
 |----------|---------------|----------|
-| **FHIR API** | `FHIRGateway` | FHIR-instance level CRUD operations - [read](https://hl7.org/fhir/http.html#read), [create](https://hl7.org/fhir/http.html#create), [update](https://hl7.org/fhir/http.html#update), [delete](https://hl7.org/fhir/http.html#delete), [search](https://hl7.org/fhir/http.html#search), register `transform` and `aggregate` handlers, connection pooling and authentication management |
+| **FHIR API** | `FHIRGateway`<br/>`AsyncFHIRGateway` | FHIR-instance level CRUD operations - [read](https://hl7.org/fhir/http.html#read), [create](https://hl7.org/fhir/http.html#create), [update](https://hl7.org/fhir/http.html#update), [delete](https://hl7.org/fhir/http.html#delete), [search](https://hl7.org/fhir/http.html#search), register `transform` and `aggregate` handlers, connection pooling and authentication management |
 | **CDS Hooks** | `CDSHooksService` | Hook Registration, Service Discovery |
 | **SOAP/CDA** | `NoteReaderService` | Method Registration (`ProcessDocument`), SOAP Service Discovery (WSDL)|

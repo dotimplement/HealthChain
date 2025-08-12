@@ -1,32 +1,25 @@
-"""
-CDS Hooks protocol integration for HealthChain Gateway.
-
-This module implements the CDS Hooks standard for clinical decision support
-integration with EHR systems.
-"""
-
 import logging
 
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+
 from fastapi import APIRouter, Body, Depends
 from pydantic import BaseModel
 
-from healthchain.gateway.core.base import BaseProtocolHandler
-from healthchain.gateway.events.cdshooks import create_cds_hook_event
+from healthchain.gateway.base import BaseProtocolHandler
+from healthchain.gateway.cds.events import create_cds_hook_event
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsdiscovery import CDSService, CDSServiceInformation
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.sandbox.workflows import UseCaseMapping
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 # Type variable for self-referencing return types
 T = TypeVar("T", bound="CDSHooksService")
 
 
-# Configuration options for CDS Hooks service
 class CDSHooksConfig(BaseModel):
     """Configuration options for CDS Hooks service"""
 
