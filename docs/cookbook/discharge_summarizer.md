@@ -53,7 +53,7 @@ For LLM approaches, we'll use [LangChain](https://python.langchain.com/docs/inte
     from langchain_core.output_parsers import StrOutputParser
 
     hf = HuggingFaceEndpoint(
-        repo_id="HuggingFaceH4/zephyr-7b-beta",
+        repo_id="deepseek-ai/DeepSeek-R1-0528",
         task="text-generation",
         max_new_tokens=512,
         do_sample=False,

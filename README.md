@@ -34,7 +34,7 @@ First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain
 ## Why use HealthChain?
 -  **EHR integrations are manual and time-consuming** - **HealthChainAPI** abstracts away complexities so you can focus on AI development, not learning FHIR APIs, CDS Hooks, and authentication schemes.
 -  **Healthcare data is fragmented and complex** - **InteropEngine** handles the conversion between FHIR, CDA, and HL7v2 so you don't have to become an expert in healthcare data standards.
--  [**Most healthcare data is unstructured**](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6372467/) - HealthChain **Pipelines** are optimized for real-time AI and NLP applications that deal with realistic healthcare data.
+-  [**Most healthcare data is unstructured**](https://pmc.ncbi.nlm.nih.gov/articles/PMC10566734/) - HealthChain **Pipelines** are optimized for real-time AI and NLP applications that deal with realistic healthcare data.
 - **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible with built-in compliance and audit features.
 
 ## HealthChainAPI

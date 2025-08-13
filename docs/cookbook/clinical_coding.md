@@ -1,6 +1,6 @@
 # Build a NoteReader Service with FHIR Integration
 
-This tutorial shows you how to build a NoteReader clinical coding service that connects legacy CDA systems with modern FHIR servers. We'll process clinical notes, extract billing codes, and handle both old and new healthcare data formats. We'll use [Epic NoteReader](https://www.leidos.com/products/epic-note-reader) as the legacy system and [Medplum](https://www.medplum.com/) as the FHIR server.
+This tutorial shows you how to build a clinical coding service that connects legacy [CDA](https://hl7.org/cda/) systems with modern [FHIR servers](https://build.fhir.org/http.html). We'll process clinical notes, extract billing codes, and handle both old and new healthcare data formats. We'll use [Epic NoteReader](https://discovery.hgdata.com/product/epic-notereader-cdi) as the legacy system and [Medplum](https://www.medplum.com/) as the FHIR server.
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/notereader_clinical_coding_fhir.py)!
 
@@ -9,8 +9,7 @@ Check out the full working example [here](https://github.com/dotimplement/Health
 We'll use [scispacy](https://allenai.github.io/scispacy/) for medical entity extraction in this example. Make sure to install the required dependencies:
 
 ```bash
-pip install healthchain
-pip install scispacy python-dotenv
+pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 ```
 
@@ -28,7 +27,7 @@ MEDPLUM_CLIENT_SECRET=your_client_secret
 
 First, we'll create a [medical coding pipeline](../reference/pipeline/pipeline.md) with a custom entity linking node for extracting conditions from clinical text.
 
-The example below just uses a dummy mapping of medical concepts to [SNOMED CT](https://www.snomed.org/), but you can do more fancy stuff with it if you want.
+The example below just uses a dictionary lookup of medical concepts to a [SNOMED CT](https://www.snomed.org/) code for demo purposes, but you can obviously do more fancy stuff with it if you want.
 
 ```python
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
@@ -71,7 +70,20 @@ The `MedicalCodingPipeline` automatically:
 
 - Extracts medical entities using the `scispacy` model
 - Converts entities to FHIR [Condition](https://www.hl7.org/fhir/condition.html) resources
-- Populates the document's `problem_list` for downstream processing
+- Populates the Document's `fhir.problem_list` for downstream processing
+
+It is equivalent to building a pipeline with the following components:
+
+```python
+from healthchain.pipeline import Pipeline
+from healthchain.pipeline.components import SpacyNLP, FHIRProblemListExtractor
+from healthchain.io.containers import Document
+
+pipeline = Pipeline[Document]()
+
+pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
+pipeline.add_node(FHIRProblemListExtractor())
+```
 
 ## Add the CDA Adapter
 
@@ -99,8 +111,9 @@ What it does:
 
 - Parses CDA XML documents
 - Extracts clinical text and coded data from the CDA document
-- Stores the CDA XML as a [DocumentReference](https://www.hl7.org/fhir/documentreference.html) object in the `fhir` attribute of the `Document` object
-- Stores the extracted problems from the CDA document in the `problem_list` attribute of the `Document` object
+- Stores the text data in `doc.text`
+- Stores the CDA XML as a [DocumentReference](https://www.hl7.org/fhir/documentreference.html) resource in `doc.fhir.bundle`
+- Stores the extracted [Condition](https://www.hl7.org/fhir/condition.html) resources from the CDA document in `doc.fhir.problem_list`
 
 ## Set up FHIR Gateway
 
@@ -137,7 +150,7 @@ Now let's set up the [NoteReader Service](../reference/gateway/soap_cda.md). Thi
 
 The good thing about NoteReader is that it's already integrated in existing EHR workflows. The bad thing is it's legacy stuff and relatively rigid.
 
-We can make it more exciting by routing the extracted conditions to a FHIR server using the FHIR gateway inside the NoteReader service method, so you can do other cool stuff to it.
+We can make it more exciting by routing the extracted conditions to a FHIR server inside the NoteReader service method, so you can do other cool modern stuff to it.
 
 ```python
 from healthchain.gateway.soap import NoteReaderService
@@ -194,7 +207,7 @@ from healthchain.fhir import create_document_reference
 from fhir.resources.documentreference import DocumentReference
 
 def create_sandbox():
-    @hc.sandbox(base_url="http://localhost:8000/")
+    @hc.sandbox(api="http://localhost:8000/")
     class NotereaderSandbox(ClinicalDocumentation):
         """Sandbox for testing clinical documentation workflows"""
         def __init__(self):

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 """
-HealthChain Clinical Documentation Improvement Service
-=====================================================
-
 A complete CDI service that processes clinical notes and extracts billing codes.
 Demonstrates FHIR-native pipelines, legacy system integration, and multi-source data handling.
 
@@ -124,7 +121,7 @@ def create_app():
 
 
 def create_sandbox():
-    @hc.sandbox(base_url="http://localhost:8000/")
+    @hc.sandbox(api="http://localhost:8000/")
     class NotereaderSandbox(ClinicalDocumentation):
         """Sandbox for testing clinical documentation workflows"""
 
