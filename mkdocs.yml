@@ -14,8 +14,8 @@ nav:
       - Licence: distribution.md
   - Cookbook:
       - cookbook/index.md
-      - CDS Sandbox: cookbook/cds_sandbox.md
-      - NoteReader Sandbox: cookbook/notereader_sandbox.md
+      - Discharge Summarizer: cookbook/discharge_summarizer.md
+      - Clinical Coding: cookbook/clinical_coding.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:

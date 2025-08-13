@@ -12,11 +12,14 @@ class SummarizationPipeline(BasePipeline, ModelRoutingMixin):
         1. Summarization: Generates summaries from document text.
         2. Card Creation: Formats summaries into CDS Hooks cards.
 
+    Attributes:
+        output_template: Template for the output summary (default: "{text}")
+        output_template_path: Path to the output template file (default: None)
+        delimiter: Delimiter for the output summary (default: "\n")
+
     Usage Examples:
-        # With Hugging Face
         >>> pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn", source="huggingface")
 
-        # With LangChain
         >>> chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
         >>> pipeline = SummarizationPipeline.load(chain)
     """
