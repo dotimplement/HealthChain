@@ -68,7 +68,7 @@ class EHRClient(BaseClient):
             Notes:
                 This method logs errors rather than raising them, to avoid interrupting the batch processing of requests.
         """
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             responses: List[Dict] = []
             timeout = httpx.Timeout(self.timeout, read=None)
             for request in self.request_data:
@@ -86,6 +86,7 @@ class EHRClient(BaseClient):
                         responses.append(response_model.model_dump_xml())
                     else:
                         # TODO: use model_dump_json() once Pydantic V2 timezone serialization issue is resolved
+                        log.debug(f"Making POST request to: {url}")
                         response = await client.post(
                             url=url,
                             json=request.model_dump(exclude_none=True),
@@ -100,8 +101,12 @@ class EHRClient(BaseClient):
                             # Fallback to raw response if parsing fails
                             responses.append(response_data)
                 except httpx.HTTPStatusError as exc:
+                    try:
+                        error_content = exc.response.json()
+                    except Exception:
+                        error_content = exc.response.text
                     log.error(
-                        f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.json()}"
+                        f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {error_content}"
                     )
                     responses.append({})
                 except httpx.TimeoutException as exc:
