@@ -265,10 +265,12 @@ cds.start_sandbox()
 ```
 
 ## Road Map
-- [ ] 🔒 Built-in HIPAA compliance validation and PHI detection
-- [ ] 📊 Track configurations, data provenance, and monitor model performance with MLFlow integration
-- [ ] 🚀 Compliance monitoring, auditing at deployment as a sidecar service
+
+- [ ] 🔍 Configurations, data provenance, and audit trails in FHIR
 - [ ] 🔄 HL7v2 parsing and FHIR profile conversion support
+- [ ] 🔒 HIPAA compliance validation and PHI detection
+- [ ] 📊 Model performance monitoring with MLFlow integration
+- [ ] 🚀 Deployment as a sidecar service with telemetry and improved CLI
 - [ ] 🧠 Multi-modal pipelines
 
 
