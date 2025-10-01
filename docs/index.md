@@ -1,6 +1,6 @@
 # Welcome to HealthChain 💫 🏥
 
-HealthChain is an open-source developer framework to build healthcare AI applications with native protocol understanding. Skip months of custom integration with **built-in FHIR support**, **real-time EHR connectivity**, and **production-ready pipelines** - all in Python.
+HealthChain is an open-source Python toolkit that streamlines productionizing healthcare AI. Built for AI/ML practitioners, it simplifies the complexity of real-time EHR integrations by providing seamless FHIR integration, unified data pipelines, and production-ready deployment.
 
 [ :fontawesome-brands-discord: Join our Discord](https://discord.gg/UQC6uAepUz){ .md-button .md-button--primary }
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -49,17 +49,19 @@ HealthChain is an open-source developer framework to build healthcare AI applica
 HealthChain provides the missing middleware layer between healthcare systems and modern AI/ML development. Whether you're building clinical decision support tools, processing medical documents, or creating multi-system integrations, these docs will guide you through:
 
 - **🔧 Core concepts** - Understand FHIR resources, pipelines, and gateway patterns
-- **📚 Real examples** - Step-by-step tutorials for common healthcare AI use cases [coming soon]
+- **📚 Real examples** - Step-by-step tutorials for common healthcare AI use cases
 - **🏗️ Advanced patterns** - Production deployment, authentication, and multi-EHR workflows
 - **🧪 Testing tools** - Sandbox environments and utilities for development
 
-## Common Use Cases You Can Build:
+## What You Can Build with HealthChain
 
-- 🚨 **CDS alerts for discharge summaries** - Generate clinical recommendations directly in Epic workflows
-- 📋 **Automatic medical coding** - Extract ICD-10 or SNOMED-CT codes from physician notes with confidence scores
-- 🔗 **Multi-EHR patient aggregation** - Combine patient records from Epic, Cerner, and specialty systems
-- 🤖 **ML model deployment** - Serve your trained healthcare models as FHIR-compliant APIs
-- 🔄 **Legacy document conversion** - Transform CDA documents to modern FHIR resources
+|   | Use Case                              | Description                                                                 |
+|---|---------------------------------------|-----------------------------------------------------------------------------|
+| 🚨 | **CDS alerts for discharge summaries** | Generate clinical recommendations directly in Epic workflows                |
+| 📋 | **Automatic medical coding**          | Extract ICD-10 or SNOMED-CT codes from physician notes with confidence scores|
+| 🔗 | **Multi-EHR patient aggregation**     | Combine patient records from Epic, Cerner, and specialty systems            |
+| 🤖 | **ML model deployment**               | Serve your trained healthcare models as FHIR-compliant APIs                 |
+| 🔄 | **Legacy document conversion**        | Transform CDA documents to modern FHIR resources                            |
 
 **New to healthcare AI?** Start with our [Quickstart Guide](quickstart.md) to build your first medical NLP pipeline in under 10 minutes.
 

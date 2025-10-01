@@ -5,9 +5,16 @@
 <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/healthchain_logo.png" alt="HealthChain Logo" width=300></img>
 
 <!-- Project Badges -->
-[![PyPI Version][pypi-version-badge]][pypi] [![Stars][stars-badge]][stars] [![Downloads][downloads-badge]][pypistats]
-[![License][license-badge]][license] [![Python Versions][python-versions-badge]][pypi] [![Build Status][build-badge]][build]
-[![Substack][substack-badge]][substack] [![Discord][discord-badge]][discord]
+[![PyPI Version][pypi-version-badge]][pypi]
+[![Stars][stars-badge]][stars]
+[![Downloads][downloads-badge]][pypistats]
+
+[![License][license-badge]][license]
+[![Python Versions][python-versions-badge]][pypi]
+[![Build Status][build-badge]][build]
+
+[![Substack][substack-badge]][substack]
+[![Discord][discord-badge]][discord]
 
 
 </div>
@@ -37,7 +44,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="./docs/assets/images/hc-use-cases-clinical-integration.png" alt="Clinical Integration" width=100%>
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-clinical-integration.png" alt="Clinical Integration" width=100%>
       <div align="center">
         <br>
         <a href="https://dotimplement.github.io/HealthChain/reference/gateway/cdshooks/"><strong>⚡️ Real-Time Clinical Workflow Integration</strong></a>
@@ -48,7 +55,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
       </div>
     </td>
     <td width="50%" valign="top">
-      <img src="./docs/assets/images/openapi_docs.png" alt="FHIR Utilities" width=100%>
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/openapi_docs.png" alt="FHIR Utilities" width=100%>
       <div align="center">
         <br>
         <a href="https://dotimplement.github.io/HealthChain/reference/utilities/fhir_helpers/"><strong>🔥 FHIR Development Utilities</strong></a>
@@ -68,7 +75,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="./docs/assets/images/hc-use-cases-genai-aggregate.png" alt="Multi-Source Integration" width=100%>
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-genai-aggregate.png" alt="Multi-Source Integration" width=100%>
       <div align="center">
         <br>
         <a href="https://dotimplement.github.io/HealthChain/reference/gateway/gateway/"><strong>🔌 Multi-EHR Data Aggregation</strong></a>
@@ -79,7 +86,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
       </div>
     </td>
     <td width="50%" valign="top">
-      <img src="./docs/assets/images/interopengine.png" alt="Format Conversion" width=100%>
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/interopengine.png" alt="Format Conversion" width=100%>
       <div align="center">
         <br>
         <a href="https://dotimplement.github.io/HealthChain/reference/interop/interop/"><strong>🔄 Healthcare Data Format Conversion</strong></a>
@@ -99,7 +106,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
   <tr>
     <td width="50%" valign="top">
     <div align="center">
-      <img src="./docs/assets/images/hc-use-cases-ml-deployment.png" alt="Deploy" width=60%>
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-ml-deployment.png" alt="Deploy" width=60%>
     </div>
       <div align="center">
         <br>
