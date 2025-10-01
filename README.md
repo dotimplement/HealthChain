@@ -4,274 +4,201 @@
 
 <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/healthchain_logo.png" alt="HealthChain Logo" width=300></img>
 
-![GitHub License](https://img.shields.io/github/license/dotimplement/HealthChain)
-![PyPI Version](https://img.shields.io/pypi/v/healthchain) ![Python Versions](https://img.shields.io/pypi/pyversions/healthchain)
-![Downloads](https://img.shields.io/pypi/dm/healthchain)
+<!-- Project Badges -->
+[![PyPI Version][pypi-version-badge]][pypi]
+[![Stars][stars-badge]][stars]
+[![Downloads][downloads-badge]][pypistats]
+
+[![License][license-badge]][license]
+[![Python Versions][python-versions-badge]][pypi]
+[![Build Status][build-badge]][build]
+
+[![Substack][substack-badge]][substack]
+[![Discord][discord-badge]][discord]
+
 
 </div>
 
-Connect your AI models to any healthcare system with a few lines of Python 💫 🏥.
+<h2 align="center" style="border-bottom: none">Open-Source Framework for Productionizing Healthcare AI</h2>
 
-Integrating AI with electronic health records (EHRs) is complex, manual, and time-consuming. Let's try to change that.
 
+<div align="center">
+
+HealthChain is an open-source developer framework to build healthcare AI applications with native protocol understanding. Skip months of custom integration with **built-in FHIR support**, **real-time EHR connectivity**, and **production-ready deployment** - all in Python.
+
+</div>
+
+## Installation
 
 ```bash
 pip install healthchain
 ```
-First time here? Check out our [Docs](https://dotimplement.github.io/HealthChain/) page!
+
+## Core Features
+
+HealthChain is the **quickest way for AI/ML engineers to integrate their models with real healthcare systems**.
 
 
-## Features
-- [x] 🔌 **Gateway**: Connect to multiple EHR systems with [unified API](https://dotimplement.github.io/HealthChain/reference/gateway/gateway/) supporting FHIR, CDS Hooks, and SOAP/CDA protocols (sync / async support)
-- [x] 🔥 **Pipelines**: Build FHIR-native ML workflows or use [pre-built ones](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline/#prebuilt) for your healthcare NLP and AI tasks
-- [x] 🔄 **InteropEngine**: Convert between FHIR, CDA, and HL7v2 with a [template-based engine](https://dotimplement.github.io/HealthChain/reference/interop/interop/)
-- [x] 🔒 Type-safe healthcare data with full type hints and Pydantic validation for [FHIR resources](https://dotimplement.github.io/HealthChain/reference/utilities/fhir_helpers/)
-- [x] ⚡ Built-in event-driven logging and operation tracking for [audit trails](https://dotimplement.github.io/HealthChain/reference/gateway/events/)
-- [x] 🚀 Deploy production-ready applications with [HealthChainAPI](https://dotimplement.github.io/HealthChain/reference/gateway/api/) and FastAPI integration
-- [x] 🧪 Generate [synthetic healthcare data](https://dotimplement.github.io/HealthChain/reference/utilities/data_generator/) and [sandbox testing](https://dotimplement.github.io/HealthChain/reference/sandbox/sandbox/) utilities
-- [x] 🖥️ Bootstrap configurations with CLI tools
+### 💡 For HealthTech Engineers
 
-## Why use HealthChain?
--  **EHR integrations are manual and time-consuming** - **HealthChainAPI** abstracts away complexities so you can focus on AI development, not learning FHIR APIs, CDS Hooks, and authentication schemes.
--  **Healthcare data is fragmented and complex** - **InteropEngine** handles the conversion between FHIR, CDA, and HL7v2 so you don't have to become an expert in healthcare data standards.
--  [**Most healthcare data is unstructured**](https://pmc.ncbi.nlm.nih.gov/articles/PMC10566734/) - HealthChain **Pipelines** are optimized for real-time AI and NLP applications that deal with realistic healthcare data.
-- **Built by health tech developers, for health tech developers** - HealthChain is tech stack agnostic, modular, and easily extensible with built-in compliance and audit features.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-clinical-integration.png" alt="Clinical Integration" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/gateway/cdshooks/"><strong>⚡️ Real-Time Clinical Workflow Integration</strong></a>
+        <br><br>
+        <div>Build CDS alerts and automated coding tools that integrate directly into Epic workflows</div><br>
+        <a href="https://dotimplement.github.io/HealthChain/cookbook/discharge_summarizer/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/openapi_docs.png" alt="FHIR Utilities" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/utilities/fhir_helpers/"><strong>🔥 FHIR Development Utilities</strong></a>
+        <br><br>
+        <div>Accelerate development with type-safe FHIR resource creation, validation helpers, and sandbox environments for testing clinical workflows</div><br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/utilities/sandbox/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+  </tr>
+</table>
 
-## HealthChainAPI
 
-The HealthChainAPI provides a secure integration layer that coordinates multiple healthcare systems in a single application.
 
-### Multi-Protocol Support
+### 🤖 For LLM / GenAI Developers
 
-Connect to multiple healthcare data sources and protocols:
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-genai-aggregate.png" alt="Multi-Source Integration" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/gateway/gateway/"><strong>🔌 Multi-EHR Data Aggregation</strong></a>
+        <br><br>
+        <div>Aggregate patient data from multiple FHIR sources into unified records with built-in NLP processing and automatic deduplication</div><br>
+        <a href="https://dotimplement.github.io/HealthChain/cookbook/multi_ehr_aggregation/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/interopengine.png" alt="Format Conversion" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/interop/interop/"><strong>🔄 Healthcare Data Format Conversion</strong></a>
+        <br><br>
+        <div>Convert between FHIR and CDA formats with configuration-driven templates for unified data processing workflows</div><br>
+        <a href="https://dotimplement.github.io/HealthChain/cookbook/clinical_coding/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+  </tr>
+</table>
+
+### 🎓 For ML Researchers
+
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+    <div align="center">
+      <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/hc-use-cases-ml-deployment.png" alt="Deploy" width=60%>
+    </div>
+      <div align="center">
+        <br>
+        <a href="https://dotimplement.github.io/HealthChain/reference/gateway/fhir_gateway/"><strong>🚀 Deploy ML Models as Healthcare APIs</strong></a>
+        <br><br>
+        <div>Turn any trained model into a production-ready FHIR endpoint with OAuth2 authentication and type-safe healthcare data handling</div><br>
+        <a href="https://dotimplement.github.io/HealthChain/cookbook/ml_model_deployment/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+</table>
+
+
+## Why HealthChain?
+
+**Electronic health record (EHR) data is specific, complex, and fragmented.** Most healthcare AI projects require months of manual integration and custom validation on top of model development. This leads to fragile pipelines that break easily and consume valuable developer time.
+
+HealthChain understands healthcare protocols and data formats natively, so you don't have to build that knowledge from scratch. Skip months of custom integration work and productionize your healthcare AI faster.
+
+- **Optimized for real-time** - Connect to live FHIR APIs and integration points instead of stale data exports
+- **Automatic validation** - Type-safe FHIR models prevent broken healthcare data
+- **Built-in NLP support** - Extract structured data from clinical notes, output as FHIR
+- **Developer experience** - Modular and extensible architecture works across any EHR system
+
+## Usage Examples
+
+### Building a Pipeline [[Docs](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline)]
 
 ```python
-from healthchain.gateway import (
-    HealthChainAPI, FHIRGateway,
-    CDSHooksService, NoteReaderService
-)
+from healthchain.pipeline import Pipeline
+from healthchain.pipeline.components.integrations import SpacyNLP
+from healthchain.io import Document
 
-# Create your healthcare application
-app = HealthChainAPI(
-    title="My Healthcare AI App",
-    description="AI-powered patient care platform"
-)
+# Create medical NLP pipeline
+nlp_pipeline = Pipeline[Document]()
+nlp_pipeline.add_node(SpacyNLP.from_model_id("en_core_web_sm"))
 
-# FHIR for patient data from multiple EHRs
-fhir = FHIRGateway()
-fhir.add_source("epic", "fhir://fhir.epic.com/r4?client_id=...")
-fhir.add_source("medplum", "fhir://api.medplum.com/fhir/R4/?client_id=...")
+nlp = nlp_pipeline.build()
+doc = Document("Patient presents with hypertension and diabetes.")
+result = nlp(doc)
 
-# CDS Hooks for real-time clinical decision support
-cds = CDSHooksService()
-
-@cds.hook("patient-view", id="allergy-alerts")
-def check_allergies(request):
-    # Your AI logic here
-    return {"cards": [...]}
-
-# SOAP for clinical document processing
-notes = NoteReaderService()
-
-@notes.method("ProcessDocument")
-def process_note(request):
-    # Your NLP pipeline here
-    return processed_document
-
-# Register everything
-app.register_gateway(fhir)
-app.register_service(cds)
-app.register_service(notes)
-
-# Your API now handles:
-# /fhir/* - Patient data, observations, etc.
-# /cds/* - Real-time clinical alerts
-# /soap/* - Clinical document processing
-
-# Deploy with uvicorn
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, port=8888)
+spacy_doc = result.nlp.get_spacy_doc()
+print(f"Entities: {[(ent.text, ent.label_) for ent in spacy_doc.ents]}")
+print(f"FHIR conditions: {result.fhir.problem_list}")  # Auto-converted to FHIR Bundle
 ```
 
-### FHIR Operations with AI Enhancement
+### Creating a Gateway [[Docs](https://dotimplement.github.io/HealthChain/reference/gateway/gateway)]
 
 ```python
-from healthchain.gateway import FHIRGateway
+from healthchain.gateway import HealthChainAPI, FHIRGateway
 from fhir.resources.patient import Patient
 
-gateway = FHIRGateway()
-gateway.add_source("epic", "fhir://fhir.epic.com/r4?...")
+# Create healthcare application
+app = HealthChainAPI(title="Multi-EHR Patient Data")
 
-# Add AI transformations to FHIR data
-@gateway.transform(Patient)
-def enhance_patient(id: str, source: str = None) -> Patient:
-    patient = gateway.read(Patient, id, source)
+# Connect to multiple FHIR sources
+fhir = FHIRGateway()
+fhir.add_source("epic", "fhir://fhir.epic.com/r4?client_id=epic_client_id")
+fhir.add_source("cerner", "fhir://fhir.cerner.com/r4?client_id=cerner_client_id")
 
-    # Get lab results and process with AI
-    lab_results = gateway.search(
-        Observation,
-        {"patient": id, "category": "laboratory"},
-        source
-    )
-    insights = nlp_pipeline.process(patient, lab_results)
+@fhir.aggregate(Patient)
+def enrich_patient_data(id: str, source: str = None) -> Patient:
+    """Get patient data from any connected EHR and add AI enhancements"""
+    patient = fhir.read(Patient, id, source)
 
-    # Add AI summary to patient record
+    # Add AI processing metadata
     patient.extension = patient.extension or []
     patient.extension.append({
-        "url": "http://healthchain.org/fhir/summary",
-        "valueString": insights.summary
+        "url": "http://healthchain.org/fhir/ai-processed",
+        "valueString": f"Enhanced by HealthChain from {source}"
     })
 
-    # Update the patient record
-    gateway.update(patient, source)
     return patient
 
-# Automatically available at: GET /fhir/transform/Patient/123?source=epic
-```
+app.register_gateway(fhir)
 
-## Pipeline
-Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with complex healthcare systems.
+# Available at: GET /fhir/transform/Patient/123?source=epic
+# Available at: GET /fhir/transform/Patient/123?source=cerner
 
-### Building a pipeline
-
-```python
-from healthchain.io.containers import Document
-from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import (
-    TextPreProcessor,
-    SpacyNLP,
-    TextPostProcessor,
-)
-
-# Initialize the pipeline
-nlp_pipeline = Pipeline[Document]()
-
-# Add TextPreProcessor component
-preprocessor = TextPreProcessor()
-nlp_pipeline.add_node(preprocessor)
-
-# Add Model component (assuming we have a pre-trained model)
-spacy_nlp = SpacyNLP.from_model_id("en_core_sci_sm")
-nlp_pipeline.add_node(spacy_nlp)
-
-# Add TextPostProcessor component
-postprocessor = TextPostProcessor(
-    postcoordination_lookup={
-        "heart attack": "myocardial infarction",
-        "high blood pressure": "hypertension",
-    }
-)
-nlp_pipeline.add_node(postprocessor)
-
-# Build the pipeline
-nlp = nlp_pipeline.build()
-
-# Use the pipeline
-result = nlp(Document("Patient has a history of heart attack and high blood pressure."))
-
-print(f"Entities: {result.nlp.get_entities()}")
-```
-
-#### Working with healthcare data formats
-Adapters handle conversion between healthcare formats (CDA, FHIR) and internal Document objects for seamless EHR integration.
-
-```python
-from healthchain.io import CdaAdapter, Document
-from healthchain.models import CdaRequest
-
-adapter = CdaAdapter()
-
-# Parse healthcare data into Document
-cda_request = CdaRequest(document="<CDA XML content>")
-doc = adapter.parse(cda_request)
-
-# Process with your pipeline
-processed_doc = nlp_pipeline(doc)
-
-# Access extracted clinical data
-print(f"Problems: {processed_doc.fhir.problem_list}")
-print(f"Medications: {processed_doc.fhir.medication_list}")
-
-# Convert back to healthcare format
-response = adapter.format(processed_doc)
-```
-
-### Using pre-built pipelines
-Pre-built pipelines are use case specific end-to-end workflows optimized for common healthcare AI tasks.
-
-```python
-from healthchain.pipeline import MedicalCodingPipeline
-from healthchain.models import CdaRequest
-
-# Load from model ID
-pipeline = MedicalCodingPipeline.from_model_id(
-    model="blaze999/Medical-NER", task="token-classification", source="huggingface"
-)
-
-# Simple end-to-end processing
-cda_request = CdaRequest(document="<CDA XML content>")
-response = pipeline.process_request(cda_request)
-
-# Or manual control for document access
-from healthchain.io import CdaAdapter
-adapter = CdaAdapter()
-doc = adapter.parse(cda_request)
-doc = pipeline(doc)
-# Access: doc.fhir.problem_list, doc.fhir.medication_list
-response = adapter.format(doc)
-```
-
-## Interoperability
-
-The InteropEngine is a template-based system that allows you to convert between FHIR, CDA, and HL7v2.
-
-```python
-from healthchain.interop import create_interop, FormatType
-
-engine = create_interop()
-
-with open("tests/data/test_cda.xml", "r") as f:
-    cda_data = f.read()
-
-# Convert CDA to FHIR
-fhir_resources = engine.to_fhir(cda_data, src_format=FormatType.CDA)
-
-# Convert FHIR to CDA
-cda_data = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
-```
-
-## Sandbox
-
-Test your AI applications in realistic healthcare contexts with [CDS Hooks](https://cds-hooks.org/) sandbox environments.
-
-```python
-import healthchain as hc
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-
-@hc.sandbox
-class MyCDS(ClinicalDecisionSupport):
-    def __init__(self):
-        self.pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn")
-
-    @hc.ehr(workflow="encounter-discharge")
-    def ehr_database_client(self):
-        return self.data_generator.generate_prefetch()
-
-cds = MyCDS()
-cds.start_sandbox()
-
-# Run with: healthchain run mycds.py
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000)
 ```
 
 ## Road Map
 
-- [ ] 🔍 Configurations, data provenance, and audit trails in FHIR
-- [ ] 🔄 HL7v2 parsing and FHIR profile conversion support
-- [ ] 🔒 HIPAA compliance validation and PHI detection
+- [ ] 🔍 Data provenance and audit trails tracking
+- [ ] 🔒 HIPAA compliance and security
+- [ ] 🔄 HL7v2 parsing, FHIR profile conversion and OMOP mapping support
+- [ ] 🚀 Enhanced deployment support with observability and telemetry (Docker, Kubernetes, etc.)
 - [ ] 📊 Model performance monitoring with MLFlow integration
-- [ ] 🚀 Deployment as a sidecar service with telemetry and improved CLI
-- [ ] 🧠 Multi-modal pipelines
+- [ ] 🤖 MCP server integration
 
 
 ## Contribute
@@ -282,3 +209,22 @@ We are always eager to hear feedback and suggestions, especially if you are a de
 
 ## Acknowledgements 🤗
 This project builds on [fhir.resources](https://github.com/nazrulworld/fhir.resources) and [CDS Hooks](https://cds-hooks.org/) standards developed by [HL7](https://www.hl7.org/) and [Boston Children's Hospital](https://www.childrenshospital.org/).
+
+
+<!-- Badge Links -->
+[pypi-version-badge]: https://img.shields.io/pypi/v/healthchain?logo=python&logoColor=white&style=flat-square&color=%23e59875
+[downloads-badge]: https://img.shields.io/pepy/dt/healthchain?style=flat-square&color=%2379a8a9
+[stars-badge]: https://img.shields.io/github/stars/dotimplement/HealthChain?style=flat-square&logo=github&color=BD932F&logoColor=white
+[license-badge]: https://img.shields.io/github/license/dotimplement/HealthChain?style=flat-square&color=%23e59875
+[python-versions-badge]: https://img.shields.io/pypi/pyversions/healthchain?style=flat-square&color=%23eeeeee
+[build-badge]: https://img.shields.io/github/actions/workflow/status/dotimplement/healthchain/ci.yml?branch=main&style=flat-square&color=%2379a8a9
+[discord-badge]: https://img.shields.io/badge/chat-%235965f2?style=flat-square&logo=discord&logoColor=white
+[substack-badge]: https://img.shields.io/badge/Cool_Things_In_HealthTech-%23c094ff?style=flat-square&logo=substack&logoColor=white
+
+[pypi]: https://pypi.org/project/healthchain/
+[pypistats]: https://pepy.tech/project/healthchain
+[stars]: https://github.com/dotimplement/HealthChain/stargazers
+[license]: https://github.com/dotimplement/HealthChain/blob/main/LICENSE
+[build]: https://github.com/dotimplement/HealthChain/actions?query=branch%3Amain
+[discord]: https://discord.gg/UQC6uAepUz
+[substack]: https://jenniferjiangkells.substack.com/
