@@ -15,6 +15,7 @@ from fhir.resources.address import Address
 from fhir.resources.period import Period
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
+from healthchain.data_generators.coding_utils import create_coding
 from fhir.resources.patient import Patient
 
 
@@ -81,7 +82,7 @@ class MaritalStatusGenerator(BaseGenerator):
         marital_code = faker.random_element(elements=(marital_status_dict.keys()))
         return CodeableConcept(
             coding=[
-                Coding(
+                create_coding(
                     system="http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
                     code=marital_code,
                     display=marital_status_dict.get(marital_code),

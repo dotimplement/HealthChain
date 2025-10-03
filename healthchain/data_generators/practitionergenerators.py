@@ -14,6 +14,7 @@ from fhir.resources.practitioner import (
 )
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
+from healthchain.data_generators.coding_utils import create_coding
 
 
 faker = Faker()
@@ -37,7 +38,7 @@ class QualificationGenerator(BaseGenerator):
         )
         return CodeableConcept(
             coding=[
-                Coding(
+                create_coding(
                     system="http://example.org",
                     code=random_qual,
                     display=QualificationGenerator.qualification_dict.get(random_qual),
@@ -79,7 +80,7 @@ class LanguageGenerator:
         language = faker.random_element(elements=language_value_dict.keys())
         return CodeableConcept(
             coding=[
-                Coding(
+                create_coding(
                     system="http://terminology.hl7.org/CodeSystem/languages",
                     code=language,
                     display=language_value_dict.get(language),
