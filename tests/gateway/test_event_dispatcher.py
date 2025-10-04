@@ -143,7 +143,7 @@ async def test_event_publishing_with_default_middleware_id(
 
     mock_dispatch.assert_called_once_with(
         "fhir.read",
-        sample_ehr_event.model_dump(),
+        sample_ehr_event.model_dump(exclude_none=True),
         middleware_id=event_dispatcher.middleware_id,
     )
 
@@ -160,7 +160,9 @@ async def test_event_publishing_with_custom_middleware_id(
     await event_dispatcher.publish(sample_ehr_event, middleware_id=custom_middleware_id)
 
     mock_dispatch.assert_called_once_with(
-        "fhir.read", sample_ehr_event.model_dump(), middleware_id=custom_middleware_id
+        "fhir.read",
+        sample_ehr_event.model_dump(exclude_none=True),
+        middleware_id=custom_middleware_id,
     )
 
 
@@ -182,7 +184,7 @@ async def test_event_publishing_awaits_dispatch_result(
     # Verify dispatch was called with correct parameters
     mock_dispatch.assert_called_once_with(
         "fhir.read",
-        sample_ehr_event.model_dump(),
+        sample_ehr_event.model_dump(exclude_none=True),
         middleware_id=event_dispatcher.middleware_id,
     )
 
