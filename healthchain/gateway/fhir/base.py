@@ -337,6 +337,7 @@ class BaseFHIRGateway(BaseGateway):
         **kwargs,
     ) -> None:
         """Register a custom handler for a resource operation."""
+        resource_name = self._get_resource_name(resource_type)
         self._validate_handler_annotations(resource_type, operation, handler)
 
         if resource_type not in self._resource_handlers:
