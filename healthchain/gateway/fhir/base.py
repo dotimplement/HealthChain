@@ -334,15 +334,21 @@ class BaseFHIRGateway(BaseGateway):
         resource_type: Type[Resource],
         operation: str,
         handler: Callable,
+        **kwargs,
     ) -> None:
         """Register a custom handler for a resource operation."""
         self._validate_handler_annotations(resource_type, operation, handler)
 
         if resource_type not in self._resource_handlers:
             self._resource_handlers[resource_type] = {}
+
+        # Store the handler function
         self._resource_handlers[resource_type][operation] = handler
 
-        resource_name = self._get_resource_name(resource_type)
+        # Store any additional decorator kwargs
+        if kwargs.get("decorator_kwargs"):
+            self._resource_handlers[resource_type][f"{operation}_kwargs"] = kwargs["decorator_kwargs"]
+
         logger.debug(
             f"Registered {operation} handler for {resource_name}: {handler.__name__}"
         )

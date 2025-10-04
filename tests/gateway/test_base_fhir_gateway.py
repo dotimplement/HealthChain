@@ -251,6 +251,11 @@ def test_predict_decorator_registers_handler_and_route(fhir_gateway):
         fhir_gateway._resource_handlers[RiskAssessment]["predict"]
         == predict_risk
     )
+    # Check that decorator kwargs are stored
+    assert "predict_kwargs" in fhir_gateway._resource_handlers[RiskAssessment]
+    assert fhir_gateway._resource_handlers[RiskAssessment]["predict_kwargs"] == {
+        "status": "final"
+    }
 
     # Check route creation
     assert len(fhir_gateway.routes) == initial_routes + 1
