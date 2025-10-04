@@ -1,11 +1,13 @@
 import logging
 import inspect
 import warnings
+import asyncio
 
 from fastapi import Depends, HTTPException, Path, Query
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Type, TypeVar, Optional
 from fastapi.responses import JSONResponse
+from fhir.resources.reference import Reference
 
 from fhir.resources.capabilitystatement import CapabilityStatement
 from fhir.resources.resource import Resource
@@ -153,6 +155,16 @@ class BaseFHIRGateway(BaseGateway):
                         }
                     )
                     operation_details.append("Aggregate: Multi-source data aggregation")
+                elif operation == "predict":
+                    interactions.append(
+                        {
+                            "code": "read",
+                            "documentation": "ML model prediction via REST endpoint",
+                        }
+                    )
+                    operation_details.append(
+                        "Predict: Serve ML model predictions as FHIR resources"
+                    )
 
             if interactions:
                 resource_name = self._get_resource_name(resource_type)
@@ -266,6 +278,16 @@ class BaseFHIRGateway(BaseGateway):
                             "parameters": ["id (optional)", "sources (optional)"],
                         }
                     )
+                elif operation == "predict":
+                    operation_list.append(
+                        {
+                            "type": "predict",
+                            "endpoint": f"/predict/{resource_name}/{{id}}",
+                            "description": f"Serve ML predictions as {resource_name} resources",
+                            "method": "GET",
+                            "parameters": ["id"],
+                        }
+                    )
 
             if operation_list:
                 available_operations[resource_name] = operation_list
@@ -334,7 +356,7 @@ class BaseFHIRGateway(BaseGateway):
         handler: Callable,
     ) -> None:
         """Validate that handler annotations match the decorator resource type."""
-        if operation != "transform":
+        if operation not in ["transform", "predict"]:
             return
 
         try:
@@ -347,7 +369,7 @@ class BaseFHIRGateway(BaseGateway):
                 )
                 return
 
-            if return_annotation != resource_type:
+            if operation == "transform" and return_annotation != resource_type:
                 raise TypeError(
                     f"Handler {handler.__name__} return type ({return_annotation}) "
                     f"doesn't match decorator resource type ({resource_type})"
@@ -374,6 +396,12 @@ class BaseFHIRGateway(BaseGateway):
             path = f"/aggregate/{resource_name}"
             summary = f"Aggregate {resource_name}"
             description = f"Aggregate {resource_name} resources from multiple sources"
+        elif operation == "predict":
+            path = f"/predict/{resource_name}/{{id}}"
+            summary = f"Predict using {resource_name}"
+            description = (
+                f"Generate a {resource_name} resource using a registered ML model"
+            )
         else:
             raise ValueError(f"Unsupported operation: {operation}")
 
@@ -398,11 +426,16 @@ class BaseFHIRGateway(BaseGateway):
         """Create a route handler for the given resource type and operation."""
         get_self_gateway = self._get_gateway_dependency()
 
-        def _execute_handler(fhir: "BaseFHIRGateway", *args) -> Any:
+        async def _execute_handler(fhir: "BaseFHIRGateway", *args) -> Any:
             """Common handler execution logic with error handling."""
+            handler_func = fhir._resource_handlers[resource_type][operation]
             try:
-                handler_func = fhir._resource_handlers[resource_type][operation]
-                result = handler_func(*args)
+                # Await if the handler is async
+                if asyncio.iscoroutinefunction(handler_func):
+                    result = await handler_func(*args)
+                else:
+                    result = handler_func(*args)
+
                 return result
             except Exception as e:
                 logger.error(f"Error in {operation} handler: {str(e)}")
@@ -418,7 +451,12 @@ class BaseFHIRGateway(BaseGateway):
                 fhir: "BaseFHIRGateway" = Depends(get_self_gateway),
             ):
                 """Transform a resource with registered handler."""
-                return _execute_handler(fhir, id, source)
+                result = await _execute_handler(fhir, id, source)
+                # For predict, wrap the result in the FHIR resource
+                if operation == "predict":
+                    # This part is now inside the route handler to access decorator kwargs
+                    result = fhir._wrap_prediction(resource_type, id, result)
+                return result
 
         elif operation == "aggregate":
 
@@ -430,12 +468,66 @@ class BaseFHIRGateway(BaseGateway):
                 fhir: "BaseFHIRGateway" = Depends(get_self_gateway),
             ):
                 """Aggregate resources with registered handler."""
-                return _execute_handler(fhir, id, sources)
+                result = await _execute_handler(fhir, id, sources)
+                return result
+
+        elif operation == "predict":
+            # Retrieve kwargs passed to the decorator
+            decorator_kwargs = fhir._resource_handlers[resource_type].get(
+                "predict_kwargs", {}
+            )
+
+            async def handler(
+                id: str = Path(..., description="Patient ID to run prediction for"),
+                fhir: "BaseFHIRGateway" = Depends(get_self_gateway),
+            ):
+                """Generate a prediction resource with a registered handler."""
+                result = await _execute_handler(fhir, id)
+                # Wrap the prediction using decorator-provided kwargs
+                return fhir._wrap_prediction(
+                    resource_type, id, result, **decorator_kwargs
+                )
 
         else:
             raise ValueError(f"Unsupported operation: {operation}")
 
         return handler
+
+    def _wrap_prediction(
+        self,
+        resource_type: Type[Resource],
+        patient_id: str,
+        prediction_output: Any,
+        status: str = "final",
+    ) -> Resource:
+        """Wrap a raw prediction output into a FHIR resource."""
+        resource_name = self._get_resource_name(resource_type)
+
+        if resource_name == "RiskAssessment":
+            prediction_data = {}
+            if isinstance(prediction_output, float):
+                prediction_data["probabilityDecimal"] = prediction_output
+            elif isinstance(prediction_output, dict):
+                # Assuming keys like 'score', 'qualitativeRisk', etc.
+                if "score" in prediction_output:
+                    prediction_data["probabilityDecimal"] = prediction_output["score"]
+                if "qualitativeRisk" in prediction_output:
+                    prediction_data["qualitativeRisk"] = prediction_output[
+                        "qualitativeRisk"
+                    ]
+
+            elif not isinstance(prediction_output, (float, dict)):
+                raise TypeError(
+                    f"Prediction function must return a float or dict, but returned {type(prediction_output)}"
+                )
+
+            return resource_type(
+                status=status,
+                subject=Reference(reference=f"Patient/{patient_id}"),
+                prediction=[prediction_data],
+            )
+        raise NotImplementedError(f"Prediction for {resource_name} not implemented.")
+
 
     def add_source(self, name: str, connection_string: str) -> None:
         """
@@ -465,6 +557,40 @@ class BaseFHIRGateway(BaseGateway):
 
         def decorator(handler: Callable):
             self._register_resource_handler(resource_type, "aggregate", handler)
+            return handler
+
+        return decorator
+
+    def predict(self, resource: Type[Resource], status: str = "final", **kwargs):
+        """
+        Decorator to simplify ML model deployment as FHIR endpoints.
+
+        Wraps a function that returns a prediction score (float) or dictionary,
+        and automatically constructs the specified FHIR resource.
+
+        Currently, only `RiskAssessment` is fully supported.
+
+        Args:
+            resource: The FHIR resource type to create (e.g., RiskAssessment).
+            status: The status to set on the created FHIR resource. Defaults to "final",
+                    which is a spec-compliant value for RiskAssessment.
+            **kwargs: Additional fields to set on the created resource.
+
+        Example:
+            @fhir.predict(resource=RiskAssessment)
+            def predict_sepsis_risk(patient_id: str) -> float: # The patient_id is passed from the URL
+                # Your model logic here
+                return 0.85 # High risk
+        """
+
+        def decorator(handler: Callable):
+            # The user-provided handler is registered for the 'predict' operation
+            self._register_resource_handler(
+                resource, "predict", handler, decorator_kwargs={"status": status}
+            )
+
+            # The actual endpoint handler is created by _register_operation_route
+            # which calls _create_route_handler, which wraps our logic.
             return handler
 
         return decorator

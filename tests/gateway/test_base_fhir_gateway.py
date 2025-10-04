@@ -1,9 +1,11 @@
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any, List
+import asyncio
 
 from fhir.resources.patient import Patient
 from fhir.resources.observation import Observation
+from fhir.resources.riskassessment import RiskAssessment
 
 from healthchain.gateway.fhir import FHIRGateway, AsyncFHIRGateway
 
@@ -219,3 +221,87 @@ def test_resource_name_extraction(fhir_gateway):
     """_get_resource_name correctly extracts resource names from types."""
     assert fhir_gateway._get_resource_name(Patient) == "Patient"
     assert fhir_gateway._get_resource_name(Observation) == "Observation"
+
+
+@pytest.mark.asyncio
+async def test_predict_handler_raises_for_invalid_output_type(fhir_gateway):
+    """The predict route handler should raise a TypeError for unsupported return types."""
+
+    @fhir_gateway.predict(resource=RiskAssessment)
+    def invalid_prediction(patient_id: str) -> list:
+        return [0.1, 0.9]  # Invalid return type
+
+    route_handler = fhir_gateway.routes[-1].endpoint
+
+    with pytest.raises(TypeError, match="Prediction function must return a float or dict"):
+        await route_handler(id="Patient789", fhir=fhir_gateway)
+
+
+def test_predict_decorator_registers_handler_and_route(fhir_gateway):
+    """The @predict decorator should register a 'predict' handler and create a route."""
+    initial_routes = len(fhir_gateway.routes)
+
+    @fhir_gateway.predict(resource=RiskAssessment)
+    def predict_risk(patient_id: str) -> float:
+        return 0.5
+
+    # Check handler registration
+    assert "predict" in fhir_gateway._resource_handlers[RiskAssessment]
+    assert (
+        fhir_gateway._resource_handlers[RiskAssessment]["predict"]
+        == predict_risk
+    )
+
+    # Check route creation
+    assert len(fhir_gateway.routes) == initial_routes + 1
+    new_route = fhir_gateway.routes[-1]
+    assert new_route.path == "/predict/RiskAssessment/{id}"
+
+
+@pytest.mark.asyncio
+async def test_predict_handler_wraps_float_output(fhir_gateway):
+    """The predict route handler should wrap a float from a sync function into a FHIR resource."""
+
+    @fhir_gateway.predict(resource=RiskAssessment)
+    def simple_prediction(patient_id: str) -> float:
+        return 0.75
+
+    # The handler created by _create_route_handler is what we need to test
+    # It's an async function that wraps the user's sync function
+    route_handler = fhir_gateway.routes[-1].endpoint
+    result = await route_handler(id="Patient123", fhir=fhir_gateway)
+
+    assert isinstance(result, RiskAssessment)
+    assert result.status == "final"
+    assert result.subject.reference == "Patient/Patient123"
+    assert result.prediction[0].probabilityDecimal == 0.75
+
+
+@pytest.mark.asyncio
+async def test_predict_handler_wraps_dict_output_from_async_func(fhir_gateway):
+    """The predict route handler should wrap a dict from an async function into a FHIR resource."""
+
+    @fhir_gateway.predict(resource=RiskAssessment)
+    async def complex_prediction(patient_id: str) -> dict:
+        await asyncio.sleep(0.01)  # Simulate async work
+        return {"score": 0.4, "qualitativeRisk": "low"}
+
+    route_handler = fhir_gateway.routes[-1].endpoint
+    result = await route_handler(id="Patient456", fhir=fhir_gateway)
+
+    assert isinstance(result, RiskAssessment)
+    assert result.subject.reference == "Patient/Patient456"
+    assert result.prediction[0].probabilityDecimal == 0.4
+    assert result.prediction[0].qualitativeRisk == "low"
+
+
+def test_predict_decorator_in_capability_statement(fhir_gateway):
+    """CapabilityStatement should include resources with registered predict handlers."""
+
+    @fhir_gateway.predict(resource=RiskAssessment)
+    def predict_risk(patient_id: str) -> float:
+        return 0.5
+
+    capability = fhir_gateway.build_capability_statement()
+    resources = capability.rest[0].resource
+    assert "RiskAssessment" in [r.type for r in resources]
