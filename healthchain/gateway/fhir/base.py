@@ -526,7 +526,7 @@ class BaseFHIRGateway(BaseGateway):
                     prediction_data["qualitativeRisk"] = {
                         "coding": [{"display": prediction_output["qualitativeRisk"]}],
                         "text": prediction_output["qualitativeRisk"],
-                    ]
+                    }
 
             elif not isinstance(prediction_output, (float, dict)):
                 raise TypeError(
