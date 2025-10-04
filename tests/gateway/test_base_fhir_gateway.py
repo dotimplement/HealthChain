@@ -297,7 +297,7 @@ async def test_predict_handler_wraps_dict_output_from_async_func(fhir_gateway):
     assert isinstance(result, RiskAssessment)
     assert result.subject.reference == "Patient/Patient456"
     assert result.prediction[0].probabilityDecimal == 0.4
-    assert result.prediction[0].qualitativeRisk == "low"
+    assert result.prediction[0].qualitativeRisk.text == "low"
 
 
 def test_predict_decorator_in_capability_statement(fhir_gateway):
