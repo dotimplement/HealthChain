@@ -260,7 +260,7 @@ def test_predict_decorator_registers_handler_and_route(fhir_gateway):
     # Check route creation
     assert len(fhir_gateway.routes) == initial_routes + 1
     new_route = fhir_gateway.routes[-1]
-    assert new_route.path == "/predict/RiskAssessment/{id}"
+    assert new_route.path == f"{fhir_gateway.prefix}/predict/RiskAssessment/{{id}}"
 
 
 @pytest.mark.asyncio
