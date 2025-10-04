@@ -480,7 +480,7 @@ class BaseFHIRGateway(BaseGateway):
 
         elif operation == "predict":
             # Retrieve kwargs passed to the decorator
-            decorator_kwargs = fhir._resource_handlers[resource_type].get(
+            decorator_kwargs = self._resource_handlers[resource_type].get(
                 "predict_kwargs", {}
             )
 
