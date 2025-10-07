@@ -280,7 +280,6 @@ def create_allergy_intolerance(
     return allergy
 
 
-# TODO: create a function that creates a DocumentReferenceContent to add to the DocumentReference
 def create_document_reference(
     data: Optional[Any] = None,
     url: Optional[str] = None,
@@ -325,6 +324,80 @@ def create_document_reference(
     )
 
     return document_reference
+
+
+def create_document_reference_content(
+    attachment_data: Optional[str] = None,
+    url: Optional[str] = None,
+    content_type: str = "text/plain",
+    language: Optional[str] = "en-US",
+    title: Optional[str] = None,
+    **kwargs
+) -> Dict[str, Any]:
+    """Create a FHIR DocumentReferenceContent object.
+    
+    Creates a DocumentReferenceContent structure that can be added to a DocumentReference.
+    Either attachment_data or url must be provided. If attachment_data is provided, it will
+    be base64 encoded automatically.
+    
+    Args:
+        attachment_data: The content data (text that will be base64 encoded)
+        url: URL where the content can be accessed
+        content_type: MIME type (e.g., 'text/plain', 'text/html', 'application/pdf') (default: text/plain)
+        language: Language code (default: en-US)
+        title: Optional title for the content (default: "Attachment created by HealthChain")
+        **kwargs: Additional DocumentReferenceContent fields (e.g., format, profile)
+    
+    Returns:
+        Dict[str, Any]: A FHIR DocumentReferenceContent dictionary with attachment and optional language
+        
+    Example:
+        >>> # Create content with inline data
+        >>> content = create_document_reference_content(
+        ...     attachment_data="Patient presents with fever...",
+        ...     content_type="text/plain",
+        ...     title="Clinical Note"
+        ... )
+        >>> 
+        >>> # Create content with URL reference
+        >>> content = create_document_reference_content(
+        ...     url="https://example.com/document.pdf",
+        ...     content_type="application/pdf",
+        ...     title="Lab Report"
+        ... )
+        >>>
+        >>> # Add content to a DocumentReference
+        >>> doc_ref = DocumentReference(
+        ...     id="doc-1",
+        ...     status="current",
+        ...     content=[content]
+        ... )
+    """
+    if not attachment_data and not url:
+        logger.warning(
+            "No attachment_data or url provided for DocumentReferenceContent"
+        )
+    
+    if title is None:
+        title = "Attachment created by HealthChain"
+
+    attachment = create_single_attachment(
+        content_type=content_type,
+        data=attachment_data,
+        url=url,
+        title=title,
+    )
+
+    content: Dict[str, Any] = {
+        "attachment": attachment,
+    }
+    
+    if language:
+        content["language"] = language
+
+    content.update(kwargs)
+    
+    return content
 
 
 def read_content_attachment(
