@@ -119,10 +119,7 @@ def test_empty_capability_statement_with_no_handlers(fhir_gateway):
     """Gateway with no handlers generates minimal CapabilityStatement."""
     capability = fhir_gateway.build_capability_statement()
 
-    assert (
-        capability.model_dump(exclude_none=True)["resourceType"]
-        == "CapabilityStatement"
-    )
+    assert capability.model_dump()["resourceType"] == "CapabilityStatement"
     assert capability.status == "active"
     assert capability.kind == "instance"
 

@@ -414,9 +414,7 @@ class AsyncFHIRGateway(BaseFHIRGateway):
                 updated_resource = await client.update(resource)
 
             resource.id = updated_resource.id
-            for field_name, field_value in updated_resource.model_dump(
-                exclude_none=True
-            ).items():
+            for field_name, field_value in updated_resource.model_dump().items():
                 if hasattr(resource, field_name):
                     setattr(resource, field_name, field_value)
 

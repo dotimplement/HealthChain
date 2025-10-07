@@ -103,7 +103,7 @@ class BaseFHIRGateway(BaseGateway):
             Includes both custom transform/aggregate operations (via REST endpoints)
             and standard FHIR CRUD operations (via Python gateway methods).
             """
-            return fhir.build_capability_statement().model_dump(exclude_none=True)
+            return fhir.build_capability_statement().model_dump()
 
         # Gateway status endpoint - returns operational metadata
         @self.get("/status", response_class=JSONResponse)

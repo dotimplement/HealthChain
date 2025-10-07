@@ -121,7 +121,7 @@ class EventDispatcher:
         """
         # Convert event to the format expected by fastapi-events
         event_name = event.event_type.value
-        event_data = event.model_dump(exclude_none=True)
+        event_data = event.model_dump()
 
         # Use the provided middleware_id or fall back to the class's middleware_id
         mid = middleware_id or self.middleware_id

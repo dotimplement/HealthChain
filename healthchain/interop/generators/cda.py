@@ -133,7 +133,7 @@ class CDAGenerator(BaseGenerator):
             context = {
                 "timestamp": timestamp,
                 "text_reference_name": reference_name,
-                "resource": resource.model_dump(exclude_none=True),
+                "resource": resource.model_dump(),
                 "config": section_config,
             }
 
