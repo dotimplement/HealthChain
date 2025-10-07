@@ -22,7 +22,7 @@ include = [
     "healthchain/configs/**/*.liquid"
 ]
 
-[project.urls]
+[tool.poetry.urls]
 "Homepage" = "https://dotimplement.github.io/HealthChain/"
 "Repository" = "https://github.com/dotimplement/HealthChain"
 

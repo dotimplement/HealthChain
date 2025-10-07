@@ -167,3 +167,5 @@ scrap/
 .python-version
 .cursor/
 scripts/
+.idea/
+.idea/

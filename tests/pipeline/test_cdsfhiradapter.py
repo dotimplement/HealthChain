@@ -29,7 +29,9 @@ def test_parse_with_document_reference(
     cds_fhir_adapter, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_with_content.model_dump()
+    test_cds_request.prefetch["document"] = doc_ref_with_content.model_dump(
+        exclude_none=True
+    )
 
     # Call the input method
     result = cds_fhir_adapter.parse(test_cds_request)
@@ -44,7 +46,9 @@ def test_parse_with_multiple_attachments(
     cds_fhir_adapter, test_cds_request, doc_ref_with_multiple_content
 ):
     # Add DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_with_multiple_content.model_dump()
+    test_cds_request.prefetch["document"] = doc_ref_with_multiple_content.model_dump(
+        exclude_none=True
+    )
 
     # Call the input method
     result = cds_fhir_adapter.parse(test_cds_request)
@@ -73,7 +77,9 @@ def test_parse_with_custom_document_key(
     cds_fhir_adapter, test_cds_request, doc_ref_with_content
 ):
     # Add DocumentReference to prefetch data with custom key
-    test_cds_request.prefetch["custom_key"] = doc_ref_with_content.model_dump()
+    test_cds_request.prefetch["custom_key"] = doc_ref_with_content.model_dump(
+        exclude_none=True
+    )
 
     # Call the input method with custom key
     result = cds_fhir_adapter.parse(
@@ -90,7 +96,9 @@ def test_parse_with_document_reference_error(
     cds_fhir_adapter, test_cds_request, doc_ref_without_content, caplog
 ):
     # Add invalid DocumentReference to prefetch data
-    test_cds_request.prefetch["document"] = doc_ref_without_content.model_dump()
+    test_cds_request.prefetch["document"] = doc_ref_without_content.model_dump(
+        exclude_none=True
+    )
 
     # Call the input method
     result = cds_fhir_adapter.parse(test_cds_request)

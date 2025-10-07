@@ -700,7 +700,9 @@ class Document(BaseDocument):
                     system=coding_system,
                 )
                 set_problem_list_item_category(condition)
-                logger.debug(f"Adding condition from spaCy: {condition.model_dump()}")
+                logger.debug(
+                    f"Adding condition from spaCy: {condition.model_dump(exclude_none=True)}"
+                )
                 new_conditions.append(condition)
 
         # 2. Extract from generic NLP entities (framework-agnostic)
@@ -725,7 +727,7 @@ class Document(BaseDocument):
                 )
                 set_problem_list_item_category(condition)
                 logger.debug(
-                    f"Adding condition from entities: {condition.model_dump()}"
+                    f"Adding condition from entities: {condition.model_dump(exclude_none=True)}"
                 )
                 new_conditions.append(condition)
 
