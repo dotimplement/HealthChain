@@ -16,11 +16,11 @@ def cda_adapter():
 @patch("healthchain.io.adapters.cdaadapter.create_interop")
 @patch("healthchain.io.adapters.cdaadapter.create_document_reference")
 @patch("healthchain.io.adapters.cdaadapter.read_content_attachment")
-@patch("healthchain.io.adapters.cdaadapter.set_problem_list_item_category")
+@patch("healthchain.io.adapters.cdaadapter.set_condition_category")
 @patch("healthchain.io.adapters.cdaadapter.Document", autospec=True)
 def test_parse(
     mock_document_class,
-    mock_set_problem_category,
+    mock_set_condition_category,
     mock_read_content,
     mock_create_doc_ref,
     mock_create_interop,
@@ -104,7 +104,9 @@ def test_parse(
     assert mock_doc.fhir.allergy_list == [test_allergy]
 
     # 6. Verify problem list items were categorized
-    mock_set_problem_category.assert_called_once_with(test_condition)
+    mock_set_condition_category.assert_called_once_with(
+        test_condition, "problem-list-item"
+    )
 
     # 7. Verify document reference content was read
     mock_read_content.assert_called_once_with(note_doc_ref)
