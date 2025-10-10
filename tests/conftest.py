@@ -1,5 +1,6 @@
 from pathlib import Path
 import pytest
+import copy
 import yaml
 import tempfile
 
@@ -24,34 +25,75 @@ from healthchain.fhir import (
 from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
 
 
-# TODO: Tidy up fixtures
-
-
 @pytest.fixture
 def cda_adapter():
+    """Provides a reusable instance of the CdaAdapter.
+
+    Use this fixture in tests that require parsing or formatting of CDA documents.
+
+    Example:
+        def test_parsing(cda_adapter):
+            request = CdaRequest(document="<xml>...</xml>")
+            document = cda_adapter.parse(request)
+            assert document is not None
+
+    Returns:
+        healthchain.io.adapters.CdaAdapter: An instance of the CDA adapter.
+    """
     from healthchain.io import CdaAdapter
 
     return CdaAdapter()
 
 
-# FHIR resource fixtures
+# ########################################
+# ######## FHIR Resource Fixtures ########
+# ########################################
 
 
 @pytest.fixture
 def empty_bundle():
-    """Create an empty bundle for testing."""
+    """Provides an empty FHIR Bundle resource.
+
+    Use this fixture for tests that need to build a Bundle from scratch by adding
+    resources dynamically.
+
+    See Also:
+        `test_bundle`: A pre-populated bundle with mixed resources.
+
+    Returns:
+        fhir.resources.bundle.Bundle: An empty FHIR Bundle of type 'collection'.
+    """
     return create_bundle()
+
 
 
 @pytest.fixture
 def test_condition():
-    """Create a test condition."""
+    """Provides a minimal, generic FHIR Condition resource.
+
+    This fixture is useful for testing components that process a single Condition
+    resource without needing specific clinical details.
+
+    Returns:
+        fhir.resources.condition.Condition: A minimal FHIR Condition resource with a
+        subject, code, and display text.
+
+    See Also:
+        `test_condition_list`: For testing with multiple conditions.
+    """
     return create_condition(subject="Patient/123", code="123", display="Test Condition")
 
 
 @pytest.fixture
 def test_condition_list():
-    """Create a list of test conditions."""
+    """Provides a list containing two FHIR Condition resources.
+
+    Use this fixture for testing components that need to handle lists or collections
+    of Condition resources.
+
+    Returns:
+        list[fhir.resources.condition.Condition]: A list of two distinct Condition resources.
+    """
     return [
         create_condition(subject="Patient/123", code="123", display="Test Condition"),
         create_condition(subject="Patient/123", code="456", display="Test Condition 2"),
@@ -60,7 +102,18 @@ def test_condition_list():
 
 @pytest.fixture
 def test_medication():
-    """Create a test medication statement."""
+    """Provides a minimal, generic FHIR MedicationStatement resource.
+
+    This fixture is useful for testing components that process a single
+    MedicationStatement without needing specific dosage or timing details.
+
+    Returns:
+        fhir.resources.medicationstatement.MedicationStatement: A minimal FHIR
+        MedicationStatement resource with a subject, code, and display text.
+
+    See Also:
+        `test_medication_with_dosage`: For a more detailed medication resource.
+    """
     return create_medication_statement(
         subject="Patient/123", code="456", display="Test Medication"
     )
@@ -68,7 +121,18 @@ def test_medication():
 
 @pytest.fixture
 def test_allergy():
-    """Create a test allergy intolerance."""
+    """Provides a minimal, generic FHIR AllergyIntolerance resource.
+
+    This fixture is useful for testing components that process a single
+    AllergyIntolerance resource without needing reaction details.
+
+    Returns:
+        fhir.resources.allergyintolerance.AllergyIntolerance: A minimal FHIR
+        AllergyIntolerance resource with a patient reference, code, and display text.
+
+    See Also:
+        `test_allergy_with_reaction`: For an allergy with reaction details.
+    """
     return create_allergy_intolerance(
         patient="Patient/123", code="789", display="Test Allergy"
     )
@@ -76,6 +140,16 @@ def test_allergy():
 
 @pytest.fixture
 def test_allergy_with_reaction(test_allergy):
+    """Provides an AllergyIntolerance resource with type and reaction details.
+
+    Extends the `test_allergy` fixture by adding `type` and `reaction` fields,
+    including manifestation and severity. Use this for testing logic that
+    processes detailed allergy information.
+
+    Returns:
+        fhir.resources.allergyintolerance.AllergyIntolerance: A detailed FHIR AllergyIntolerance resource.
+    """
+    test_allergy = copy.deepcopy(test_allergy)
     test_allergy.type = create_single_codeable_concept(
         code="ABC", display="Test Allergy", system="http://snomed.info/sct"
     )
@@ -91,6 +165,16 @@ def test_allergy_with_reaction(test_allergy):
 
 @pytest.fixture
 def test_medication_with_dosage(test_medication):
+    """Provides a MedicationStatement with dosage and effective period.
+
+    Extends the `test_medication` fixture by adding `dosage` (including route and
+    timing) and `effectivePeriod`. Use this for testing logic that processes
+    medication administration details.
+
+    Returns:
+        fhir.resources.medicationstatement.MedicationStatement: A detailed FHIR MedicationStatement resource.
+    """
+    test_medication = copy.deepcopy(test_medication)
     test_medication.dosage = [
         {
             "doseAndRate": [{"doseQuantity": {"value": 500, "unit": "mg"}}],
@@ -108,7 +192,15 @@ def test_medication_with_dosage(test_medication):
 
 @pytest.fixture
 def doc_ref_with_content():
-    """Create a DocumentReference with single text content."""
+    """Provides a DocumentReference with a single, plain-text attachment.
+
+    The attachment data "Test document content" is base64 encoded. Use this
+    fixture to test functions that read or process content from a
+    DocumentReference.
+
+    Returns:
+        fhir.resources.documentreference.DocumentReference: A FHIR DocumentReference with one content attachment.
+    """
     return create_document_reference(
         data="Test document content",
         content_type="text/plain",
@@ -118,7 +210,15 @@ def doc_ref_with_content():
 
 @pytest.fixture
 def doc_ref_with_multiple_content():
-    """Create a DocumentReference with multiple text content."""
+    """Provides a DocumentReference with two separate plain-text attachments.
+
+    Contains two attachments with "First content" and "Second content". Use this
+    to test logic that handles multiple `content` entries in a single
+    DocumentReference.
+
+    Returns:
+        fhir.resources.documentreference.DocumentReference: A FHIR DocumentReference with two content attachments.
+    """
     doc_ref = create_document_reference(
         data="First content",
         content_type="text/plain",
@@ -136,7 +236,14 @@ def doc_ref_with_multiple_content():
 
 @pytest.fixture
 def doc_ref_with_cda_xml():
-    """Create a DocumentReference with CDA XML content."""
+    """Provides a DocumentReference with XML content.
+
+    The attachment has a `contentType` of "text/xml" and data of "<CDA XML>".
+    Useful for simulating a DocumentReference that points to a CDA document.
+
+    Returns:
+        fhir.resources.documentreference.DocumentReference: A DocumentReference with an XML attachment.
+    """
     return create_document_reference(
         data="<CDA XML>",
         content_type="text/xml",
@@ -145,18 +252,36 @@ def doc_ref_with_cda_xml():
 
 @pytest.fixture
 def doc_ref_without_content():
-    """Create a DocumentReference without content for error testing."""
+    """Provides an invalid DocumentReference with no attachment data.
+
+    The `attachment` is missing the required `data` or `url` field. This is
+    intended for testing error handling and validation logic.
+
+    Returns:
+        fhir.resources.documentreference.DocumentReference: An incomplete DocumentReference resource.
+    """
+    from fhir.resources.attachment import Attachment
     return DocumentReference(
         status="current",
-        content=[
-            {"attachment": {"contentType": "text/plain"}}
-        ],  # Missing required data
+        content=[DocumentReferenceContent(attachment=Attachment(contentType="text/plain"))],  # Missing required data or url
     )
 
 
 @pytest.fixture
 def test_bundle():
-    """Create a test bundle."""
+    """Provides a FHIR Bundle containing one Condition and one MedicationStatement.
+
+    Use this fixture for testing components that process bundles with mixed
+    resource types.
+
+    Example:
+        def test_bundle_processor(test_bundle):
+            conditions = get_resources(test_bundle, "Condition")
+            assert len(conditions) == 1
+
+    Returns:
+        fhir.resources.bundle.Bundle: A FHIR Bundle with two resource entries.
+    """
     bundle = create_bundle()
     bundle.entry = [
         {
@@ -175,7 +300,23 @@ def test_bundle():
 
 @pytest.fixture
 def test_document():
-    """Create a test document with FHIR resources."""
+    """Provides a `Document` container with pre-populated FHIR lists.
+
+    This fixture creates a `healthchain.io.Document` instance and populates its
+    `fhir` attribute with a problem list, medication list, and allergy list,
+    each containing one resource.
+
+    Example:
+        def test_process_document(test_document):
+            # test_document.fhir.problem_list is already populated
+            assert len(test_document.fhir.problem_list) == 1
+            # Run a pipeline or function on the document
+            result = process_clinical_data(test_document)
+            assert result is not None
+
+    Returns:
+        healthchain.io.containers.Document: A pre-populated Document container for pipeline testing.
+    """
     doc = Document(data="Test note")
     doc.fhir.bundle = create_bundle()
 
@@ -200,11 +341,29 @@ def test_document():
 
 @pytest.fixture
 def test_empty_document():
+    """Provides an empty `Document` container with simple text data.
+
+    Returns:
+        healthchain.io.containers.Document: A Document container with `data` set and no other annotations.
+    """
     return Document(data="This is a sample text for testing.")
 
 
 @pytest.fixture
 def valid_prefetch_data():
+    """Provides a `Prefetch` model object for CDS Hooks testing.
+
+    Contains a single prefetch key "document" with a DocumentReference resource.
+    Use this for testing services that consume CDS Hooks prefetch data.
+
+    Example:
+        def test_prefetch_handler(valid_prefetch_data):
+            request = CDSRequest(prefetch=valid_prefetch_data.prefetch)
+            # ... test logic
+
+    Returns:
+        healthchain.models.hooks.prefetch.Prefetch: A Pydantic model representing valid prefetch data.
+    """
     return Prefetch(
         prefetch={
             "document": create_document_reference(
@@ -214,11 +373,21 @@ def valid_prefetch_data():
     )
 
 
-# Test request and response fixtures
+# #################################################
+# ######## Request and Response Fixtures ########
+# #################################################
 
 
 @pytest.fixture
 def test_cds_request():
+    """Provides a sample `CDSRequest` object.
+
+    Represents a typical CDS Hooks request for the `patient-view` hook, including
+    context and a minimal Patient resource in the prefetch data.
+
+    Returns:
+        healthchain.models.requests.cdsrequest.CDSRequest: A Pydantic model representing a CDS Hooks request.
+    """
     cds_dict = {
         "hook": "patient-view",
         "hookInstance": "29e93987-c345-4cb7-9a92-b5136289c2a4",
@@ -238,6 +407,11 @@ def test_cds_request():
 
 @pytest.fixture
 def test_cds_response_single_card():
+    """Provides a `CDSResponse` object with a single informational card.
+
+    Returns:
+        healthchain.models.responses.cdsresponse.CDSResponse: A response containing one `Card` in its `cards` list.
+    """
     return CDSResponse(
         cards=[
             Card(
@@ -252,11 +426,23 @@ def test_cds_response_single_card():
 
 @pytest.fixture
 def test_cds_response_empty():
+    """Provides an empty `CDSResponse` object with no cards.
+
+    Returns:
+        healthchain.models.responses.cdsresponse.CDSResponse: A response with an empty `cards` list.
+    """
     return CDSResponse(cards=[])
 
 
 @pytest.fixture
 def test_cds_response_multiple_cards():
+    """Provides a `CDSResponse` object with multiple cards.
+
+    Contains two cards with different indicators ('info' and 'warning').
+
+    Returns:
+        healthchain.models.responses.cdsresponse.CDSResponse: A response containing two `Card` objects.
+    """
     return CDSResponse(
         cards=[
             Card(
@@ -273,7 +459,15 @@ def test_cds_response_multiple_cards():
 
 @pytest.fixture
 def test_cda_request():
-    with open("./tests/data/test_cda.xml", "r") as file:
+    """Provides a `CdaRequest` object with CDA XML content from a file.
+
+    Reads the content from `./tests/data/test_cda.xml`.
+
+    Returns:
+        healthchain.models.requests.cdarequest.CdaRequest: A request object containing a CDA XML string.
+    """
+    cda_path = Path(__file__).parent / "data" / "test_cda.xml"
+    with open(cda_path, "r") as file:
         test_cda = file.read()
 
     return CdaRequest(document=test_cda)
@@ -281,6 +475,11 @@ def test_cda_request():
 
 @pytest.fixture
 def test_cda_response():
+    """Provides a sample `CdaResponse` object with a mock CDA document.
+
+    Returns:
+        healthchain.models.responses.cdaresponse.CdaResponse: A response object with a mock XML document string.
+    """
     return CdaResponse(
         document="<ClinicalDocument>Mock CDA Response Document</ClinicalDocument>",
         error=None,
@@ -289,6 +488,13 @@ def test_cda_response():
 
 @pytest.fixture
 def test_cda_response_with_error():
+    """Provides a `CdaResponse` object representing an error condition.
+
+    The `document` is empty and the `error` field is populated.
+
+    Returns:
+        healthchain.models.responses.cdaresponse.CdaResponse: A response object indicating an error occurred.
+    """
     return CdaResponse(
         document="", error="An error occurred while processing the CDA document"
     )
@@ -296,27 +502,38 @@ def test_cda_response_with_error():
 
 @pytest.fixture
 def test_soap_request():
-    with open("./tests/data/test_soap_request.xml", "r") as file:
+    """Provides a `CdaRequest` with a sample SOAP XML request from a file.
+
+    Reads the content from `./tests/data/test_soap_request.xml`.
+
+    Returns:
+        healthchain.models.requests.cdarequest.CdaRequest: A request object containing a SOAP XML string.
+    """
+    soap_path = Path(__file__).parent / "data" / "test_soap_request.xml"
+    with open(soap_path, "r") as file:
         test_soap = file.read()
 
     return CdaRequest(document=test_soap)
 
 
 @pytest.fixture
-def real_config_dir():
-    """Use the actual config directory for testing"""
-    project_root = Path(__file__).parent.parent
-    config_dir = project_root / "configs"
-
-    if not config_dir.exists():
-        pytest.skip("Actual config directory not found. Skipping ConfigManager tests.")
-
-    return config_dir
-
-
-@pytest.fixture
 def config_fixtures():
-    """Create temporary directory with config files for testing both ConfigManager and InteropConfigManager."""
+    """Creates a temporary directory with a complete set of config files.
+
+    This fixture simulates the entire `configs` directory structure, including
+    defaults, environments, module-specific configs (interop), and mappings.
+    It is suitable for testing both `ConfigManager` and `InteropConfigManager`.
+
+    Example:
+        def test_config_loading(config_fixtures):
+            # config_fixtures is a Path to a temporary directory
+            manager = ConfigManager(config_dir=config_fixtures)
+            manager.load()
+            assert manager.get_config_value("debug") is True
+
+    Yields:
+        pathlib.Path: The path to the temporary configuration directory.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         config_dir = Path(temp_dir)
 
@@ -565,3 +782,22 @@ def config_fixtures():
             yaml.dump(mapping_content, f)
 
         yield config_dir
+
+
+@pytest.fixture
+def real_config_dir():
+    """Provides the path to the actual `configs` directory in the project.
+
+    This fixture allows tests to run against the real, checked-in configuration
+    files. It will skip tests if the directory is not found.
+
+    Returns:
+        pathlib.Path: The path to the project's `configs` directory.
+    """
+    project_root = Path(__file__).parent.parent
+    config_dir = project_root / "configs"
+
+    if not config_dir.exists():
+        pytest.skip("Actual config directory not found. Skipping ConfigManager tests.")
+
+    return config_dir

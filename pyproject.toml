@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "healthchain"
 version = "0.0.0"
-description = "Python toolkit that makes it easier to connect your AI/ML pipelines to healthcare systems"
+description = "Open source framework for productionizing healthcare AI"
 authors = ["Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>", "Adam Kells <adamjkells93@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://dotimplement.github.io/HealthChain/"
-keywords = ["nlp", "ai", "llm", "healthcare", "ehr", "mlops"]
+keywords = ["nlp", "ai", "llm", "healthcare", "ehr", "mlops", "fhir"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
