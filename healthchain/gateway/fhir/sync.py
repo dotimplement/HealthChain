@@ -10,6 +10,7 @@ from healthchain.gateway.clients.fhir.base import FHIRServerInterface
 from healthchain.gateway.clients.fhir.sync.connection import FHIRConnectionManager
 from healthchain.gateway.fhir.base import BaseFHIRGateway
 from healthchain.gateway.fhir.errors import FHIRErrorHandler
+from healthchain.fhir import add_provenance_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -232,6 +233,8 @@ class FHIRGateway(BaseFHIRGateway):
         resource_type: Type[Resource],
         params: Dict[str, Any] = None,
         source: str = None,
+        add_provenance: bool = False,
+        provenance_tag: str = None,
     ) -> Bundle:
         """
         Search for FHIR resources (sync version).
@@ -240,12 +243,24 @@ class FHIRGateway(BaseFHIRGateway):
             resource_type: The FHIR resource type class
             params: Search parameters (e.g., {"name": "Smith", "active": "true"})
             source: Source name to search in (uses first available if None)
+            add_provenance: If True, automatically add provenance metadata to resources
+            provenance_tag: Optional tag code for provenance (e.g., "aggregated", "transformed")
 
         Returns:
             Bundle containing search results
 
         Example:
+            # Basic search
             bundle = gateway.search(Patient, {"name": "Smith"}, "epic")
+
+            # Search with automatic provenance
+            bundle = gateway.search(
+                Condition,
+                {"patient": "123"},
+                "epic",
+                add_provenance=True,
+                provenance_tag="aggregated"
+            )
         """
 
         bundle = self._execute_with_client(
@@ -254,6 +269,19 @@ class FHIRGateway(BaseFHIRGateway):
             resource_type=resource_type,
             client_args=(resource_type, params),
         )
+
+        # Add provenance metadata if requested
+        if add_provenance and bundle.entry:
+            source_name = source or next(iter(self.connection_manager.sources.keys()))
+            for entry in bundle.entry:
+                if entry.resource:
+                    entry.resource = add_provenance_metadata(
+                        entry.resource,
+                        source_name,
+                        provenance_tag,
+                        provenance_tag.capitalize() if provenance_tag else None,
+                    )
+
         type_name = resource_type.__resource_type__
         result_count = len(bundle.entry) if bundle.entry else 0
         logger.info(
