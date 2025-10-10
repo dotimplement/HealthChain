@@ -13,7 +13,6 @@ Run:
 - python notereader_clinical_coding_fhir.py  # Demo and start server
 """
 
-import os
 import uvicorn
 from datetime import datetime, timezone
 
@@ -26,6 +25,7 @@ from dotenv import load_dotenv
 from healthchain.fhir import create_document_reference
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.gateway.fhir import FHIRGateway
+from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 from healthchain.gateway.soap import NoteReaderService
 from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
@@ -35,14 +35,9 @@ from healthchain.sandbox.use_cases import ClinicalDocumentation
 
 load_dotenv()
 
-
-BILLING_URL = (
-    f"fhir://api.medplum.com/fhir/R4/"
-    f"?client_id={os.environ.get('MEDPLUM_CLIENT_ID')}"
-    f"&client_secret={os.environ.get('MEDPLUM_CLIENT_SECRET')}"
-    f"&token_url={os.environ.get('MEDPLUM_TOKEN_URL', 'https://api.medplum.com/oauth2/token')}"
-    f"&scope={os.environ.get('MEDPLUM_SCOPE', 'openid')}"
-)
+# Load configuration from environment variables
+config = FHIRAuthConfig.from_env("MEDPLUM")
+BILLING_URL = config.to_connection_string()
 
 
 def create_pipeline():

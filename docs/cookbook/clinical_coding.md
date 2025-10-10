@@ -13,14 +13,17 @@ pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 ```
 
-If you'd like to test the FHIR integration with Medplum, make sure you have the following environment variables set. To setup Medplum, register an account on [Medplum](https://www.medplum.com/docs/tutorials/register) and obtain your [Client Credentials](https://www.medplum.com/docs/auth/methods/client-credentials).
+To test the FHIR integration with Medplum, you'll need to set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Setup Guide](./setup_fhir_sandboxes.md#medplum-sandbox) for detailed instructions.
 
-![Medplum Client Application](../assets/images/medplum_client.png)
+Once you have your Medplum credentials, configure them in a `.env` file:
 
 ```bash
 # .env file
+MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
 MEDPLUM_CLIENT_ID=your_client_id
 MEDPLUM_CLIENT_SECRET=your_client_secret
+MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
+MEDPLUM_SCOPE=openid
 ```
 
 ## Initialize the pipeline
@@ -120,20 +123,15 @@ What it does:
 [FHIR gateways](../reference/gateway/fhir_gateway.md) connect to external FHIR servers. You can add multiple FHIR sources to the gateway via connection strings with the `add_source` method. The gateway will handle authentication and connections for you.
 
 ```python
-import os
-from healthchain.gateway.fhir import FHIRGateway
+from healthchain.gateway import FHIRGateway
+from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure FHIR connection with OAuth2 authentication
-BILLING_URL = (
-    f"fhir://api.medplum.com/fhir/R4/"
-    f"?client_id={os.environ.get('MEDPLUM_CLIENT_ID')}"
-    f"&client_secret={os.environ.get('MEDPLUM_CLIENT_SECRET')}"
-    f"&token_url=https://api.medplum.com/oauth2/token"
-    f"&scope=openid"
-)
+# Load configuration from environment variables
+config = FHIRAuthConfig.from_env("MEDPLUM")
+BILLING_URL = config.to_connection_string()
 
 # Initialize FHIR gateway and register external systems
 fhir_gateway = FHIRGateway()
