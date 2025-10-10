@@ -32,27 +32,48 @@ class FHIRClientError(Exception):
 class FHIRAuthConfig(BaseModel):
     """Configuration for FHIR server authentication."""
 
-    # OAuth2 settings
-    client_id: str
-    client_secret: Optional[str] = None  # Client secret string for standard flow
-    client_secret_path: Optional[str] = (
-        None  # Path to private key file for JWT assertion
-    )
-    token_url: str
-    scope: Optional[str] = "system/*.read system/*.write"
-    audience: Optional[str] = None
-    use_jwt_assertion: bool = False  # Use JWT client assertion (Epic/SMART style)
-
     # Connection settings
     base_url: str
     timeout: int = 30
     verify_ssl: bool = True
 
+    # OAuth2 settings (optional - for authenticated endpoints)
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None  # Client secret string for standard flow
+    client_secret_path: Optional[str] = (
+        None  # Path to private key file for JWT assertion
+    )
+    token_url: Optional[str] = None
+    scope: Optional[str] = "system/*.read system/*.write"
+    audience: Optional[str] = None
+    use_jwt_assertion: bool = False  # Use JWT client assertion (Epic/SMART style)
+
+    @property
+    def requires_auth(self) -> bool:
+        """
+        Auto-detect if authentication is needed based on parameters.
+
+        Returns:
+            True if any auth parameters are present, False for public endpoints
+        """
+        return bool(self.client_id or self.token_url)
+
     def model_post_init(self, __context) -> None:
-        """Validate that exactly one of client_secret or client_secret_path is provided."""
+        """Validate auth configuration if auth parameters are present."""
+        # If no auth params, this is a public endpoint - skip validation
+        if not self.requires_auth:
+            return
+
+        # If auth is required, validate configuration
+        if not self.client_id:
+            raise ValueError("client_id is required when using authentication")
+
+        if not self.token_url:
+            raise ValueError("token_url is required when using authentication")
+
         if not self.client_secret and not self.client_secret_path:
             raise ValueError(
-                "Either client_secret or client_secret_path must be provided"
+                "Either client_secret or client_secret_path must be provided for authentication"
             )
 
         if self.client_secret and self.client_secret_path:
@@ -328,17 +349,29 @@ def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
     """
     Parse a FHIR connection string into authentication configuration.
 
-    Format: fhir://hostname:port/path?client_id=xxx&client_secret=xxx&token_url=xxx&scope=xxx
-    Or for JWT: fhir://hostname:port/path?client_id=xxx&client_secret_path=xxx&token_url=xxx&use_jwt_assertion=true
+    Supports both authenticated and unauthenticated (public) endpoints:
+    - Authenticated: fhir://hostname/path?client_id=xxx&client_secret=xxx&token_url=xxx
+    - Public: fhir://hostname/path (no auth parameters)
 
     Args:
-        connection_string: FHIR connection string with OAuth2 credentials
+        connection_string: FHIR connection string with optional OAuth2 credentials
 
     Returns:
         FHIRAuthConfig with parsed settings
 
     Raises:
-        ValueError: If connection string is invalid or missing required parameters
+        ValueError: If connection string is invalid
+
+    Examples:
+        # Authenticated endpoint
+        config = parse_fhir_auth_connection_string(
+            "fhir://epic.com/api/FHIR/R4?client_id=app&client_secret=secret&token_url=https://epic.com/token"
+        )
+
+        # Public endpoint (no auth)
+        config = parse_fhir_auth_connection_string(
+            "fhir://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
+        )
     """
     import urllib.parse
 
@@ -348,35 +381,30 @@ def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
     parsed = urllib.parse.urlparse(connection_string)
     params = dict(urllib.parse.parse_qsl(parsed.query))
 
-    # Validate required parameters
-    required_params = ["client_id", "token_url"]
-    missing_params = [param for param in required_params if param not in params]
-
-    if missing_params:
-        raise ValueError(f"Missing required parameters: {missing_params}")
-
-    # Check that exactly one of client_secret or client_secret_path is provided
-    has_secret = "client_secret" in params
-    has_secret_path = "client_secret_path" in params
-
-    if not has_secret and not has_secret_path:
-        raise ValueError(
-            "Either 'client_secret' or 'client_secret_path' parameter must be provided"
-        )
-
-    if has_secret and has_secret_path:
-        raise ValueError(
-            "Cannot provide both 'client_secret' and 'client_secret_path' parameters"
-        )
-
     # Build base URL
     base_url = f"https://{parsed.netloc}{parsed.path}"
 
+    # Auto-detect if auth is needed based on parameter presence
+    has_client_id = "client_id" in params
+    has_token_url = "token_url" in params
+    has_secret = "client_secret" in params
+    has_secret_path = "client_secret_path" in params
+
+    # If no auth params at all, this is a public endpoint
+    if not any([has_client_id, has_token_url, has_secret, has_secret_path]):
+        return FHIRAuthConfig(
+            base_url=base_url,
+            timeout=int(params.get("timeout", 30)),
+            verify_ssl=params.get("verify_ssl", "true").lower() == "true",
+        )
+
+    # If any auth param is present, validate complete auth config
+    # FHIRAuthConfig.model_post_init will handle validation
     return FHIRAuthConfig(
-        client_id=params["client_id"],
+        client_id=params.get("client_id"),
         client_secret=params.get("client_secret"),
         client_secret_path=params.get("client_secret_path"),
-        token_url=params["token_url"],
+        token_url=params.get("token_url"),
         scope=params.get("scope", "system/*.read system/*.write"),
         audience=params.get("audience"),
         base_url=base_url,

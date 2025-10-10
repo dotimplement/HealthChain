@@ -41,12 +41,20 @@ The FHIR component serves as a comprehensive manager for FHIR resources, providi
    - Automatic `Bundle` creation and management
    - Resource type validation
    - Convenient access to common clinical data lists
+   - Automatic extraction of `OperationOutcome` and `Provenance` resources into `doc.fhir.operation_outcomes` and `doc.fhir.provenances` (removed from bundle)
 
 **Clinical Data Lists:**
 
    - `problem_list`: List of `Condition` resources (diagnoses, problems)
    - `medication_list`: List of `MedicationStatement` resources
    - `allergy_list`: List of `AllergyIntolerance` resources
+
+**Convenience Accessors:**
+
+- `patient`: First Patient resource in the bundle, or `None`
+- `patients`: List of Patient resources (patients remain in the bundle)
+- `operation_outcomes`: List of OperationOutcome resources (extracted)
+- `provenances`: List of Provenance resources (extracted)
 
 **Document Reference Management:**
 
@@ -109,6 +117,12 @@ prefetch = {
 }
 doc.fhir.prefetch_resources = prefetch
 conditions = doc.fhir.get_prefetch_resources("Condition")
+
+# Access extracted and convenience data
+doc.fhir.operation_outcomes  # extracted
+doc.fhir.provenances         # extracted
+doc.fhir.patient             # convenience accessor, remains in bundle
+doc.fhir.patients            # convenience accessor, remains in bundle
 
 ```
 

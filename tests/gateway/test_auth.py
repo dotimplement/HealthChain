@@ -15,6 +15,11 @@ from healthchain.gateway.clients.auth import (
     TokenInfo,
     OAuth2TokenManager,
 )
+from healthchain.gateway.clients.fhir.base import (
+    FHIRAuthConfig,
+    parse_fhir_auth_connection_string,
+)
+from healthchain.gateway.clients.fhir.sync.client import FHIRClient
 
 
 @pytest.fixture
@@ -231,7 +236,6 @@ def test_oauth2_token_manager_thread_safety():
 
     # Mock the token refresh to track calls
     refresh_calls = []
-    token_manager._refresh_token
 
     def tracked_refresh():
         refresh_calls.append(time.time())
@@ -347,3 +351,105 @@ def test_sync_vs_async_token_manager_distinction():
     # Method signatures should be different
     assert not inspect.iscoroutinefunction(sync_manager.get_access_token)
     assert inspect.iscoroutinefunction(async_manager.get_access_token)
+
+
+def test_public_endpoint_mode_behaviors():
+    """Public endpoint: parse config, no auth required, no token, no Authorization header."""
+    connection_string = (
+        "fhir://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
+    )
+
+    config = parse_fhir_auth_connection_string(connection_string)
+
+    assert (
+        config.base_url
+        == "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
+    )
+    assert config.requires_auth is False
+
+    client = FHIRClient(auth_config=config)
+    assert client.token_manager is None
+
+    headers = client._get_headers()
+    assert "Authorization" not in headers
+    assert headers["Accept"] == "application/fhir+json"
+    assert headers["Content-Type"] == "application/fhir+json"
+
+
+def test_parse_connection_string_with_auth():
+    """Connection string with auth params creates authenticated config."""
+    connection_string = (
+        "fhir://epic.com/api/FHIR/R4"
+        "?client_id=test_app"
+        "&client_secret=test_secret"
+        "&token_url=https://epic.com/oauth2/token"
+    )
+
+    config = parse_fhir_auth_connection_string(connection_string)
+
+    assert config.base_url == "https://epic.com/api/FHIR/R4"
+    assert config.requires_auth is True
+    assert config.client_id == "test_app"
+    assert config.client_secret == "test_secret"
+    assert config.token_url == "https://epic.com/oauth2/token"
+
+
+@pytest.mark.parametrize(
+    "config_kwargs,error",
+    [
+        (
+            {"base_url": "https://epic.com/api/FHIR/R4", "client_id": "test_app"},
+            "token_url is required",
+        ),
+        (
+            {
+                "base_url": "https://epic.com/api/FHIR/R4",
+                "client_id": "test_app",
+                "token_url": "https://epic.com/token",
+            },
+            "Either client_secret or client_secret_path",
+        ),
+        (
+            {
+                "base_url": "https://epic.com/api/FHIR/R4",
+                "client_id": "test_app",
+                "client_secret": "secret",
+                "token_url": "https://epic.com/token",
+                "use_jwt_assertion": True,
+            },
+            "requires client_secret_path",
+        ),
+    ],
+)
+def test_fhir_auth_config_validation_rules(config_kwargs, error):
+    """FHIRAuthConfig enforces validation rules for authenticated configs."""
+    with pytest.raises(ValueError, match=error):
+        FHIRAuthConfig(**config_kwargs)
+
+
+def test_to_connection_string_roundtrip():
+    """FHIRAuthConfig serializes to and parses from connection string consistently."""
+    cfg = FHIRAuthConfig(
+        base_url="https://epic.com/api/FHIR/R4",
+        client_id="app",
+        client_secret="secret",
+        token_url="https://epic.com/token",
+        scope="system/*.read",
+        timeout=45,
+        verify_ssl=False,
+    )
+    conn = cfg.to_connection_string()
+    parsed = parse_fhir_auth_connection_string(conn)
+    assert parsed.base_url == cfg.base_url
+    assert parsed.client_id == cfg.client_id
+    assert parsed.token_url == cfg.token_url
+    assert parsed.timeout == 45
+    assert parsed.verify_ssl is False
+
+
+def test_from_env_missing_vars_raises(monkeypatch):
+    """from_env raises when required env vars are missing."""
+    for key in ["EPIC_CLIENT_ID", "EPIC_TOKEN_URL", "EPIC_BASE_URL"]:
+        monkeypatch.delenv(key, raising=False)
+    with pytest.raises(ValueError, match="Missing required environment variables"):
+        FHIRAuthConfig.from_env("EPIC")

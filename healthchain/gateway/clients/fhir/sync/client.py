@@ -30,15 +30,24 @@ class FHIRClient(FHIRServerInterface):
         **kwargs,
     ):
         """
-        Initialize the FHIR client with OAuth2.0 authentication.
+        Initialize the FHIR client with optional OAuth2.0 authentication.
+
+        Supports both authenticated and public FHIR endpoints.
+        Authentication is auto-detected based on auth_config.requires_auth.
 
         Args:
-            auth_config: OAuth2.0 authentication configuration
+            auth_config: Authentication configuration (auth optional for public endpoints)
             limits: httpx connection limits for pooling
             **kwargs: Additional parameters passed to httpx.Client
         """
         super().__init__(auth_config)
-        self.token_manager = OAuth2TokenManager(auth_config.to_oauth2_config())
+
+        # Only create token manager if authentication is required
+        self.token_manager = (
+            OAuth2TokenManager(auth_config.to_oauth2_config())
+            if auth_config.requires_auth
+            else None
+        )
 
         # Create httpx client with connection pooling and additional kwargs
         client_kwargs = {"timeout": self.timeout, "verify": self.verify_ssl}
@@ -63,10 +72,19 @@ class FHIRClient(FHIRServerInterface):
         self.client.close()
 
     def _get_headers(self) -> Dict[str, str]:
-        """Get headers with fresh OAuth2.0 token."""
+        """
+        Get headers with optional OAuth2.0 token.
+
+        For authenticated endpoints, includes Authorization header.
+        For public endpoints, returns base headers only.
+        """
         headers = self.base_headers.copy()
-        token = self.token_manager.get_access_token()
-        headers["Authorization"] = f"Bearer {token}"
+
+        # Only add authorization header if authentication is required
+        if self.token_manager is not None:
+            token = self.token_manager.get_access_token()
+            headers["Authorization"] = f"Bearer {token}"
+
         return headers
 
     def capabilities(self) -> CapabilityStatement:

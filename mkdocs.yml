@@ -16,6 +16,7 @@ nav:
       - cookbook/index.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
       - Clinical Coding: cookbook/clinical_coding.md
+      - Multi-Source Data Integration: data_aggregation.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:

@@ -13,7 +13,9 @@ from healthchain.fhir.bundle_helpers import (
     get_resources,
     set_resources,
     get_resource_type,
+    extract_resources,
 )
+from healthchain.fhir import merge_bundles, create_condition
 
 
 def test_create_bundle():
@@ -120,3 +122,96 @@ def test_set_resources_type_validation(empty_bundle, test_condition):
         ValueError, match="Resource must be of type MedicationStatement"
     ):
         set_resources(empty_bundle, [test_condition], "MedicationStatement")
+
+
+def test_merge_bundles_basic_and_type():
+    """Merging combines entries and sets bundle type to collection by default."""
+    b1 = create_bundle("searchset")
+    add_resource(b1, create_condition(subject="Patient/123", code="E11.9"))
+    add_resource(b1, create_condition(subject="Patient/123", code="I10"))
+
+    b2 = create_bundle("searchset")
+    add_resource(b2, create_condition(subject="Patient/123", code="J44.9"))
+
+    merged = merge_bundles([b1, b2])
+    assert merged.entry is not None and len(merged.entry) == 3
+    assert merged.type == "collection"
+
+
+def test_merge_bundles_deduplication_toggle():
+    """Deduplication removes dups when True, keeps when False."""
+    c1 = create_condition(subject="Patient/123", code="E11.9")
+    c1.id = "cond-1"
+    c1_dup = create_condition(subject="Patient/123", code="E11.9")
+    c1_dup.id = "cond-1"
+
+    b1 = create_bundle("searchset")
+    add_resource(b1, c1)
+    b2 = create_bundle("searchset")
+    add_resource(b2, c1_dup)
+
+    merged_dedupe = merge_bundles([b1, b2], deduplicate=True)
+    assert merged_dedupe.entry is not None and len(merged_dedupe.entry) == 1
+
+    merged_all = merge_bundles([b1, b2], deduplicate=False)
+    assert merged_all.entry is not None and len(merged_all.entry) == 2
+
+
+def test_merge_bundles_preserves_full_url_and_handles_empty_none():
+    """Preserves fullUrl and handles empty/None bundles."""
+    b1 = create_bundle("searchset")
+    cond = create_condition(subject="Patient/123", code="E11.9")
+    add_resource(b1, cond, full_url="http://example.com/Condition/123")
+
+    b2 = create_bundle("searchset")  # empty
+
+    merged = merge_bundles([b1, b2, None])
+    assert merged.entry is not None and len(merged.entry) == 1
+    assert merged.entry[0].fullUrl == "http://example.com/Condition/123"
+
+
+def test_merge_bundles_customizations():
+    """Supports custom bundle_type and custom dedupe_key semantics."""
+    # custom bundle_type
+    b = create_bundle("searchset")
+    add_resource(b, create_condition(subject="Patient/123", code="E11.9"))
+    merged_txn = merge_bundles([b], bundle_type="transaction")
+    assert merged_txn.type == "transaction"
+
+    # custom dedupe_key (keep both because ids differ)
+    c1 = create_condition(subject="Patient/123", code="E11.9")
+    c1.id = "id-1"
+    c2 = create_condition(subject="Patient/123", code="E11.9")
+    c2.id = "id-2"
+    b1 = create_bundle("searchset")
+    add_resource(b1, c1)
+    b2 = create_bundle("searchset")
+    add_resource(b2, c2)
+    merged_custom_key = merge_bundles([b1, b2], deduplicate=True, dedupe_key="id")
+    assert merged_custom_key.entry is not None and len(merged_custom_key.entry) == 2
+
+
+def test_extract_resources_removes_and_returns():
+    """extract_resources removes resources of a type and returns them."""
+    b = create_bundle()
+    c1 = create_condition(subject="Patient/1", code="E11.9")
+    c2 = create_condition(subject="Patient/1", code="I10")
+    add_resource(b, c1)
+    add_resource(b, c2)
+    extracted = extract_resources(b, "Condition")
+    assert len(extracted) == 2
+    assert b.entry == []
+
+
+def test_merge_bundles_dedupe_missing_key_keeps_all():
+    """Resources missing dedupe_key should not be collapsed when deduplicate=True."""
+    b1 = create_bundle("searchset")
+    b2 = create_bundle("searchset")
+    c1 = create_condition(subject="Patient/1", code="E11.9")
+    c1.id = None
+    c2 = create_condition(subject="Patient/1", code="E11.9")
+    c2.id = None
+    add_resource(b1, c1)
+    add_resource(b2, c2)
+    merged = merge_bundles([b1, b2], deduplicate=True, dedupe_key="id")
+    assert merged.entry is not None and len(merged.entry) == 2

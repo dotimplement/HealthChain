@@ -223,23 +223,23 @@ def test_fhir_auth_config_to_oauth2_config_conversion():
         # Missing required params
         (
             "fhir://example.com/fhir/R4?client_id=test_client",
-            "Missing required parameters",
+            "token_url is required",
         ),
         # Missing secrets
         (
             "fhir://example.com/fhir/R4?client_id=test&token_url=https://example.com/token",
-            "Either 'client_secret' or 'client_secret_path' parameter must be provided",
+            "Either client_secret or client_secret_path must be provided",
         ),
         # Both secrets
         (
             "fhir://example.com/fhir/R4?client_id=test&client_secret=secret&client_secret_path=/path&token_url=https://example.com/token",
-            "Cannot provide both 'client_secret' and 'client_secret_path' parameters",
+            "Cannot provide both client_secret and client_secret_path",
         ),
     ],
 )
 def test_connection_string_parsing_validation(connection_string, expected_error):
     """Connection string parsing enforces validation rules."""
-    with pytest.raises(ValueError, match=expected_error):
+    with pytest.raises(Exception, match=expected_error):
         parse_fhir_auth_connection_string(connection_string)
 
 

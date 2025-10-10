@@ -451,14 +451,14 @@ class BaseFHIRGateway(BaseGateway):
 
     def aggregate(self, resource_type: Type[Resource]):
         """
-        Decorator for custom aggregation functions.
+        Decorator for custom aggregation functions. Can return the same resource type or a bundle of resources.
 
         Args:
             resource_type: The FHIR resource type class that this handler aggregates
 
         Example:
             @fhir_gateway.aggregate(Patient)
-            def aggregate_patients(id: str = None, sources: List[str] = None) -> List[Patient]:
+            def aggregate_patients(id: str = None, sources: List[str] = None) -> Patient | Bundle:
                 # Handler implementation
                 pass
         """
@@ -471,7 +471,7 @@ class BaseFHIRGateway(BaseGateway):
 
     def transform(self, resource_type: Type[Resource]):
         """
-        Decorator for custom transformation functions.
+        Decorator for custom transformation functions. Must return the same resource type.
 
         Args:
             resource_type: The FHIR resource type class that this handler transforms
