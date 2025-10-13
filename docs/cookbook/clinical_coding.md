@@ -13,7 +13,7 @@ pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 ```
 
-To test the FHIR integration with Medplum, you'll need to set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Setup Guide](./setup_fhir_sandboxes.md#medplum-sandbox) for detailed instructions.
+To test the FHIR integration with Medplum, you'll need to set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Setup Guide](./setup_fhir_sandboxes.md#medplum) for detailed instructions.
 
 Once you have your Medplum credentials, configure them in a `.env` file:
 
@@ -268,4 +268,4 @@ A clinical coding service that bridges legacy CDA systems with modern FHIR infra
     - **Enhance entity linking**: Replace the dictionary lookup with terminology servers or entity linking models for comprehensive medical terminology coverage.
     - **Add validation**: Implement FHIR resource validation before sending to external servers.
     - **Expand to other workflows**: Adapt the pattern for lab results, medications, or radiology reports.
-    - **Build on it**: Use the extracted conditions in the [Data Aggregation tutorial](./data_aggregation.md) to combine with other FHIR sources.
+    - **Build on it**: Use the extracted conditions in the [Data Aggregation example](./multi_ehr_aggregation.md) to combine with other FHIR sources.

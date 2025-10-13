@@ -13,7 +13,7 @@ Dive into real-world, production-ready examples to learn how to build interopera
 
 ## 📚 How-To Guides
 
-- 🚦 **[Multi-Source Patient Data Aggregation](./data_aggregation.md)**
+- 🚦 **[Multi-Source Patient Data Aggregation](./multi_ehr_aggregation.md)**
   *Merge patient data from multiple FHIR sources (Epic, Cerner, etc.), deduplicate conditions, prove provenance, and robustly handle cross-vendor errors. Foundation for retrieval-augmented generation (RAG) and analytics workflows.*
 
 - 🧾 **[Automate Clinical Coding & FHIR Integration](./clinical_coding.md)**

@@ -4,6 +4,8 @@ This tutorial shows you how to build a CDS service that integrates with EHR syst
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
 
+![](../assets/images/hc-use-cases-clinical-integration.png) *Illustrative Architecture - actual implementation may vary.*
+
 ## Setup
 
 ```bash
