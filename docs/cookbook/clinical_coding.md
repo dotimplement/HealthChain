@@ -13,7 +13,6 @@ pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 ```
 
-<<<<<<< HEAD
 To test the FHIR integration with Medplum, you'll need to set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Setup Guide](./setup_fhir_sandboxes.md#medplum-sandbox) for detailed instructions.
 
 Once you have your Medplum credentials, configure them in a `.env` file:
@@ -25,16 +24,6 @@ MEDPLUM_CLIENT_ID=your_client_id
 MEDPLUM_CLIENT_SECRET=your_client_secret
 MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
 MEDPLUM_SCOPE=openid
-=======
-If you'd like to test the FHIR integration with Medplum, make sure you have the following environment variables set. To setup Medplum, register an account on [Medplum](https://www.medplum.com/docs/tutorials/register) and obtain your [Client Credentials](https://www.medplum.com/docs/auth/methods/client-credentials).
-
-![Medplum Client Application](../assets/images/medplum_client.png)
-
-```bash
-# .env file
-MEDPLUM_CLIENT_ID=your_client_id
-MEDPLUM_CLIENT_SECRET=your_client_secret
->>>>>>> 2f114b2ed4e5f052098bc8deb7514ea2fea34a84
 ```
 
 ## Initialize the pipeline
