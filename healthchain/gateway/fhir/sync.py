@@ -283,9 +283,8 @@ class FHIRGateway(BaseFHIRGateway):
                     )
 
         type_name = resource_type.__resource_type__
-        result_count = len(bundle.entry) if bundle.entry else 0
         logger.info(
-            f"FHIR operation: search on {type_name} with params {params}, found {result_count} results"
+            f"FHIR operation: search on {type_name}, found {len(bundle.entry) if bundle.entry else 0} results"
         )
 
         return bundle

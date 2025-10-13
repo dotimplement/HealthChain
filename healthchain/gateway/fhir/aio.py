@@ -226,12 +226,12 @@ class AsyncFHIRGateway(BaseFHIRGateway):
         # Emit search event with result count
         type_name = resource_type.__resource_type__
         event_data = {
-            "params": params,
             "result_count": len(bundle.entry) if bundle.entry else 0,
         }
+        # Do not include full params.
         self._emit_fhir_event("search", type_name, None, event_data)
-        logger.debug(
-            f"Searched {type_name} with params {params}, found {len(bundle.entry) if bundle.entry else 0} results"
+        logger.info(
+            f"FHIR operation: search on {type_name}, found {event_data['result_count']} results"
         )
 
         return bundle
