@@ -66,7 +66,6 @@ def empty_bundle():
     return create_bundle()
 
 
-
 @pytest.fixture
 def test_condition():
     """Provides a minimal, generic FHIR Condition resource.
@@ -261,9 +260,12 @@ def doc_ref_without_content():
         fhir.resources.documentreference.DocumentReference: An incomplete DocumentReference resource.
     """
     from fhir.resources.attachment import Attachment
+
     return DocumentReference(
         status="current",
-        content=[DocumentReferenceContent(attachment=Attachment(contentType="text/plain"))],  # Missing required data or url
+        content=[
+            DocumentReferenceContent(attachment=Attachment(contentType="text/plain"))
+        ],  # Missing required data or url
     )
 
 
