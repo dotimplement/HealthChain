@@ -789,7 +789,7 @@ class Document(BaseDocument):
                     display=ent.text,
                     system=coding_system,
                 )
-                set_condition_category(condition)
+                set_condition_category(condition, "problem-list-item")
                 logger.debug(
                     f"Adding condition from spaCy: {condition.model_dump(exclude_none=True)}"
                 )
