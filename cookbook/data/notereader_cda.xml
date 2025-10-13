@@ -1,0 +1,2151 @@
+<ClinicalDocument xmlns="urn:hl7-org:v3">
+    <realmCode code="GB" />
+    <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+    <templateId root="1.2.840.114350.1.72.1.51693" />
+    <templateId root="2.16.840.1.113883.10" extension="IMPL_CDAR2_LEVEL1" />
+    <templateId root="2.16.840.1.113883.10.20.3" />
+    <templateId root="2.16.840.1.113883.10.20.1" />
+    <templateId root="2.16.840.1.113883.3.88.11.32.1" />
+    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.5" />
+    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.2" />
+    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.1.1" />
+    <id assigningAuthorityName="EPC" extension="3664b4fe-6fcb-11ed-8917-000c29cbaf7b" root="1.2.840.114350.1.13.525.3.7.1.1" />
+    <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Summarization of Episode Note" />
+    <title>CDA for NoteReader (NLP integration)</title>
+    <effectiveTime value="20221129095009+0000" />
+    <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="Normal" />
+    <languageCode code="en-GB" />
+    <recordTarget>
+        <patientRole>
+            <id assigningAuthorityName="EPIC" extension="E8148" root="1.2.840.114350.1.13.525.3.7.5.737384.0" />
+            <addr use="HP">
+                <streetAddressLine>250 Euston Road</streetAddressLine>
+                <city>London</city>
+                <postalCode>NW1 2BG</postalCode>
+                <country>England</country>
+                <useablePeriod xsi:type="IVL_TS"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <low value="20200925" />
+                    <high nullFlavor="NA" />
+                </useablePeriod>
+            </addr>
+            <telecom use="HP" value="tel:+44-20-3456-7898" />
+            <patient>
+                <name use="L">
+                    <given>Edwin</given>
+                    <family>Mars</family>
+                    <validTime>
+                        <low nullFlavor="NA" />
+                        <high nullFlavor="NA" />
+                    </validTime>
+                </name>
+                <name use="P">
+                    <given>Edwin</given>
+                    <family>Mars</family>
+                    <validTime>
+                        <low value="20221024160114" />
+                        <high nullFlavor="UNK" />
+                    </validTime>
+                </name>
+                <name use="P">
+                    <given>Adam</given>
+                    <given>Horatio</given>
+                    <family>Mars</family>
+                    <validTime>
+                        <low value="20220729112146" />
+                        <high value="20221024160114" />
+                    </validTime>
+                </name>
+                <name use="P">
+                    <given>Edwin</given>
+                    <given>Horatio</given>
+                    <family>Mars</family>
+                    <validTime>
+                        <low value="20221024160114" />
+                        <high nullFlavor="UNK" />
+                    </validTime>
+                </name>
+                <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGenderCode" displayName="Male" />
+                <birthTime value="19850120" />
+                <maritalStatusCode nullFlavor="UNK" />
+                <raceCode nullFlavor="UNK" />
+                <ethnicGroupCode nullFlavor="UNK" />
+                <languageCommunication>
+                    <languageCode code="en" />
+                    <modeCode code="RWR" codeSystem="2.16.840.1.113883.5.60" displayName="Received Written" />
+                    <preferenceInd value="true" />
+                </languageCommunication>
+            </patient>
+            <providerOrganization>
+                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                <name>UCLH - University College London Hospitals - OLDTST</name>
+                <telecom nullFlavor="NI" />
+                <addr use="WP">
+                    <postalCode>NW1 2BU</postalCode>
+                    <country>England</country>
+                </addr>
+            </providerOrganization>
+        </patientRole>
+    </recordTarget>
+    <author>
+        <time value="20221129095010+0000" />
+        <assignedAuthor>
+            <id extension="10.2" root="1.2.840.114350.1.1" />
+            <addr nullFlavor="NA" />
+            <telecom nullFlavor="NA" />
+            <assignedAuthoringDevice>
+                <manufacturerModelName>Epic - Version 10.2</manufacturerModelName>
+                <softwareName>Epic - Version 10.2</softwareName>
+            </assignedAuthoringDevice>
+            <representedOrganization>
+                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                <name>UCLH - University College London Hospitals - OLDTST</name>
+                <telecom nullFlavor="NI" />
+                <addr use="WP">
+                    <postalCode>NW1 2BU</postalCode>
+                    <country>England</country>
+                </addr>
+            </representedOrganization>
+        </assignedAuthor>
+    </author>
+    <custodian>
+        <assignedCustodian>
+            <representedCustodianOrganization>
+                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                <name>UCLH - University College London Hospitals - OLDTST</name>
+                <telecom nullFlavor="NI" />
+                <addr use="WP">
+                    <postalCode>NW1 2BU</postalCode>
+                    <country>England</country>
+                </addr>
+            </representedCustodianOrganization>
+        </assignedCustodian>
+    </custodian>
+    <legalAuthenticator>
+        <time value="20221129095010+0000" />
+        <signatureCode code="S" />
+        <assignedEntity>
+            <id nullFlavor="UNK" />
+            <code nullFlavor="UNK" />
+            <addr nullFlavor="UNK" />
+            <telecom nullFlavor="UNK" />
+            <assignedPerson>
+                <name nullFlavor="UNK" />
+            </assignedPerson>
+        </assignedEntity>
+    </legalAuthenticator>
+    <participant typeCode="IND">
+        <templateId root="2.16.840.1.113883.3.88.11.32.3" />
+        <templateId root="2.16.840.1.113883.3.88.11.83.3" />
+        <templateId root="1.3.6.1.4.1.19376.1.5.3.1.2.4" />
+        <time value="20190212" />
+        <associatedEntity classCode="AGNT">
+            <id extension="19120" root="1.2.840.114350.1.13.525.3.7.2.827665" />
+            <code nullFlavor="OTH">
+                <originalText>Spouse / Civil Partner </originalText>
+            </code>
+            <addr use="HP">
+                <streetAddressLine>250 Euston Road</streetAddressLine>
+                <city>London</city>
+                <postalCode>NW1 2BG</postalCode>
+                <country>England</country>
+            </addr>
+            <telecom use="HP" value="tel:+44-20-3456-7898" />
+            <associatedPerson>
+                <name>Amy MARS</name>
+            </associatedPerson>
+        </associatedEntity>
+    </participant>
+    <documentationOf typeCode="DOC">
+        <serviceEvent classCode="PCPR">
+            <effectiveTime>
+                <low value="20190212144008+0000" />
+                <high value="20221129" />
+            </effectiveTime>
+            <performer typeCode="PRF">
+                <templateId root="2.16.840.1.113883.3.88.11.32.4" />
+                <templateId root="2.16.840.1.113883.3.88.11.83.4" />
+                <templateId root="1.3.6.1.4.1.19376.1.5.3.1.2.3" />
+                <functionCode code="PP" codeSystem="2.16.840.1.113883.12.443" codeSystemName="Provider Role" displayName="Primary Care Provider">
+                    <originalText>Primary Care Provider</originalText>
+                </functionCode>
+                <time>
+                    <low nullFlavor="NI" />
+                    <high nullFlavor="PINF" />
+                </time>
+                <assignedEntity nullFlavor="NI">
+                    <id nullFlavor="UNK" />
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="NA" />
+                    <assignedPerson nullFlavor="NA">
+                        <name nullFlavor="UNK" />
+                    </assignedPerson>
+                    <representedOrganization classCode="ORG">
+                        <name>UCLH - University College London Hospitals - OLDTST</name>
+                        <telecom nullFlavor="UNK" />
+                        <addr use="WP">
+                            <postalCode>NW1 2BU</postalCode>
+                            <country>England</country>
+                        </addr>
+                    </representedOrganization>
+                </assignedEntity>
+            </performer>
+        </serviceEvent>
+    </documentationOf>
+    <componentOf>
+        <encompassingEncounter>
+            <id extension="1002020752" root="1.2.840.114350.1.13.525.3.7.3.698084.8" />
+            <code code="IMP" codeSystem="2.16.840.1.113883.5.4" displayName="Inpatient Encounter">
+                <originalText>Hospital Encounter</originalText>
+                <translation code="1" codeSystem="1.2.840.114350.1.72.1.30.1" />
+            </code>
+            <effectiveTime>
+                <low value="20190212144008+0000" />
+            </effectiveTime>
+            <responsibleParty>
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <addr use="WP" />
+                    <telecom nullFlavor="NA" />
+                    <assignedPerson>
+                        <name>
+                            <given>Sarah</given>
+                            <family>LOGAN</family>
+                        </name>
+                    </assignedPerson>
+                    <representedOrganization>
+                        <name>UCLH - University College London Hospitals - OLDTST</name>
+                    </representedOrganization>
+                </assignedEntity>
+            </responsibleParty>
+            <encounterParticipant typeCode="ATND">
+                <time value="20190212144008+0000" />
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <code nullFlavor="OTH">
+                        <originalText>Infectious Diseases</originalText>
+                        <translation code="30" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Infectious Diseases" />
+                        <translation code="16" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Infectious Diseases" />
+                    </code>
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="UNK" />
+                    <assignedPerson>
+                        <name use="L">
+                            <given>Sarah</given>
+                            <family>Logan</family>
+                            <validTime>
+                                <low nullFlavor="UNK" />
+                                <high nullFlavor="UNK" />
+                            </validTime>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+            <encounterParticipant typeCode="ATND">
+                <time value="20190212144008+0000" />
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <code nullFlavor="OTH">
+                        <originalText>Haematology</originalText>
+                    </code>
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="UNK" />
+                    <assignedPerson>
+                        <name use="L">
+                            <given>Wai</given>
+                            <given>Keong</given>
+                            <family>Wong</family>
+                            <validTime>
+                                <low nullFlavor="UNK" />
+                                <high nullFlavor="UNK" />
+                            </validTime>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+            <encounterParticipant typeCode="ATND">
+                <time value="20190212144008+0000" />
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <code nullFlavor="OTH">
+                        <originalText>Haematology</originalText>
+                        <translation code="113" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Pharmacy" />
+                        <translation code="124" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Pharmacy" />
+                    </code>
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="UNK" />
+                    <assignedPerson>
+                        <name use="L">
+                            <given>Wai</given>
+                            <family>Wong</family>
+                            <suffix qualifier="AC"> RN</suffix>
+                            <validTime>
+                                <low nullFlavor="UNK" />
+                                <high nullFlavor="UNK" />
+                            </validTime>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+            <encounterParticipant typeCode="ATND">
+                <time value="20190212144008+0000" />
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <code nullFlavor="OTH">
+                        <originalText>General (Internal) Medicine</originalText>
+                        <translation code="99" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Dental" />
+                    </code>
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="UNK" />
+                    <assignedPerson>
+                        <name use="L">
+                            <given>Anthony</given>
+                            <family>Segal</family>
+                            <validTime>
+                                <low nullFlavor="UNK" />
+                                <high nullFlavor="UNK" />
+                            </validTime>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+            <encounterParticipant typeCode="ADM">
+                <time value="20190212144008+0000" />
+                <assignedEntity>
+                    <id nullFlavor="UNK" />
+                    <code nullFlavor="OTH">
+                        <originalText>Infectious Diseases</originalText>
+                        <translation code="30" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Infectious Diseases" />
+                        <translation code="16" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Infectious Diseases" />
+                    </code>
+                    <addr nullFlavor="UNK" />
+                    <telecom nullFlavor="UNK" />
+                    <assignedPerson>
+                        <name use="L">
+                            <given>Sarah</given>
+                            <family>Logan</family>
+                            <validTime>
+                                <low nullFlavor="UNK" />
+                                <high nullFlavor="UNK" />
+                            </validTime>
+                        </name>
+                    </assignedPerson>
+                </assignedEntity>
+            </encounterParticipant>
+            <location>
+                <healthCareFacility>
+                    <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                    <serviceProviderOrganization>
+                        <id extension="10201" root="1.2.840.114350.1.13.525.3.7.2.696570" />
+                        <name>UNIVERSITY COLLEGE HOSPITAL CAMPUS</name>
+                        <addr nullFlavor="UNK" />
+                        <asOrganizationPartOf>
+                            <wholeOrganization>
+                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                <addr nullFlavor="NA" />
+                            </wholeOrganization>
+                        </asOrganizationPartOf>
+                    </serviceProviderOrganization>
+                </healthCareFacility>
+            </location>
+        </encompassingEncounter>
+    </componentOf>
+    <component>
+        <structuredBody>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.1.2" />
+                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.13" />
+                    <templateId root="2.16.840.1.113883.3.88.11.83.102" />
+                    <id root="36820298-6FCB-11ED-8917-000C29CBAF7B" />
+                    <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies and adverse reactions Document" />
+                    <title>Allergies</title>
+                    <text>
+                        <table>
+                            <colgroup>
+                                <col span="2" width="25%" />
+                                <col width="13%" />
+                                <col width="12%" />
+                                <col width="25%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Active Allergy</th>
+                                    <th>Reactions</th>
+                                    <th>Severity</th>
+                                    <th>Noted Date</th>
+                                    <th>Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ID="allergy2">
+                                    <td ID="allergy2allergen">Eggs</td>
+                                    <td ID="allergy2reaction">
+                                        <content ID="allergy2reaction1">Swelling</content>
+                                    </td>
+                                    <td ID="allergy2severity">High</td>
+                                    <td>25/09/2020</td>
+                                    <td ID="allergy2comments">
+                                        <paragraph>Swollen toe after eating boiled egg</paragraph>
+                                    </td>
+                                </tr>
+                                <tr ID="allergy3">
+                                    <td ID="allergy3allergen">Ibuprofen</td>
+                                    <td ID="allergy3reaction">
+                                        <content ID="allergy3reaction1">Gastrointestinal bleeding</content>
+                                    </td>
+                                    <td ID="allergy3severity">Low</td>
+                                    <td>25/09/2020</td>
+                                    <td ID="allergy3comments" />
+                                </tr>
+                                <tr ID="allergy4">
+                                    <td ID="allergy4allergen">Loratadine</td>
+                                    <td ID="allergy4reaction">
+                                        <content ID="allergy4reaction1">Rash, itching or hives</content>,                                        <content ID="allergy4reaction2">Swelling</content>
+                                    </td>
+                                    <td ID="allergy4severity">High</td>
+                                    <td>09/11/2022</td>
+                                    <td ID="allergy4comments">
+                                        <paragraph>09/11/2022 Leilei: I entered this for testing purpose. </paragraph>
+                                    </td>
+                                </tr>
+                                <tr ID="allergy5">
+                                    <td ID="allergy5allergen">Methotrexate</td>
+                                    <td ID="allergy5reaction">
+                                        <content ID="allergy5reaction1">Diarrhoea</content>
+                                    </td>
+                                    <td ID="allergy5severity">Medium</td>
+                                    <td>25/09/2020</td>
+                                    <td ID="allergy5comments" />
+                                </tr>
+                                <tr ID="allergy6">
+                                    <td ID="allergy6allergen">Paracetamol</td>
+                                    <td ID="allergy6reaction">
+                                        <content ID="allergy6reaction1">Diarrhoea</content>
+                                    </td>
+                                    <td ID="allergy6severity">Low</td>
+                                    <td>25/09/2020</td>
+                                    <td ID="allergy6comments" />
+                                </tr>
+                                <tr ID="allergy7">
+                                    <td ID="allergy7allergen">Penicillins</td>
+                                    <td ID="allergy7reaction">
+                                        <content ID="allergy7reaction1">Anaphylaxis</content>
+                                    </td>
+                                    <td ID="allergy7severity">High</td>
+                                    <td>14/11/2022</td>
+                                    <td ID="allergy7comments">
+                                        <paragraph>14/11/2022: Leilei: testing purpose. </paragraph>
+                                    </td>
+                                </tr>
+                                <tr ID="allergy8">
+                                    <td ID="allergy8allergen">Shellfish</td>
+                                    <td ID="allergy8reaction">
+                                        <content ID="allergy8reaction1">Shortness of breath</content>
+                                    </td>
+                                    <td ID="allergy8severity">High</td>
+                                    <td>14/11/2022</td>
+                                    <td ID="allergy8comments" />
+                                </tr>
+                            </tbody>
+                        </table>
+                        <footnote ID="subTitle1" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 29/11/2022)</footnote>
+                    </text>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="56733-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy2" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20200925" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="56733" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="418471000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Propensity to adverse reactions to food" />
+                                    <text>
+                                        <reference value="#allergy2" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20200925" />
+                                    </effectiveTime>
+                                    <value code="102263004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221020" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <author>
+                                        <time value="20200925134049+0100" />
+                                        <assignedAuthor>
+                                            <id extension="KTRACEY" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Katherine</given>
+                                                    <family>Tracey</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code code="102263004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT">
+                                                    <originalText>
+                                                        <reference value="#allergy2allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>EGGS</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="56733.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy2reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20200925" />
+                                            </effectiveTime>
+                                            <value code="65124004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Swelling"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy2reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy2severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="High"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.40" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+                                    <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                                    <text>
+                                        <reference value="#allergy2comments" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                </act>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="56732-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy3" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20200925" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="56732" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="59037007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Drug Intolerance" />
+                                    <text>
+                                        <reference value="#allergy3" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20200925" />
+                                    </effectiveTime>
+                                    <value code="387207008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221020" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <author>
+                                        <time value="20200925134027+0100" />
+                                        <assignedAuthor>
+                                            <id extension="KTRACEY" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Katherine</given>
+                                                    <family>Tracey</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code code="387207008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT">
+                                                    <originalText>
+                                                        <reference value="#allergy3allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>IBUPROFEN</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="56732.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy3reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20200925" />
+                                            </effectiveTime>
+                                            <value code="74474003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Gastrointestinal bleeding"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy3reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy3severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="L" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="Low"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="64592-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy4" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20221109" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="64592" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="59037007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Drug Intolerance" />
+                                    <text>
+                                        <reference value="#allergy4" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20221109" />
+                                    </effectiveTime>
+                                    <value code="386884002" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221109" />
+                                        <assignedAuthor>
+                                            <id extension="337" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Leilei</given>
+                                                    <family>Zhu</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code code="386884002" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT">
+                                                    <originalText>
+                                                        <reference value="#allergy4allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>LORATADINE</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="64592.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy4reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20221109" />
+                                            </effectiveTime>
+                                            <value code="126485001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Rash, itching or hives"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy4reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy4severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="High"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="64592.2" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy4reaction2" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20221109" />
+                                            </effectiveTime>
+                                            <value code="65124004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Swelling"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy4reaction2" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy4severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="High"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.40" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+                                    <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                                    <text>
+                                        <reference value="#allergy4comments" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                </act>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="56734-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy5" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20200925" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="56734" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="416098002" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Drug Allergy" />
+                                    <text>
+                                        <reference value="#allergy5" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20200925" />
+                                    </effectiveTime>
+                                    <value code="387381009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221020" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <author>
+                                        <time value="20200925134129+0100" />
+                                        <assignedAuthor>
+                                            <id extension="KTRACEY" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Katherine</given>
+                                                    <family>Tracey</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code code="387381009" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT">
+                                                    <originalText>
+                                                        <reference value="#allergy5allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>METHOTREXATE</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="56734.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy5reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20200925" />
+                                            </effectiveTime>
+                                            <value code="62315008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Diarrhoea"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy5reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy5severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="M" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="Moderate"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="56730-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy6" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20200925" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="56730" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="419511003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Propensity to adverse reactions to drug" />
+                                    <text>
+                                        <reference value="#allergy6" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20200925" />
+                                    </effectiveTime>
+                                    <value code="387517004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221020" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <author>
+                                        <time value="20200925134002+0100" />
+                                        <assignedAuthor>
+                                            <id extension="KTRACEY" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Katherine</given>
+                                                    <family>Tracey</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code code="387517004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT">
+                                                    <originalText>
+                                                        <reference value="#allergy6allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>PARACETAMOL</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="56730.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy6reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20200925" />
+                                            </effectiveTime>
+                                            <value code="62315008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Diarrhoea"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy6reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy6severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="L" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="Low"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="64606-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy7" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20221114" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="64606" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="419199007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Allergy to substance" />
+                                    <text>
+                                        <reference value="#allergy7" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20221114" />
+                                    </effectiveTime>
+                                    <value xsi:type="CD" nullFlavor="OTH"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221114" />
+                                        <assignedAuthor>
+                                            <id extension="337" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Leilei</given>
+                                                    <family>Zhu</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code nullFlavor="OTH">
+                                                    <originalText>
+                                                        <reference value="#allergy7allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>PENICILLINS</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="64606.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy7reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20221114" />
+                                            </effectiveTime>
+                                            <value code="39579001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Anaphylaxis"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy7reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy7severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="High"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.40" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+                                    <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                                    <text>
+                                        <reference value="#allergy7comments" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                </act>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.3" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.6" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.6" />
+                            <id extension="64607-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#allergy8" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20221114" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.6" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.18" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1" extension="allergy" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="64607" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="414285001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Food Allergy" />
+                                    <text>
+                                        <reference value="#allergy8" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20221114" />
+                                    </effectiveTime>
+                                    <value xsi:type="CD" nullFlavor="UNK"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                    <author>
+                                        <time value="20221114" />
+                                        <assignedAuthor>
+                                            <id extension="337" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Leilei</given>
+                                                    <family>Zhu</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <participant typeCode="CSM">
+                                        <participantRole classCode="MANU">
+                                            <playingEntity classCode="MMAT">
+                                                <code nullFlavor="UNK">
+                                                    <originalText>
+                                                        <reference value="#allergy8allergen" />
+                                                    </originalText>
+                                                </code>
+                                                <name>SHELLFISH</name>
+                                            </playingEntity>
+                                        </participantRole>
+                                    </participant>
+                                    <entryRelationship inversionInd="true" typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.39" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                    <entryRelationship inversionInd="true" typeCode="MFST">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.54" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" extension="reaction" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                            <id extension="64607.1" root="1.2.840.114350.1.13.525.3.7.6.768076.3008" />
+                                            <code code="RXNASSESS" />
+                                            <text>
+                                                <reference value="#allergy8reaction1" />
+                                            </text>
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20221114" />
+                                            </effectiveTime>
+                                            <value code="267036007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CD" displayName="Shortness of breath"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                                <originalText>
+                                                    <reference value="#allergy8reaction1" />
+                                                </originalText>
+                                            </value>
+                                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                                <observation classCode="OBS" moodCode="EVN">
+                                                    <templateId root="2.16.840.1.113883.10.20.1.55" />
+                                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1" />
+                                                    <code code="SEV" codeSystem="2.16.840.1.113883.5.4" codeSystemName="ActCode" displayName="Severity" />
+                                                    <text>
+                                                        <reference value="#allergy8severity" />
+                                                    </text>
+                                                    <statusCode code="completed" />
+                                                    <value code="H" codeSystem="2.16.840.1.113883.5.1063" codeSystemName="SeverityObservation" xsi:type="CD" displayName="High"
+                                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                                </observation>
+                                            </entryRelationship>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.1.8" />
+                    <templateId root="2.16.840.1.113883.3.88.11.83.112" />
+                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.19" />
+                    <id root="369C0DBE-6FCB-11ED-8917-000C29CBAF7B" />
+                    <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Medication use Narrative" />
+                    <title>Medication</title>
+                    <text>
+                        <table>
+                            <colgroup>
+                                <col span="2" width="25%" />
+                                <col width="13%" />
+                                <col width="12%" />
+                                <col span="2" width="8%" />
+                                <col width="9%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Instructions</th>
+                                    <th>Dispensed</th>
+                                    <th>Refills</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ID="currx10" styleCode="xhistorical xRowNormal">
+                                    <td>
+                                        <paragraph ID="med10">LANSOPRAZOLE ORAL</paragraph>
+                                    </td>
+                                    <td ID="sig10">Take 30 mg by mouth ONCE only .</td>
+                                    <td />
+                                    <td>0</td>
+                                    <td />
+                                    <td>20/10/2022</td>
+                                    <td>Discontinued<content> (No longer prescribed / taking)</content>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <footnote ID="subTitle9" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 29/11/2022)</footnote>
+                    </text>
+                    <entry>
+                        <substanceAdministration classCode="SBADM" moodCode="INT">
+                            <templateId root="2.16.840.1.113883.10.20.1.24" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.8" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.1" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.8" />
+                            <id extension="2225761" root="1.2.840.114350.1.13.525.3.7.2.798268" />
+                            <text mediaType="text/xml">
+                                <reference value="#sig10" />
+                            </text>
+                            <statusCode code="completed" />
+                            <effectiveTime xsi:type="IVL_TS"
+                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                <low nullFlavor="UNK" />
+                                <high value="20221020" />
+                            </effectiveTime>
+                            <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="Oral">
+                                <originalText>Oral</originalText>
+                            </routeCode>
+                            <doseQuantity unit="mg" value="30" />
+                            <consumable typeCode="CSM">
+                                <manufacturedProduct classCode="MANU">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.53" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.9" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.8.2" />
+                                    <manufacturedMaterial>
+                                        <code codeSystem="2.16.840.1.113883.6.88" nullFlavor="UNK">
+                                            <originalText>
+                                                <reference value="#med10" />
+                                            </originalText>
+                                        </code>
+                                    </manufacturedMaterial>
+                                </manufacturedProduct>
+                            </consumable>
+                            <author>
+                                <time value="20221020104207+0100" />
+                                <assignedAuthor>
+                                    <id extension="2100012" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                    <code nullFlavor="OTH">
+                                        <originalText>General Practice</originalText>
+                                        <translation code="116" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="General Practice" />
+                                        <translation code="50" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="General Practice" />
+                                    </code>
+                                    <addr nullFlavor="UNK" />
+                                    <telecom nullFlavor="UNK" />
+                                    <assignedPerson>
+                                        <name use="L">
+                                            <given>Historical</given>
+                                            <family>Provider</family>
+                                            <validTime>
+                                                <low nullFlavor="UNK" />
+                                                <high nullFlavor="UNK" />
+                                            </validTime>
+                                        </name>
+                                    </assignedPerson>
+                                    <representedOrganization>
+                                        <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                        <name>UCLH - University College London Hospitals - OLDTST</name>
+                                        <addr use="WP">
+                                            <postalCode>NW1 2BU</postalCode>
+                                            <country>England</country>
+                                        </addr>
+                                    </representedOrganization>
+                                </assignedAuthor>
+                            </author>
+                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.40" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+                                    <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                                    <text>
+                                        <reference value="#sig10" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <author>
+                                        <time value="20221020104207+0100" />
+                                        <assignedAuthor>
+                                            <id extension="2100012" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>General Practice</originalText>
+                                                <translation code="116" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="General Practice" />
+                                                <translation code="50" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="General Practice" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Historical</given>
+                                                    <family>Provider</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                </act>
+                            </entryRelationship>
+                            <entryRelationship typeCode="REFR">
+                                <supply classCode="SPLY" moodCode="INT">
+                                    <templateId root="2.16.840.1.113883.3.88.1.11.32.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.34" />
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.3" />
+                                    <id extension="2225761" root="1.2.840.114350.1.13.525.3.7.2.798268" />
+                                    <statusCode code="completed" />
+                                    <repeatNumber value="1" />
+                                    <product>
+                                        <manufacturedProduct classCode="MANU">
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.7.2" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.53" />
+                                            <templateId root="2.16.840.1.113883.3.88.11.32.9" />
+                                            <templateId root="2.16.840.1.113883.3.88.11.83.8.2" />
+                                            <manufacturedMaterial>
+                                                <code codeSystem="2.16.840.1.113883.6.88" nullFlavor="UNK">
+                                                    <originalText>
+                                                        <reference value="#med10" />
+                                                    </originalText>
+                                                </code>
+                                            </manufacturedMaterial>
+                                        </manufacturedProduct>
+                                    </product>
+                                </supply>
+                            </entryRelationship>
+                            <entryRelationship typeCode="REFR">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="2.16.840.1.113883.10.20.1.47" />
+                                    <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Status" />
+                                    <statusCode code="completed" />
+                                    <value code="73425007" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" xsi:type="CE" displayName="No Longer Active"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                </observation>
+                            </entryRelationship>
+                        </substanceAdministration>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.1.11" />
+                    <id root="36A9579E-6FCB-11ED-8917-000C29CBAF7B" />
+                    <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem list - Reported" />
+                    <title>Problems</title>
+                    <text>
+                        <table>
+                            <colgroup>
+                                <col width="75%" />
+                                <col width="25%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Active Problems</th>
+                                    <th>Noted Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ID="problem15" styleCode="xRowNormal">
+                                    <td ID="problem15name">Hepatic failure</td>
+                                    <td>29/09/2022</td>
+                                </tr>
+                                <tr ID="problem14" styleCode="xRowAlt">
+                                    <td ID="problem14name">Community acquired pneumonia</td>
+                                    <td>16/02/2022</td>
+                                </tr>
+                                <tr styleCode="xRowAlt xMergeUp">
+                                    <td ID="problem14comment" colspan="2" styleCode="xallIndent">
+                                        <paragraph styleCode="xcellHeader">Overview: </paragraph>
+                                        <content>
+                                            <content styleCode="xLabel">Formatting of this note might be different from the original.</content>
+                                            <br />
+Bad Chest XR<br />
+Not responding to Antibiotics</content>
+                                        <br />
+                                    </td>
+                                </tr>
+                                <tr ID="problem12" styleCode="xRowNormal">
+                                    <td ID="problem12name">Hypertension</td>
+                                    <td>17/05/2019</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table>
+                            <colgroup>
+                                <col width="75%" />
+                                <col width="12%" />
+                                <col width="13%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Resolved Problems</th>
+                                    <th>Noted Date</th>
+                                    <th>Resolved Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ID="problem13" styleCode="xRowNormal">
+                                    <td ID="problem13name">Gallstone</td>
+                                    <td>16/02/2022</td>
+                                    <td>16/02/2022</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <footnote ID="subTitle11" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 29/11/2022)</footnote>
+                    </text>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.7" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.7" />
+                            <id extension="51854-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#problem12" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20210317" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="51854" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="64572001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" />
+                                    <text>
+                                        <reference value="#problem12name" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20190517" />
+                                    </effectiveTime>
+                                    <value code="38341003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Hypertension" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                        <originalText>
+                                            <reference value="#problem12name" />
+                                        </originalText>
+                                    </value>
+                                    <author>
+                                        <time value="20210317142056+0000" />
+                                        <assignedAuthor>
+                                            <id extension="4536" root="1.2.840.114350.1.13.525.3.7.2.697780" />
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Transition</given>
+                                                    <family>Snomed</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <entryRelationship typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.50" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.57" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1.1" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20190517" />
+                                            </effectiveTime>
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.7" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.7" />
+                            <id extension="62722-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#problem13" />
+                            </text>
+                            <statusCode code="completed" />
+                            <effectiveTime>
+                                <low value="20220216" />
+                                <high value="20220216" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="62722" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="64572001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" />
+                                    <text>
+                                        <reference value="#problem13name" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20220216" />
+                                        <high value="20220216" />
+                                    </effectiveTime>
+                                    <value code="235919008" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Gallstone" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                        <originalText>
+                                            <reference value="#problem13name" />
+                                        </originalText>
+                                    </value>
+                                    <author>
+                                        <time value="20220216130639+0000" />
+                                        <assignedAuthor>
+                                            <id extension="752" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Intensive Care Medicine</originalText>
+                                                <translation code="118" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Critical Care Medicine" />
+                                                <translation code="88" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Intensive Care Medicine" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Terry</given>
+                                                    <family>Segal</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <entryRelationship typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.50" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.57" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1.1" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20220216" />
+                                                <high value="20220216" />
+                                            </effectiveTime>
+                                            <value code="413322009" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Resolved"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.7" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.7" />
+                            <id extension="62723-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#problem14" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20220922" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="62723" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="64572001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" />
+                                    <text>
+                                        <reference value="#problem14name" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20220216" />
+                                    </effectiveTime>
+                                    <value code="385093006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Community acquired pneumonia" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                        <originalText>
+                                            <reference value="#problem14name" />
+                                        </originalText>
+                                    </value>
+                                    <author>
+                                        <time value="20220922120025+0100" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <entryRelationship typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.50" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.57" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1.1" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20220216" />
+                                            </effectiveTime>
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                            <entryRelationship inversionInd="true" typeCode="SUBJ">
+                                <act classCode="ACT" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.2" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.40" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.32.12" />
+                                    <templateId root="2.16.840.1.113883.3.88.11.83.11" />
+                                    <templateId root="2.16.840.1.113883.10.20.22.4.64" />
+                                    <code code="48767-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+                                    <text>
+                                        <reference value="#problem14comment" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                </act>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <templateId root="2.16.840.1.113883.10.20.1.27" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.1" />
+                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5.2" />
+                            <templateId root="2.16.840.1.113883.3.88.11.32.7" />
+                            <templateId root="2.16.840.1.113883.3.88.11.83.7" />
+                            <id extension="64477-concern" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                            <code nullFlavor="NA" />
+                            <text>
+                                <reference value="#problem15" />
+                            </text>
+                            <statusCode code="active" />
+                            <effectiveTime>
+                                <low value="20220929" />
+                            </effectiveTime>
+                            <entryRelationship inversionInd="false" typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.5" />
+                                    <templateId root="2.16.840.1.113883.10.20.1.28" />
+                                    <id extension="64477" root="1.2.840.114350.1.13.525.3.7.2.768076" />
+                                    <code code="64572001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" />
+                                    <text>
+                                        <reference value="#problem15name" />
+                                    </text>
+                                    <statusCode code="completed" />
+                                    <effectiveTime>
+                                        <low value="20220929" />
+                                    </effectiveTime>
+                                    <value code="59927004" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Hepatic failure" xsi:type="CD"
+                                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                        <originalText>
+                                            <reference value="#problem15name" />
+                                        </originalText>
+                                    </value>
+                                    <author>
+                                        <time value="20220929152241+0100" />
+                                        <assignedAuthor>
+                                            <id extension="3451" root="1.2.840.114350.1.13.525.3.7.2.836982" />
+                                            <code nullFlavor="OTH">
+                                                <originalText>Haematology</originalText>
+                                                <translation code="27" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Haematology" />
+                                                <translation code="14" codeSystem="1.2.840.114350.1.13.525.3.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Haematology" />
+                                            </code>
+                                            <addr nullFlavor="UNK" />
+                                            <telecom nullFlavor="UNK" />
+                                            <assignedPerson>
+                                                <name use="L">
+                                                    <given>Georgina</given>
+                                                    <family>Dean</family>
+                                                    <validTime>
+                                                        <low nullFlavor="UNK" />
+                                                        <high nullFlavor="UNK" />
+                                                    </validTime>
+                                                </name>
+                                            </assignedPerson>
+                                            <representedOrganization>
+                                                <id extension="116000" root="1.2.840.114350.1.13.525.3.7.2.688879" />
+                                                <name>UCLH - University College London Hospitals - OLDTST</name>
+                                                <addr use="WP">
+                                                    <postalCode>NW1 2BU</postalCode>
+                                                    <country>England</country>
+                                                </addr>
+                                            </representedOrganization>
+                                        </assignedAuthor>
+                                    </author>
+                                    <entryRelationship typeCode="REFR">
+                                        <observation classCode="OBS" moodCode="EVN">
+                                            <templateId root="2.16.840.1.113883.10.20.1.50" />
+                                            <templateId root="2.16.840.1.113883.10.20.1.57" />
+                                            <templateId root="1.3.6.1.4.1.19376.1.5.3.1.4.1.1" />
+                                            <code code="33999-4" codeSystem="2.16.840.1.113883.6.1" displayName="Status" />
+                                            <statusCode code="completed" />
+                                            <effectiveTime>
+                                                <low value="20220929" />
+                                            </effectiveTime>
+                                            <value code="55561003" codeSystem="2.16.840.1.113883.6.96" xsi:type="CE" displayName="Active"
+                                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            <component>
+                <section>
+                    <templateId root="1.2.840.114350.1.72.1.200001" />
+                    <code code="51847-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="ASSESSMENT AND PLAN" />
+                    <title>Progress Notes</title>
+                    <text>
+                        <content>Summary: Test note</content>
+                        <br />
+                        <br />
+                        <content>Annotation test<br />
+                        <br />
+This 37 year old gentleman presented with a fever, cough and sore throat. He was diagnosed with a community acquired pneumonia, and started on co-amoxiclav. Unfortunately he developed anaphylaxis and was treated with resuscitation fluids and adrenaline but not hydrocortisone. He had refractory anaphylaxis and so was transferred to intensive care for intubation and ventilation. He then developed a "ventilation associated pneumonia", requiring meropenem. Once treated for his CAP and VAP he was stepped down to the ward. He was treated with haloperidol for a presumed 'delirium'. He improved medically, but deteriorated in terms of his psychiatric health, with depression, anxiety and paranoid schizophrenia. He was self-medicating with his own supply of Librium.<br />
+                    <br />
+He has a past medical history of asthma and COPD but not cirrhosis. <br />
+                <br />
+He regularly takes penicillin, Ventolin and tiotropium inhalers, as well as an ACE inhibitor, beta blocker and calcium channel blocker.<br />
+            <br />
+He is allergic to all opiates, including morphine.<br />
+        <br />
+He has previously had a cholecystectomy and appendicectomy. <br />
+    <br />
+Plan:<br />
+- Discharge planning<br />
+<br />
+I reviewed the Resident's note and agree with the documented findings and plan of care.  The reason the patient is critically ill and the nature of the treatment and management provided by the teaching physician (me) to manage the critically ill patient is: as aove                                                <br />
+The patient was critically ill during the time that I saw the patient. The Critical Care Time excluding procedures was 6 minutes. </content>
+<br />
+<content styleCode="xLabel">Electronically signed by Georgina DEAN at 29/11/2022 09:50 GMT</content>
+<br />
+</text>
+</section>
+</component>
+</structuredBody>
+</component>
+</ClinicalDocument>

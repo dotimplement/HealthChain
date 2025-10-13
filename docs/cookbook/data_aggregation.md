@@ -7,7 +7,7 @@ Check out the full working example [here](https://github.com/dotimplement/Health
 ## Setup
 
 ```bash
-pip install healthchain
+pip install healthchain python-dotenv
 ```
 
 We'll use Epic's public FHIR sandbox. If you haven't set up Epic sandbox access yet, see the [FHIR Sandbox Setup Guide](./setup_fhir_sandboxes.md#epic-sandbox) for detailed instructions.
@@ -23,10 +23,10 @@ EPIC_TOKEN_URL=https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token
 EPIC_USE_JWT_ASSERTION=true
 ```
 
-Load the configuration into a connection string:
+Load your Epic credentials from the `.env` file and create a connection string compatible with the FHIR gateway:
 
 ```python
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 
 config = FHIRAuthConfig.from_env("EPIC")
 EPIC_URL = config.to_connection_string()
@@ -34,7 +34,7 @@ EPIC_URL = config.to_connection_string()
 
 ## Set Up FHIR Gateway
 
-[FHIR gateways](../reference/gateway/fhir_gateway.md) connect to external FHIR servers. Add the Epic sandbox as a source.
+[FHIR Gateways](../reference/gateway/fhir_gateway.md) connect to external FHIR servers and handles authentication, connection pooling, and token refresh automatically. Add the Epic sandbox as a source:
 
 ```python
 from healthchain.gateway import FHIRGateway
@@ -47,12 +47,15 @@ CERNER_URL = "fhir://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583
 gateway.add_source("cerner", CERNER_URL)
 
 # You can add more sources:
-# gateway.add_source("medplum", medplum_url)
+# gateway.add_source("other source", fhir://url)
 ```
 
-Handles authentication, connection pooling, and token refresh automatically.
+!!! note
 
-**Note:** Cerner's public sandbox requires no authentication but contains different test patients than Epic. This demonstrates multi-vendor aggregation and production-ready error handling when patients don't exist in all sources.
+    Cerner's public sandbox patient cohort differs from Epic's. For demo/testing with sandboxes, expect incomplete aggregation if patient cohorts don't overlap - this is normal for the public test data.
+
+    In production, you must perform your own patient identity matching (MPI/crosswalk) before aggregation.
+
 
 ## Create Aggregation Handler
 
@@ -79,51 +82,39 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
             print(f"Error from {source}: {e}")
             # Continue with partial data rather than fail completely
 
-    # Deduplicate identical conditions across sources (e.g., both Epic and Cerner report "hypertension")
+    # Combine conditions across sources
     merged_bundle = merge_bundles(bundles, deduplicate=True)
     return merged_bundle
 ```
 
-**What it does:**
+!!! info "What this handler does"
 
-- Queries each configured FHIR source for patient conditions
-- Adds `Meta` tags to track data provenance (which source each condition came from, preserves existing metadata)
-- Handles errors gracefully - partial data is better than no data
-- Deduplicates identical conditions across sources
+    - Queries each configured FHIR source for patient conditions
+    - Adds [Meta](https://hl7.org/fhir/resource.html#Meta) tags to track data provenance (which source each condition came from, preserves existing metadata)
+    - Handles errors gracefully – partial data is better than no data
+    - Deduplicates identical conditions across sources
 
-> **Expected Error Handling**
->
-> When querying a patient that doesn't exist in Cerner, you'll see:
-> ```
-> Error from cerner: [FHIR request failed: 400 - Unknown error]
-> search <class 'fhir.resources.condition.Condition'> failed:
-> Resource could not be parsed or failed basic FHIR validation rules
-> ```
-> This is **expected behavior** - the service continues with data from Epic. The try/except block catches the error, allowing partial results rather than complete failure.
 
-<details>
-<summary>Example Meta Data</summary>
+??? example "Example FHIR Metadata"
 
-```json
-{
-  "resourceType": "Condition",
-  "id": "eOAZNRZkdPPPE9DUuPBBBgA3",
-  "meta": {
-    "lastUpdated": "2025-10-10T15:23:50.167941Z",
-    "source": "urn:healthchain:source:epic",
-    "tag": [
-      {
-        "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
-        "code": "aggregated",
-        "display": "Aggregated"
+    ```json
+    {
+      "resourceType": "Condition",
+      "id": ...,
+      "meta": {
+        "lastUpdated": "2025-10-10T15:23:50.167941Z",  // Updated timestamp
+        "source": "urn:healthchain:source:epic",  // Adds source
+        "tag": [
+          {
+            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+            "code": "aggregated",
+            "display": "Aggregated"
+          }  // Appends a custom HealthChain tag
+        ]
       }
-    ]
-  }
-  ...
-}
-```
-
-</details>
+      ...
+    }
+    ```
 
 ## Build the Service
 
@@ -139,17 +130,17 @@ app.register_gateway(gateway, path="/fhir")
 uvicorn.run(app)
 ```
 
-The service automatically provides:
-- `/fhir/*` - Standard FHIR operations (read, search, create, update)
-- `/fhir/metadata` - CapabilityStatement describing supported resources and operations
-- `/fhir/status` - Operational status and metadata for gateway
-- `/docs` - OpenAPI docs page
+!!! tip "FHIR Endpoints Provided by the Service"
+
+    - `/fhir/*` - Standard FHIR operations (`read`, `search`, `create`, `update`)
+    - `/fhir/metadata` - [CapabilityStatement](https://hl7.org/fhir/capabilitystatement.html) describing supported resources and operations
+    - `/fhir/status` - Operational status and metadata for gateway
 
 ## Add Processing Pipeline (Optional)
 
-For additional processing like terminology mapping or quality checks, create a Document [pipeline](../reference/pipeline/pipeline.md).
+For additional processing like terminology mapping or quality checks, create a Document [Pipeline](../reference/pipeline/pipeline.md).
 
-Document pipelines are optimized for text and structured data processing, such as FHIR resources. When you initialize a `Document` with FHIR Bundle data, it automatically extracts and separates metadata resources from the clinical resources for easier inspection and error handling:
+Document pipelines are optimized for text and structured data processing, such as FHIR resources. When you initialize a [Document](../reference/pipeline/data_container.md) with FHIR [Bundle](https://www.hl7.org/fhir/condition.html) data, it automatically extracts and separates metadata resources from the clinical resources for easier inspection and error handling:
 
 ```python
 # Initialize Document with a Bundle
@@ -185,11 +176,48 @@ doc = Document(data=merged_bundle)
 doc = pipeline(doc)
 ```
 
-Common pipeline uses: terminology mapping (ICD-10 ↔ SNOMED CT), data enrichment (risk scores, clinical decision support), quality checks (validate completeness, flag inconsistencies), consent filtering (apply patient consent rules).
+!!! tip "Common Pipeline Uses"
 
-## What Happens When You Run This
+    - **Terminology mapping** (ICD-10 ↔ SNOMED CT)
+    - **Data enrichment** (risk scores, clinical decision support)
+    - **Quality checks** (validate completeness, flag inconsistencies)
+    - **Consent filtering** (apply patient consent rules)
 
-The service aggregates patient conditions from configured FHIR sources with automatic provenance tracking. Here's example output when querying Linda Ross (Epic patient `eIXesllypH3M9tAA5WdJftQ3`):
+
+## Test the Service
+
+To test aggregation, request `/fhir/aggregate/Condition/{patientId}` with the `sources` parameter (e.g., `epic,cerner`).
+
+Example uses Epic patient `eIXesllypH3M9tAA5WdJftQ3`; see [Epic sandbox](https://fhir.epic.com/Documentation?docId=testpatients) for more test patients.
+
+
+=== "cURL"
+    ```bash
+    curl -X 'GET' \
+      'http://127.0.0.1:8888/fhir/aggregate/Condition?id=eIXesllypH3M9tAA5WdJftQ3&sources=epic&sources=cerner' \
+      -H 'accept: application/fhir+json'
+    ```
+
+=== "Python"
+    ```python
+      import requests
+
+      url = "http://127.0.0.1:8888/fhir/aggregate/Condition"
+      params = {
+          "id": "eIXesllypH3M9tAA5WdJftQ3",
+          "sources": ["epic", "cerner"]
+      }
+      headers = {
+          "accept": "application/fhir+json"
+      }
+      response = requests.get(url, headers=headers, params=params)
+      print(response.json)
+    ```
+
+
+### Expected Outputs
+
+Example output when querying Linda Ross (Epic patient `eIXesllypH3M9tAA5WdJftQ3`):
 
 ```
 ✓ Patient: Ross, Linda Jane
@@ -209,245 +237,147 @@ Sample conditions:
     Onset: 2019-05-24
 ```
 
-### Test the Service
+???+ example "Aggregated Result: With provenance tags and pipeline processing"
 
-=== "cURL"
-    Query the aggregation endpoint:
-    ```bash
-    curl -X GET "http://localhost:8000/fhir/aggregate/Condition/eIXesllypH3M9tAA5WdJftQ3?sources=epic,cerner"
-    ```
+    Sample Bundle with deduplicated Conditions aggregated from Epic and Cerner. Each includes source details (`meta.source`, `meta.tag`) and a pipeline-added `note`.
 
-    Check the CapabilityStatement:
-    ```bash
-    curl -X GET "http://localhost:8000/fhir/metadata"
-    ```
-
-=== "Python"
-    Query the aggregation endpoint:
-    ```python
-    import requests
-
-    response = requests.get(
-        "http://localhost:8000/fhir/aggregate/Condition/eIXesllypH3M9tAA5WdJftQ3",
-        params={"sources": ["epic", "cerner"]}
-    )
-    bundle = response.json()
-    ```
-
-    Check the CapabilityStatement:
-    ```python
-    import requests
-
-    response = requests.get("http://localhost:8000/fhir/metadata")
-    capability_statement = response.json()
-    ```
-
-### Expected Outputs
-
-<details>
-<summary><strong>Conditions from Epic (Linda Ross - eIXesllypH3M9tAA5WdJftQ3)</strong></summary>
-
-```json
-{
-  "resourceType": "Bundle",
-  "type": "collection",
-  "entry": [
+    ```json
     {
-      "resource": {
-        "resourceType": "Condition",
-        "id": "eOCME6XUbCLYmFlVf2l1G0w3",
-        "clinicalStatus": { "text": "Active" },
-        "category": [{ "text": "Problem List Item" }],
-        "severity": { "text": "Medium" },
-        "code": {
-          "coding": [
-            {
-              "system": "http://hl7.org/fhir/sid/icd-10-cm",
-              "code": "J45.40",
-              "display": "Moderate persistent asthma, uncomplicated"
+      "resourceType": "Bundle",
+      "type": "collection",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "eOCME6XUbCLYmFlVf2l1G0w3",
+            "meta": {
+              "lastUpdated": "2025-10-10T15:23:50.167941Z",  // Updated by HealthChain Gateway
+              "source": "urn:healthchain:source:epic",       // Added by HealthChain Gateway
+              "tag": [{
+                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "code": "aggregated",
+                "display": "Aggregated"
+              }]  // Added by HealthChain Gateway
             },
-            {
-              "system": "http://snomed.info/sct",
-              "code": "427295004",
-              "display": "Moderate Persistent Asthma"
+            "clinicalStatus": { "text": "Active" },
+            "severity": { "text": "Medium" },
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                  "code": "J45.40",
+                  "display": "Moderate persistent asthma, uncomplicated"
+                },
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "427295004",
+                  "display": "Moderate Persistent Asthma"
+                },
+                {
+                  "system": "http://hl7.org/fhir/sid/icd-9-cm",
+                  "code": "493.90"
+                }
+              ],
+              "text": "Moderate persistent asthma"
             },
-            {
-              "system": "http://hl7.org/fhir/sid/icd-9-cm",
-              "code": "493.90"
-            }
-          ],
-          "text": "Moderate persistent asthma"
-        },
-        "subject": {
-          "reference": "Patient/eIXesllypH3M9tAA5WdJftQ3",
-          "display": "Ross, Linda Jane"
-        },
-        "onsetDateTime": "1999-03-08"
-      }
-    },
-    {
-      "resource": {
-        "resourceType": "Condition",
-        "id": "etZVq9vWdHQ4q0Y6INaFhig3",
-        "severity": { "text": "High" },
-        "code": {
-          "coding": [
-            {
-              "system": "http://hl7.org/fhir/sid/icd-10-cm",
-              "code": "J20.9",
-              "display": "Acute bronchitis, unspecified"
+            "subject": {
+              "reference": "Patient/eIXesllypH3M9tAA5WdJftQ3",
+              "display": "Ross, Linda Jane"
             },
-            {
-              "system": "http://snomed.info/sct",
-              "code": "405944004",
-              "display": "Asthmatic Bronchitis"
-            }
-          ],
-          "text": "Bronchitis with asthma, acute"
+            "onsetDateTime": "1999-03-08",
+            "note": [{
+              "text": "This resource has been processed by healthchain pipeline"
+            }]  // Added by HealthChain Pipeline
+          }
         },
-        "onsetDateTime": "2019-05-24"
-      }
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "etZVq9vWdHQ4q0Y6INaFhig3",
+            "meta": {
+              "lastUpdated": "2025-10-10T15:23:50.168175Z", // Updated by HealthChain Gateway
+              "source": "urn:healthchain:source:epic",      // Added by HealthChain Gateway
+              "tag": [{
+                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "code": "aggregated"
+              }]  // Added by HealthChain Gateway
+            },
+            "severity": { "text": "High" },
+            "code": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                  "code": "J20.9",
+                  "display": "Acute bronchitis, unspecified"
+                },
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "405944004",
+                  "display": "Asthmatic Bronchitis"
+                }
+              ],
+              "text": "Bronchitis with asthma, acute"
+            },
+            "onsetDateTime": "2019-05-24",
+            "note": [{
+              "text": "This resource has been processed by healthchain pipeline"
+            }]  // Added by HealthChain Pipeline
+          }
+        }
+      ]
     }
-  ]
-}
-```
+    ```
 
-</details>
+??? warning "OperationOutcome: Authorization warnings"
 
-<details>
-<summary><strong>OperationOutcome: Authorization warnings</strong></summary>
+    You'll see this if you haven't authorized access to the correct FHIR resources when you set up your FHIR sandbox.
 
-You'll see this if you haven't authorized access to the correct FHIR resources when you set up your FHIR sandbox.
+    ```python
+    print([outcome.model_dump() for outcome in doc.fhir.operation_outcomes])
+    ```
 
-```python
-doc.fhir.operation_outcomes
-```
-
-```json
-{
-  "resourceType": "OperationOutcome",
-  "meta": {
-    "source": "urn:healthchain:source:epic"
-  },
-  "issue": [
+    ```json
     {
-      "severity": "warning",
-      "code": "suppressed",
-      "details": {
-        "coding": [{
-          "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
-          "code": "59204"
-        }]
+      "resourceType": "OperationOutcome",
+      "meta": {
+        "source": "urn:healthchain:source:epic"
       },
-      "diagnostics": "Client not authorized for Condition - Encounter Diagnosis"
-    },
-    {
-      "severity": "warning",
-      "code": "suppressed",
-      "diagnostics": "Client not authorized for Condition - Health Concerns"
-    },
-    {
-      "severity": "warning",
-      "code": "suppressed",
-      "diagnostics": "Client not authorized for Condition - Medical History"
+      "issue": [
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "details": {
+            "coding": [{
+              "system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.657369",
+              "code": "59204"
+            }]
+          },
+          "diagnostics": "Client not authorized for Condition - Encounter Diagnosis"
+        },
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "diagnostics": "Client not authorized for Condition - Health Concerns"
+        },
+        {
+          "severity": "warning",
+          "code": "suppressed",
+          "diagnostics": "Client not authorized for Condition - Medical History"
+        }
+      ]
     }
-  ]
-}
-```
+    ```
 
-</details>
+??? warning "Expected Error Handling"
 
-<details>
-<summary><strong>Aggregated Result: With provenance tags and pipeline processing</strong></summary>
+    You'll see this when querying a patient that doesn't exist in a source:
 
-```json
-{
-  "resourceType": "Bundle",
-  "type": "collection",
-  "entry": [
-    {
-      "resource": {
-        "resourceType": "Condition",
-        "id": "eOCME6XUbCLYmFlVf2l1G0w3",
-        "meta": {
-          "lastUpdated": "2025-10-10T15:23:50.167941Z",
-          "source": "urn:healthchain:source:epic",
-          "tag": [{
-            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
-            "code": "aggregated",
-            "display": "Aggregated"
-          }]
-        },
-        "clinicalStatus": { "text": "Active" },
-        "severity": { "text": "Medium" },
-        "code": {
-          "coding": [
-            {
-              "system": "http://hl7.org/fhir/sid/icd-10-cm",
-              "code": "J45.40",
-              "display": "Moderate persistent asthma, uncomplicated"
-            },
-            {
-              "system": "http://snomed.info/sct",
-              "code": "427295004",
-              "display": "Moderate Persistent Asthma"
-            },
-            {
-              "system": "http://hl7.org/fhir/sid/icd-9-cm",
-              "code": "493.90"
-            }
-          ],
-          "text": "Moderate persistent asthma"
-        },
-        "subject": {
-          "reference": "Patient/eIXesllypH3M9tAA5WdJftQ3",
-          "display": "Ross, Linda Jane"
-        },
-        "onsetDateTime": "1999-03-08",
-        "note": [{
-          "text": "This resource has been processed by healthchain pipeline"
-        }]
-      }
-    },
-    {
-      "resource": {
-        "resourceType": "Condition",
-        "id": "etZVq9vWdHQ4q0Y6INaFhig3",
-        "meta": {
-          "lastUpdated": "2025-10-10T15:23:50.168175Z",
-          "source": "urn:healthchain:source:epic",
-          "tag": [{
-            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
-            "code": "aggregated"
-          }]
-        },
-        "severity": { "text": "High" },
-        "code": {
-          "coding": [
-            {
-              "system": "http://hl7.org/fhir/sid/icd-10-cm",
-              "code": "J20.9",
-              "display": "Acute bronchitis, unspecified"
-            },
-            {
-              "system": "http://snomed.info/sct",
-              "code": "405944004",
-              "display": "Asthmatic Bronchitis"
-            }
-          ],
-          "text": "Bronchitis with asthma, acute"
-        },
-        "onsetDateTime": "2019-05-24",
-        "note": [{
-          "text": "This resource has been processed by healthchain pipeline"
-        }]
-      }
-    }
-  ]
-}
-```
+    ```
+    Error from cerner: [FHIR request failed: 400 - Unknown error]
+    search <class 'fhir.resources.condition.Condition'> failed:
+    Resource could not be parsed or failed basic FHIR validation rules
+    ```
 
-</details>
 
 ## What You've Built
 
@@ -459,22 +389,20 @@ A production-ready data aggregation service with:
 - **Deduplication** - Merges identical conditions across sources
 - **Pipeline extensibility** - Add custom processing for terminology mapping, NLP, or quality checks
 
-## Use Cases
+!!! info "Use Cases"
 
-**Training Data for AI Models:**
-Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
+    - **RAG Systems**
+      Build retrieval systems that search across multiple health systems. The aggregator provides the unified patient context LLMs need for clinical reasoning.
 
-**RAG Systems:**
-Build retrieval systems that search across multiple health systems. The aggregator provides the unified patient context LLMs need for clinical reasoning.
+    - **Data Harmonization**
+      Use pipelines to normalize terminology (ICD-10 ↔ SNOMED CT), validate completeness, and flag inconsistencies across sources.
 
-**Data Harmonization:**
-Use pipelines to normalize terminology (ICD-10 ↔ SNOMED CT), validate completeness, and flag inconsistencies across sources.
+    - **Training Data for AI Models**
+      Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
 
-## Next Steps
+!!! tip "Next Steps"
 
-- **Try Medplum**: Set up [Medplum](./setup_fhir_sandboxes.md#medplum-sandbox) where you can upload the same test patients to multiple instances for true multi-source aggregation
-- **Expand resource types**: Change `Condition` to `MedicationStatement`, `Observation`, or `Procedure` to aggregate different data
-- **Add processing**: Extend the pipeline with terminology mapping, entity extraction, or quality checks
-- **Build on it**: Use aggregated data in the [Clinical Coding tutorial](./clinical_coding.md) or feed it to your LLM application
-
-> **Note:** Epic and Cerner sandboxes contain different test patients. In production, you'd map master patient identifiers across systems or use sources that share patient cohorts.
+    - **Try another FHIR server**: Set up a different [FHIR server](./setup_fhir_sandboxes.md) where you can upload the same test patients to multiple instances for true multi-source aggregation.
+    - **Expand resource types**: Change `Condition` to `MedicationStatement`, `Observation`, or `Procedure` to aggregate different data.
+    - **Add processing**: Extend the pipeline with terminology mapping, entity extraction, or quality checks.
+    - **Build on it**: Use aggregated data in the [Clinical Coding tutorial](./clinical_coding.md) or feed it to your LLM application.

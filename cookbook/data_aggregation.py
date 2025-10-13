@@ -6,7 +6,7 @@ Demonstrates aggregating patient data from multiple FHIR sources with
 simple pipeline processing and provenance tracking.
 
 Requirements:
-- pip install healthchain
+- pip install healthchain python-dotenv
 
 Run:
 - python data_aggregation.py
@@ -98,7 +98,7 @@ def create_app():
 
         # print([outcome.model_dump() for outcome in doc.fhir.operation_outcomes])
 
-        return doc.fhir.bundle
+        return doc.fhir.bundle.model_dump()
 
     app = HealthChainAPI()
     app.register_gateway(gateway)
@@ -110,5 +110,5 @@ if __name__ == "__main__":
     import uvicorn
 
     app = create_app()
-    uvicorn.run(app)
-    # Default: http://127.0.0.1:8000/
+    uvicorn.run(app, port=8888)
+    # Runs at: http://127.0.0.1:8888/

@@ -4,13 +4,12 @@ This guide covers setting up access to public FHIR sandboxes for testing and dev
 
 ## Epic on FHIR Sandbox
 
-Epic provides a public [testing sandbox](https://open.epic.com/MyApps/Endpoints) with [sample patients](https://fhir.epic.com/Documentation?docId=testpatients) for developing against their FHIR Server. This is useful for understanding the Epic FHIR API specs and testing your code without waiting for production environment access.
+Epic provides a public [testing sandbox](https://open.epic.com/MyApps/Endpoints) with [sample patients](https://fhir.epic.com/Documentation?docId=testpatients) and [resource specifications available](https://fhir.epic.com/Specifications) for developing against their FHIR Server.
 
 ### Prerequisites
 
 - Free Epic on FHIR developer account: [https://fhir.epic.com/](https://fhir.epic.com/)
-- No existing Epic customer account required
-- Registration takes about 1 minute
+- No existing Epic customer account required (it only takes a minute)
 
 ### Step 1: Create an App
 
@@ -95,10 +94,12 @@ gateway.add_source("epic", EPIC_URL)
 ### Available Test Patients
 
 Epic provides [sample test patients](https://fhir.epic.com/Documentation?docId=testpatients) including:
+
 - **Derrick Lin** - Patient ID: `eq081-VQEgP8drUUqCWzHfw3`
 - **Linda Ross** - Patient ID: `eIXesllypH3M9tAA5WdJftQ3`
 - Many others with various clinical scenarios
 
+---
 ## Cerner Sandbox
 
 Cerner (now Oracle Health) provides both open and secure public sandboxes for the [FHIR R4 APIs for Oracle Health Millennium Platform](https://docs.oracle.com/en/industries/health/millennium-platform-apis/mfrap/srv_root_url.html).
@@ -116,7 +117,7 @@ curl -i -H "Accept: application/json+fhir" "https://fhir-open.cerner.com/r4/ec24
 
 Documentation on Secure Sandbox coming soon.
 
-
+---
 ## Medplum
 
 [Medplum](https://www.medplum.com/) is an open-source healthcare platform that provides a compliant FHIR server. It's useful for testing with controlled data where you can upload your own test patients. Medplum uses [standard OAuth2/OpenID authentication](https://www.medplum.com/docs/auth/client-credentials).
@@ -180,7 +181,7 @@ gateway.add_source("medplum", MEDPLUM_URL)
 - **Multi-source testing**: Create multiple projects for different data sources
 - **Web interface**: Browse and manage resources via UI
 
-
+---
 ## Tips for Multi-Source Testing
 
 ### Different Test Data

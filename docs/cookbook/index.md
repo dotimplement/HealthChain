@@ -1,13 +1,28 @@
-# Examples
+# 🍳 Cookbook: Hands-On Examples
 
-The best way to learn is by example! Here are some to get you started:
+Dive into real-world, production-ready examples to learn how to build interoperable healthcare AI apps with **HealthChain**.
 
-## Getting Started
+---
 
-- [Working with FHIR Sandboxes](./setup_fhir_sandboxes.md): Set up access to Epic, Medplum, and other FHIR sandboxes for testing and development. Essential prerequisite for the tutorials below.
+## 🚦 Getting Started
 
-## Tutorials
+- [**Working with FHIR Sandboxes**](./setup_fhir_sandboxes.md)
+  *Spin up and access free Epic, Medplum, and other FHIR sandboxes for safe experimentation. This is the recommended first step before doing the detailed tutorials below.*
 
-- [Multi-Source Patient Data Aggregation](./data_aggregation.md): Aggregate patient data from multiple FHIR sources (Epic, Cerner), deduplicate conditions, track data provenance, and build production-ready error handling for cross-vendor healthcare AI applications.
-- [Automate Clinical Coding and FHIR Integration](./clinical_coding.md): Build a system that extracts medical conditions from clinical documentation, maps them to SNOMED CT codes, and synchronizes structured Condition resources with external FHIR servers (Medplum) for billing and analytics.
-- [Summarize Discharge Notes with CDS Hooks](./discharge_summarizer.md): Implement a CDS Hooks service that listens for `encounter-discharge` events, automatically generates concise summaries of discharge notes, and delivers clinical recommendations directly into EHR workflows.
+---
+
+## 📚 How-To Guides
+
+- 🚦 **[Multi-Source Patient Data Aggregation](./data_aggregation.md)**
+  *Merge patient data from multiple FHIR sources (Epic, Cerner, etc.), deduplicate conditions, prove provenance, and robustly handle cross-vendor errors. Foundation for retrieval-augmented generation (RAG) and analytics workflows.*
+
+- 🧾 **[Automate Clinical Coding & FHIR Integration](./clinical_coding.md)**
+  *Extract medical conditions from clinical documentation using AI, map to SNOMED CT codes, and sync as FHIR Condition resources to systems like Medplum—enabling downstream billing, analytics, and interoperability.*
+
+- 📝 **[Summarize Discharge Notes with CDS Hooks](./discharge_summarizer.md)**
+  *Deploy a CDS Hooks-compliant service that listens for discharge events, auto-generates concise plain-language summaries, and delivers actionable clinical cards directly into the EHR workflow.*
+
+---
+
+!!! info "What next?"
+    See the source code for each recipe, experiment with the sandboxes, and adapt the patterns for your projects!

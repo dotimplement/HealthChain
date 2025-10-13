@@ -14,15 +14,13 @@ Run:
 """
 
 import uvicorn
-from datetime import datetime, timezone
-
 import healthchain as hc
+
 from fhir.resources.documentreference import DocumentReference
-from fhir.resources.meta import Meta
 from spacy.tokens import Span
 from dotenv import load_dotenv
 
-from healthchain.fhir import create_document_reference
+from healthchain.fhir import create_document_reference, add_provenance_metadata
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.gateway.fhir import FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
@@ -79,7 +77,6 @@ def create_pipeline():
 
 
 def create_app():
-    """Create production healthcare API."""
     pipeline = create_pipeline()
     cda_adapter = CdaAdapter()
 
@@ -97,9 +94,8 @@ def create_app():
 
         for condition in doc.fhir.problem_list:
             # Add basic provenance tracking
-            condition.meta = Meta(
-                source="urn:healthchain:pipeline:cdi",
-                lastUpdated=datetime.now(timezone.utc).isoformat(),
+            condition = add_provenance_metadata(
+                condition, source="epic-notereader", tag_code="cdi"
             )
             fhir_gateway.create(condition, source="billing")
 
@@ -122,7 +118,7 @@ def create_sandbox():
 
         def __init__(self):
             super().__init__()
-            self.data_path = "./resources/uclh_cda.xml"
+            self.data_path = "./data/notereader_cda.xml"
 
         @hc.ehr(workflow="sign-note-inpatient")
         def load_clinical_document(self) -> DocumentReference:

@@ -108,7 +108,8 @@ markdown_extensions:
   - tables
   - def_list
   - attr_list
-  - md_in_html
+  - md_in_html:
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
