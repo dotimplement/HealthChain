@@ -14,8 +14,10 @@ nav:
       - Licence: distribution.md
   - Cookbook:
       - cookbook/index.md
+      - Setup FHIR Sandbox: cookbook/setup_fhir_sandboxes.md
+      - Multi-Source Data Integration: cookbook/multi_ehr_aggregation.md
+      - Automated Clinical Coding: cookbook/clinical_coding.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
-      - Clinical Coding: cookbook/clinical_coding.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:
@@ -51,6 +53,7 @@ nav:
         - Parsers: reference/interop/parsers.md
         - Generators: reference/interop/generators.md
         - Working with xmltodict: reference/interop/xmltodict.md
+        - In Development: reference/interop/experimental.md
       - Utilities:
         - FHIR Helpers: reference/utilities/fhir_helpers.md
         - Sandbox: reference/utilities/sandbox.md
@@ -107,7 +110,8 @@ markdown_extensions:
   - tables
   - def_list
   - attr_list
-  - md_in_html
+  - md_in_html:
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

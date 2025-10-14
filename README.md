@@ -168,18 +168,16 @@ fhir.add_source("epic", "fhir://fhir.epic.com/r4?client_id=epic_client_id")
 fhir.add_source("cerner", "fhir://fhir.cerner.com/r4?client_id=cerner_client_id")
 
 @fhir.aggregate(Patient)
-def enrich_patient_data(id: str, source: str = None) -> Patient:
+def enrich_patient_data(id: str, source: str) -> Patient:
     """Get patient data from any connected EHR and add AI enhancements"""
-    patient = fhir.read(Patient, id, source)
-
-    # Add AI processing metadata
-    patient.extension = patient.extension or []
-    patient.extension.append({
-        "url": "http://healthchain.org/fhir/ai-processed",
-        "valueString": f"Enhanced by HealthChain from {source}"
-    })
-
-    return patient
+    bundle = fhir.search(
+        Patient,
+        {"_id": id},
+        source,
+        add_provenance=True,
+        provenance_tag="ai-enhanced",
+    )
+    return bundle
 
 app.register_gateway(fhir)
 
