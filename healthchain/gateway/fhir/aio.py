@@ -12,6 +12,7 @@ from healthchain.gateway.clients.fhir.aio.connection import AsyncFHIRConnectionM
 from healthchain.gateway.fhir.errors import FHIRErrorHandler
 from healthchain.gateway.fhir.base import BaseFHIRGateway
 from healthchain.gateway.events.fhir import create_fhir_event
+from healthchain.fhir import add_provenance_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -170,6 +171,8 @@ class AsyncFHIRGateway(BaseFHIRGateway):
         resource_type: Type[Resource],
         params: Dict[str, Any] = None,
         source: str = None,
+        add_provenance: bool = False,
+        provenance_tag: str = None,
     ) -> Bundle:
         """
         Search for FHIR resources.
@@ -178,6 +181,8 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             resource_type: The FHIR resource type class
             params: Search parameters (e.g., {"name": "Smith", "active": "true"})
             source: Source name to search in (uses first available if None)
+            add_provenance: If True, automatically add provenance metadata to resources
+            provenance_tag: Optional tag code for provenance (e.g., "aggregated", "transformed")
 
         Returns:
             Bundle containing search results
@@ -187,11 +192,17 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             FHIRConnectionError: If connection fails
 
         Example:
-            # Search for patients by name
+            # Basic search
             bundle = await fhir_gateway.search(Patient, {"name": "Smith"}, "epic")
-            for entry in bundle.entry or []:
-                patient = entry.resource
-                print(f"Found patient: {patient.name[0].family}")
+
+            # Search with automatic provenance
+            bundle = await fhir_gateway.search(
+                Condition,
+                {"patient": "123"},
+                "epic",
+                add_provenance=True,
+                provenance_tag="aggregated"
+            )
         """
         bundle = await self._execute_with_client(
             "search",
@@ -201,15 +212,26 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             client_kwargs={"params": params},
         )
 
+        if add_provenance and bundle.entry:
+            source_name = source or next(iter(self.connection_manager.sources.keys()))
+            for entry in bundle.entry:
+                if entry.resource:
+                    entry.resource = add_provenance_metadata(
+                        entry.resource,
+                        source_name,
+                        provenance_tag,
+                        provenance_tag.capitalize() if provenance_tag else None,
+                    )
+
         # Emit search event with result count
         type_name = resource_type.__resource_type__
         event_data = {
-            "params": params,
             "result_count": len(bundle.entry) if bundle.entry else 0,
         }
+        # Do not include full params.
         self._emit_fhir_event("search", type_name, None, event_data)
-        logger.debug(
-            f"Searched {type_name} with params {params}, found {len(bundle.entry) if bundle.entry else 0} results"
+        logger.info(
+            f"FHIR operation: search on {type_name}, found {event_data['result_count']} results"
         )
 
         return bundle

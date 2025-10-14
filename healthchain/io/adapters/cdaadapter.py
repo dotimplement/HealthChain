@@ -8,7 +8,7 @@ from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.fhir import (
     create_bundle,
-    set_problem_list_item_category,
+    set_condition_category,
     create_document_reference,
     read_content_attachment,
 )
@@ -111,7 +111,7 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
         for resource in fhir_resources:
             if isinstance(resource, Condition):
                 problem_list.append(resource)
-                set_problem_list_item_category(resource)
+                set_condition_category(resource, "problem-list-item")
             elif isinstance(resource, MedicationStatement):
                 medication_list.append(resource)
             elif isinstance(resource, AllergyIntolerance):
