@@ -1,6 +1,6 @@
 # Build a NoteReader Service with FHIR Integration
 
-This tutorial shows you how to build a clinical coding service that connects legacy [CDA](https://hl7.org/cda/) systems with modern [FHIR servers](https://build.fhir.org/http.html). We'll process clinical notes, extract billing codes, and handle both old and new healthcare data formats. We'll use [Epic NoteReader](https://discovery.hgdata.com/product/epic-notereader-cdi) as the legacy system and [Medplum](https://www.medplum.com/) as the FHIR server.
+This example shows you how to build a clinical coding service that connects legacy [CDA](https://hl7.org/cda/) systems with modern [FHIR servers](https://build.fhir.org/http.html). We'll process clinical notes, extract billing codes, and handle both old and new healthcare data formats. We'll use [Epic NoteReader](https://discovery.hgdata.com/product/epic-notereader-cdi) as the legacy system and [Medplum](https://www.medplum.com/) as the FHIR server.
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/notereader_clinical_coding_fhir.py)!
 
@@ -254,13 +254,13 @@ A clinical coding service that bridges legacy CDA systems with modern FHIR infra
 
 !!! info "Use Cases"
 
-    - **Clinical Documentation Improvement (CDI)**
+    - **Clinical Documentation Improvement (CDI)**:
       Automatically extract billable conditions from clinical notes and populate problem lists in real-time during clinician workflows.
 
-    - **Terminology Harmonization**
+    - **Terminology Harmonization**:
       Bridge legacy ICD-9 systems with modern SNOMED CT standards by processing historical CDA documents and creating FHIR-compliant problem lists.
 
-    - **Research Data Extraction**
+    - **Research Data Extraction**:
       Extract structured condition data from unstructured clinical notes for cohort building and retrospective studies.
 
 !!! tip "Next Steps"

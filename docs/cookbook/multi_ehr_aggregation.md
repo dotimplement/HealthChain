@@ -1,6 +1,6 @@
 # Multi-Source Patient Data Aggregation
 
-This tutorial shows you how to aggregate patient data from multiple FHIR sources and track data provenance - essential for building AI applications that train on diverse data or query multiple EHR vendors in RAG systems.
+This example shows you how to aggregate patient data from multiple FHIR sources and track data provenance: essential for building AI applications that train on diverse data, query multiple EHR vendors in RAG systems, or construct unified patient timelines from fragmented health records.
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!
 
@@ -393,14 +393,11 @@ A production-ready data aggregation service with:
 
 !!! info "Use Cases"
 
-    - **RAG Systems**
-      Build retrieval systems that search across multiple health systems. The aggregator provides the unified patient context LLMs need for clinical reasoning.
+    - **Data Harmonization**: Use pipelines to normalize terminology (ICD-10 ↔ SNOMED CT), validate completeness, and flag inconsistencies across sources. Combine with clinical NLP engines to extract and aggregate data from unstructured clinical notes alongside structured FHIR resources.
 
-    - **Data Harmonization**
-      Use pipelines to normalize terminology (ICD-10 ↔ SNOMED CT), validate completeness, and flag inconsistencies across sources.
+    - **RAG Systems**: Build retrieval systems that search across multiple health systems. The aggregator provides the unified patient context LLMs need for clinical reasoning.
 
-    - **Training Data for AI Models**
-      Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
+    - **Training Data for AI Models**: Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
 
 !!! tip "Next Steps"
 

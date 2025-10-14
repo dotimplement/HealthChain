@@ -78,7 +78,7 @@ EPIC_USE_JWT_ASSERTION=true
 ### Using Epic Sandbox in Code
 
 ```python
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 
 # Load configuration from environment variables
 config = FHIRAuthConfig.from_env("EPIC")
@@ -137,6 +137,7 @@ Documentation on Secure Sandbox coming soon.
 ### Step 2: Get Credentials
 
 After creating the client:
+
 1. Note your **Client ID**
 2. Copy your **Client Secret**
 
@@ -160,7 +161,7 @@ MEDPLUM_SCOPE=openid
 
 ```python
 from healthchain.gateway import FHIRGateway
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -195,6 +196,7 @@ Public sandboxes (Epic, Cerner) contain different test patients. When testing mu
 ### Error Handling
 
 Your code should handle:
+
 - Network issues or downtime
 - Patient not found in specific sources
 - Rate limiting
