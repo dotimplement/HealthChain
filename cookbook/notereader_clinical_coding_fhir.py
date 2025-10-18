@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A complete CDI service that processes clinical notes and extracts billing codes.
+A complete CDI service that processes clinical notes and extracts FHIR conditions.
 Demonstrates FHIR-native pipelines, legacy system integration, and multi-source data handling.
 
 Requirements:
@@ -13,36 +13,33 @@ Run:
 - python notereader_clinical_coding_fhir.py  # Demo and start server
 """
 
-import os
+import logging
 import uvicorn
-from datetime import datetime, timezone
-
 import healthchain as hc
+
 from fhir.resources.documentreference import DocumentReference
-from fhir.resources.meta import Meta
 from spacy.tokens import Span
 from dotenv import load_dotenv
 
-from healthchain.fhir import create_document_reference
+from healthchain.fhir import create_document_reference, add_provenance_metadata
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.gateway.fhir import FHIRGateway
+from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 from healthchain.gateway.soap import NoteReaderService
 from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 from healthchain.sandbox.use_cases import ClinicalDocumentation
 
+# Suppress Spyne warnings
+logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
+
 
 load_dotenv()
 
-
-BILLING_URL = (
-    f"fhir://api.medplum.com/fhir/R4/"
-    f"?client_id={os.environ.get('MEDPLUM_CLIENT_ID')}"
-    f"&client_secret={os.environ.get('MEDPLUM_CLIENT_SECRET')}"
-    f"&token_url={os.environ.get('MEDPLUM_TOKEN_URL', 'https://api.medplum.com/oauth2/token')}"
-    f"&scope={os.environ.get('MEDPLUM_SCOPE', 'openid')}"
-)
+# Load configuration from environment variables
+config = FHIRAuthConfig.from_env("MEDPLUM")
+MEDPLUM_URL = config.to_connection_string()
 
 
 def create_pipeline():
@@ -84,13 +81,12 @@ def create_pipeline():
 
 
 def create_app():
-    """Create production healthcare API."""
     pipeline = create_pipeline()
     cda_adapter = CdaAdapter()
 
     # Modern FHIR sources
     fhir_gateway = FHIRGateway()
-    fhir_gateway.add_source("billing", BILLING_URL)
+    fhir_gateway.add_source("medplum", MEDPLUM_URL)
 
     # Legacy CDA processing
     note_service = NoteReaderService()
@@ -102,11 +98,10 @@ def create_app():
 
         for condition in doc.fhir.problem_list:
             # Add basic provenance tracking
-            condition.meta = Meta(
-                source="urn:healthchain:pipeline:cdi",
-                lastUpdated=datetime.now(timezone.utc).isoformat(),
+            condition = add_provenance_metadata(
+                condition, source="epic-notereader", tag_code="cdi"
             )
-            fhir_gateway.create(condition, source="billing")
+            fhir_gateway.create(condition, source="medplum")
 
         cda_response = cda_adapter.format(doc)
 
@@ -127,7 +122,7 @@ def create_sandbox():
 
         def __init__(self):
             super().__init__()
-            self.data_path = "./resources/uclh_cda.xml"
+            self.data_path = "./data/notereader_cda.xml"
 
         @hc.ehr(workflow="sign-note-inpatient")
         def load_clinical_document(self) -> DocumentReference:

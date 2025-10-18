@@ -6,9 +6,9 @@ The `fhir` module provides a set of helper functions to make it easier for you t
 
 FHIR is the modern de facto standard for storing and exchanging healthcare data, but working with [FHIR resources](https://www.hl7.org/fhir/resourcelist.html) can often involve complex and nested JSON structures with required and optional fields that vary between contexts.
 
-Creating FHIR resources can involve a lot of boilerplate code, validation errors and manual comparison of FHIR specifications with the resource you're trying to create.
+Creating FHIR resources can involve a lot of boilerplate code, validation errors and manual comparison with FHIR specifications.
 
-For example, as an ML practitioner, you may only care about extracting and inserting certain codes and texts within a FHIR resource. If you want locate the SNOMED CT code for a medication, you may have to do something headache-inducing like this:
+For example, as an ML practitioner, you may only care about extracting and inserting certain codes and texts within a FHIR resource. If you want to locate the SNOMED CT code for a medication, you may have to do something headache-inducing like:
 
 ```python
 medication_statement = {
@@ -32,14 +32,20 @@ medication_statement = {
 
 medication_statement["medication"]["concept"]["coding"][0]["code"]
 medication_statement["medication"]["concept"]["coding"][0]["display"]
-
 ```
 
-The `fhir` `create_*` functions create FHIR resources with sensible defaults, automatically creating a reference ID prefixed by "`hc-`", a status of "`active`" (or equivalent) and adding a creation date where necessary.
+!!! tip "Sensible Defaults for Resource Creation"
+    The `fhir` `create_*` functions create FHIR resources with sensible defaults, automatically setting:
+      - A reference ID prefixed by "`hc-`"
+      - A status of "`active`" (or equivalent)
+      - A creation date where necessary
 
-Internally, HealthChain uses [fhir.resources](https://github.com/nazrulworld/fhir.resources) to validate FHIR resources, which is in turn powered by [Pydantic V2](https://docs.pydantic.dev/latest/). You can modify and manipulate the FHIR resources as you would any other Pydantic object after its creation.
+    You can modify and manipulate these resources as you would any other Pydantic object after their creation.
 
-**Please exercise caution when using these functions, as they are only meant to create minimal valid FHIR resources to make it easier to get started. Always check the sensible defaults serve your needs, and validate the resource to ensure it is correct!**
+!!! important "Validation of FHIR Resources"
+    Internally, HealthChain uses [fhir.resources](https://github.com/nazrulworld/fhir.resources) to validate FHIR resources, which is powered by [Pydantic V2](https://docs.pydantic.dev/latest/).
+    These helpers create minimal valid FHIR objects to help you get started easily.
+    :octicons-alert-16: **ALWAYS check that the sensible defaults fit your needs, and validate your resource!**
 
 ### Overview
 
@@ -48,21 +54,20 @@ Internally, HealthChain uses [fhir.resources](https://github.com/nazrulworld/fhi
 | **Condition** | • `clinicalStatus`<br>• `subject` | • `clinicalStatus`: "active"<br>• `id`: auto-generated with "hc-" prefix | • Recording diagnoses<br>• Problem list items<br>• Active conditions |
 | **MedicationStatement** | • `subject`<br>• `status`<br>• `medication` | • `status`: "recorded"<br>• `id`: auto-generated with "hc-" prefix | • Current medications<br>• Medication history<br>• Prescribed medications |
 | **AllergyIntolerance** | • `patient` | • `id`: auto-generated with "hc-" prefix | • Allergies<br>• Intolerances<br>• Adverse reactions |
-| **DocumentReference** | • `type` | • `status`: "current"<br>• `date`: current UTC time<br>• `description`: default text<br>• `content.attachment.title`: default text | • Clinical notes<br>• Lab reports<br>• Imaging reports |
+| **DocumentReference** | • `type` | • `status`: "current"<br>• `date`: UTC now<br>• `description`: default text<br>• `content.attachment.title`: default text | • Clinical notes<br>• Lab reports<br>• Imaging reports |
 
+---
 
 ### create_condition()
 
 Creates a new [**Condition**](https://www.hl7.org/fhir/condition.html) resource.
 
-**Required fields:**
+!!! note "Required fields"
+    - [clinicalStatus](https://www.hl7.org/fhir/condition-definitions.html#Condition.clinicalStatus)
+    - [subject](https://www.hl7.org/fhir/condition-definitions.html#Condition.subject)
 
-- [clinicalStatus](https://www.hl7.org/fhir/condition-definitions.html#Condition.clinicalStatus)
-- [subject](https://www.hl7.org/fhir/condition-definitions.html#Condition.subject)
-
-**Sensible defaults:**
-
-- `clinicalStatus` is set to "`active`"
+!!! tip "Sensible Defaults"
+    `clinicalStatus` is set to "`active`"
 
 ```python
 from healthchain.fhir import create_condition
@@ -79,53 +84,44 @@ condition = create_condition(
 print(condition.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
-
-```json
-{
-    "resourceType": "Condition",
-    "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
-
-    // Clinical status indicating this is an active condition
-    "clinicalStatus": {
-        "coding": [{
-            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-            "code": "active",
-            "display": "Active"
-        }]
-    },
-
-    // SNOMED CT code for Hypertension
-    "code": {
-        "coding": [{
-            "system": "http://snomed.info/sct",
-            "code": "38341003",
-            "display": "Hypertension"
-        }]
-    },
-
-    // Reference to the patient this condition belongs to
-    "subject": {
-        "reference": "Patient/123"
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "Condition",
+        "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
+        "clinicalStatus": {
+            "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                "code": "active",
+                "display": "Active"
+            }]
+        },
+        "code": {
+            "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "38341003",
+                "display": "Hypertension"
+            }]
+        },
+        "subject": {
+            "reference": "Patient/123"
+        }
     }
-}
-```
-</details>
+    ```
+
+---
 
 ### create_medication_statement()
 
 Creates a new [**MedicationStatement**](https://www.hl7.org/fhir/medicationstatement.html) resource.
 
-**Required fields:**
+!!! note "Required fields"
+    - [subject](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.subject)
+    - [status](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.status)
+    - [medication](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.medication)
 
-- [subject](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.subject)
-- [status](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.status)
-- [medication](https://www.hl7.org/fhir/medicationstatement-definitions.html#MedicationStatement.medication)
-
-**Sensible defaults:**
-
-- `status` is set to "`recorded`"
+!!! tip "Sensible Defaults"
+    `status` is set to "`recorded`"
 
 ```python
 from healthchain.fhir import create_medication_statement
@@ -142,47 +138,38 @@ medication = create_medication_statement(
 print(medication.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
-
-```json
-{
-    "resourceType": "MedicationStatement",
-    "id": "hc-86a26eba-63f9-4017-b7b2-5b36f9bad5f1",
-
-    // Required fields are highlighted
-    "status": "recorded",  // [Required] Status of the medication statement
-
-    // Required medication details using RxNorm coding
-    "medication": {  // [Required] Details about the medication
-        "concept": {
-            "coding": [{
-                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                "code": "1049221",
-                "display": "Acetaminophen 325 MG Oral Tablet"
-            }]
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "MedicationStatement",
+        "id": "hc-86a26eba-63f9-4017-b7b2-5b36f9bad5f1",
+        "status": "recorded",
+        "medication": {
+            "concept": {
+                "coding": [{
+                    "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                    "code": "1049221",
+                    "display": "Acetaminophen 325 MG Oral Tablet"
+                }]
+            }
+        },
+        "subject": {
+            "reference": "Patient/123"
         }
-    },
-
-    // Required reference to the patient
-    "subject": {  // [Required] Reference to the patient this medication belongs to
-        "reference": "Patient/123"
     }
-}
-```
-</details>
+    ```
+
+---
 
 ### create_allergy_intolerance()
 
 Creates a new [**AllergyIntolerance**](https://www.hl7.org/fhir/allergyintolerance.html) resource.
 
-**Required fields:**
+!!! note "Required fields"
+    - [patient](https://www.hl7.org/fhir/allergyintolerance-definitions.html#AllergyIntolerance.patient)
 
-- [patient](https://www.hl7.org/fhir/allergyintolerance-definitions.html#AllergyIntolerance.patient)
-
-**Sensible defaults:**
-
-- None
+!!! tip "Sensible Defaults"
+    None (besides the auto-generated id)
 
 ```python
 from healthchain.fhir import create_allergy_intolerance
@@ -199,46 +186,39 @@ allergy = create_allergy_intolerance(
 print(allergy.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
-
-```json
-{
-    "resourceType": "AllergyIntolerance",
-    "id": "hc-65edab39-d90b-477b-bdb5-a173b21efd44",
-
-    // SNOMED CT code for the allergy
-    "code": {
-        "coding": [{
-            "system": "http://snomed.info/sct",
-            "code": "418038007",
-            "display": "Propensity to adverse reactions to substance"
-        }]
-    },
-
-    // Required reference to the patient
-    "patient": {  // [Required] Reference to the patient this allergy belongs to
-        "reference": "Patient/123"
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "AllergyIntolerance",
+        "id": "hc-65edab39-d90b-477b-bdb5-a173b21efd44",
+        "code": {
+            "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "418038007",
+                "display": "Propensity to adverse reactions to substance"
+            }]
+        },
+        "patient": {
+            "reference": "Patient/123"
+        }
     }
-}
-```
-</details>
+    ```
+
+---
 
 ### create_document_reference()
 
 Creates a new [**DocumentReference**](https://www.hl7.org/fhir/documentreference.html) resource. Handles base64 encoding of the attachment data.
 
-**Required fields:**
+!!! note "Required fields"
+    - [type](https://www.hl7.org/fhir/documentreference-definitions.html#DocumentReference.type)
 
-- [type](https://www.hl7.org/fhir/documentreference-definitions.html#DocumentReference.type)
-
-**Sensible defaults:**
-
-- `type` is set to "`collection`"
-- `status` is set to "`current`"
-- `date` is set to the current UTC timestamp
-- `description` is set to "`DocumentReference created by HealthChain`"
-- `content[0].attachment.title` is set to "`Attachment created by HealthChain`"
+!!! tip "Sensible Defaults"
+    - `type` is set to "`collection`"
+    - `status` is set to "`current`"
+    - `date` is set to the current UTC timestamp
+    - `description` is set to "`DocumentReference created by HealthChain`"
+    - `content[0].attachment.title` is set to "`Attachment created by HealthChain`"
 
 ```python
 from healthchain.fhir import create_document_reference
@@ -254,39 +234,31 @@ doc_ref = create_document_reference(
 print(doc_ref.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "DocumentReference",
+        "id": "hc-60fcfdad-9617-4557-88d8-8c8db9b9fe70",
+        "status": "current",
+        "date": "2025-02-28T14:55:33+00:00",
+        "description": "A simple text document",
+        "content": [{
+            "attachment": {
+                "contentType": "text/plain",
+                "data": "SGVsbG8gV29ybGQ=",
+                "title": "Attachment created by HealthChain",
+                "creation": "2025-02-28T14:55:33+00:00"
+            }
+        }]
+    }
+    ```
 
-```json
-{
-    "resourceType": "DocumentReference",
-    "id": "hc-60fcfdad-9617-4557-88d8-8c8db9b9fe70",
+    ??? example "View Decoded Content"
+        ```text
+        Hello World
+        ```
 
-    // Document metadata
-    "status": "current",
-    "date": "2025-02-28T14:55:33+00:00",  // UTC timestamp
-    "description": "A simple text document",
-
-    // Document content with base64 encoded data
-    "content": [{
-        "attachment": {
-            "contentType": "text/plain",
-            "data": "SGVsbG8gV29ybGQ=",  // "Hello World" in base64
-            "title": "Attachment created by HealthChain",
-            "creation": "2025-02-28T14:55:33+00:00"  // UTC timestamp
-        }
-    }]
-}
-```
-
-<details>
-<summary>View decoded content</summary>
-
-```text
-Hello World
-```
-</details>
-</details>
+---
 
 ## Utilities
 
@@ -310,48 +282,39 @@ set_problem_list_item_category(problem_list_item)
 print(problem_list_item.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
-
-```json
-{
-    "resourceType": "Condition",
-    "id": "hc-3d5f62e7-729b-4da1-936c-e8e16e5a9358",
-
-    // Required fields are highlighted
-    "clinicalStatus": {  // [Required] Clinical status of the condition
-        "coding": [{
-            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-            "code": "active",
-            "display": "Active"
-        }]
-    },
-
-    // Category added by set_problem_list_item_category
-    "category": [{
-        "coding": [{
-            "system": "http://terminology.hl7.org/CodeSystem/condition-category",
-            "code": "problem-list-item",
-            "display": "Problem List Item"
-        }]
-    }],
-
-    // SNOMED CT code for the condition
-    "code": {
-        "coding": [{
-            "system": "http://snomed.info/sct",
-            "code": "38341003",
-            "display": "Hypertension"
-        }]
-    },
-
-    // Required reference to the patient
-    "subject": {  // [Required] Reference to the patient this condition belongs to
-        "reference": "Patient/123"
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "Condition",
+        "id": "hc-3d5f62e7-729b-4da1-936c-e8e16e5a9358",
+        "clinicalStatus": {
+            "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                "code": "active",
+                "display": "Active"
+            }]
+        },
+        "category": [{
+            "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+                "code": "problem-list-item",
+                "display": "Problem List Item"
+            }]
+        }],
+        "code": {
+            "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "38341003",
+                "display": "Hypertension"
+            }]
+        },
+        "subject": {
+            "reference": "Patient/123"
+        }
     }
-}
-```
-</details>
+    ```
+
+---
 
 ### read_content_attachment()
 
@@ -374,6 +337,8 @@ attachments = read_content_attachment(document_reference)
 # ]
 ```
 
+---
+
 ## Bundle Operations
 
 FHIR Bundles are containers that can hold multiple FHIR resources together. They are commonly used to group related resources or to send/receive multiple resources in a single request.
@@ -385,17 +350,17 @@ The bundle operations make it easy to:
 - Retrieve specific resource types from bundles
 - Work with multiple resource types in a single bundle
 
+---
+
 ### create_bundle()
 
 Creates a new [**Bundle**](https://www.hl7.org/fhir/bundle.html) resource.
 
-**Required fields:**
+!!! note "Required field"
+    - [type](https://www.hl7.org/fhir/bundle-definitions.html#Bundle.type)
 
-- [type](https://www.hl7.org/fhir/bundle-definitions.html#Bundle.type)
-
-**Sensible defaults:**
-
-- `type` is set to "`collection`"
+!!! tip "Sensible Defaults"
+    `type` is set to "`collection`"
 
 ```python
 from healthchain.fhir import create_bundle
@@ -407,17 +372,16 @@ bundle = create_bundle(bundle_type="collection")
 print(bundle.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": []
+    }
+    ```
 
-```json
-{
-    "resourceType": "Bundle",
-    "type": "collection",  // [Required] Type of bundle
-    "entry": []           // Empty list of resources
-}
-```
-</details>
+---
 
 ### add_resource()
 
@@ -441,56 +405,45 @@ add_resource(bundle, condition)
 print(bundle.model_dump())
 ```
 
-<details>
-<summary>View output JSON</summary>
-
-```json
-{
-    "resourceType": "Bundle",
-    "type": "collection",
-
-    // List of resources in the bundle
-    "entry": [{
-        "resource": {
-            "resourceType": "Condition",
-            "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
-
-            // Required fields from the condition
-            "clinicalStatus": {  // [Required]
-                "coding": [{
-                    "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                    "code": "active",
-                    "display": "Active"
-                }]
-            },
-
-            "code": {
-                "coding": [{
-                    "system": "http://snomed.info/sct",
-                    "code": "38341003",
-                    "display": "Hypertension"
-                }]
-            },
-
-            "subject": {  // [Required]
-                "reference": "Patient/123"
+??? example "Example Output JSON"
+    ```json
+    {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": [{
+            "resource": {
+                "resourceType": "Condition",
+                "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
+                "clinicalStatus": {
+                    "coding": [{
+                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                        "code": "active",
+                        "display": "Active"
+                    }]
+                },
+                "code": {
+                    "coding": [{
+                        "system": "http://snomed.info/sct",
+                        "code": "38341003",
+                        "display": "Hypertension"
+                    }]
+                },
+                "subject": {
+                    "reference": "Patient/123"
+                }
             }
-        }
-    }]
-}
-```
+        }]
+    }
+    ```
 
-<details>
-<summary>View field descriptions</summary>
+    ??? info "Field Descriptions"
+        | Field | Required | Description |
+        |-------|:--------:|-------------|
+        | `entry` | - | Array of resources in the bundle |
+        | `entry[].resource` | ✓ | The FHIR resource being added |
+        | `entry[].fullUrl` | - | Optional full URL for the resource |
 
-| Field | Required | Description |
-|-------|:--------:|-------------|
-| `entry` | - | Array of resources in the bundle |
-| `entry[].resource` | ✓ | The FHIR resource being added |
-| `entry[].fullUrl` | - | Optional full URL for the resource |
-
-</details>
-</details>
+---
 
 ### get_resources()
 
@@ -506,10 +459,11 @@ conditions = get_resources(bundle, "Condition")
 from fhir.resources.condition import Condition
 conditions = get_resources(bundle, Condition)
 
-# Each resource in the returned list will be a full FHIR resource
 for condition in conditions:
     print(f"Found condition: {condition.code.coding[0].display}")
 ```
+
+---
 
 ### set_resources()
 
@@ -539,60 +493,141 @@ set_resources(bundle, conditions, "Condition", replace=True)
 set_resources(bundle, conditions, "Condition", replace=False)
 ```
 
-<details>
-<summary>View example bundle with multiple conditions</summary>
-
-```json
-{
-    "resourceType": "Bundle",
-    "type": "collection",
-    "entry": [
-        {
-            "resource": {
-                "resourceType": "Condition",
-                "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
-                "clinicalStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                        "code": "active",
-                        "display": "Active"
-                    }]
-                },
-                "code": {
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "38341003",
-                        "display": "Hypertension"
-                    }]
-                },
-                "subject": {"reference": "Patient/123"}
+??? example "Bundle with Multiple Conditions"
+    ```json
+    {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Condition",
+                    "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
+                    "clinicalStatus": {
+                        "coding": [{
+                            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                            "code": "active",
+                            "display": "Active"
+                        }]
+                    },
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "38341003",
+                            "display": "Hypertension"
+                        }]
+                    },
+                    "subject": {"reference": "Patient/123"}
+                }
+            },
+            {
+                "resource": {
+                    "resourceType": "Condition",
+                    "id": "hc-9876fedc-ba98-7654-3210-fedcba987654",
+                    "clinicalStatus": {
+                        "coding": [{
+                            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                            "code": "active",
+                            "display": "Active"
+                        }]
+                    },
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "44054006",
+                            "display": "Diabetes"
+                        }]
+                    },
+                    "subject": {"reference": "Patient/123"}
+                }
             }
+        ]
+    }
+    ```
+
+---
+
+### merge_bundles()
+
+Merges multiple FHIR [**Bundle**](https://www.hl7.org/fhir/bundle.html) resources into a single bundle.
+
+- Resources from each bundle are combined into a single output bundle of `type: collection`.
+- All entries from all input bundles will appear in the resulting bundle's `entry` array.
+- If bundles have the same resource (e.g. matching `id` or identical resources), they will *all* be included unless you handle duplicates before/after calling `merge_bundles`.
+
+```python
+from healthchain.fhir import merge_bundles, create_bundle, create_condition
+
+# Create two bundles with different resources
+bundle1 = create_bundle()
+add_resource(bundle1, create_condition(
+    subject="Patient/123", code="38341003", display="Hypertension"
+))
+bundle2 = create_bundle()
+add_resource(bundle2, create_condition(
+    subject="Patient/123", code="44054006", display="Diabetes"
+))
+
+# Merge the bundles together
+merged = merge_bundles(bundle1, bundle2)
+
+# Output the merged bundle
+print(merged.model_dump())
+```
+
+??? example "Example Output JSON"
+    ```json
+    {
+      "resourceType": "Bundle",
+      "type": "collection",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
+            "clinicalStatus": {
+              "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                "code": "active",
+                "display": "Active"
+              }]
+            },
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "38341003",
+                "display": "Hypertension"
+              }]
+            },
+            "subject": { "reference": "Patient/123" }
+          }
         },
         {
-            "resource": {
-                "resourceType": "Condition",
-                "id": "hc-9876fedc-ba98-7654-3210-fedcba987654",
-                "clinicalStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                        "code": "active",
-                        "display": "Active"
-                    }]
-                },
-                "code": {
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "44054006",
-                        "display": "Diabetes"
-                    }]
-                },
-                "subject": {"reference": "Patient/123"}
-            }
+          "resource": {
+            "resourceType": "Condition",
+            "id": "hc-9876fedc-ba98-7654-3210-fedcba987654",
+            "clinicalStatus": {
+              "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                "code": "active",
+                "display": "Active"
+              }]
+            },
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "44054006",
+                "display": "Diabetes"
+              }]
+            },
+            "subject": { "reference": "Patient/123" }
+          }
         }
-    ]
-}
-```
-</details>
+      ]
+    }
+    ```
+
+---
 
 ## Common Patterns
 
@@ -654,88 +689,85 @@ medications = get_resources(bundle, "MedicationStatement")
 allergies = get_resources(bundle, "AllergyIntolerance")
 ```
 
-<details>
-<summary>View complete bundle JSON</summary>
-
-```json
-{
-    "resourceType": "Bundle",
-    "type": "collection",
-    "entry": [
-        {
-            "resource": {
-                "resourceType": "Condition",
-                "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
-                "clinicalStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                        "code": "active",
-                        "display": "Active"
-                    }]
-                },
-                "code": {
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "38341003",
-                        "display": "Hypertension"
-                    }]
-                },
-                "subject": {"reference": "Patient/123"}
-            }
-        },
-        {
-            "resource": {
-                "resourceType": "Condition",
-                "id": "hc-9876fedc-ba98-7654-3210-fedcba987654",
-                "clinicalStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                        "code": "active",
-                        "display": "Active"
-                    }]
-                },
-                "code": {
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "44054006",
-                        "display": "Diabetes"
-                    }]
-                },
-                "subject": {"reference": "Patient/123"}
-            }
-        },
-        {
-            "resource": {
-                "resourceType": "MedicationStatement",
-                "id": "hc-86a26eba-63f9-4017-b7b2-5b36f9bad5f1",
-                "status": "recorded",
-                "medication": {
-                    "concept": {
+??? example "Complete Bundle Example Output"
+    ```json
+    {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Condition",
+                    "id": "hc-3117bdce-bfab-4d71-968b-1ded900882ca",
+                    "clinicalStatus": {
                         "coding": [{
-                            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                            "code": "1049221",
-                            "display": "Acetaminophen 325 MG"
+                            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                            "code": "active",
+                            "display": "Active"
                         }]
-                    }
-                },
-                "subject": {"reference": "Patient/123"}
+                    },
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "38341003",
+                            "display": "Hypertension"
+                        }]
+                    },
+                    "subject": {"reference": "Patient/123"}
+                }
+            },
+            {
+                "resource": {
+                    "resourceType": "Condition",
+                    "id": "hc-9876fedc-ba98-7654-3210-fedcba987654",
+                    "clinicalStatus": {
+                        "coding": [{
+                            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                            "code": "active",
+                            "display": "Active"
+                        }]
+                    },
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "44054006",
+                            "display": "Diabetes"
+                        }]
+                    },
+                    "subject": {"reference": "Patient/123"}
+                }
+            },
+            {
+                "resource": {
+                    "resourceType": "MedicationStatement",
+                    "id": "hc-86a26eba-63f9-4017-b7b2-5b36f9bad5f1",
+                    "status": "recorded",
+                    "medication": {
+                        "concept": {
+                            "coding": [{
+                                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                "code": "1049221",
+                                "display": "Acetaminophen 325 MG"
+                            }]
+                        }
+                    },
+                    "subject": {"reference": "Patient/123"}
+                }
+            },
+            {
+                "resource": {
+                    "resourceType": "AllergyIntolerance",
+                    "id": "hc-65edab39-d90b-477b-bdb5-a173b21efd44",
+                    "code": {
+                        "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "418038007",
+                            "display": "Penicillin allergy"
+                        }]
+                    },
+                    "patient": {"reference": "Patient/123"}
+                }
             }
-        },
-        {
-            "resource": {
-                "resourceType": "AllergyIntolerance",
-                "id": "hc-65edab39-d90b-477b-bdb5-a173b21efd44",
-                "code": {
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "418038007",
-                        "display": "Penicillin allergy"
-                    }]
-                },
-                "patient": {"reference": "Patient/123"}
-            }
-        }
-    ]
-}
-```
-</details>
+        ]
+    }
+    ```

@@ -25,6 +25,7 @@ This page tracks templates that are under development or have known issues. Use 
 **Location:** `dev-templates/allergies/`
 
 **Usage:**
+
 1. Copy experimental files to your custom config:
    ```bash
    # After running: healthchain init-configs my_configs
@@ -70,6 +71,7 @@ We welcome contributions to improve experimental templates!
 ## Roadmap
 
 **Next Priorities:**
+
 1. 🎯 **Allergies stabilization** - Fix clinical status parsing and round-trip issues
 2. 🔮 **Future sections** - Procedures, Vital Signs, Lab Results
 3. 🔧 **Template tooling** - Better validation and testing framework

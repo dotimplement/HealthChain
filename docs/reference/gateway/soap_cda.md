@@ -10,7 +10,8 @@ Clinical Documentation workflows communicate using [CDA (Clinical Document Archi
 
 The Epic NoteReader CDI is a SOAP/CDA-based NLP service that extracts structured data from clinical notes. Like CDS Hooks, it operates in real-time and is triggered when a clinician opts into CDI functionality and signs or pends a note.
 
-The primary use case for Epic NoteReader is to convert free-text medical documentation into coded information that can be used for billing, quality reporting, continuity of care, and clinical decision support at the point-of-care ([case study](https://www.researchsquare.com/article/rs-4925228/v1)).
+The primary use case for Epic NoteReader is to convert free-text medical documentation into coded information that can be used for billing, quality reporting, continuity of care, and clinical decision support at the point-of-care ([example](https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-025-03195-1)).
+
 
 | When      | Where | What you receive            | What you send back         |
 | :-------- | :-----| :-------------------------- |----------------------------|

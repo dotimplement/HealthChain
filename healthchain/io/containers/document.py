@@ -1,4 +1,5 @@
 import logging
+
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
 from uuid import uuid4
@@ -13,17 +14,22 @@ from fhir.resources.documentreference import DocumentReference
 from fhir.resources.resource import Resource
 from fhir.resources.reference import Reference
 from fhir.resources.documentreference import DocumentReferenceRelatesTo
+from fhir.resources.operationoutcome import OperationOutcome
+from fhir.resources.provenance import Provenance
+from fhir.resources.patient import Patient
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
 from healthchain.fhir import (
     create_bundle,
+    add_resource,
     get_resources,
     set_resources,
+    extract_resources,
     create_single_codeable_concept,
     read_content_attachment,
     create_condition,
-    set_problem_list_item_category,
+    set_condition_category,
 )
 
 logger = logging.getLogger(__name__)
@@ -216,6 +222,8 @@ class FhirData:
     such as a problem list, medication list, and allergy list.
     These collections are accessible as properties of the class instance.
 
+    TODO: make problem, meds, allergy lists configurable
+
     Properties:
         bundle: The FHIR bundle containing resources
         prefetch_resources: Dictionary of CDS Hooks prefetch resources
@@ -237,6 +245,8 @@ class FhirData:
 
     _prefetch_resources: Optional[Dict[str, Resource]] = None
     _bundle: Optional[Bundle] = None
+    _operation_outcomes: List[OperationOutcome] = field(default_factory=list)
+    _provenances: List[Provenance] = field(default_factory=list)
 
     @property
     def bundle(self) -> Optional[Bundle]:
@@ -260,6 +270,44 @@ class FhirData:
     def prefetch_resources(self, resources: Dict[str, Resource]):
         """Sets the prefetch FHIR resources from CDS service requests."""
         self._prefetch_resources = resources
+
+    @property
+    def operation_outcomes(self) -> List[OperationOutcome]:
+        """Get extracted OperationOutcome resources separated from the bundle."""
+        return self._operation_outcomes
+
+    @operation_outcomes.setter
+    def operation_outcomes(self, outcomes: List[OperationOutcome]) -> None:
+        self._operation_outcomes = outcomes or []
+
+    @property
+    def provenances(self) -> List[Provenance]:
+        """Get extracted Provenance resources separated from the bundle."""
+        return self._provenances
+
+    @provenances.setter
+    def provenances(self, provenances: List[Provenance]) -> None:
+        self._provenances = provenances or []
+
+    @property
+    def patient(self) -> Optional[Patient]:
+        """Get the first Patient resource from the bundle (convenience accessor).
+
+        Returns None if no Patient resources are present in the bundle.
+        For bundles with multiple patients, use the patients property instead.
+        """
+        patients = self.get_resources("Patient")
+        return patients[0] if patients else None
+
+    @property
+    def patients(self) -> List[Patient]:
+        """Get all Patient resources from the bundle.
+
+        Most bundles contain a single patient, but some queries (e.g., family history,
+        population queries) may return multiple patients. This property provides access
+        to all Patient resources without removing them from the bundle.
+        """
+        return self.get_resources("Patient")
 
     @property
     def problem_list(self) -> List[Condition]:
@@ -640,40 +688,40 @@ class CdsAnnotations:
 @dataclass
 class Document(BaseDocument):
     """
-    A document container that extends BaseDocument with rich annotation capabilities.
+    Main document container for processing textual and clinical data in HealthChain.
 
-    This class extends BaseDocument to handle textual document data and annotations from
-    various sources. It serves as the main data structure passed through processing pipelines,
-    accumulating annotations and analysis results at each step.
+    The Document class is the primary structure used throughout annotation and analytics
+    pipelines, accumulating transformations, extractions, and results from each stage. It
+    seamlessly integrates raw text, NLP annotations, FHIR resources, clinical decision
+    support (CDS) results, and ML model outputs in one object.
 
-    The Document class provides a comprehensive representation that can include:
-    - Raw text and basic tokenization
-    - NLP annotations (tokens, entities, embeddings, spaCy docs)
-    - FHIR resources through the fhir property (problem list, medication list, allergy list)
-    - Clinical decision support results through the cds property (cards, actions)
-    - ML model outputs (Hugging Face, LangChain)
+    Features:
+        - Accepts text, FHIR Bundles/resources, or lists of FHIR resources as input.
+        - Provides basic tokenization and supports integration with NLP models (spaCy, transformers).
+        - Stores and manipulates clinical FHIR data via the .fhir property (access to bundles, problem lists, meds, allergies, etc.).
+        - Encapsulates CDS Hooks-style decision support cards and suggested actions via the .cds property.
+        - Stores outputs from external ML/LLM models: HuggingFace, LangChain, etc.
 
     Attributes:
-        nlp (NlpAnnotations): Container for NLP-related annotations like tokens and entities
-        fhir (FhirData): Container for FHIR resources and CDS context
-        cds (CdsAnnotations): Container for clinical decision support results
-        models (ModelOutputs): Container for ML model outputs
+        nlp (NlpAnnotations): NLP output (tokens, entities, embeddings, spaCy doc)
+        fhir (FhirData): FHIR resources and context (problem list, medication, allergy, etc.)
+        cds (CdsAnnotations): Clinical decision support (cards and actions)
+        models (ModelOutputs): Results from ML/LLM models (HuggingFace, LangChain, etc.)
+        text (str): The text content of the document (if available).
+        data: The original input supplied (raw text, Bundle, resource, or list of resources)
 
-    Example:
+    Usage example:
         >>> doc = Document(data="Patient has hypertension")
-        >>> # Add set continuity of care lists
+        >>> doc.nlp._tokens
+        ['Patient', 'has', 'hypertension']
         >>> doc.fhir.problem_list = [Condition(...)]
-        >>> doc.fhir.medication_list = [MedicationStatement(...)]
-        >>> # Add FHIR resources
-        >>> doc.fhir.add_resources([Patient(...)], "Patient")
-        >>> # Add a document with a parent
-        >>> parent_id = doc.fhir.add_document(DocumentReference(...), parent_id="123")
-        >>> # Add CDS results
         >>> doc.cds.cards = [Card(...)]
-        >>> doc.cds.actions = [Action(...)]
+        >>> doc.models.huggingface_results = ...
+        >>> for token in doc:
+        ...     print(token)
 
     Inherits from:
-        BaseDocument: Provides base document functionality and raw text storage
+        BaseDocument
     """
 
     _nlp: NlpAnnotations = field(default_factory=NlpAnnotations)
@@ -698,15 +746,54 @@ class Document(BaseDocument):
         return self._models
 
     def __post_init__(self):
-        """Initialize the document with basic tokenization if needed."""
+        """
+        Post-initialization setup to process textual or FHIR data.
+
+        - If input data is a FHIR Bundle, stores it and extracts OperationOutcome and Provenance resources.
+        - If input data is a list of FHIR resources, wraps them in a Bundle.
+        - For text input, sets .text field accordingly.
+        - Performs basic whitespace tokenization if necessary.
+        """
         super().__post_init__()
-        self.text = self.data
-        if not self._nlp._tokens:
+
+        # Handle FHIR Bundle data
+        if isinstance(self.data, Bundle):
+            self._fhir._bundle = self.data
+
+            # Extract OperationOutcome resources (operation results/errors)
+            outcomes = extract_resources(self._fhir._bundle, "OperationOutcome")
+            if outcomes:
+                self._fhir._operation_outcomes = outcomes
+
+            # Extract Provenance resources (data lineage/origin)
+            provenances = extract_resources(self._fhir._bundle, "Provenance")
+            if provenances:
+                self._fhir._provenances = provenances
+
+            self.text = ""  # No text content for bundle-only documents
+        # Handle list of FHIR resources
+        elif (
+            isinstance(self.data, list)
+            and self.data
+            and isinstance(self.data[0], Resource)
+        ):
+            self._fhir._bundle = create_bundle()
+            for resource in self.data:
+                add_resource(self._fhir._bundle, resource)
+            self.text = ""  # No text content for resource-only documents
+        else:
+            # Handle text data
+            self.text = self.data if isinstance(self.data, str) else str(self.data)
+
+        if not self._nlp._tokens and self.text:
             self._nlp._tokens = self.text.split()  # Basic tokenization if not provided
 
     def word_count(self) -> int:
         """
-        Get the word count from the document's text.
+        Return the number of word tokens in the document.
+
+        Returns:
+            int: The count of tokenized words in the document.
         """
         return len(self._nlp._tokens)
 
@@ -717,7 +804,7 @@ class Document(BaseDocument):
         code_attribute: str = "cui",
     ):
         """
-        Updates the document's problem list by extracting medical entities from NLP annotations.
+        Populate or update the problem list using entities extracted via NLP.
 
         This method looks for entities with associated medical codes and creates FHIR Condition
         resources from them. It supports a two-step process:
@@ -729,15 +816,18 @@ class Document(BaseDocument):
         1. spaCy entities with extension attributes (e.g., ent._.cui)
         2. Generic entities in the NLP annotations container (framework-agnostic)
 
+        TODO: make this more generic and support other resource types
+
         Args:
             patient_ref: FHIR reference to the patient (default: "Patient/123")
             coding_system: Coding system URI for the conditions (default: SNOMED CT)
             code_attribute: Name of the attribute containing the medical code (default: "cui")
 
-        Note:
-            - Preserves any existing conditions in the problem list
-            - For non-spaCy entities, codes should be stored as keys in entity dictionaries
-            - Different code attributes: "cui", "snomed_id", "icd10", etc.
+        Notes:
+            - Preserves any existing problem list Conditions.
+            - Supports framework-agnostic extraction (spaCy and dict entities).
+            - For spaCy, looks for entity extension attribute (e.g. ent._.cui).
+            - For non-spaCy, expects codes as dict keys (ent["cui"], etc.).
         """
         # Start with existing conditions to preserve them
         existing_conditions = self.fhir.problem_list.copy()
@@ -765,8 +855,10 @@ class Document(BaseDocument):
                     display=ent.text,
                     system=coding_system,
                 )
-                set_problem_list_item_category(condition)
-                logger.debug(f"Adding condition from spaCy: {condition.model_dump()}")
+                set_condition_category(condition, "problem-list-item")
+                logger.debug(
+                    f"Adding condition from spaCy: {condition.model_dump(exclude_none=True)}"
+                )
                 new_conditions.append(condition)
 
         # 2. Extract from generic NLP entities (framework-agnostic)
@@ -789,9 +881,9 @@ class Document(BaseDocument):
                     display=entity_text,
                     system=coding_system,
                 )
-                set_problem_list_item_category(condition)
+                set_condition_category(condition, "problem-list-item")
                 logger.debug(
-                    f"Adding condition from entities: {condition.model_dump()}"
+                    f"Adding condition from entities: {condition.model_dump(exclude_none=True)}"
                 )
                 new_conditions.append(condition)
 
@@ -801,7 +893,19 @@ class Document(BaseDocument):
             self.fhir.add_resources(all_conditions, "Condition", replace=True)
 
     def __iter__(self) -> Iterator[str]:
+        """
+        Iterate through the document's tokens.
+
+        Returns:
+            Iterator[str]: Iterator over the document tokens.
+        """
         return iter(self._nlp._tokens)
 
     def __len__(self) -> int:
+        """
+        Return the length of the document's text.
+
+        Returns:
+            int: Character length of the document text.
+        """
         return len(self.text)

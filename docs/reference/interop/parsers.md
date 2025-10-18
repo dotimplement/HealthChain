@@ -51,92 +51,66 @@ problems = sections.get("problems", [])
 # }
 ```
 
-<details>
-<summary>View full parsed output</summary>
+??? example "View full parsed output"
 
-Note how the original XML structure is preserved in dictionary format with '@' used to denote attributes:
+    This data structure represents a problem (condition) entry from a CDA document, containing:
 
-```python
-[{
-  'act': {
-    '@classCode': 'ACT',
-    '@moodCode': 'EVN',
-    'templateId': [
-      {'@root': '2.16.840.1.113883.10.20.1.27'},
-      {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5.1'},
-      {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5.2'},
-      {'@root': '2.16.840.1.113883.3.88.11.32.7'},
-      {'@root': '2.16.840.1.113883.3.88.11.83.7'}
-    ],
-    'id': {
-      '@extension': '51854-concern',
-      '@root': '1.2.840.114350.1.13.525.3.7.2.768076'
-    },
-    'code': {
-      '@nullFlavor': 'NA'
-    },
-    'text': {
-      'reference': {'@value': '#problem12'}
-    },
-    'statusCode': {
-      '@code': 'active'
-    },
-    'effectiveTime': {
-      'low': {'@value': '20210317'}
-    },
-    'entryRelationship': {
-      '@typeCode': 'SUBJ',
-      '@inversionInd': False,
-      'observation': {
-        '@classCode': 'OBS',
+      - A problem act with template IDs and status
+      - An observation with clinical details (SNOMED code 38341003 - Hypertension)
+      - Status information (Active)
+      - Dates (onset date: May 17, 2019)
+
+    Note how the original XML structure is preserved in dictionary format with '@' used to denote attributes:
+
+    ```python
+    [{
+      'act': {
+        '@classCode': 'ACT',
         '@moodCode': 'EVN',
         'templateId': [
-          {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5'},
-          {'@root': '2.16.840.1.113883.10.20.1.28'}
+          {'@root': '2.16.840.1.113883.10.20.1.27'},
+          {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5.1'},
+          {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5.2'},
+          {'@root': '2.16.840.1.113883.3.88.11.32.7'},
+          {'@root': '2.16.840.1.113883.3.88.11.83.7'}
         ],
         'id': {
-          '@extension': '51854',
+          '@extension': '51854-concern',
           '@root': '1.2.840.114350.1.13.525.3.7.2.768076'
         },
         'code': {
-          '@code': '64572001',
-          '@codeSystem': '2.16.840.1.113883.6.96',
-          '@codeSystemName': 'SNOMED CT'
+          '@nullFlavor': 'NA'
         },
         'text': {
-          'reference': {'@value': '#problem12name'}
+          'reference': {'@value': '#problem12'}
         },
         'statusCode': {
-          '@code': 'completed'
+          '@code': 'active'
         },
         'effectiveTime': {
-          'low': {'@value': '20190517'}
-        },
-        'value': {
-          '@code': '38341003',
-          '@codeSystem': '2.16.840.1.113883.6.96',
-          '@codeSystemName': 'SNOMED CT',
-          '@xsi:type': 'CD',
-          '@xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-          'originalText': {
-            'reference': {'@value': '#problem12name'}
-          }
+          'low': {'@value': '20210317'}
         },
         'entryRelationship': {
-          '@typeCode': 'REFR',
+          '@typeCode': 'SUBJ',
           '@inversionInd': False,
           'observation': {
             '@classCode': 'OBS',
             '@moodCode': 'EVN',
             'templateId': [
-              {'@root': '2.16.840.1.113883.10.20.1.50'},
-              {'@root': '2.16.840.1.113883.10.20.1.57'},
-              {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.1.1'}
+              {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.5'},
+              {'@root': '2.16.840.1.113883.10.20.1.28'}
             ],
+            'id': {
+              '@extension': '51854',
+              '@root': '1.2.840.114350.1.13.525.3.7.2.768076'
+            },
             'code': {
-              '@code': '33999-4',
-              '@codeSystem': '2.16.840.1.113883.6.1',
-              '@displayName': 'Status'
+              '@code': '64572001',
+              '@codeSystem': '2.16.840.1.113883.6.96',
+              '@codeSystemName': 'SNOMED CT'
+            },
+            'text': {
+              'reference': {'@value': '#problem12name'}
             },
             'statusCode': {
               '@code': 'completed'
@@ -145,33 +119,52 @@ Note how the original XML structure is preserved in dictionary format with '@' u
               'low': {'@value': '20190517'}
             },
             'value': {
-              '@code': '55561003',
+              '@code': '38341003',
               '@codeSystem': '2.16.840.1.113883.6.96',
-              '@xsi:type': 'CE',
-              '@displayName': 'Active',
-              '@xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'
+              '@codeSystemName': 'SNOMED CT',
+              '@xsi:type': 'CD',
+              '@xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+              'originalText': {
+                'reference': {'@value': '#problem12name'}
+              }
+            },
+            'entryRelationship': {
+              '@typeCode': 'REFR',
+              '@inversionInd': False,
+              'observation': {
+                '@classCode': 'OBS',
+                '@moodCode': 'EVN',
+                'templateId': [
+                  {'@root': '2.16.840.1.113883.10.20.1.50'},
+                  {'@root': '2.16.840.1.113883.10.20.1.57'},
+                  {'@root': '1.3.6.1.4.1.19376.1.5.3.1.4.1.1'}
+                ],
+                'code': {
+                  '@code': '33999-4',
+                  '@codeSystem': '2.16.840.1.113883.6.1',
+                  '@displayName': 'Status'
+                },
+                'statusCode': {
+                  '@code': 'completed'
+                },
+                'effectiveTime': {
+                  'low': {'@value': '20190517'}
+                },
+                'value': {
+                  '@code': '55561003',
+                  '@codeSystem': '2.16.840.1.113883.6.96',
+                  '@xsi:type': 'CE',
+                  '@displayName': 'Active',
+                  '@xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'
+                }
+              }
             }
           }
         }
       }
-    }
-  }
-}]
-```
+    }]
+    ```
 
-This data structure represents a problem (condition) entry from a CDA document, containing:
-<br>
-- A problem act with template IDs and status
-<br>
-- An observation with clinical details (SNOMED code 38341003 - Hypertension)
-<br>
-- Status information (Active)
-<br>
-- Dates (onset date: May 17, 2019)
-<br>
-
-This data structure is then processed by the generator to map to the configured FHIR resource.
-</details>
 
 ### Section Configuration
 

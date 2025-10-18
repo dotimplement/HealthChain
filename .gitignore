@@ -166,4 +166,5 @@ scrap/
 .ruff_cache/
 .python-version
 .cursor/
-scripts/
+.private/
+.idea/
