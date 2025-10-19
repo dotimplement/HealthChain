@@ -9,6 +9,7 @@ from faker import Faker
 
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.coding import Coding
+from healthchain.data_generators.coding_utils import create_coding
 
 
 faker = Faker()
@@ -195,11 +196,10 @@ class CodeableConceptGenerator(BaseGenerator):
 
         return CodeableConcept(
             coding=[
-                Coding(
+                create_coding(
                     system=value_set_instance.system,
                     code=code,
                     display=display,
-                    # extension=[Extension(value_set_instance.extension)],
                 )
             ]
         )
