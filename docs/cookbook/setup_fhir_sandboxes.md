@@ -130,8 +130,14 @@ Documentation on Secure Sandbox coming soon.
 ### Step 1: Create a Client Application
 
 1. Log in to your Medplum account
-2. Navigate to [ClientApplication](https://app.medplum.com/ClientApplication)
-3. Create a new Client and configure Access Policy if needed.
+2. Navigate to Client Application:
+   - Option 1: Use this direct link: [ClientApplication](https://app.medplum.com/ClientApplication)
+   - Option 2: Click the Medplum logo (top-left) and search for "Client Application" in the resources search bar
+3. Create a new Client
+4. Configure Access Policy if needed:
+   - **Required for**: Production deployments, multi-user environments, restricted data access
+   - **Optional for**: Sandbox testing with personal test data
+   - For production setup, see [Medplum's access control documentation](https://www.medplum.com/docs/access/access-policies)
 
 
 ### Step 2: Get Credentials

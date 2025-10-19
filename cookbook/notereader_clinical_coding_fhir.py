@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A complete CDI service that processes clinical notes and extracts billing codes.
+A complete CDI service that processes clinical notes and extracts FHIR conditions.
 Demonstrates FHIR-native pipelines, legacy system integration, and multi-source data handling.
 
 Requirements:
@@ -13,6 +13,7 @@ Run:
 - python notereader_clinical_coding_fhir.py  # Demo and start server
 """
 
+import logging
 import uvicorn
 import healthchain as hc
 
@@ -30,12 +31,15 @@ from healthchain.models import CdaRequest
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 from healthchain.sandbox.use_cases import ClinicalDocumentation
 
+# Suppress Spyne warnings
+logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
+
 
 load_dotenv()
 
 # Load configuration from environment variables
 config = FHIRAuthConfig.from_env("MEDPLUM")
-BILLING_URL = config.to_connection_string()
+MEDPLUM_URL = config.to_connection_string()
 
 
 def create_pipeline():
@@ -82,7 +86,7 @@ def create_app():
 
     # Modern FHIR sources
     fhir_gateway = FHIRGateway()
-    fhir_gateway.add_source("billing", BILLING_URL)
+    fhir_gateway.add_source("medplum", MEDPLUM_URL)
 
     # Legacy CDA processing
     note_service = NoteReaderService()
@@ -97,7 +101,7 @@ def create_app():
             condition = add_provenance_metadata(
                 condition, source="epic-notereader", tag_code="cdi"
             )
-            fhir_gateway.create(condition, source="billing")
+            fhir_gateway.create(condition, source="medplum")
 
         cda_response = cda_adapter.format(doc)
 
