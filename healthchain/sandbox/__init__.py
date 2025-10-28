@@ -1,3 +1,10 @@
+# New simplified API
+from .sandbox_client import SandboxClient
+from .datasets import DatasetRegistry, DatasetLoader
+
+# Import loaders to trigger auto-registration
+
+# Legacy decorators and classes (deprecated)
 from .decorator import sandbox, api, ehr
 from .environment import SandboxEnvironment
 from .use_cases import (
@@ -9,6 +16,11 @@ from .use_cases import (
 from .clients import EHRClient
 
 __all__ = [
+    # New API
+    "SandboxClient",
+    "DatasetRegistry",
+    "DatasetLoader",
+    # Legacy API (deprecated)
     "sandbox",
     "api",
     "ehr",

@@ -15,13 +15,11 @@ Run:
 
 import logging
 import uvicorn
-import healthchain as hc
 
-from fhir.resources.documentreference import DocumentReference
 from spacy.tokens import Span
 from dotenv import load_dotenv
 
-from healthchain.fhir import create_document_reference, add_provenance_metadata
+from healthchain.fhir import add_provenance_metadata
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.gateway.fhir import FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
@@ -29,7 +27,6 @@ from healthchain.gateway.soap import NoteReaderService
 from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
-from healthchain.sandbox.use_cases import ClinicalDocumentation
 
 # Suppress Spyne warnings
 logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
@@ -115,30 +112,6 @@ def create_app():
     return app
 
 
-def create_sandbox():
-    @hc.sandbox(api="http://localhost:8000/")
-    class NotereaderSandbox(ClinicalDocumentation):
-        """Sandbox for testing clinical documentation workflows"""
-
-        def __init__(self):
-            super().__init__()
-            self.data_path = "./data/notereader_cda.xml"
-
-        @hc.ehr(workflow="sign-note-inpatient")
-        def load_clinical_document(self) -> DocumentReference:
-            """Load a sample CDA document for processing"""
-            with open(self.data_path, "r") as file:
-                xml_content = file.read()
-
-            return create_document_reference(
-                data=xml_content,
-                content_type="text/xml",
-                description="Sample CDA document from sandbox",
-            )
-
-    return NotereaderSandbox()
-
-
 # Create the app
 app = create_app()
 
@@ -146,6 +119,7 @@ app = create_app()
 if __name__ == "__main__":
     import threading
     from time import sleep
+    from healthchain.sandbox import SandboxClient
 
     # Start server
     def run_server():
@@ -155,9 +129,17 @@ if __name__ == "__main__":
     server_thread.start()
     sleep(2)  # Wait for startup
 
-    # Test sandbox
-    sandbox = create_sandbox()
-    sandbox.start_sandbox()
+    # Create sandbox client for testing
+    client = SandboxClient(
+        api_url="http://localhost:8000", endpoint="/notereader/fhir/", protocol="soap"
+    )
+
+    # Load clinical document from file
+    client.load_from_path("./data/notereader_cda.xml")
+
+    # Send request and save response
+    responses = client.send_requests()
+    client.save_responses("./output/")
 
     try:
         server_thread.join()

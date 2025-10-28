@@ -1,9 +1,6 @@
-import healthchain as hc
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-from healthchain.models import Prefetch, CDSRequest, CDSResponse
-from healthchain.data_generators import CdsDataGenerator
+from healthchain.models import CDSRequest, CDSResponse
 
 from langchain_huggingface.llms import HuggingFaceEndpoint
 from langchain_huggingface import ChatHuggingFace
@@ -65,20 +62,6 @@ def discharge_summarizer(request: CDSRequest) -> CDSResponse:
 app.register_service(cds, path="/cds")
 
 
-@hc.sandbox(api="http://localhost:8000")
-class DischargeNoteSummarizer(ClinicalDecisionSupport):
-    def __init__(self):
-        super().__init__(path="/cds/cds-services/discharge-summarizer")
-        self.data_generator = CdsDataGenerator()
-
-    @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> Prefetch:
-        data = self.data_generator.generate_prefetch(
-            free_text_path="data/discharge_notes.csv", column_name="text"
-        )
-        return data
-
-
 if __name__ == "__main__":
     import uvicorn
     import threading
@@ -90,6 +73,23 @@ if __name__ == "__main__":
     api_thread = threading.Thread(target=start_api, daemon=True)
     api_thread.start()
 
-    # Start the sandbox
-    summarizer = DischargeNoteSummarizer()
-    summarizer.start_sandbox()
+    # Create sandbox client and load test data
+    from healthchain.sandbox import SandboxClient
+
+    client = SandboxClient(
+        api_url="http://localhost:8000",
+        endpoint="/cds/cds-services/discharge-summarizer",
+    )
+
+    # Load discharge notes from CSV
+    client.load_free_text(
+        workflow="encounter-discharge",
+        csv_path="data/discharge_notes.csv",
+        column_name="text",
+    )
+
+    # Send requests and get responses
+    responses = client.send_requests()
+
+    # Save results
+    client.save_responses("./output/")
