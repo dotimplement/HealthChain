@@ -1,5 +1,5 @@
-from healthchain.data_generators.proceduregenerators import ProcedureGenerator
-from healthchain.data_generators.value_sets.procedurecodes import (
+from healthchain.sandbox.generators.proceduregenerators import ProcedureGenerator
+from healthchain.sandbox.generators.value_sets.procedurecodes import (
     ProcedureCodeSimple,
     ProcedureCodeComplex,
 )

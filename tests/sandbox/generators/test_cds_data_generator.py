@@ -5,7 +5,7 @@ from fhir.resources.condition import Condition
 from fhir.resources.procedure import Procedure
 from fhir.resources.patient import Patient
 
-from healthchain.data_generators import CdsDataGenerator
+from healthchain.sandbox.generators import CdsDataGenerator
 from healthchain.sandbox.workflows import Workflow
 
 

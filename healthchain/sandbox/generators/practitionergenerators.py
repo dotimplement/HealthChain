@@ -1,7 +1,7 @@
 from typing import Optional
 from faker import Faker
 
-from healthchain.data_generators.basegenerators import (
+from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,

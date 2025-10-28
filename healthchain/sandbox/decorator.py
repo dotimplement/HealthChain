@@ -106,7 +106,7 @@ def ehr(
         @wraps(func)
         def wrapper(self, *args: Any, **kwargs: Any) -> Any:
             # Import here to avoid circular imports
-            from healthchain.data_generators import CdsDataGenerator
+            from healthchain.sandbox.generators import CdsDataGenerator
             from healthchain.sandbox.clients.ehr import EHRClient
 
             # Validate function decorated is a use case base class

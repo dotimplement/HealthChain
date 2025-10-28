@@ -304,7 +304,7 @@ class SandboxClient:
             ...     random_seed=42
             ... )
         """
-        from healthchain.data_generators import CdsDataGenerator
+        from .generators import CdsDataGenerator
 
         workflow_enum = Workflow(workflow) if isinstance(workflow, str) else workflow
 

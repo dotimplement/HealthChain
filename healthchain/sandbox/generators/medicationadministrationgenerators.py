@@ -5,7 +5,7 @@ from fhir.resources.medicationadministration import MedicationAdministration
 from fhir.resources.medicationadministration import MedicationAdministrationDosage
 from fhir.resources.reference import Reference
 from fhir.resources.codeablereference import CodeableReference
-from healthchain.data_generators.basegenerators import (
+from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,

@@ -5,13 +5,13 @@ from fhir.resources.reference import Reference
 from fhir.resources.condition import ConditionStage, ConditionParticipant
 
 from healthchain.fhir.helpers import create_single_codeable_concept, create_condition
-from healthchain.data_generators.basegenerators import (
+from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.data_generators.value_sets.conditioncodes import (
+from healthchain.sandbox.generators.value_sets.conditioncodes import (
     ConditionCodeSimple,
     ConditionCodeComplex,
 )

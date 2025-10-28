@@ -1,8 +1,8 @@
-from healthchain.data_generators.medicationrequestgenerators import (
+from healthchain.sandbox.generators.medicationrequestgenerators import (
     MedicationRequestGenerator,
     MedicationRequestContainedGenerator,
 )
-from healthchain.data_generators.value_sets.medicationcodes import (
+from healthchain.sandbox.generators.value_sets.medicationcodes import (
     MedicationRequestMedication,
 )
 

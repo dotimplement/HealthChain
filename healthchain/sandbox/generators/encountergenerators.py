@@ -7,7 +7,7 @@ from fhir.resources.coding import Coding
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.period import Period
 from fhir.resources.reference import Reference
-from healthchain.data_generators.basegenerators import (
+from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,

@@ -1,10 +1,10 @@
-from healthchain.data_generators.conditiongenerators import (
+from healthchain.sandbox.generators.conditiongenerators import (
     ClinicalStatusGenerator,
     VerificationStatusGenerator,
     CategoryGenerator,
     ConditionGenerator,
 )
-from healthchain.data_generators.value_sets.conditioncodes import (
+from healthchain.sandbox.generators.value_sets.conditioncodes import (
     ConditionCodeSimple,
     ConditionCodeComplex,
 )

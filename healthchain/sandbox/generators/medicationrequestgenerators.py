@@ -1,13 +1,13 @@
 from typing import Optional
 from faker import Faker
 
-from healthchain.data_generators.basegenerators import (
+from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
     register_generator,
     CodeableConceptGenerator,
 )
-from healthchain.data_generators.value_sets.medicationcodes import (
+from healthchain.sandbox.generators.value_sets.medicationcodes import (
     MedicationRequestMedication,
 )
 from fhir.resources.medicationrequest import MedicationRequest
