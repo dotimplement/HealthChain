@@ -140,3 +140,28 @@ class DatasetRegistry:
     def clear(cls) -> None:
         """Clear all registered datasets. Mainly for testing."""
         cls._datasets.clear()
+
+
+def list_available_datasets() -> Dict[str, str]:
+    """
+    Get a dictionary of all available datasets with their descriptions.
+
+    This helper function provides an easy way to discover what datasets
+    are available in the registry without needing to check documentation.
+
+    Returns:
+        Dictionary mapping dataset names to their descriptions
+
+    Example:
+        >>> from healthchain.sandbox import list_available_datasets
+        >>> datasets = list_available_datasets()
+        >>> print(datasets)
+        {
+            'mimic-on-fhir': 'MIMIC-IV-on-FHIR: Real de-identified clinical data...',
+            'synthea-patients': 'Synthea: Synthetic patient data generator...'
+        }
+    """
+    return {
+        name: DatasetRegistry.get_dataset_info(name)["description"]
+        for name in DatasetRegistry.list_datasets()
+    }

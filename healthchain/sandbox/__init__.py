@@ -1,6 +1,6 @@
 # New simplified API
 from .sandbox_client import SandboxClient
-from .datasets import DatasetRegistry, DatasetLoader
+from .datasets import DatasetRegistry, DatasetLoader, list_available_datasets
 
 # Import loaders to trigger auto-registration
 
@@ -20,6 +20,7 @@ __all__ = [
     "SandboxClient",
     "DatasetRegistry",
     "DatasetLoader",
+    "list_available_datasets",
     # Legacy API (deprecated)
     "sandbox",
     "api",
