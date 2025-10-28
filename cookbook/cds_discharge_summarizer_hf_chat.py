@@ -1,3 +1,6 @@
+import os
+import getpass
+
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.models import CDSRequest, CDSResponse
@@ -6,10 +9,10 @@ from langchain_huggingface.llms import HuggingFaceEndpoint
 from langchain_huggingface import ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from dotenv import load_dotenv
 
-import getpass
-import os
 
+load_dotenv()
 
 if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")

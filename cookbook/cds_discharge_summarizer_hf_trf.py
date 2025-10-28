@@ -1,10 +1,14 @@
+import os
+import getpass
+
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.sandbox import SandboxClient
 from healthchain.models import CDSRequest, CDSResponse
 
-import getpass
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
