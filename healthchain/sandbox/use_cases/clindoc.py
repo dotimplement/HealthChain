@@ -4,7 +4,6 @@ import pkgutil
 import xmltodict
 
 from typing import Dict, Optional
-from fhir.resources.documentreference import DocumentReference
 
 from healthchain.service.endpoints import ApiProtocol
 from healthchain.models import CdaRequest
@@ -42,14 +41,12 @@ class ClinDocRequestConstructor(BaseRequestConstructor):
         raise NotImplementedError("This function is not implemented yet.")
 
     @validate_workflow(UseCaseMapping.ClinicalDocumentation)
-    def construct_request(
-        self, document_reference: DocumentReference, workflow: Workflow
-    ) -> CdaRequest:
+    def construct_request(self, data: str, workflow: Workflow) -> CdaRequest:
         """
         Constructs a CDA request for clinical documentation use cases (NoteReader)
 
         Parameters:
-            document_reference (DocumentReference): FHIR DocumentReference containing CDA XML data
+            data (str): Raw XML string
             workflow (Workflow): The NoteReader workflow type, e.g. notereader-sign-inpatient
 
         Returns:
@@ -57,30 +54,34 @@ class ClinDocRequestConstructor(BaseRequestConstructor):
 
         Raises:
             ValueError: If the SOAP envelope template is invalid or missing required keys
+            ValueError: If the input data is not valid XML
         """
-        # TODO: handle different workflows
-        cda_xml = None
-        for content in document_reference.content:
-            if content.attachment.contentType == "text/xml":
-                cda_xml = content.attachment.data
-                break
+        # TODO: Add workflow-specific handling if needed
+        if not isinstance(data, str):
+            raise ValueError(f"Expected str, got {type(data).__name__}")
 
-        if cda_xml is not None:
-            # Make a copy of the SOAP envelope template
-            soap_envelope = self.soap_envelope.copy()
+        # Validate that the string is well-formed XML
+        import xml.etree.ElementTree as ET
 
-            cda_xml = base64.b64encode(cda_xml).decode("utf-8")
+        try:
+            ET.fromstring(data)
+        except ET.ParseError as e:
+            log.warning("Input is not valid XML: %s", e)
+            return None
 
-            # Insert encoded cda in the Document section
-            if not insert_at_key(soap_envelope, "urn:Document", cda_xml):
-                raise ValueError(
-                    "Key 'urn:Document' missing from SOAP envelope template!"
-                )
-            request = CdaRequest.from_dict(soap_envelope)
+        # Make a copy of the SOAP envelope template
+        soap_envelope = self.soap_envelope.copy()
 
-            return request
-        else:
-            log.warning("No CDA document found in the DocumentReference!")
+        # Base64 encode the XML
+        cda_xml_encoded = base64.b64encode(data.encode("utf-8")).decode("utf-8")
+
+        # Insert encoded cda in the Document section
+        if not insert_at_key(soap_envelope, "urn:Document", cda_xml_encoded):
+            raise ValueError("Key 'urn:Document' missing from SOAP envelope template!")
+
+        request = CdaRequest.from_dict(soap_envelope)
+
+        return request
 
 
 class ClinicalDocumentation(BaseUseCase):

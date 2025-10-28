@@ -8,7 +8,6 @@ from healthchain.sandbox.use_cases.clindoc import (
 )
 from healthchain.sandbox.workflows import Workflow, UseCaseType
 from healthchain.service.endpoints import ApiProtocol
-from healthchain.fhir import create_document_reference
 
 
 def test_clindoc_request_constructor_init():
@@ -61,16 +60,13 @@ def test_clindoc_request_construction(mock_load_envelope):
 
     # Create a DocumentReference with XML content
     xml_content = "<ClinicalDocument>Test Document</ClinicalDocument>"
-    doc_ref = create_document_reference(
-        data=xml_content, content_type="text/xml", description="Test CDA Document"
-    )
 
     # Mock CdaRequest.from_dict to avoid actual parsing
     with patch("healthchain.models.CdaRequest.from_dict") as mock_from_dict:
         mock_from_dict.return_value = MagicMock()
 
         # Construct the request
-        constructor.construct_request(doc_ref, Workflow.sign_note_inpatient)
+        constructor.construct_request(xml_content, Workflow.sign_note_inpatient)
 
         # Verify CdaRequest.from_dict was called with modified envelope
         mock_from_dict.assert_called_once()
@@ -85,17 +81,10 @@ def test_clindoc_request_construction_no_xml():
     """Test CDA request construction when no XML content is found"""
     constructor = ClinDocRequestConstructor()
 
-    # Create a DocumentReference without XML content
-    doc_ref = create_document_reference(
-        data="Not XML content",
-        content_type="text/plain",
-        description="Test non-XML Document",
-    )
-
     mock_warning = MagicMock()
     clindoc.log.warning = mock_warning
 
-    result = constructor.construct_request(doc_ref, Workflow.sign_note_inpatient)
+    result = constructor.construct_request("not XML", Workflow.sign_note_inpatient)
     assert result is None
     mock_warning.assert_called_once()
 

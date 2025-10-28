@@ -4,13 +4,14 @@ SandboxClient for quickly spinning up demos and loading test datasets.
 Replaces the decorator-based sandbox pattern with direct instantiation.
 """
 
-from enum import Enum
+import json
 import logging
 import uuid
-from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
-
 import httpx
+
+from pathlib import Path
+from enum import Enum
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from healthchain.models import CDSRequest, CDSResponse, Prefetch
 from healthchain.models.responses.cdaresponse import CdaResponse
@@ -127,7 +128,7 @@ class SandboxClient:
         registered datasets.
 
         Args:
-            source: Dataset name (e.g., "mimic-on-fhir", "synthea-patients")
+            source: Dataset name (e.g., "mimic-on-fhir", "synthea")
             **kwargs: Dataset-specific parameters (e.g., sample_size, num_patients)
 
         Returns:
@@ -137,18 +138,18 @@ class SandboxClient:
             ValueError: If dataset not found in registry
 
         Examples:
+            Discover available datasets:
+            >>> from healthchain.sandbox import list_available_datasets
+            >>> print(list_available_datasets())
+
             Load MIMIC dataset:
             >>> client.load_from_registry("mimic-on-fhir", sample_size=10)
-
-            Load Synthea dataset:
-            >>> client.load_from_registry("synthea-patients", num_patients=5)
         """
         from healthchain.sandbox.datasets import DatasetRegistry
 
         log.info(f"Loading dataset from registry: {source}")
         try:
             loaded_data = DatasetRegistry.load(source, **kwargs)
-            # TODO: check expected data format matches here
             self._construct_request(loaded_data)
             log.info(f"Loaded {source} dataset with {len(self.request_data)} requests")
         except KeyError:
@@ -170,7 +171,7 @@ class SandboxClient:
         Supports loading single files or directories. File type is auto-detected
         from extension and protocol:
         - .xml files with SOAP protocol → CDA documents
-        - .json files with REST protocol → FHIR bundles (future)
+        - .json files with REST protocol → Pre-formatted Prefetch data
 
         Args:
             path: File path or directory path
@@ -194,8 +195,6 @@ class SandboxClient:
             Load with explicit workflow:
             >>> client.load_from_path("./data/note.xml", workflow="sign-note-inpatient")
         """
-        from healthchain.fhir import create_document_reference
-
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Path not found: {path}")
@@ -222,28 +221,44 @@ class SandboxClient:
             extension = file_path.suffix.lower()
 
             if extension == ".xml":
-                # Load as CDA document
                 with open(file_path, "r") as f:
                     xml_content = f.read()
-
-                doc_ref = create_document_reference(
-                    data=xml_content,
-                    content_type="text/xml",
-                    description=f"CDA document from {file_path.name}",
-                )
-
                 workflow_enum = (
                     Workflow(workflow)
                     if isinstance(workflow, str)
                     else workflow or self.workflow or Workflow.sign_note_inpatient
                 )
-                self._construct_request(doc_ref, workflow_enum)
+                self._construct_request(xml_content, workflow_enum)
+                log.info(f"Loaded CDA document from {file_path.name}")
 
             elif extension == ".json":
-                # TODO: if it is json, load as is as prefetch (example prefetch data)
-                raise NotImplementedError(
-                    "JSON/FHIR bundle loading not yet implemented"
-                )
+                with open(file_path, "r") as f:
+                    json_data = json.load(f)
+
+                try:
+                    # Validate and load as Prefetch object
+                    prefetch_data = Prefetch(**json_data)
+
+                    workflow_enum = (
+                        Workflow(workflow)
+                        if isinstance(workflow, str)
+                        else workflow or self.workflow
+                    )
+                    if not workflow_enum:
+                        raise ValueError(
+                            "Workflow must be specified when loading JSON Prefetch data. "
+                            "Provide via 'workflow' parameter or set on client initialization."
+                        )
+                    self._construct_request(prefetch_data, workflow_enum)
+                    log.info(f"Loaded Prefetch data from {file_path.name}")
+
+                except Exception as e:
+                    log.error(f"Failed to parse {file_path} as Prefetch: {e}")
+                    raise ValueError(
+                        f"File {file_path} is not valid Prefetch format. "
+                        f"Expected JSON with 'prefetch' key containing FHIR resources. "
+                        f"Error: {e}"
+                    )
             else:
                 log.warning(f"Skipping unsupported file type: {file_path}")
 
@@ -287,13 +302,6 @@ class SandboxClient:
             ...     column_name="text",
             ...     workflow="encounter-discharge",
             ...     random_seed=42
-            ... )
-
-            Generate patient views:
-            >>> client.load_free_text(
-            ...     csv_path="./data/clinical_notes.csv",
-            ...     column_name="note_text",
-            ...     workflow="patient-view"
             ... )
         """
         from healthchain.data_generators import CdsDataGenerator

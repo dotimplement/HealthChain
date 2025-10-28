@@ -6,7 +6,6 @@ from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.fhir import create_document_reference
 
 
 def test_notereader_sandbox_integration():
@@ -32,11 +31,7 @@ def test_notereader_sandbox_integration():
 
         @hc.ehr(workflow="sign-note-inpatient")
         def load_document_reference(self):
-            return create_document_reference(
-                data=self.test_document,
-                content_type="text/xml",
-                description="Test document",
-            )
+            return self.test_document
 
     # Create an instance of the sandbox
     sandbox_instance = TestNotereaderSandbox()
@@ -63,11 +58,7 @@ def test_notereader_sandbox_workflow_execution():
 
         @hc.ehr(workflow="sign-note-inpatient")
         def get_clinical_document(self):
-            return create_document_reference(
-                data="<ClinicalDocument>Test content</ClinicalDocument>",
-                content_type="text/xml",
-                description="Test CDA document",
-            )
+            return "<ClinicalDocument>Test content</ClinicalDocument>"
 
     # Create sandbox instance
     sandbox = TestNotereaderWithData()
