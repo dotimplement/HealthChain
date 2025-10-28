@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, Optional
 
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
@@ -235,6 +235,8 @@ class FHIRGateway(BaseFHIRGateway):
         source: str = None,
         add_provenance: bool = False,
         provenance_tag: str = None,
+        follow_pagination: bool = False,
+        max_pages: Optional[int] = None,
     ) -> Bundle:
         """
         Search for FHIR resources (sync version).
@@ -245,6 +247,8 @@ class FHIRGateway(BaseFHIRGateway):
             source: Source name to search in (uses first available if None)
             add_provenance: If True, automatically add provenance metadata to resources
             provenance_tag: Optional tag code for provenance (e.g., "aggregated", "transformed")
+            follow_pagination: If True, automatically fetch all pages
+            max_pages: Maximum number of pages to fetch (None for unlimited)
 
         Returns:
             Bundle containing search results
@@ -269,6 +273,33 @@ class FHIRGateway(BaseFHIRGateway):
             resource_type=resource_type,
             client_args=(resource_type, params),
         )
+
+        # Handle pagination if requested
+        if follow_pagination:
+            all_entries = bundle.entry or []
+            page_count = 1
+
+            while bundle.link:
+                next_link = next((link for link in bundle.link if link.relation == "next"), None)
+                if not next_link or (max_pages and page_count >= max_pages):
+                    break
+
+                # Extract the relative URL from the next link
+                next_url = next_link.url.split("/")[-2:]  # Get resource_type/_search part
+                next_params = dict(pair.split("=") for pair in next_link.url.split("?")[1].split("&"))
+
+                bundle = self._execute_with_client(
+                    "search",
+                    source=source,
+                    resource_type=resource_type,
+                    client_args=(resource_type, next_params),
+                )
+
+                if bundle.entry:
+                    all_entries.extend(bundle.entry)
+                page_count += 1
+
+            bundle.entry = all_entries
 
         # Add provenance metadata if requested
         if add_provenance and bundle.entry:
