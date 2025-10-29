@@ -470,7 +470,7 @@ def run_sandbox_demos(notereader_client, cds_client):
     print_step("Starting Clinical Documentation sandbox...")
     try:
         responses = notereader_client.send_requests()
-        notereader_client.save_responses("./output/")
+        notereader_client.save_results("./output/")
         print_success(
             f"Clinical Documentation sandbox completed - {len(responses)} response(s)"
         )
@@ -483,7 +483,7 @@ def run_sandbox_demos(notereader_client, cds_client):
     print_step("Starting Clinical Decision Support sandbox...")
     try:
         responses = cds_client.send_requests()
-        cds_client.save_responses("./output/")
+        cds_client.save_results("./output/")
         print_success(
             f"Clinical Decision Support sandbox completed - {len(responses)} response(s)"
         )

@@ -267,10 +267,11 @@ class SandboxClient:
         **kwargs,
     ) -> "SandboxClient":
         """
-        Generate synthetic FHIR data from free text notes using CdsDataGenerator.
+        Generates a CDS prefetch from free text notes.
 
-        Reads clinical notes from a CSV file and generates complete FHIR resources
-        (Patient, Encounter, etc.) around the text for CDS Hooks workflows.
+        Reads clinical notes from a CSV file and wraps it in FHIR DocumentReferences
+        in a CDS prefetch field for CDS Hooks workflows. Generates additional synthetic
+        FHIR resources as needed based on the specified workflow.
 
         Args:
             csv_path: Path to CSV file containing clinical notes
@@ -299,10 +300,6 @@ class SandboxClient:
 
         workflow_enum = Workflow(workflow) if isinstance(workflow, str) else workflow
 
-        log.info(
-            f"Generating FHIR data from free text for workflow: {workflow_enum.value}"
-        )
-
         generator = CdsDataGenerator()
         generator.set_workflow(workflow_enum)
 
@@ -314,7 +311,9 @@ class SandboxClient:
         )
 
         self._construct_request(prefetch_data, workflow_enum)
-        log.info(f"Generated {len(self.request_data)} requests from free text")
+        log.info(
+            f"Generated {len(self.request_data)} requests from free text for workflow {workflow_enum.value}"
+        )
 
         return self
 
@@ -420,9 +419,10 @@ class SandboxClient:
 
         self.responses = responses
         log.info(f"Received {len(responses)} responses")
+
         return responses
 
-    def save_responses(self, directory: Union[str, Path] = "./output/") -> None:
+    def save_results(self, directory: Union[str, Path] = "./output/") -> None:
         """
         Save request and response data to disk.
 
