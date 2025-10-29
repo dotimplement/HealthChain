@@ -144,3 +144,67 @@ def test_clindoc_request_construction(mock_load_envelope):
             "urn:Document"
             in mock_envelope["soapenv:Envelope"]["soapenv:Body"]["urn:ProcessDocument"]
         )
+
+
+def test_clindoc_request_handles_malformed_xml():
+    """ClinDocRequestConstructor rejects malformed XML and returns None."""
+    constructor = ClinDocRequestConstructor()
+
+    # Test with invalid XML
+    malformed_xml = "<ClinicalDocument><unclosed>tag"
+    result = constructor.construct_request(malformed_xml, Workflow.sign_note_inpatient)
+
+    assert result is None
+
+
+def test_clindoc_request_rejects_non_string_input():
+    """ClinDocRequestConstructor raises ValueError for non-string data."""
+    constructor = ClinDocRequestConstructor()
+
+    with pytest.raises(ValueError, match="Expected str"):
+        constructor.construct_request({"not": "a string"}, Workflow.sign_note_inpatient)
+
+    with pytest.raises(ValueError, match="Expected str"):
+        constructor.construct_request(123, Workflow.sign_note_inpatient)
+
+
+def test_clindoc_request_missing_soap_envelope_key():
+    """ClinDocRequestConstructor raises ValueError when SOAP template missing required key."""
+    with patch.object(ClinDocRequestConstructor, "_load_soap_envelope") as mock_load:
+        # Mock envelope without required key
+        mock_load.return_value = {"soapenv:Envelope": {"soapenv:Body": {}}}
+
+        constructor = ClinDocRequestConstructor()
+        xml_content = "<ClinicalDocument>Test</ClinicalDocument>"
+
+        with pytest.raises(ValueError, match="Key 'urn:Document' missing"):
+            constructor.construct_request(xml_content, Workflow.sign_note_inpatient)
+
+
+def test_cds_request_construction_with_custom_context():
+    """CdsRequestConstructor includes custom context parameters in request."""
+    constructor = CdsRequestConstructor()
+    bundle = create_bundle()
+    prefetch = Prefetch(prefetch={"patient": bundle})
+
+    # Test with custom context
+    custom_context = {"patientId": "patient-123", "encounterId": "encounter-456"}
+
+    request = constructor.construct_request(
+        prefetch_data=prefetch, workflow=Workflow.patient_view, context=custom_context
+    )
+
+    assert request.context.patientId == "patient-123"
+    assert request.context.encounterId == "encounter-456"
+
+
+def test_cds_request_validates_workflow_for_clinical_doc():
+    """CdsRequestConstructor rejects ClinicalDocumentation workflows."""
+    constructor = CdsRequestConstructor()
+    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+
+    # Should reject sign-note workflows
+    with pytest.raises(ValueError, match="Invalid workflow"):
+        constructor.construct_request(
+            prefetch_data=prefetch, workflow=Workflow.sign_note_inpatient
+        )

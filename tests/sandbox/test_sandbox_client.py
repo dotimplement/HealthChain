@@ -1,4 +1,5 @@
 import pytest
+import json
 
 from healthchain.sandbox import SandboxClient
 
@@ -96,12 +97,12 @@ def test_send_requests_without_data():
         client.send_requests()
 
 
-def test_save_responses_without_responses():
-    """save_responses raises RuntimeError if no responses available."""
+def test_save_results_without_responses():
+    """save_results raises RuntimeError if no responses available."""
     client = SandboxClient(api_url="http://localhost:8000", endpoint="/test")
 
     with pytest.raises(RuntimeError, match="No responses to save"):
-        client.save_responses()
+        client.save_results()
 
 
 def test_get_status():
@@ -130,3 +131,92 @@ def test_repr():
     assert "SandboxClient" in repr_str
     assert "http://localhost:8000" in repr_str
     assert "/test" in repr_str
+
+
+def test_load_from_path_json_prefetch_file(tmp_path):
+    """load_from_path loads and validates JSON Prefetch files."""
+    from healthchain.fhir import create_bundle
+
+    # Create valid Prefetch JSON
+    json_file = tmp_path / "prefetch.json"
+    prefetch_data = {"prefetch": {"patient": create_bundle().model_dump()}}
+    json_file.write_text(json.dumps(prefetch_data))
+
+    client = SandboxClient(
+        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
+    )
+
+    client.load_from_path(str(json_file))
+
+    assert len(client.request_data) == 1
+    assert client.request_data[0].hook == "patient-view"
+
+
+def test_load_from_path_json_without_workflow_fails(tmp_path):
+    """load_from_path requires workflow for JSON Prefetch files."""
+    json_file = tmp_path / "prefetch.json"
+    json_file.write_text('{"prefetch": {}}')
+
+    client = SandboxClient(api_url="http://localhost:8000", endpoint="/test")
+
+    with pytest.raises(ValueError, match="Workflow must be specified"):
+        client.load_from_path(str(json_file))
+
+
+def test_load_from_path_invalid_json_prefetch(tmp_path):
+    """load_from_path rejects malformed JSON Prefetch data."""
+    json_file = tmp_path / "invalid.json"
+    json_file.write_text('{"not_prefetch": "data"}')
+
+    client = SandboxClient(
+        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
+    )
+
+    with pytest.raises(ValueError, match="not valid Prefetch format"):
+        client.load_from_path(str(json_file))
+
+
+def test_save_results_distinguishes_protocols(tmp_path):
+    """save_results uses correct file extension based on protocol."""
+    from healthchain.models import Prefetch
+    from healthchain.fhir import create_bundle
+    from healthchain.sandbox.workflows import Workflow
+
+    # Test REST/JSON protocol
+    rest_client = SandboxClient(
+        api_url="http://localhost:8000", endpoint="/test", protocol="rest"
+    )
+    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+    rest_client._construct_request(prefetch, Workflow.patient_view)
+    rest_client.responses = [{"cards": []}]
+
+    rest_dir = tmp_path / "rest"
+    rest_client.save_results(rest_dir)
+
+    assert len(list(rest_dir.glob("**/*.json"))) > 0
+    assert len(list(rest_dir.glob("**/*.xml"))) == 0
+
+    # Test SOAP/XML protocol
+    soap_client = SandboxClient(
+        api_url="http://localhost:8000", endpoint="/test", protocol="soap"
+    )
+    soap_client._construct_request("<doc>test</doc>", Workflow.sign_note_inpatient)
+    soap_client.responses = ["<response>data</response>"]
+
+    soap_dir = tmp_path / "soap"
+    soap_client.save_results(soap_dir)
+
+    assert len(list(soap_dir.glob("**/*.xml"))) > 0
+    assert len(list(soap_dir.glob("**/*.json"))) == 0
+
+
+def test_construct_request_requires_workflow_for_rest():
+    """_construct_request raises ValueError if workflow missing for REST protocol."""
+    client = SandboxClient(api_url="http://localhost:8000", endpoint="/test")
+    from healthchain.models import Prefetch
+    from healthchain.fhir import create_bundle
+
+    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+
+    with pytest.raises(ValueError, match="Workflow must be specified for REST"):
+        client._construct_request(prefetch, None)
