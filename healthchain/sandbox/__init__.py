@@ -1,34 +1,34 @@
-# New simplified API
-from .sandbox_client import SandboxClient
+import warnings
+
+from .sandboxclient import SandboxClient
 from .datasets import DatasetRegistry, DatasetLoader, list_available_datasets
+
 
 # Import loaders to trigger auto-registration
 
-# Legacy decorators and classes (deprecated)
-from .decorator import sandbox, api, ehr
-from .environment import SandboxEnvironment
-from .use_cases import (
-    ClinicalDecisionSupport,
-    ClinicalDocumentation,
-    CdsRequestConstructor,
-    ClinDocRequestConstructor,
-)
-from .clients import EHRClient
-
 __all__ = [
-    # New API
     "SandboxClient",
     "DatasetRegistry",
     "DatasetLoader",
     "list_available_datasets",
-    # Legacy API (deprecated)
-    "sandbox",
-    "api",
-    "ehr",
-    "SandboxEnvironment",
-    "ClinicalDecisionSupport",
-    "ClinicalDocumentation",
-    "CdsRequestConstructor",
-    "ClinDocRequestConstructor",
-    "EHRClient",
 ]
+
+
+def __getattr__(name):
+    deprecated_names = [
+        "sandbox",
+        "api",
+        "ehr",
+        "ClinicalDecisionSupport",
+        "ClinicalDocumentation",
+    ]
+
+    if name in deprecated_names:
+        warnings.warn(
+            f"{name} is deprecated and has been removed. "
+            f"Use SandboxClient instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        raise AttributeError(f"{name} has been removed")
+    raise AttributeError(f"module 'healthchain.sandbox' has no attribute '{name}'")

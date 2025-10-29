@@ -10,29 +10,20 @@ import uuid
 import httpx
 
 from pathlib import Path
-from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from healthchain.sandbox.base import ApiProtocol
 from healthchain.models import CDSRequest, CDSResponse, Prefetch
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.sandbox.workflows import Workflow
 from healthchain.sandbox.utils import ensure_directory_exists, save_data_to_directory
+from healthchain.sandbox.requestconstructors import (
+    CdsRequestConstructor,
+    ClinDocRequestConstructor,
+)
 
 
 log = logging.getLogger(__name__)
-
-
-class ApiProtocol(Enum):
-    """
-    Enum defining the supported API protocols.
-
-    Available protocols:
-    - soap: SOAP protocol
-    - rest: REST protocol
-    """
-
-    soap = "SOAP"
-    rest = "REST"
 
 
 class SandboxClient:
@@ -337,9 +328,6 @@ class SandboxClient:
             data: Data to convert (Prefetch for CDS, DocumentReference for CDA)
             workflow: Workflow to use for request construction
         """
-        from healthchain.sandbox.use_cases.cds import CdsRequestConstructor
-        from healthchain.sandbox.use_cases.clindoc import ClinDocRequestConstructor
-
         workflow = workflow or self.workflow
 
         if self.protocol == ApiProtocol.rest:

@@ -30,11 +30,9 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
 
-import healthchain as hc
 from spacy.tokens import Span
 
 # HealthChain imports
-from healthchain.data_generators.cdsdatagenerator import CdsDataGenerator
 from healthchain.gateway import (
     HealthChainAPI,
     NoteReaderService,
@@ -45,21 +43,19 @@ from healthchain.gateway.cds import CDSHooksService
 from healthchain.gateway.fhir import FHIRGateway
 from healthchain.gateway.events.dispatcher import local_handler
 from healthchain.io import Document
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses import CdaResponse
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 from healthchain.pipeline.summarizationpipeline import SummarizationPipeline
-from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.fhir import create_document_reference
-from healthchain.sandbox.use_cases.cds import ClinicalDecisionSupport
 
 # FHIR imports
 from fhir.resources.documentreference import DocumentReference
 from fhir.resources.patient import Patient
 from fhir.resources.meta import Meta
+from healthchain.sandbox import SandboxClient
+from healthchain.fhir import create_document_reference
 
 # Configuration
 CONFIG = {
@@ -409,49 +405,36 @@ def create_sandboxes():
     """Create sandbox environments for testing"""
     print_section("Creating Sandbox Environments", "🏖️")
 
-    base_url = f"http://{CONFIG['server']['host']}:{CONFIG['server']['port']}/"
+    base_url = f"http://{CONFIG['server']['host']}:{CONFIG['server']['port']}"
 
     # NoteReader Sandbox
-    @hc.sandbox(base_url)
-    class NotereaderSandbox(ClinicalDocumentation):
-        """Sandbox for testing clinical documentation workflows"""
+    notereader_client = SandboxClient(
+        api_url=base_url,
+        endpoint="/notereader/fhir/",
+        workflow=CONFIG["workflows"]["notereader"],
+        protocol="soap",
+    )
 
-        def __init__(self):
-            super().__init__()
-            self.data_path = CONFIG["data"]["cda_document_path"]
-
-        @hc.ehr(workflow=CONFIG["workflows"]["notereader"])
-        def load_clinical_document(self) -> DocumentReference:
-            """Load a sample CDA document for processing"""
-            with open(self.data_path, "r") as file:
-                xml_content = file.read()
-
-            return create_document_reference(
-                data=xml_content,
-                content_type="text/xml",
-                description="Sample CDA document from sandbox",
-            )
+    # Load CDA document
+    notereader_client.load_from_path(CONFIG["data"]["cda_document_path"])
 
     # CDS Hooks Sandbox
-    @hc.sandbox(base_url)
-    class DischargeNoteSummarizer(ClinicalDecisionSupport):
-        """Sandbox for testing clinical decision support workflows"""
+    cds_client = SandboxClient(
+        api_url=base_url,
+        endpoint="/cds/cds-services/discharge-summary",
+        workflow=CONFIG["workflows"]["cds"],
+        protocol="rest",
+    )
 
-        def __init__(self):
-            super().__init__(path="/cds/cds-services/")
-            self.data_generator = CdsDataGenerator()
-
-        @hc.ehr(workflow=CONFIG["workflows"]["cds"])
-        def load_discharge_data(self) -> Prefetch:
-            """Generate synthetic discharge data for testing"""
-            data = self.data_generator.generate_prefetch(
-                free_text_path=CONFIG["data"]["discharge_notes_path"],
-                column_name="text",
-            )
-            return data
+    # Load discharge notes
+    cds_client.load_free_text(
+        csv_path=CONFIG["data"]["discharge_notes_path"],
+        column_name="text",
+        workflow=CONFIG["workflows"]["cds"],
+    )
 
     print_success("Sandbox environments created")
-    return NotereaderSandbox(), DischargeNoteSummarizer()
+    return notereader_client, cds_client
 
 
 def start_server(app):
@@ -479,15 +462,18 @@ def start_server(app):
     return server_thread
 
 
-def run_sandbox_demos(notereader_sandbox, cds_sandbox):
+def run_sandbox_demos(notereader_client, cds_client):
     """Run the sandbox demonstrations"""
     print_section("Running Sandbox Demonstrations", "🎭")
 
     # Start NoteReader demo
     print_step("Starting Clinical Documentation sandbox...")
     try:
-        notereader_sandbox.start_sandbox()
-        print_success("Clinical Documentation sandbox completed")
+        responses = notereader_client.send_requests()
+        notereader_client.save_responses("./output/")
+        print_success(
+            f"Clinical Documentation sandbox completed - {len(responses)} response(s)"
+        )
     except Exception as e:
         print(f"❌ NoteReader sandbox error: {str(e)}")
 
@@ -496,8 +482,11 @@ def run_sandbox_demos(notereader_sandbox, cds_sandbox):
     # Start CDS Hooks demo
     print_step("Starting Clinical Decision Support sandbox...")
     try:
-        cds_sandbox.start_sandbox(service_id="discharge-summary")
-        print_success("Clinical Decision Support sandbox completed")
+        responses = cds_client.send_requests()
+        cds_client.save_responses("./output/")
+        print_success(
+            f"Clinical Decision Support sandbox completed - {len(responses)} response(s)"
+        )
     except Exception as e:
         print(f"❌ CDS sandbox error: {str(e)}")
 

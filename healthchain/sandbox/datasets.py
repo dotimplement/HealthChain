@@ -5,49 +5,14 @@ Provides a centralized registry for loading test datasets like MIMIC-on-FHIR and
 """
 
 import logging
-from abc import ABC, abstractmethod
+
 from typing import Any, Dict, List
 
 from healthchain.models import Prefetch
+from healthchain.sandbox.base import DatasetLoader
+
 
 log = logging.getLogger(__name__)
-
-
-class DatasetLoader(ABC):
-    """
-    Abstract base class for dataset loaders.
-
-    Subclasses should implement the load() method to return Prefetch data
-    from their specific dataset source.
-    """
-
-    @abstractmethod
-    def load(self, **kwargs) -> Prefetch:
-        """
-        Load dataset and return as Prefetch object.
-
-        Args:
-            **kwargs: Loader-specific parameters
-
-        Returns:
-            Prefetch object containing FHIR resources
-
-        Raises:
-            FileNotFoundError: If dataset files are not found
-            ValueError: If dataset parameters are invalid
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Dataset name for registration."""
-        pass
-
-    @property
-    def description(self) -> str:
-        """Optional description of the dataset."""
-        return ""
 
 
 class DatasetRegistry:

@@ -1,20 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict
+from enum import Enum
 
-from healthchain.sandbox.workflows import UseCaseType, Workflow
+from healthchain.models.hooks.prefetch import Prefetch
+from healthchain.sandbox.workflows import Workflow
 
 
-class BaseClient(ABC):
-    """Base client class
-    A client can be an EHR or CPOE etc.
-    The basic operation is that it sends data in a specified standard.
+class ApiProtocol(Enum):
+    """
+    Enum defining the supported API protocols.
+
+    Available protocols:
+    - soap: SOAP protocol
+    - rest: REST protocol
     """
 
-    @abstractmethod
-    def send_request(self) -> None:
-        """
-        Sends a request to AI service
-        """
+    soap = "SOAP"
+    rest = "REST"
 
 
 class BaseRequestConstructor(ABC):
@@ -30,40 +32,38 @@ class BaseRequestConstructor(ABC):
         pass
 
 
-class BaseUseCase(ABC):
+class DatasetLoader(ABC):
     """
-    Abstract base class for healthcare use cases in the sandbox environment.
+    Abstract base class for dataset loaders.
 
-    This class provides a foundation for implementing different healthcare use cases
-    such as Clinical Decision Support (CDS) or Clinical Documentation (NoteReader).
-    Subclasses must implement the type and strategy properties.
+    Subclasses should implement the load() method to return Prefetch data
+    from their specific dataset source.
     """
 
-    def __init__(
-        self,
-        client: Optional[BaseClient] = None,
-    ) -> None:
-        self._client: BaseClient = client
-
-        self.responses: List[Dict[str, str]] = []
-        self.sandbox_id = None
-        self.url = None
-
-    @property
     @abstractmethod
-    def type(self) -> UseCaseType:
+    def load(self, **kwargs) -> Prefetch:
+        """
+        Load dataset and return as Prefetch object.
+
+        Args:
+            **kwargs: Loader-specific parameters
+
+        Returns:
+            Prefetch object containing FHIR resources
+
+        Raises:
+            FileNotFoundError: If dataset files are not found
+            ValueError: If dataset parameters are invalid
+        """
         pass
 
     @property
     @abstractmethod
-    def strategy(self) -> BaseRequestConstructor:
+    def name(self) -> str:
+        """Dataset name for registration."""
         pass
 
     @property
-    def path(self) -> str:
-        path = self._path
-        if not path.startswith("/"):
-            path = "/" + path
-        if not path.endswith("/"):
-            path = path + "/"
-        return path
+    def description(self) -> str:
+        """Optional description of the dataset."""
+        return ""
