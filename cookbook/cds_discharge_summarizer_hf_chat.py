@@ -9,10 +9,11 @@ from langchain_huggingface.llms import HuggingFaceEndpoint
 from langchain_huggingface import ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+
 from dotenv import load_dotenv
 
-
 load_dotenv()
+
 
 if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")
@@ -69,6 +70,8 @@ if __name__ == "__main__":
     import uvicorn
     import threading
 
+    from healthchain.sandbox import SandboxClient
+
     # Start the API server in a separate thread
     def start_api():
         uvicorn.run(app, port=8000)
@@ -77,22 +80,23 @@ if __name__ == "__main__":
     api_thread.start()
 
     # Create sandbox client and load test data
-    from healthchain.sandbox import SandboxClient
-
     client = SandboxClient(
         api_url="http://localhost:8000",
         endpoint="/cds/cds-services/discharge-summarizer",
     )
-
     # Load discharge notes from CSV
     client.load_free_text(
         workflow="encounter-discharge",
         csv_path="data/discharge_notes.csv",
         column_name="text",
     )
-
     # Send requests and get responses
     responses = client.send_requests()
 
     # Save results
-    client.save_responses("./output/")
+    client.save_results("./output/")
+
+    try:
+        api_thread.join()
+    except KeyboardInterrupt:
+        pass

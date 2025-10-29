@@ -25,34 +25,34 @@ Current implemented workflows:
 
 For more information on CDS workflows, see the [CDS Hooks Protocol](../gateway/cdshooks.md) documentation.
 
-You can use the data generator within a client function or on its own.
+You can use the data generator with `SandboxClient.load_free_text()` or standalone:
 
-=== "Within client"
+=== "With SandboxClient"
     ```python
-    import healthchain as hc
-    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-    from healthchain.models import Prefetch
-    from healthchain.data_generators import CdsDataGenerator
+    from healthchain.sandbox import SandboxClient
 
-    @hc.sandbox
-    class MyCoolSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            self.data_generator = CdsDataGenerator()
+    # Create client
+    client = SandboxClient(
+        api_url="http://localhost:8000",
+        endpoint="/cds/cds-services/my-service",
+        workflow="encounter-discharge"
+    )
 
-        @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> Prefetch:
-            prefetch = self.data_generator.generate_prefetch()
-            return prefetch
+    # Generate FHIR data from clinical notes
+    client.load_free_text(
+        csv_path="./data/discharge_notes.csv",
+        column_name="text",
+        workflow="encounter-discharge",
+        random_seed=42
+    )
 
-        @hc.api
-        def my_server(self, request) -> None:
-            pass
+    responses = client.send_requests()
     ```
 
 
-=== "On its own"
+=== "Standalone"
     ```python
-    from healthchain.data_generators import CdsDataGenerator
+    from healthchain.sandbox.generators import CdsDataGenerator
     from healthchain.sandbox.workflows import Workflow
 
     # Initialize data generator
@@ -84,10 +84,6 @@ You can use the data generator within a client function or on its own.
 data_generator.generate(constrain=["has_medication_requests"])
 ```
 -->
-
-## Other synthetic data sources
-
-If you are looking for realistic datasets, you are also free to load your own data in a sandbox run! Check out [MIMIC](https://mimic.mit.edu/) for comprehensive continuity of care records and free-text data, or [Synthea](https://synthetichealth.github.io/synthea/) for synthetically generated FHIR resources. Both are open-source, although you will need to complete [PhysioNet Credentialing](https://mimic.mit.edu/docs/gettingstarted/) to access MIMIC.
 
 ## Loading free-text
 

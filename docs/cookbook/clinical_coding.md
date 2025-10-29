@@ -217,37 +217,21 @@ app.register_service(note_service, path="/notereader")
 
 ## Test with Sample Documents
 
-HealthChain provides a [sandbox utility](../reference/utilities/sandbox.md) which simulates the NoteReader workflow end-to-end. It loads your sample CDA document, sends it to your service via the configured endpoint, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally before connecting to Epic.
+HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the NoteReader workflow end-to-end. It loads your sample CDA document, sends it to your service via the configured endpoint, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally before connecting to Epic.
 
 ```python
-import healthchain as hc
+from healthchain.sandbox import SandboxClient
 
-from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.fhir import create_document_reference
+# Create sandbox client for SOAP/CDA testing
+client = SandboxClient(
+    api_url="http://localhost:8000",
+    endpoint="/notereader/ProcessDocument",
+    workflow="sign-note-inpatient",
+    protocol="soap"
+)
 
-from fhir.resources.documentreference import DocumentReference
-
-def create_sandbox():
-    @hc.sandbox(api="http://localhost:8000/")
-    class NotereaderSandbox(ClinicalDocumentation):
-        """Sandbox for testing clinical documentation workflows"""
-        def __init__(self):
-            super().__init__()
-            self.data_path = "./data/notereader_cda.xml"
-
-        @hc.ehr(workflow="sign-note-inpatient")
-        def load_clinical_document(self) -> DocumentReference:
-            """Load a sample CDA document for processing"""
-            with open(self.data_path, "r") as file:
-                xml_content = file.read()
-
-            return create_document_reference(
-                data=xml_content,
-                content_type="text/xml",
-                description="Sample CDA document from sandbox",
-            )
-
-    return NotereaderSandbox()
+# Load sample CDA document
+client.load_from_path("./data/notereader_cda.xml")
 ```
 
 ## Run the Complete Example
@@ -256,13 +240,18 @@ Now for the moment of truth! Start your service and run the sandbox to see the c
 
 ```python
 import uvicorn
+import threading
 
-# Start the service on port 8000
-uvicorn.run(app)
+# Start the API server in a separate thread
+def start_api():
+    uvicorn.run(app, port=8000)
 
-# Create and start the sandbox
-sandbox = create_sandbox()
-sandbox.start_sandbox()
+api_thread = threading.Thread(target=start_api, daemon=True)
+api_thread.start()
+
+# Send requests and save responses with sandbox client
+client.send_requests()
+client.save_results("./output/")
 ```
 
 !!! abstract "What happens when you run this"

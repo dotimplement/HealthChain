@@ -14,7 +14,6 @@ Run:
 """
 
 import logging
-import uvicorn
 
 from spacy.tokens import Span
 from dotenv import load_dotenv
@@ -28,9 +27,9 @@ from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 
+
 # Suppress Spyne warnings
 logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
-
 
 load_dotenv()
 
@@ -118,6 +117,8 @@ app = create_app()
 
 if __name__ == "__main__":
     import threading
+    import uvicorn
+
     from time import sleep
     from healthchain.sandbox import SandboxClient
 
@@ -133,13 +134,14 @@ if __name__ == "__main__":
     client = SandboxClient(
         api_url="http://localhost:8000", endpoint="/notereader/fhir/", protocol="soap"
     )
-
     # Load clinical document from file
     client.load_from_path("./data/notereader_cda.xml")
 
     # Send request and save response
     responses = client.send_requests()
-    client.save_responses("./output/")
+
+    # Save results
+    client.save_results("./output/")
 
     try:
         server_thread.join()
