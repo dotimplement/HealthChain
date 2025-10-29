@@ -10,7 +10,7 @@ This adapter is particularly useful for clinical documentation improvement (CDI)
 
 | Input | Output | Document Access |
 |-------|--------|-----------------|
-| [**CdaRequest**](../../../api/use_cases.md#healthchain.models.requests.cdarequest.CdaRequest) | [**CdaResponse**](../../../api/use_cases.md#healthchain.models.responses.cdaresponse.CdaResponse) | `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.text` |
+| [**CdaRequest**](../../../api/sandbox.md#healthchain.models.requests.cdarequest.CdaRequest) | [**CdaResponse**](../../../api/sandbox.md#healthchain.models.responses.cdaresponse.CdaResponse) | `Document.fhir.problem_list`, `Document.fhir.medication_list`, `Document.text` |
 
 ## Document Data Access
 

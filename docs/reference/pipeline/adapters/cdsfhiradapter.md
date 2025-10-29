@@ -10,7 +10,7 @@ This adapter is specifically designed for building CDS services that receive FHI
 
 | Input | Output | Document Access |
 |-------|--------|-----------------|
-| [**CDSRequest**](../../../api/use_cases.md#healthchain.models.requests.cdsrequest.CDSRequest) | [**CDSResponse**](../../../api/use_cases.md#healthchain.models.responses.cdsresponse.CDSResponse) | `Document.fhir.get_prefetch_resources()`, `Document.cds.cards` |
+| [**CDSRequest**](../../../api/sandbox.md#healthchain.models.requests.cdsrequest.CDSRequest) | [**CDSResponse**](../../../api/sandbox.md#healthchain.models.responses.cdsresponse.CDSResponse) | `Document.fhir.get_prefetch_resources()`, `Document.cds.cards` |
 
 
 ## Document Data Access

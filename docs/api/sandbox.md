@@ -1,9 +1,11 @@
-# Use Cases
+# Sandbox Client
 
-::: healthchain.sandbox.use_cases.cds
+::: healthchain.sandbox.sandboxclient.SandboxClient
+
+::: healthchain.sandbox.generators.cdsdatagenerator
+
 ::: healthchain.models.requests.cdsrequest
 ::: healthchain.models.responses.cdsresponse
 
-::: healthchain.sandbox.use_cases.clindoc
 ::: healthchain.models.requests.cdarequest
 ::: healthchain.models.responses.cdaresponse

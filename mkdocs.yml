@@ -64,12 +64,9 @@ nav:
       - api/component.md
       - api/containers.md
       - api/adapters.md
-      - api/use_cases.md
       - api/cds_hooks.md
-      - api/service.md
-      - api/clients.md
+      - api/sandbox.md
       - api/interop.md
-      - api/data_generators.md
       - api/fhir_helpers.md
   - Community:
       - community/index.md

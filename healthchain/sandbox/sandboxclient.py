@@ -110,7 +110,7 @@ class SandboxClient:
     def load_from_registry(
         self,
         source: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "SandboxClient":
         """
         Load data from the dataset registry.
@@ -264,7 +264,7 @@ class SandboxClient:
         column_name: str,
         workflow: Union[Workflow, str],
         random_seed: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "SandboxClient":
         """
         Generates a CDS prefetch from free text notes.
