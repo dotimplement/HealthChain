@@ -10,8 +10,7 @@ import base64
 import pkgutil
 import xmltodict
 
-from typing import Dict, Optional
-from fhir.resources.resource import Resource
+from typing import Any, Dict, Optional
 
 from healthchain.sandbox.base import BaseRequestConstructor, ApiProtocol
 from healthchain.sandbox.workflows import (
@@ -27,7 +26,6 @@ from healthchain.models.hooks import (
     OrderSignContext,
     PatientViewContext,
     EncounterDischargeContext,
-    Prefetch,
 )
 
 
@@ -59,7 +57,7 @@ class CdsRequestConstructor(BaseRequestConstructor):
     @validate_workflow(UseCaseMapping.ClinicalDecisionSupport)
     def construct_request(
         self,
-        prefetch_data: Dict[str, Resource],
+        prefetch_data: Dict[str, Any],
         workflow: Workflow,
         context: Optional[Dict[str, str]] = {},
     ) -> CDSRequest:
@@ -67,7 +65,7 @@ class CdsRequestConstructor(BaseRequestConstructor):
         Build a CDS Hooks request including context and prefetch data.
 
         Args:
-            prefetch_data (Dict[str, Resource]): Dictionary mapping prefetch template names to FHIR resource objects.
+            prefetch_data (Dict[str, Any]): Dict containing FHIR resource objects.
             workflow (Workflow): The name of the CDS Hooks workflow (e.g., Workflow.patient_view).
             context (Optional[Dict[str, str]]): Optional context values for initializing the workflow's context model.
 
@@ -76,30 +74,25 @@ class CdsRequestConstructor(BaseRequestConstructor):
 
         Raises:
             ValueError: If the workflow is not supported or lacks a defined context model.
-            TypeError: If prefetch_data is not an instance of Prefetch.
 
         Note:
             Only CDS workflows supported by UseCaseMapping.ClinicalDecisionSupport are valid.
-            The expected prefetch_data argument is a Prefetch object encapsulating FHIR resources.
 
         # TODO: Add FhirServer support in future.
         """
 
-        log.debug(f"Constructing CDS request for {workflow.value} from {prefetch_data}")
+        log.debug(f"Constructing CDS request for {workflow.value}")
 
         context_model = self.context_mapping.get(workflow, None)
         if context_model is None:
             raise ValueError(
                 f"Invalid workflow {workflow.value} or workflow model not implemented."
             )
-        if not isinstance(prefetch_data, Prefetch):
-            raise TypeError(
-                f"Prefetch data must be a Prefetch object, but got {type(prefetch_data)}"
-            )
+
         request = CDSRequest(
             hook=workflow.value,
             context=context_model(**context),
-            prefetch=prefetch_data.prefetch,
+            prefetch=prefetch_data,
         )
         return request
 

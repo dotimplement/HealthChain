@@ -8,7 +8,6 @@ import logging
 
 from typing import Any, Dict, List
 
-from healthchain.models import Prefetch
 from healthchain.sandbox.base import DatasetLoader
 
 
@@ -43,16 +42,17 @@ class DatasetRegistry:
         log.debug(f"Registered dataset: {name}")
 
     @classmethod
-    def load(cls, name: str, **kwargs) -> Prefetch:
+    def load(cls, name: str, data_path: str, **kwargs) -> Dict:
         """
         Load a dataset by name.
 
         Args:
             name: Name of the dataset to load
+            data_path: Path to the dataset files
             **kwargs: Dataset-specific parameters
 
         Returns:
-            Prefetch object containing FHIR resources
+            Dict containing FHIR resources
 
         Raises:
             KeyError: If dataset name is not registered
@@ -65,7 +65,7 @@ class DatasetRegistry:
 
         loader = cls._datasets[name]
         log.info(f"Loading dataset: {name}")
-        return loader.load(**kwargs)
+        return loader.load(data_path=data_path, **kwargs)
 
     @classmethod
     def list_datasets(cls) -> List[str]:

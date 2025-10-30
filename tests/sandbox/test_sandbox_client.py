@@ -164,21 +164,21 @@ def test_load_from_path_json_without_workflow_fails(tmp_path):
 
 
 def test_load_from_path_invalid_json_prefetch(tmp_path):
-    """load_from_path rejects malformed JSON Prefetch data."""
-    json_file = tmp_path / "invalid.json"
+    """load_from_path processes JSON data for prefetch."""
+    json_file = tmp_path / "data.json"
     json_file.write_text('{"not_prefetch": "data"}')
 
     client = SandboxClient(
         api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
     )
 
-    with pytest.raises(ValueError, match="not valid Prefetch format"):
-        client.load_from_path(str(json_file))
+    # Should load the JSON data without error since we're using plain dicts now
+    client.load_from_path(str(json_file))
+    assert len(client.request_data) == 1
 
 
 def test_save_results_distinguishes_protocols(tmp_path):
     """save_results uses correct file extension based on protocol."""
-    from healthchain.models import Prefetch
     from healthchain.fhir import create_bundle
     from healthchain.sandbox.workflows import Workflow
 
@@ -186,7 +186,7 @@ def test_save_results_distinguishes_protocols(tmp_path):
     rest_client = SandboxClient(
         api_url="http://localhost:8000", endpoint="/test", protocol="rest"
     )
-    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+    prefetch = {"patient": create_bundle()}
     rest_client._construct_request(prefetch, Workflow.patient_view)
     rest_client.responses = [{"cards": []}]
 
@@ -213,10 +213,9 @@ def test_save_results_distinguishes_protocols(tmp_path):
 def test_construct_request_requires_workflow_for_rest():
     """_construct_request raises ValueError if workflow missing for REST protocol."""
     client = SandboxClient(api_url="http://localhost:8000", endpoint="/test")
-    from healthchain.models import Prefetch
     from healthchain.fhir import create_bundle
 
-    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+    prefetch = {"patient": create_bundle()}
 
     with pytest.raises(ValueError, match="Workflow must be specified for REST"):
         client._construct_request(prefetch, None)

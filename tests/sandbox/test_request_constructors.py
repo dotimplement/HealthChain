@@ -6,7 +6,6 @@ from healthchain.sandbox.requestconstructors import (
     ClinDocRequestConstructor,
 )
 from healthchain.sandbox.workflows import Workflow
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.sandbox.base import ApiProtocol
 from healthchain.fhir import create_bundle
 
@@ -29,8 +28,8 @@ def test_cds_request_constructor_validation():
     """Test validation of workflows in CdsRequestConstructor"""
     constructor = CdsRequestConstructor()
 
-    # Create a prefetch object
-    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+    # Create a prefetch dict
+    prefetch = {"patient": create_bundle()}
 
     # Test with valid workflow
     valid_workflow = Workflow.patient_view
@@ -46,15 +45,16 @@ def test_cds_request_constructor_validation():
 
 
 def test_cds_request_constructor_type_error():
-    """Test type error handling in CdsRequestConstructor"""
+    """Test validation error handling in CdsRequestConstructor"""
     constructor = CdsRequestConstructor()
 
-    # Test with invalid prefetch data type - should raise TypeError
-    with pytest.raises(TypeError):
-        # Not a Prefetch object
-        invalid_prefetch = {"patient": create_bundle()}
+    # Test with invalid workflow - should raise ValueError
+    with pytest.raises(ValueError):
+        # Invalid workflow
+        invalid_workflow = MagicMock()
+        invalid_workflow.value = "invalid-workflow"
         constructor.construct_request(
-            prefetch_data=invalid_prefetch, workflow=Workflow.patient_view
+            prefetch_data={"patient": create_bundle()}, workflow=invalid_workflow
         )
 
 
@@ -62,9 +62,9 @@ def test_cds_request_construction():
     """Test request construction in CdsRequestConstructor"""
     constructor = CdsRequestConstructor()
 
-    # Create a bundle and prefetch
+    # Create a bundle and prefetch dict
     bundle = create_bundle()
-    prefetch = Prefetch(prefetch={"patient": bundle})
+    prefetch = {"patient": bundle}
 
     # Construct a request
     request = constructor.construct_request(
@@ -76,7 +76,7 @@ def test_cds_request_construction():
     # Verify request properties
     assert request.hook == "patient-view"
     assert request.context.patientId == "test-patient-123"
-    assert request.prefetch == prefetch.prefetch
+    assert request.prefetch == prefetch
 
 
 def test_clindoc_request_constructor_init():
@@ -185,7 +185,7 @@ def test_cds_request_construction_with_custom_context():
     """CdsRequestConstructor includes custom context parameters in request."""
     constructor = CdsRequestConstructor()
     bundle = create_bundle()
-    prefetch = Prefetch(prefetch={"patient": bundle})
+    prefetch = {"patient": bundle}
 
     # Test with custom context
     custom_context = {"patientId": "patient-123", "encounterId": "encounter-456"}
@@ -201,7 +201,7 @@ def test_cds_request_construction_with_custom_context():
 def test_cds_request_validates_workflow_for_clinical_doc():
     """CdsRequestConstructor rejects ClinicalDocumentation workflows."""
     constructor = CdsRequestConstructor()
-    prefetch = Prefetch(prefetch={"patient": create_bundle()})
+    prefetch = {"patient": create_bundle()}
 
     # Should reject sign-note workflows
     with pytest.raises(ValueError, match="Invalid workflow"):

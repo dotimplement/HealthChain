@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from healthchain.sandbox.base import ApiProtocol
-from healthchain.models import CDSRequest, CDSResponse, Prefetch
+from healthchain.models import CDSRequest, CDSResponse
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.sandbox.workflows import Workflow
 from healthchain.sandbox.utils import ensure_directory_exists, save_data_to_directory
@@ -110,6 +110,8 @@ class SandboxClient:
     def load_from_registry(
         self,
         source: str,
+        data_path: str,
+        workflow: Optional[Union[Workflow, str]] = None,
         **kwargs: Any,
     ) -> "SandboxClient":
         """
@@ -120,13 +122,17 @@ class SandboxClient:
 
         Args:
             source: Dataset name (e.g., "mimic-on-fhir", "synthea")
-            **kwargs: Dataset-specific parameters (e.g., sample_size, num_patients)
+            data_path: Path to the dataset files
+            workflow: CDS workflow type (e.g., "encounter-discharge", "patient-view").
+                     If not provided, uses the workflow set on client initialization.
+            **kwargs: Dataset-specific parameters (e.g., resource_types, sample_size)
 
         Returns:
             Self for method chaining
 
         Raises:
-            ValueError: If dataset not found in registry
+            ValueError: If dataset not found in registry or workflow not specified
+            FileNotFoundError: If data_path doesn't exist
 
         Examples:
             Discover available datasets:
@@ -134,14 +140,23 @@ class SandboxClient:
             >>> print(list_available_datasets())
 
             Load MIMIC dataset:
-            >>> client.load_from_registry("mimic-on-fhir", sample_size=10)
+            >>> client.load_from_registry(
+            ...     "mimic-on-fhir",
+            ...     data_path="./data/mimic-fhir",
+            ...     workflow="patient-view",
+            ...     resource_types=["MimicMedication"],
+            ...     sample_size=10
+            ... )
         """
         from healthchain.sandbox.datasets import DatasetRegistry
 
         log.info(f"Loading dataset from registry: {source}")
         try:
-            loaded_data = DatasetRegistry.load(source, **kwargs)
-            self._construct_request(loaded_data)
+            loaded_data = DatasetRegistry.load(source, data_path=data_path, **kwargs)
+            workflow_enum = (
+                Workflow(workflow) if isinstance(workflow, str) else workflow
+            )
+            self._construct_request(loaded_data, workflow_enum)
             log.info(f"Loaded {source} dataset with {len(self.request_data)} requests")
         except KeyError:
             raise ValueError(
@@ -227,9 +242,7 @@ class SandboxClient:
                     json_data = json.load(f)
 
                 try:
-                    # Validate and load as Prefetch object
-                    prefetch_data = Prefetch(**json_data)
-
+                    # Load as prefetch dict
                     workflow_enum = (
                         Workflow(workflow)
                         if isinstance(workflow, str)
@@ -237,17 +250,17 @@ class SandboxClient:
                     )
                     if not workflow_enum:
                         raise ValueError(
-                            "Workflow must be specified when loading JSON Prefetch data. "
+                            "Workflow must be specified when loading JSON prefetch data. "
                             "Provide via 'workflow' parameter or set on client initialization."
                         )
-                    self._construct_request(prefetch_data, workflow_enum)
-                    log.info(f"Loaded Prefetch data from {file_path.name}")
+                    self._construct_request(json_data, workflow_enum)
+                    log.info(f"Loaded prefetch data from {file_path.name}")
 
                 except Exception as e:
-                    log.error(f"Failed to parse {file_path} as Prefetch: {e}")
+                    log.error(f"Failed to parse {file_path} as prefetch data: {e}")
                     raise ValueError(
-                        f"File {file_path} is not valid Prefetch format. "
-                        f"Expected JSON with 'prefetch' key containing FHIR resources. "
+                        f"File {file_path} is not valid prefetch format. "
+                        f"Expected JSON with FHIR resources. "
                         f"Error: {e}"
                     )
             else:
@@ -318,13 +331,13 @@ class SandboxClient:
         return self
 
     def _construct_request(
-        self, data: Union[Prefetch, Any], workflow: Optional[Workflow] = None
+        self, data: Union[Dict[str, Any], Any], workflow: Optional[Workflow] = None
     ) -> None:
         """
         Convert data to request format and add to queue.
 
         Args:
-            data: Data to convert (Prefetch for CDS, DocumentReference for CDA)
+            data: Data to convert (Dict for CDS prefetch, string for CDA)
             workflow: Workflow to use for request construction
         """
         workflow = workflow or self.workflow

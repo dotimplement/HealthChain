@@ -5,7 +5,6 @@ from healthchain.gateway.cds import CDSHooksService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.fhir import create_bundle, create_condition
 
 
@@ -37,7 +36,7 @@ def test_cdshooks_sandbox_integration():
 
     # Load test data
     test_bundle = create_bundle()
-    prefetch_data = Prefetch(prefetch={"patient": test_bundle})
+    prefetch_data = {"patient": test_bundle}
     client._construct_request(prefetch_data, client.workflow)
 
     # Verify request was constructed
@@ -88,7 +87,7 @@ def test_cdshooks_workflows():
     patient_bundle.entry = [{"resource": condition}]
 
     # Load data into client
-    prefetch_data = Prefetch(prefetch={"patient": patient_bundle})
+    prefetch_data = {"patient": patient_bundle}
     client._construct_request(prefetch_data, client.workflow)
 
     # Verify request was constructed

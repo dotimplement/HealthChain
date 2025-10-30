@@ -11,6 +11,7 @@ from healthchain.fhir.helpers import (
     create_document_reference,
     create_single_attachment,
     create_resource_from_dict,
+    convert_prefetch_to_fhir_objects,
     add_provenance_metadata,
     add_coding_to_codeable_concept,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "create_document_reference",
     "create_single_attachment",
     "create_resource_from_dict",
+    "convert_prefetch_to_fhir_objects",
     # Resource modification
     "add_provenance_metadata",
     "add_coding_to_codeable_concept",

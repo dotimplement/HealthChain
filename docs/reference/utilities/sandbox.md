@@ -142,6 +142,7 @@ print(status)
     The `@hc.sandbox` and `@hc.ehr` decorators with `ClinicalDecisionSupport` and `ClinicalDocumentation` base classes are deprecated. Use `SandboxClient` instead.
 
 **Before:**
+
 ```python
 @hc.sandbox
 class TestCDS(ClinicalDecisionSupport):
@@ -151,6 +152,7 @@ class TestCDS(ClinicalDecisionSupport):
 ```
 
 **After:**
+
 ```python
 client = SandboxClient(
     api_url="http://localhost:8000",
