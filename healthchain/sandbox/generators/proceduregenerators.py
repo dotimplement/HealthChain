@@ -1,0 +1,60 @@
+from typing import Optional
+from faker import Faker
+
+from healthchain.sandbox.generators.basegenerators import (
+    BaseGenerator,
+    generator_registry,
+    register_generator,
+    CodeableConceptGenerator,
+)
+from healthchain.sandbox.generators.value_sets.procedurecodes import (
+    ProcedureCodeSimple,
+    ProcedureCodeComplex,
+)
+from fhir.resources.procedure import Procedure
+from fhir.resources.reference import Reference
+
+
+faker = Faker()
+
+
+@register_generator
+class EventStatusGenerator(BaseGenerator):
+    @staticmethod
+    def generate():
+        return faker.random_element(elements=("in-progress", "completed"))
+
+
+@register_generator
+class ProcedureSnomedCodeGenerator(CodeableConceptGenerator):
+    def generate(self, constraints: Optional[list] = None):
+        constraints = constraints or []
+        if "complex-procedure" not in constraints:
+            return self.generate_from_valueset(ProcedureCodeSimple)
+        elif "complex-procedure" in constraints:
+            return self.generate_from_valueset(ProcedureCodeComplex)
+
+
+@register_generator
+class ProcedureGenerator(BaseGenerator):
+    @staticmethod
+    def generate(
+        subject_reference: Optional[str] = None,
+        encounter_reference: Optional[str] = None,
+        constraints: Optional[list] = None,
+        random_seed: Optional[int] = None,
+    ):
+        Faker.seed(random_seed)
+        subject_reference = subject_reference or "Patient/123"
+        encounter_reference = encounter_reference or "Encounter/123"
+        code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(
+            constraints=constraints
+        )
+        return Procedure(
+            id=generator_registry.get("IdGenerator").generate(),
+            status=generator_registry.get("EventStatusGenerator").generate(),
+            code=code,
+            subject=Reference(reference=subject_reference),
+            encounter=Reference(reference=encounter_reference),
+            occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),
+        )

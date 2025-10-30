@@ -1,18 +1,17 @@
 from unittest.mock import patch, MagicMock
 
-import healthchain as hc
+from healthchain.sandbox import SandboxClient
 from healthchain.gateway.cds import CDSHooksService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from healthchain.models.hooks.prefetch import Prefetch
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
 from healthchain.fhir import create_bundle, create_condition
 
 
 def test_cdshooks_sandbox_integration():
-    """Test CDSHooks service integration with sandbox decorator"""
-    # Create HealthChainAPI instead of FastAPI
+    """Test CDSHooks service integration with SandboxClient"""
+    # Create HealthChainAPI
     app = HealthChainAPI()
     cds_service = CDSHooksService()
 
@@ -28,22 +27,28 @@ def test_cdshooks_sandbox_integration():
     # Register the service with the HealthChainAPI
     app.register_service(cds_service, "/cds")
 
-    # Define a sandbox class using the CDSHooks service
-    @hc.sandbox("http://localhost:8000/")
-    class TestCDSHooksSandbox(ClinicalDecisionSupport):
-        def __init__(self):
-            super().__init__(path="/cds/cds-services/")
-            self.test_bundle = create_bundle()
+    # Create SandboxClient
+    client = SandboxClient(
+        api_url="http://localhost:8000",
+        endpoint="/cds/cds-services/test-patient-view",
+        workflow="patient-view",
+        protocol="rest",
+    )
 
-        @hc.ehr(workflow="patient-view")
-        def load_prefetch_data(self) -> Prefetch:
-            return Prefetch(prefetch={"patient": self.test_bundle})
+    # Load test data
+    test_bundle = create_bundle()
+    prefetch_data = Prefetch(prefetch={"patient": test_bundle})
+    client._construct_request(prefetch_data, client.workflow)
 
-    # Create an instance of the sandbox
-    sandbox_instance = TestCDSHooksSandbox()
+    # Verify request was constructed
+    assert len(client.request_data) == 1
+    assert client.request_data[0].hook == "patient-view"
 
-    # Patch the client request method to avoid actual HTTP requests
-    with patch.object(sandbox_instance, "_client") as mock_client:
+    # Mock HTTP response
+    with patch("httpx.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value.__enter__.return_value = mock_client
+
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "cards": [
@@ -54,43 +59,52 @@ def test_cdshooks_sandbox_integration():
                 }
             ]
         }
-        mock_client.send_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
+        mock_client.post.return_value = mock_response
 
-        # Verify the sandbox can be initialized with the workflow
-        assert hasattr(sandbox_instance, "load_prefetch_data")
+        # Send requests
+        responses = client.send_requests()
+
+        # Verify response
+        assert len(responses) == 1
+        assert responses[0]["cards"][0]["summary"] == "Test Card"
 
 
 def test_cdshooks_workflows():
-    """Test CDSHooks sandbox"""
+    """Test CDSHooks sandbox with patient-view workflow"""
+    # Create SandboxClient
+    client = SandboxClient(
+        api_url="http://localhost:8000",
+        endpoint="/cds/cds-services/patient-view",
+        workflow="patient-view",
+        protocol="rest",
+    )
 
-    @hc.sandbox("http://localhost:8000/")
-    class TestCDSSandbox(ClinicalDecisionSupport):
-        def __init__(self):
-            super().__init__(path="/cds/cds-services/")
-            self.patient_bundle = create_bundle()
-            self.encounter_bundle = create_bundle()
+    # Create test data
+    patient_bundle = create_bundle()
+    condition = create_condition(
+        subject="Patient/123", code="123", display="Test Condition"
+    )
+    patient_bundle.entry = [{"resource": condition}]
 
-        @hc.ehr(workflow="patient-view")
-        def load_patient_data(self) -> Prefetch:
-            # Add a condition to the bundle
-            condition = create_condition(
-                subject="Patient/123", code="123", display="Test Condition"
-            )
-            self.patient_bundle.entry = [{"resource": condition}]
-            return Prefetch(prefetch={"patient": self.patient_bundle})
+    # Load data into client
+    prefetch_data = Prefetch(prefetch={"patient": patient_bundle})
+    client._construct_request(prefetch_data, client.workflow)
 
-    # Create sandbox instance
-    sandbox = TestCDSSandbox()
+    # Verify request was constructed
+    assert len(client.request_data) == 1
 
-    # Verify both workflows are correctly registered
-    assert hasattr(sandbox, "load_patient_data")
+    # Mock HTTP response
+    with patch("httpx.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value.__enter__.return_value = mock_client
 
-    # Test the patient-view workflow
-    with patch.object(sandbox, "_client") as mock_client:
         mock_response = MagicMock()
         mock_response.json.return_value = {"cards": []}
-        mock_client.send_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
+        mock_client.post.return_value = mock_response
 
-        # Mock client workflow
-        mock_client.workflow = MagicMock()
-        mock_client.workflow.value = "patient-view"
+        # Send requests and verify
+        responses = client.send_requests()
+        assert len(responses) == 1
+        assert "cards" in responses[0]

@@ -8,26 +8,29 @@ Check out the full working example [here](https://github.com/dotimplement/Health
 
 ## Setup
 
+### Install Dependencies
+
 ```bash
-pip install healthchain
+pip install healthchain python-dotenv
 ```
 
-Make sure you have a [Hugging Face API token](https://huggingface.co/docs/hub/security-tokens) and set it as the `HUGGINGFACEHUB_API_TOKEN` environment variable.
+This example uses a Hugging Face model for the summarization task, so make sure you have a [Hugging Face API token](https://huggingface.co/docs/hub/security-tokens) and set it as the `HUGGINGFACEHUB_API_TOKEN` environment variable.
 
-```python
-import getpass
-import os
-
-if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
-    os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass(
-      "Enter your token: "
-    )
-```
 
 If you are using a chat model, make sure you have the necessary `langchain` packages installed.
 
 ```bash
 pip install langchain langchain-huggingface
+```
+
+### Download Sample Data
+
+Download the sample data `discharge_notes.csv` into a `data/` folder in your project root using `wget`:
+
+```bash
+mkdir -p data
+cd data
+wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/discharge_notes.csv
 ```
 
 ## Initialize the pipeline
@@ -85,7 +88,7 @@ The `SummarizationPipeline` automatically:
 
 - Parses FHIR resources from CDS Hooks requests
 - Extracts clinical text from discharge documents
-- Formats outputs as CDS cards according to the CDS Hooks specification
+- Formats outputs as CDS cards
 
 ## Add the CDS FHIR Adapter
 
@@ -146,37 +149,36 @@ app = HealthChainAPI(title="Discharge Summary CDS Service")
 app.register_service(cds_service)
 ```
 
-## Test with Sandbox
+## Test with Sample Data
 
-Use the [sandbox utility](../reference/utilities/sandbox.md) to test the service with sample data:
+HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the CDS hooks workflow end-to-end. It loads your sample free text data and formats it into CDS requests, sends it to your service, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally and inspect the inputs and outputs before connecting to a real EHR instance.
 
-!!! note "Download Sample Data"
-
-    Download sample discharge note files from [cookbook/data](https://github.com/dotimplement/HealthChain/tree/main/cookbook/data) and place them in a `data/` folder in your project root.
 
 ```python
-import healthchain as hc
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-from healthchain.models import Prefetch
-from healthchain.data_generators import CdsDataGenerator
+from healthchain.sandbox import SandboxClient
 
-@hc.sandbox(api="http://localhost:8000")
-class DischargeNoteSummarizer(ClinicalDecisionSupport):
-    def __init__(self):
-        super().__init__(path="/cds-services/discharge-summary")
-        self.data_generator = CdsDataGenerator()
+# Create sandbox client for testing
+client = SandboxClient(
+    api_url="http://localhost:8000",
+    endpoint="/cds/cds-services/discharge-summarizer",
+    workflow="encounter-discharge"
+)
 
-    @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> Prefetch:
-        data = self.data_generator.generate(
-            free_text_path="data/discharge_notes.csv", column_name="text"
-        )
-        return data
+# Load discharge notes from CSV and generate FHIR data
+client.load_free_text(
+    csv_path="data/discharge_notes.csv",
+    column_name="text",
+    workflow="encounter-discharge"
+)
 ```
+
+!!! tip "Learn More About Test Data Generation"
+
+    Read more about the test FHIR data generator for CDS hooks [here](../reference/utilities/data_generator.md)
 
 ## Run the Complete Example
 
-Put it all together and run both the service and sandbox:
+Put it all together and run both the service and sandbox client:
 
 ```python
 import uvicorn
@@ -189,9 +191,9 @@ def start_api():
 api_thread = threading.Thread(target=start_api, daemon=True)
 api_thread.start()
 
-# Start the sandbox
-summarizer = DischargeNoteSummarizer()
-summarizer.start_sandbox()
+# Send requests and save responses with sandbox client
+client.send_requests()
+client.save_results("./output/")
 ```
 
 !!! tip "Service Endpoints"
