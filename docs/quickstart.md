@@ -178,24 +178,23 @@ cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 
 ### Sandbox Testing
 
-Test your AI applications in realistic healthcare contexts with sandbox environments for CDS Hooks and clinical documentation workflows.
+Test your AI applications in realistic healthcare contexts with `SandboxClient` for CDS Hooks and clinical documentation workflows.
 
 [(Full Documentation on Sandbox)](./reference/utilities/sandbox.md)
 
 ```python
-import healthchain as hc
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
+from healthchain.sandbox import SandboxClient
 
-@hc.sandbox
-class MyCDS(ClinicalDecisionSupport):
-    def __init__(self):
-        self.pipeline = SummarizationPipeline.from_model_id("facebook/bart-large-cnn")
+# Create client and load test data
+client = SandboxClient(
+    api_url="http://localhost:8000",
+    endpoint="/cds/cds-services/my-service",
+    workflow="encounter-discharge"
+)
 
-    @hc.ehr(workflow="encounter-discharge")
-    def ehr_database_client(self):
-        return self.data_generator.generate_prefetch()
-
-# Run with: healthchain run mycds.py
+# Load from datasets or files
+client.load_from_registry("synthea", num_patients=5)
+responses = client.send_requests()
 ```
 
 ### FHIR Helpers
@@ -218,59 +217,33 @@ condition = create_condition(
 
 ### Data Generator
 
-You can use the data generator to generate synthetic data for your sandbox runs.
+You can use the data generator to generate synthetic FHIR data for testing.
 
-The `.generate_prefetch()` method is dependent on use case and workflow. For example, `CdsDataGenerator` will generate synthetic [FHIR](https://hl7.org/fhir/) data as [Pydantic](https://docs.pydantic.dev/) models suitable for the workflow specified by the use case.
+The `CdsDataGenerator` generates synthetic [FHIR](https://hl7.org/fhir/) data as [Pydantic](https://docs.pydantic.dev/) models suitable for different CDS workflows. Use it standalone or with `SandboxClient.load_free_text()` to include text-based data.
 
 [(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
 
-=== "Within client"
-    ```python
-    import healthchain as hc
+```python
+from healthchain.sandbox.generators import CdsDataGenerator
+from healthchain.sandbox.workflows import Workflow
 
-    from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-    from healthchain.models import Prefetch
-    from healthchain.data_generators import CdsDataGenerator
+# Initialize data generator
+data_generator = CdsDataGenerator()
 
-    @hc.sandbox
-    class MyCoolSandbox(ClinicalDecisionSupport):
-        def __init__(self) -> None:
-            self.data_generator = CdsDataGenerator()
+# Generate FHIR resources for specific workflow
+data_generator.set_workflow(Workflow.encounter_discharge)
+data = data_generator.generate_prefetch()
 
-        @hc.ehr(workflow="patient-view")
-        def load_data_in_client(self) -> Prefetch:
-            data = self.data_generator.generate_prefetch()
-            return data
+print(data.model_dump())
 
-        @hc.api
-        def my_server(self, request) -> None:
-            pass
-    ```
-
-
-=== "On its own"
-    ```python
-    from healthchain.data_generators import CdsDataGenerator
-    from healthchain.sandbox.workflows import Workflow
-
-    # Initialize data generator
-    data_generator = CdsDataGenerator()
-
-    # Generate FHIR resources for use case workflow
-    data_generator.set_workflow(Workflow.encounter_discharge)
-    data = data_generator.generate_prefetch()
-
-    print(data.model_dump())
-
-    # {
-    #    "prefetch": {
-    #        "encounter":
-    #            {
-    #              "resourceType": ...
-    #            }
-    #    }
-    #}
-    ```
+# {
+#    "prefetch": {
+#        "encounter": {
+#            "resourceType": ...
+#        }
+#    }
+# }
+```
 
 ## Going further ✨
 Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/dotimplement/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).
