@@ -121,7 +121,7 @@ class MimicOnFHIRLoader(DatasetLoader):
 
                 # Group by FHIR resourceType (not filename)
                 for resource in resources:
-                    fhir_type = resource["resourceType"]
+                    fhir_type = resource.get("resourceType")
                     if fhir_type not in resources_by_type:
                         resources_by_type[fhir_type] = []
                     resources_by_type[fhir_type].append(resource)
@@ -143,7 +143,7 @@ class MimicOnFHIRLoader(DatasetLoader):
 
         bundles = {}
         for fhir_type, resources in resources_by_type.items():
-            bundles[fhir_type] = Bundle(
+            bundles[fhir_type.lower()] = Bundle(
                 type="collection",
                 entry=[{"resource": resource} for resource in resources],
             )
