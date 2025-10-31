@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Dict
 from enum import Enum
 
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.sandbox.workflows import Workflow
 
 
@@ -36,20 +35,20 @@ class DatasetLoader(ABC):
     """
     Abstract base class for dataset loaders.
 
-    Subclasses should implement the load() method to return Prefetch data
+    Subclasses should implement the load() method to return data
     from their specific dataset source.
     """
 
     @abstractmethod
-    def load(self, **kwargs) -> Prefetch:
+    def load(self, **kwargs) -> Dict:
         """
-        Load dataset and return as Prefetch object.
+        Load dataset and return as dict of FHIR resources.
 
         Args:
             **kwargs: Loader-specific parameters
 
         Returns:
-            Prefetch object containing FHIR resources
+            Dict containing FHIR resources
 
         Raises:
             FileNotFoundError: If dataset files are not found

@@ -185,15 +185,19 @@ Test your AI applications in realistic healthcare contexts with `SandboxClient` 
 ```python
 from healthchain.sandbox import SandboxClient
 
-# Create client and load test data
+# Create client with service URL and workflow
 client = SandboxClient(
-    api_url="http://localhost:8000",
-    endpoint="/cds/cds-services/my-service",
+    url="http://localhost:8000/cds/cds-services/my-service",
     workflow="encounter-discharge"
 )
 
 # Load from datasets or files
-client.load_from_registry("synthea", num_patients=5)
+client.load_from_registry(
+    "synthea-patient",
+    data_dir="./data/synthea",
+    resource_types=["Condition", "DocumentReference"],
+    sample_size=3
+)
 responses = client.send_requests()
 ```
 

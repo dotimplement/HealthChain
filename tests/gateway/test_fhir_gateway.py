@@ -285,32 +285,26 @@ def test_search_with_empty_bundle():
         )
         assert result.entry is None
 
+
 def test_search_with_pagination(fhir_gateway):
     """Gateway.search fetches all pages when pagination is enabled."""
     # Create mock bundles for pagination
     page1 = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="1"))],
-        link=[{"relation": "next", "url": "Patient?page=2"}]
+        link=[{"relation": "next", "url": "Patient?page=2"}],
     )
     page2 = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="2"))],
-        link=[{"relation": "next", "url": "Patient?page=3"}]
+        link=[{"relation": "next", "url": "Patient?page=3"}],
     )
-    page3 = Bundle(
-        type="searchset",
-        entry=[BundleEntry(resource=Patient(id="3"))]
-    )
+    page3 = Bundle(type="searchset", entry=[BundleEntry(resource=Patient(id="3"))])
 
     with patch.object(
         fhir_gateway, "_execute_with_client", side_effect=[page1, page2, page3]
     ) as mock_execute:
-        result = fhir_gateway.search(
-            Patient,
-            {"name": "Smith"},
-            follow_pagination=True
-        )
+        result = fhir_gateway.search(Patient, {"name": "Smith"}, follow_pagination=True)
 
         assert mock_execute.call_count == 3
         assert result.entry is not None
@@ -324,22 +318,19 @@ def test_search_with_max_pages(fhir_gateway):
     page1 = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="1"))],
-        link=[{"relation": "next", "url": "Patient?page=2"}]
+        link=[{"relation": "next", "url": "Patient?page=2"}],
     )
     page2 = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="2"))],
-        link=[{"relation": "next", "url": "Patient?page=3"}]
+        link=[{"relation": "next", "url": "Patient?page=3"}],
     )
 
     with patch.object(
         fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
     ) as mock_execute:
         result = fhir_gateway.search(
-            Patient,
-            {"name": "Smith"},
-            follow_pagination=True,
-            max_pages=2
+            Patient, {"name": "Smith"}, follow_pagination=True, max_pages=2
         )
 
         assert mock_execute.call_count == 2
@@ -354,17 +345,13 @@ def test_search_with_pagination_empty_next_link(fhir_gateway):
     bundle = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="1"))],
-        link=[{"relation": "self", "url": "Patient?name=Smith"}]
+        link=[{"relation": "self", "url": "Patient?name=Smith"}],
     )
 
     with patch.object(
         fhir_gateway, "_execute_with_client", return_value=bundle
     ) as mock_execute:
-        result = fhir_gateway.search(
-            Patient,
-            {"name": "Smith"},
-            follow_pagination=True
-        )
+        result = fhir_gateway.search(Patient, {"name": "Smith"}, follow_pagination=True)
 
         mock_execute.assert_called_once()
         assert result.entry is not None
@@ -377,12 +364,9 @@ def test_search_with_pagination_and_provenance(fhir_gateway):
     page1 = Bundle(
         type="searchset",
         entry=[BundleEntry(resource=Patient(id="1"))],
-        link=[{"relation": "next", "url": "Patient?page=2"}]
+        link=[{"relation": "next", "url": "Patient?page=2"}],
     )
-    page2 = Bundle(
-        type="searchset",
-        entry=[BundleEntry(resource=Patient(id="2"))]
-    )
+    page2 = Bundle(type="searchset", entry=[BundleEntry(resource=Patient(id="2"))])
 
     with patch.object(
         fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
@@ -393,7 +377,7 @@ def test_search_with_pagination_and_provenance(fhir_gateway):
             source="test_source",
             follow_pagination=True,
             add_provenance=True,
-            provenance_tag="aggregated"
+            provenance_tag="aggregated",
         )
 
         assert mock_execute.call_count == 2

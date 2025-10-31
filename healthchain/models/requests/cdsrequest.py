@@ -40,9 +40,7 @@ class CDSRequest(BaseModel):
     fhirAuthorization: Optional[FHIRAuthorization] = (
         None  # TODO: note this is required if fhirserver is given
     )
-    prefetch: Optional[Dict[str, Any]] = (
-        None  # fhir resource is passed either thru prefetched template of fhir server
-    )
+    prefetch: Optional[Dict[str, Any]] = None
     extension: Optional[List[Dict[str, Any]]] = None
 
     def model_dump(self, **kwargs):
