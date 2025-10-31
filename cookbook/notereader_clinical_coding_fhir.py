@@ -132,8 +132,7 @@ if __name__ == "__main__":
 
     # Create sandbox client for testing
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )

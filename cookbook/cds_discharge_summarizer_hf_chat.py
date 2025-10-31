@@ -81,8 +81,7 @@ if __name__ == "__main__":
 
     # Create sandbox client and load test data
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/discharge-summarizer",
+        url="http://localhost:8000/cds/cds-services/discharge-summarizer",
         workflow="encounter-discharge",
     )
     # Load discharge notes from CSV
