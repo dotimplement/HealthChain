@@ -37,7 +37,7 @@ def test_cdshooks_sandbox_integration():
     # Load test data
     test_bundle = create_bundle()
     prefetch_data = {"patient": test_bundle}
-    client._construct_request(prefetch_data, client.workflow)
+    client._construct_request(prefetch_data)
 
     # Verify request was constructed
     assert len(client.request_data) == 1
@@ -88,7 +88,7 @@ def test_cdshooks_workflows():
 
     # Load data into client
     prefetch_data = {"patient": patient_bundle}
-    client._construct_request(prefetch_data, client.workflow)
+    client._construct_request(prefetch_data)
 
     # Verify request was constructed
     assert len(client.request_data) == 1

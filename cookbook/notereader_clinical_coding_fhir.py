@@ -132,7 +132,10 @@ if __name__ == "__main__":
 
     # Create sandbox client for testing
     client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/notereader/fhir/", protocol="soap"
+        api_url="http://localhost:8000",
+        endpoint="/notereader/fhir/",
+        workflow="sign-note-inpatient",
+        protocol="soap",
     )
     # Load clinical document from file
     client.load_from_path("./data/notereader_cda.xml")

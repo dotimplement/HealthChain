@@ -57,6 +57,11 @@ from fhir.resources.meta import Meta
 from healthchain.sandbox import SandboxClient
 from healthchain.fhir import create_document_reference
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 # Configuration
 CONFIG = {
     "server": {
@@ -430,7 +435,6 @@ def create_sandboxes():
     cds_client.load_free_text(
         csv_path=CONFIG["data"]["discharge_notes_path"],
         column_name="text",
-        workflow=CONFIG["workflows"]["cds"],
     )
 
     print_success("Sandbox environments created")

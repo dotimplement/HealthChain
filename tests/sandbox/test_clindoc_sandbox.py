@@ -32,7 +32,7 @@ def test_notereader_sandbox_integration():
 
     # Load test document
     test_document = "<test>document</test>"
-    client._construct_request(test_document, client.workflow)
+    client._construct_request(test_document)
 
     # Verify request was constructed
     assert len(client.request_data) == 1
@@ -82,7 +82,7 @@ def test_notereader_sandbox_workflow_execution():
 
     # Load clinical document
     clinical_document = "<ClinicalDocument>Test content</ClinicalDocument>"
-    client._construct_request(clinical_document, client.workflow)
+    client._construct_request(clinical_document)
 
     # Verify request was constructed
     assert len(client.request_data) == 1

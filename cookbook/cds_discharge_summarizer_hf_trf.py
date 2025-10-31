@@ -56,10 +56,10 @@ if __name__ == "__main__":
     client = SandboxClient(
         api_url="http://localhost:8000",
         endpoint="/cds/cds-services/discharge-summarizer",
+        workflow="encounter-discharge",
     )
     # Load discharge notes from CSV
     client.load_free_text(
-        workflow="encounter-discharge",
         csv_path="data/discharge_notes.csv",
         column_name="text",
     )

@@ -71,7 +71,7 @@ class SandboxClient:
         self,
         api_url: str,
         endpoint: str,
-        workflow: Optional[Union[Workflow, str]] = None,
+        workflow: Union[Workflow, str],
         protocol: Literal["rest", "soap"] = "rest",
         timeout: float = 10.0,
     ):
@@ -81,12 +81,12 @@ class SandboxClient:
         Args:
             api_url: Base URL of the service (e.g., "http://localhost:8000")
             endpoint: Service endpoint path (e.g., "/cds/cds-services/my-service")
-            workflow: Optional workflow specification (auto-detected if not provided)
+            workflow: Workflow specification (required) - determines request type and validation
             protocol: Communication protocol - "rest" for CDS Hooks, "soap" for CDA
             timeout: Request timeout in seconds
 
         Raises:
-            ValueError: If api_url or endpoint is invalid
+            ValueError: If api_url, endpoint, or workflow-protocol combination is invalid
         """
         try:
             self.api = httpx.URL(api_url)
@@ -103,15 +103,44 @@ class SandboxClient:
         self.responses: List[Dict] = []
         self.sandbox_id = uuid.uuid4()
 
+        # Single validation point - fail fast on incompatible workflow-protocol
+        self._validate_workflow_protocol()
+
         log.info(
             f"Initialized SandboxClient {self.sandbox_id} for {self.api}{self.endpoint}"
         )
+
+    def _validate_workflow_protocol(self) -> None:
+        """
+        Validate workflow is compatible with protocol.
+
+        Raises:
+            ValueError: If workflow-protocol combination is invalid
+        """
+        from healthchain.sandbox.workflows import UseCaseMapping
+
+        if self.protocol == ApiProtocol.soap:
+            # SOAP only works with ClinicalDocumentation workflows
+            soap_workflows = UseCaseMapping.ClinicalDocumentation.allowed_workflows
+            if self.workflow.value not in soap_workflows:
+                raise ValueError(
+                    f"Workflow '{self.workflow.value}' is not compatible with SOAP protocol. "
+                    f"SOAP requires Clinical Documentation workflows: {soap_workflows}"
+                )
+
+        elif self.protocol == ApiProtocol.rest:
+            # REST only works with CDS workflows
+            rest_workflows = UseCaseMapping.ClinicalDecisionSupport.allowed_workflows
+            if self.workflow.value not in rest_workflows:
+                raise ValueError(
+                    f"Workflow '{self.workflow.value}' is not compatible with REST protocol. "
+                    f"REST requires CDS workflows: {rest_workflows}"
+                )
 
     def load_from_registry(
         self,
         source: str,
         data_path: str,
-        workflow: Optional[Union[Workflow, str]] = None,
         **kwargs: Any,
     ) -> "SandboxClient":
         """
@@ -123,15 +152,13 @@ class SandboxClient:
         Args:
             source: Dataset name (e.g., "mimic-on-fhir", "synthea")
             data_path: Path to the dataset files
-            workflow: CDS workflow type (e.g., "encounter-discharge", "patient-view").
-                     If not provided, uses the workflow set on client initialization.
             **kwargs: Dataset-specific parameters (e.g., resource_types, sample_size)
 
         Returns:
             Self for method chaining
 
         Raises:
-            ValueError: If dataset not found in registry or workflow not specified
+            ValueError: If dataset not found in registry
             FileNotFoundError: If data_path doesn't exist
 
         Examples:
@@ -140,10 +167,15 @@ class SandboxClient:
             >>> print(list_available_datasets())
 
             Load MIMIC dataset:
+            >>> client = SandboxClient(
+            ...     api_url="http://localhost:8000",
+            ...     endpoint="/cds/patient-view",
+            ...     workflow="patient-view",
+            ...     protocol="rest"
+            ... )
             >>> client.load_from_registry(
             ...     "mimic-on-fhir",
             ...     data_path="./data/mimic-fhir",
-            ...     workflow="patient-view",
             ...     resource_types=["MimicMedication"],
             ...     sample_size=10
             ... )
@@ -153,10 +185,7 @@ class SandboxClient:
         log.info(f"Loading dataset from registry: {source}")
         try:
             loaded_data = DatasetRegistry.load(source, data_path=data_path, **kwargs)
-            workflow_enum = (
-                Workflow(workflow) if isinstance(workflow, str) else workflow
-            )
-            self._construct_request(loaded_data, workflow_enum)
+            self._construct_request(loaded_data)
             log.info(f"Loaded {source} dataset with {len(self.request_data)} requests")
         except KeyError:
             raise ValueError(
@@ -169,7 +198,6 @@ class SandboxClient:
         self,
         path: Union[str, Path],
         pattern: Optional[str] = None,
-        workflow: Optional[Union[Workflow, str]] = None,
     ) -> "SandboxClient":
         """
         Load data from file system path.
@@ -182,7 +210,6 @@ class SandboxClient:
         Args:
             path: File path or directory path
             pattern: Glob pattern for filtering files in directory (e.g., "*.xml")
-            workflow: Optional workflow override (auto-detected from protocol if not provided)
 
         Returns:
             Self for method chaining
@@ -197,9 +224,6 @@ class SandboxClient:
 
             Load directory of CDA files:
             >>> client.load_from_path("./data/cda_files/", pattern="*.xml")
-
-            Load with explicit workflow:
-            >>> client.load_from_path("./data/note.xml", workflow="sign-note-inpatient")
         """
         path = Path(path)
         if not path.exists():
@@ -229,12 +253,7 @@ class SandboxClient:
             if extension == ".xml":
                 with open(file_path, "r") as f:
                     xml_content = f.read()
-                workflow_enum = (
-                    Workflow(workflow)
-                    if isinstance(workflow, str)
-                    else workflow or self.workflow or Workflow.sign_note_inpatient
-                )
-                self._construct_request(xml_content, workflow_enum)
+                self._construct_request(xml_content)
                 log.info(f"Loaded CDA document from {file_path.name}")
 
             elif extension == ".json":
@@ -242,18 +261,7 @@ class SandboxClient:
                     json_data = json.load(f)
 
                 try:
-                    # Load as prefetch dict
-                    workflow_enum = (
-                        Workflow(workflow)
-                        if isinstance(workflow, str)
-                        else workflow or self.workflow
-                    )
-                    if not workflow_enum:
-                        raise ValueError(
-                            "Workflow must be specified when loading JSON prefetch data. "
-                            "Provide via 'workflow' parameter or set on client initialization."
-                        )
-                    self._construct_request(json_data, workflow_enum)
+                    self._construct_request(json_data)
                     log.info(f"Loaded prefetch data from {file_path.name}")
 
                 except Exception as e:
@@ -275,7 +283,6 @@ class SandboxClient:
         self,
         csv_path: str,
         column_name: str,
-        workflow: Union[Workflow, str],
         random_seed: Optional[int] = None,
         **kwargs: Any,
     ) -> "SandboxClient":
@@ -283,13 +290,12 @@ class SandboxClient:
         Generates a CDS prefetch from free text notes.
 
         Reads clinical notes from a CSV file and wraps it in FHIR DocumentReferences
-        in a CDS prefetch field for CDS Hooks workflows. Generates additional synthetic
-        FHIR resources as needed based on the specified workflow.
+        in a CDS prefetch field for CDS Hooks workflows. Hydrates it with generated
+        FHIR resources as needed based on the workflow set at client initialization.
 
         Args:
             csv_path: Path to CSV file containing clinical notes
             column_name: Name of the column containing the text
-            workflow: CDS workflow type (e.g., "encounter-discharge", "patient-view")
             random_seed: Seed for reproducible data generation
             **kwargs: Additional parameters for data generation
 
@@ -298,23 +304,19 @@ class SandboxClient:
 
         Raises:
             FileNotFoundError: If CSV file doesn't exist
-            ValueError: If workflow is invalid or column not found
+            ValueError: If column not found
 
         Examples:
-            Generate discharge summaries:
             >>> client.load_free_text(
             ...     csv_path="./data/discharge_notes.csv",
             ...     column_name="text",
-            ...     workflow="encounter-discharge",
             ...     random_seed=42
             ... )
         """
         from .generators import CdsDataGenerator
 
-        workflow_enum = Workflow(workflow) if isinstance(workflow, str) else workflow
-
         generator = CdsDataGenerator()
-        generator.set_workflow(workflow_enum)
+        generator.set_workflow(self.workflow)
 
         prefetch_data = generator.generate_prefetch(
             random_seed=random_seed,
@@ -323,41 +325,132 @@ class SandboxClient:
             **kwargs,
         )
 
-        self._construct_request(prefetch_data, workflow_enum)
+        self._construct_request(prefetch_data)
         log.info(
-            f"Generated {len(self.request_data)} requests from free text for workflow {workflow_enum.value}"
+            f"Generated {len(self.request_data)} requests from free text for workflow {self.workflow.value}"
         )
 
         return self
 
-    def _construct_request(
-        self, data: Union[Dict[str, Any], Any], workflow: Optional[Workflow] = None
-    ) -> None:
+    def _construct_request(self, data: Union[Dict[str, Any], Any]) -> None:
         """
         Convert data to request format and add to queue.
 
         Args:
             data: Data to convert (Dict for CDS prefetch, string for CDA)
-            workflow: Workflow to use for request construction
         """
-        workflow = workflow or self.workflow
-
         if self.protocol == ApiProtocol.rest:
-            if not workflow:
-                raise ValueError(
-                    "Workflow must be specified for REST/CDS Hooks requests"
-                )
             constructor = CdsRequestConstructor()
-            request = constructor.construct_request(data, workflow)
+            request = constructor.construct_request(data, self.workflow)
         elif self.protocol == ApiProtocol.soap:
             constructor = ClinDocRequestConstructor()
-            request = constructor.construct_request(
-                data, workflow or Workflow.sign_note_inpatient
-            )
+            request = constructor.construct_request(data, self.workflow)
         else:
             raise ValueError(f"Unsupported protocol: {self.protocol}")
 
         self.request_data.append(request)
+
+    def clear_requests(self) -> "SandboxClient":
+        """
+        Clear all queued requests.
+
+        Useful when you want to start fresh without creating a new client instance.
+
+        Returns:
+            Self for method chaining
+        """
+        count = len(self.request_data)
+        self.request_data.clear()
+        log.info(f"Cleared {count} queued request(s)")
+
+        return self
+
+    def preview_requests(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Get preview of queued requests without sending them.
+
+        Provides a summary view of what requests are queued, useful for debugging
+        and verifying data was loaded correctly before sending.
+
+        Args:
+            limit: Maximum number of requests to preview. If None, preview all.
+
+        Returns:
+            List of request summary dictionaries containing metadata
+
+        Examples:
+            >>> client.load_free_text(csv_path="data.csv", column_name="text", workflow="encounter-discharge")
+            >>> previews = client.preview_requests(limit=3)
+            >>> for p in previews:
+            ...     print(f"Request {p['index']}: {p['type']} for {p['protocol']}")
+        """
+        requests = self.request_data[:limit] if limit else self.request_data
+        previews = []
+
+        for idx, req in enumerate(requests):
+            preview = {
+                "index": idx,
+                "type": req.__class__.__name__,
+                "protocol": self.protocol.value
+                if hasattr(self.protocol, "value")
+                else str(self.protocol),
+            }
+
+            # Add protocol-specific info
+            if self.protocol == ApiProtocol.rest and hasattr(req, "hook"):
+                preview["hook"] = req.hook
+                preview["hookInstance"] = getattr(req, "hookInstance", None)
+            elif self.protocol == ApiProtocol.soap:
+                preview["has_document"] = hasattr(req, "document")
+
+            previews.append(preview)
+
+        return previews
+
+    def get_request_data(
+        self, format: Literal["raw", "dict", "json"] = "dict"
+    ) -> Union[List, str]:
+        """
+        Get raw request data for inspection.
+
+        Allows direct access to request data for debugging or custom processing.
+
+        Args:
+            format: Return format - "raw" for list of request objects,
+                   "dict" for list of dictionaries, "json" for JSON string
+
+        Returns:
+            Request data in specified format
+
+        Raises:
+            ValueError: If format is not one of "raw", "dict", or "json"
+
+        Examples:
+            >>> client.load_from_path("data.xml")
+            >>> # Get as dictionaries
+            >>> dicts = client.get_request_data("dict")
+            >>> # Get as JSON string
+            >>> json_str = client.get_request_data("json")
+            >>> print(json_str)
+        """
+        if format == "raw":
+            return self.request_data
+        elif format == "dict":
+            result = []
+            for req in self.request_data:
+                if hasattr(req, "model_dump"):
+                    result.append(req.model_dump(exclude_none=True))
+                elif hasattr(req, "model_dump_xml"):
+                    result.append({"document": req.model_dump_xml()})
+                else:
+                    result.append(req)
+            return result
+        elif format == "json":
+            return json.dumps(self.get_request_data("dict"), indent=2)
+        else:
+            raise ValueError(
+                f"Invalid format '{format}'. Must be 'raw', 'dict', or 'json'"
+            )
 
     def send_requests(self) -> List[Dict]:
         """
@@ -365,9 +458,6 @@ class SandboxClient:
 
         Returns:
             List of response dictionaries
-
-        Raises:
-            RuntimeError: If no requests are queued
         """
         if not self.request_data:
             raise RuntimeError(
@@ -441,9 +531,6 @@ class SandboxClient:
 
         Args:
             directory: Directory to save data to (default: "./output/")
-
-        Raises:
-            RuntimeError: If no responses are available to save
         """
         if not self.responses:
             raise RuntimeError(
@@ -502,6 +589,23 @@ class SandboxClient:
             "requests_queued": len(self.request_data),
             "responses_received": len(self.responses),
         }
+
+    def __enter__(self) -> "SandboxClient":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """
+        Context manager exit - auto-save results if responses exist.
+
+        Only saves if no exception occurred and responses were generated.
+        """
+        if self.responses and exc_type is None:
+            try:
+                self.save_results()
+                log.info("Auto-saved results on context exit")
+            except Exception as e:
+                log.warning(f"Failed to auto-save results: {e}")
 
     def __repr__(self) -> str:
         """String representation of SandboxClient."""
