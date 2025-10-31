@@ -23,6 +23,7 @@ from healthchain.fhir.bundle_helpers import (
     set_resources,
     merge_bundles,
     extract_resources,
+    count_resources,
 )
 
 __all__ = [
@@ -48,4 +49,5 @@ __all__ = [
     "set_resources",
     "merge_bundles",
     "extract_resources",
+    "count_resources",
 ]
