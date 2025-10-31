@@ -93,7 +93,7 @@ class SandboxClient:
         self.timeout = timeout
 
         # Request/response management
-        self.request_data: List[Union[CDSRequest, Any]] = []
+        self.requests: List[Union[CDSRequest, Any]] = []
         self.responses: List[Dict] = []
         self.sandbox_id = uuid.uuid4()
 
@@ -172,7 +172,7 @@ class SandboxClient:
         try:
             loaded_data = DatasetRegistry.load(source, data_dir=data_dir, **kwargs)
             self._construct_request(loaded_data)
-            log.info(f"Loaded {source} dataset with {len(self.request_data)} requests")
+            log.info(f"Loaded {source} dataset with {len(self.requests)} requests")
         except KeyError:
             raise ValueError(
                 f"Unknown dataset: {source}. "
@@ -253,7 +253,7 @@ class SandboxClient:
                 log.warning(f"Skipping unsupported file type: {file_path}")
 
         log.info(
-            f"Loaded {len(self.request_data)} requests from {len(files_to_load)} file(s)"
+            f"Loaded {len(self.requests)} requests from {len(files_to_load)} file(s)"
         )
         return self
 
@@ -300,11 +300,11 @@ class SandboxClient:
 
         if generate_synthetic:
             log.info(
-                f"Generated {len(self.request_data)} requests from free text with synthetic resources for workflow {self.workflow.value}"
+                f"Generated {len(self.requests)} requests from free text with synthetic resources for workflow {self.workflow.value}"
             )
         else:
             log.info(
-                f"Generated {len(self.request_data)} requests from free text only (no synthetic resources)"
+                f"Generated {len(self.requests)} requests from free text only (no synthetic resources)"
             )
 
         return self
@@ -325,7 +325,7 @@ class SandboxClient:
         else:
             raise ValueError(f"Unsupported protocol: {self.protocol}")
 
-        self.request_data.append(request)
+        self.requests.append(request)
 
     def clear_requests(self) -> "SandboxClient":
         """
@@ -336,8 +336,8 @@ class SandboxClient:
         Returns:
             Self for method chaining
         """
-        count = len(self.request_data)
-        self.request_data.clear()
+        count = len(self.requests)
+        self.requests.clear()
         log.info(f"Cleared {count} queued request(s)")
 
         return self
@@ -355,7 +355,7 @@ class SandboxClient:
         Returns:
             List of request summary dictionaries containing metadata
         """
-        requests = self.request_data[:limit] if limit else self.request_data
+        requests = self.requests[:limit] if limit else self.requests
         previews = []
 
         for idx, req in enumerate(requests):
@@ -405,10 +405,10 @@ class SandboxClient:
             >>> print(json_str)
         """
         if format == "raw":
-            return self.request_data
+            return self.requests
         elif format == "dict":
             result = []
-            for req in self.request_data:
+            for req in self.requests:
                 if hasattr(req, "model_dump"):
                     result.append(req.model_dump(exclude_none=True))
                 elif hasattr(req, "model_dump_xml"):
@@ -430,18 +430,18 @@ class SandboxClient:
         Returns:
             List of response dictionaries
         """
-        if not self.request_data:
+        if not self.requests:
             raise RuntimeError(
                 "No requests to send. Load data first using load_from_registry(), load_from_path(), or load_free_text()"
             )
 
-        log.info(f"Sending {len(self.request_data)} requests to {self.url}")
+        log.info(f"Sending {len(self.requests)} requests to {self.url}")
 
         with httpx.Client(follow_redirects=True) as client:
             responses: List[Dict] = []
             timeout = httpx.Timeout(self.timeout, read=None)
 
-            for request in self.request_data:
+            for request in self.requests:
                 try:
                     if self.protocol == ApiProtocol.soap:
                         headers = {"Content-Type": "text/xml; charset=utf-8"}
@@ -463,12 +463,19 @@ class SandboxClient:
                             timeout=timeout,
                         )
                         response.raise_for_status()
-                        response_data = response.json()
+
                         try:
+                            response_data = response.json()
                             cds_response = CDSResponse(**response_data)
                             responses.append(cds_response.model_dump(exclude_none=True))
+                        except json.JSONDecodeError:
+                            log.error(
+                                f"Invalid JSON response from {self.url}. "
+                                f"Response preview: {response.text[:200]}"
+                            )
+                            responses.append({})
                         except Exception:
-                            # Fallback to raw response if parsing fails
+                            # Fallback to raw response if CDSResponse parsing fails
                             responses.append(response_data)
 
                 except httpx.HTTPStatusError as exc:
@@ -515,10 +522,10 @@ class SandboxClient:
 
         # Save requests
         if self.protocol == ApiProtocol.soap:
-            request_data = [request.model_dump_xml() for request in self.request_data]
+            request_data = [request.model_dump_xml() for request in self.requests]
         else:
             request_data = [
-                request.model_dump(exclude_none=True) for request in self.request_data
+                request.model_dump(exclude_none=True) for request in self.requests
             ]
 
         save_data_to_directory(
@@ -555,7 +562,7 @@ class SandboxClient:
             if hasattr(self.protocol, "value")
             else str(self.protocol),
             "workflow": self.workflow.value if self.workflow else None,
-            "requests_queued": len(self.request_data),
+            "requests_queued": len(self.requests),
             "responses_received": len(self.responses),
         }
 
@@ -581,5 +588,5 @@ class SandboxClient:
         return (
             f"SandboxClient(url='{self.url}', "
             f"protocol='{self.protocol.value if hasattr(self.protocol, 'value') else self.protocol}', "
-            f"requests={len(self.request_data)})"
+            f"requests={len(self.requests)})"
         )

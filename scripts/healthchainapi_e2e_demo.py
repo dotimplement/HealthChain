@@ -414,8 +414,7 @@ def create_sandboxes():
 
     # NoteReader Sandbox
     notereader_client = SandboxClient(
-        api_url=base_url,
-        endpoint="/notereader/fhir/",
+        url=base_url + "/notereader/fhir/",
         workflow=CONFIG["workflows"]["notereader"],
         protocol="soap",
     )
@@ -425,8 +424,7 @@ def create_sandboxes():
 
     # CDS Hooks Sandbox
     cds_client = SandboxClient(
-        api_url=base_url,
-        endpoint="/cds/cds-services/discharge-summary",
+        url=base_url + "/cds/cds-services/discharge-summary",
         workflow=CONFIG["workflows"]["cds"],
         protocol="rest",
     )
