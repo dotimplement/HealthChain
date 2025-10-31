@@ -7,12 +7,10 @@ from healthchain.sandbox import SandboxClient
 
 def test_load_from_registry_unknown_dataset():
     """load_from_registry raises ValueError for unknown datasets."""
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     with pytest.raises(ValueError, match="Unknown dataset"):
-        client.load_from_registry("nonexistent-dataset", data_path="/test")
+        client.load_from_registry("nonexistent-dataset", data_dir="/test")
 
 
 def test_load_from_path_single_xml_file(tmp_path):
@@ -22,8 +20,7 @@ def test_load_from_path_single_xml_file(tmp_path):
     cda_file.write_text("<ClinicalDocument>Test CDA</ClinicalDocument>")
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -42,8 +39,7 @@ def test_load_from_path_directory_with_pattern(tmp_path):
     (tmp_path / "other.txt").write_text("Not XML")
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -60,8 +56,7 @@ def test_load_from_path_directory_all_files(tmp_path):
     (tmp_path / "note2.xml").write_text("<ClinicalDocument>Note 2</ClinicalDocument>")
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -74,8 +69,7 @@ def test_load_from_path_directory_all_files(tmp_path):
 def test_load_from_path_error_handling(tmp_path):
     """load_from_path raises FileNotFoundError for nonexistent path."""
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -94,8 +88,7 @@ def test_load_free_text_generates_data(tmp_path):
     csv_file.write_text("text\nSample discharge note\n")
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="encounter-discharge",
     )
 
@@ -107,11 +100,32 @@ def test_load_free_text_generates_data(tmp_path):
     assert len(client.request_data) > 0
 
 
+def test_load_free_text_without_synthetic_data(tmp_path):
+    """load_free_text can generate data without synthetic resources."""
+    # Create test CSV
+    csv_file = tmp_path / "test.csv"
+    csv_file.write_text("text\nSample discharge note\nAnother note\n")
+
+    client = SandboxClient(
+        url="http://localhost:8000/test",
+        workflow="encounter-discharge",
+    )
+
+    client.load_free_text(
+        csv_path=str(csv_file),
+        column_name="text",
+        generate_synthetic=False,
+        random_seed=42,
+    )
+
+    assert len(client.request_data) > 0
+    # Verify request was created (but without checking prefetch content details)
+    assert client.request_data[0].hook == "encounter-discharge"
+
+
 def test_send_requests_without_data():
     """send_requests raises RuntimeError if no data is loaded."""
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     with pytest.raises(RuntimeError, match="No requests to send"):
         client.send_requests()
@@ -119,9 +133,7 @@ def test_send_requests_without_data():
 
 def test_save_results_without_responses():
     """save_results raises RuntimeError if no responses available."""
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     with pytest.raises(RuntimeError, match="No responses to save"):
         client.save_results()
@@ -129,15 +141,12 @@ def test_save_results_without_responses():
 
 def test_get_status():
     """get_status returns client status information."""
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     status = client.get_status()
 
     assert "sandbox_id" in status
-    assert status["api_url"] == "http://localhost:8000"
-    assert status["endpoint"] == "/test"
+    assert status["url"] == "http://localhost:8000/test"
     assert status["protocol"] == "REST"
     assert status["workflow"] == "patient-view"
     assert status["requests_queued"] == 0
@@ -146,15 +155,12 @@ def test_get_status():
 
 def test_repr():
     """__repr__ returns meaningful string representation."""
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     repr_str = repr(client)
 
     assert "SandboxClient" in repr_str
-    assert "http://localhost:8000" in repr_str
-    assert "/test" in repr_str
+    assert "http://localhost:8000/test" in repr_str
 
 
 def test_load_from_path_json_prefetch_file(tmp_path):
@@ -166,9 +172,7 @@ def test_load_from_path_json_prefetch_file(tmp_path):
     prefetch_data = {"prefetch": {"patient": create_bundle().model_dump()}}
     json_file.write_text(json.dumps(prefetch_data))
 
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     client.load_from_path(str(json_file))
 
@@ -181,9 +185,7 @@ def test_load_from_path_invalid_json_prefetch(tmp_path):
     json_file = tmp_path / "data.json"
     json_file.write_text('{"not_prefetch": "data"}')
 
-    client = SandboxClient(
-        api_url="http://localhost:8000", endpoint="/test", workflow="patient-view"
-    )
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
 
     # Should load the JSON data without error since we're using plain dicts now
     client.load_from_path(str(json_file))
@@ -196,8 +198,7 @@ def test_save_results_distinguishes_protocols(tmp_path):
 
     # Test REST/JSON protocol
     rest_client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
         protocol="rest",
     )
@@ -213,8 +214,7 @@ def test_save_results_distinguishes_protocols(tmp_path):
 
     # Test SOAP/XML protocol
     soap_client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -243,15 +243,13 @@ def test_workflow_protocol_validation(workflow, protocol, should_fail):
     if should_fail:
         with pytest.raises(ValueError, match="not compatible"):
             SandboxClient(
-                api_url="http://localhost:8000",
-                endpoint="/test",
+                url="http://localhost:8000/test",
                 workflow=workflow,
                 protocol=protocol,
             )
     else:
         client = SandboxClient(
-            api_url="http://localhost:8000",
-            endpoint="/test",
+            url="http://localhost:8000/test",
             workflow=workflow,
             protocol=protocol,
         )
@@ -263,8 +261,7 @@ def test_clear_requests():
     from healthchain.fhir import create_bundle
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -284,8 +281,7 @@ def test_preview_requests_provides_metadata():
     from healthchain.fhir import create_bundle
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -311,8 +307,7 @@ def test_preview_requests_respects_limit():
     from healthchain.fhir import create_bundle
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -338,8 +333,7 @@ def test_get_request_data_formats(format_type, check):
     from healthchain.fhir import create_bundle
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -354,8 +348,7 @@ def test_get_request_data_formats(format_type, check):
 def test_get_request_data_invalid_format():
     """get_request_data raises ValueError for invalid format."""
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -368,8 +361,7 @@ def test_context_manager_auto_saves_on_success(tmp_path):
     from healthchain.fhir import create_bundle
 
     with SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     ) as client:
         prefetch = {"patient": create_bundle()}
@@ -383,8 +375,7 @@ def test_context_manager_auto_saves_on_success(tmp_path):
 def test_context_manager_no_save_without_responses(tmp_path):
     """Context manager does not save if no responses generated."""
     with SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     ) as client:
         # No requests or responses
@@ -398,8 +389,7 @@ def test_context_manager_no_save_on_exception():
     """Context manager does not save if exception occurs."""
     with pytest.raises(RuntimeError):
         with SandboxClient(
-            api_url="http://localhost:8000",
-            endpoint="/test",
+            url="http://localhost:8000/test",
             workflow="patient-view",
         ) as client:
             client.responses = [{"cards": []}]
@@ -425,8 +415,7 @@ def test_send_requests_rest_success(mock_client_class):
     mock_client_class.return_value = mock_client
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 
@@ -455,8 +444,7 @@ def test_send_requests_soap_success(mock_client_class):
     mock_client_class.return_value = mock_client
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -488,8 +476,7 @@ def test_send_requests_handles_multiple_requests(mock_client_class):
     mock_client_class.return_value = mock_client
 
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/test",
+        url="http://localhost:8000/test",
         workflow="patient-view",
     )
 

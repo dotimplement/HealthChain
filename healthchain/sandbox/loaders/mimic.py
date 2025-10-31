@@ -29,7 +29,7 @@ class MimicOnFHIRLoader(DatasetLoader):
         >>> client = SandboxClient(...)
         >>> client.load_from_registry(
         ...     "mimic-on-fhir",
-        ...     data_path="./data/mimic-fhir",
+        ...     data_dir="./data/mimic-fhir",
         ...     resource_types=["MimicMedication", "MimicCondition"],
         ...     sample_size=10
         ... )
@@ -50,39 +50,54 @@ class MimicOnFHIRLoader(DatasetLoader):
 
     def load(
         self,
-        data_path: str,
+        data_dir: str,
         resource_types: Optional[List[str]] = None,
         sample_size: Optional[int] = None,
         random_seed: Optional[int] = None,
         **kwargs,
     ) -> Dict:
         """
-        Load MIMIC-on-FHIR data as dict containing R4B Bundles.
+        Load MIMIC-on-FHIR data as a dict of FHIR Bundles.
 
         Args:
-            data_path: Path to MIMIC-on-FHIR data directory
-            resource_types: List of MIMIC resource types to load (e.g., ["MimicMedication", "MimicCondition"]).
-                          These should match the MIMIC-on-FHIR filename format (without .ndjson.gz extension).
-                          If None, raises ValueError.
-            sample_size: Number of resources to randomly sample per resource type.
-                        If None, loads all available resources.
-            random_seed: Random seed for reproducible sampling.
-            **kwargs: Additional parameters (reserved for future use)
+            data_dir: Path to root MIMIC-on-FHIR directory (expects a /fhir subdir with .ndjson.gz files)
+            resource_types: Resource type names to load (e.g., ["MimicMedication"]). Required.
+            sample_size: Number of resources to randomly sample per type (loads all if None)
+            random_seed: Seed for sampling
+            **kwargs: Reserved for future use
 
         Returns:
-            Dict containing R4B Bundle resources grouped by FHIR resource type.
-            Each Bundle contains resources of the same type.
-            Example: {"MedicationStatement": Bundle(...), "Condition": Bundle(...)}
+            Dict mapping resource type (e.g., "MedicationStatement") to FHIR R4B Bundle
 
         Raises:
-            FileNotFoundError: If data path doesn't exist or resource files not found
-            ValueError: If resource_types is None or empty, or if resource validation fails
+            FileNotFoundError: If directory or resource files not found
+            ValueError: If resource_types is None/empty or resources fail validation
+
+        Example:
+            >>> loader = MimicOnFHIRLoader()
+            >>> loader.load(data_dir="./data/mimic-iv-fhir", resource_types=["MimicMedication"], sample_size=100)
         """
-        data_path = Path(data_path)
-        if not data_path.exists():
+
+        data_dir = Path(data_dir)
+        if not data_dir.exists():
             raise FileNotFoundError(
-                f"MIMIC-on-FHIR data not found at: {data_path}. "
-                "Please provide a valid data_path."
+                f"MIMIC-on-FHIR data directory not found at: {data_dir}\n"
+                f"Please ensure the directory exists and contains a 'fhir' subdirectory with .ndjson.gz files.\n"
+                f"Expected structure: {data_dir}/fhir/MimicMedication.ndjson.gz, etc."
+            )
+
+        # Check if /fhir subdirectory exists
+        fhir_dir = data_dir / "fhir"
+        if not fhir_dir.exists():
+            raise FileNotFoundError(
+                f"MIMIC-on-FHIR 'fhir' subdirectory not found at: {fhir_dir}\n"
+                f"The loader expects data_dir to contain a 'fhir' subdirectory with .ndjson.gz resource files.\n"
+                f"Expected structure:\n"
+                f"  {data_dir}/\n"
+                f"  └── fhir/\n"
+                f"      ├── MimicMedication.ndjson.gz\n"
+                f"      ├── MimicCondition.ndjson.gz\n"
+                f"      └── ... (other resource files)"
             )
 
         if not resource_types:
@@ -101,7 +116,7 @@ class MimicOnFHIRLoader(DatasetLoader):
         for resource_type in resource_types:
             try:
                 resources = self._load_resource_file(
-                    data_path, resource_type, sample_size
+                    data_dir, resource_type, sample_size
                 )
 
                 # Group by FHIR resourceType (not filename)
@@ -136,13 +151,13 @@ class MimicOnFHIRLoader(DatasetLoader):
         return bundles
 
     def _load_resource_file(
-        self, data_path: Path, resource_type: str, sample_size: Optional[int] = None
+        self, data_dir: Path, resource_type: str, sample_size: Optional[int] = None
     ) -> List[Dict]:
         """
         Load resources from a single MIMIC-on-FHIR .ndjson.gz file.
 
         Args:
-            data_path: Path to MIMIC-on-FHIR data directory
+            data_dir: Path to MIMIC-on-FHIR data directory
             resource_type: MIMIC resource type (e.g., "MimicMedication")
             sample_size: Number of resources to randomly sample
 
@@ -156,15 +171,30 @@ class MimicOnFHIRLoader(DatasetLoader):
         import gzip
         import json
 
-        # Construct file path
-        fhir_dir = data_path / "fhir"
+        # Construct file path - MIMIC-on-FHIR stores resources in /fhir subdirectory
+        fhir_dir = data_dir / "fhir"
         file_path = fhir_dir / f"{resource_type}.ndjson.gz"
 
         if not file_path.exists():
-            raise FileNotFoundError(
-                f"Resource file not found: {file_path}. "
-                f"Expected MIMIC-on-FHIR file at {fhir_dir}/{resource_type}.ndjson.gz"
+            # Provide helpful error with available files
+            available_files = []
+            if fhir_dir.exists():
+                available_files = [f.stem for f in fhir_dir.glob("*.ndjson.gz")]
+
+            error_msg = f"Resource file not found: {file_path}\n"
+            error_msg += (
+                f"Expected MIMIC-on-FHIR file at {fhir_dir}/{resource_type}.ndjson.gz\n"
             )
+
+            if available_files:
+                error_msg += f"\nAvailable resource files in {fhir_dir}:\n"
+                error_msg += "\n".join(f"  - {f}" for f in available_files[:10])
+                if len(available_files) > 10:
+                    error_msg += f"\n  ... and {len(available_files) - 10} more"
+            else:
+                error_msg += f"\nNo .ndjson.gz files found in {fhir_dir}"
+
+            raise FileNotFoundError(error_msg)
 
         # Read all resources from file as dicts
         resources = []

@@ -42,13 +42,13 @@ class DatasetRegistry:
         log.debug(f"Registered dataset: {name}")
 
     @classmethod
-    def load(cls, name: str, data_path: str, **kwargs) -> Dict:
+    def load(cls, name: str, data_dir: str, **kwargs) -> Dict:
         """
         Load a dataset by name.
 
         Args:
             name: Name of the dataset to load
-            data_path: Path to the dataset files
+            data_dir: Path to the directory containing dataset files
             **kwargs: Dataset-specific parameters
 
         Returns:
@@ -65,7 +65,7 @@ class DatasetRegistry:
 
         loader = cls._datasets[name]
         log.info(f"Loading dataset: {name}")
-        return loader.load(data_path=data_path, **kwargs)
+        return loader.load(data_dir=data_dir, **kwargs)
 
     @classmethod
     def list_datasets(cls) -> List[str]:

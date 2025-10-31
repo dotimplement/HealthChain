@@ -28,8 +28,7 @@ def test_cdshooks_sandbox_integration():
 
     # Create SandboxClient
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/test-patient-view",
+        url="http://localhost:8000/cds/cds-services/test-patient-view",
         workflow="patient-view",
         protocol="rest",
     )
@@ -73,8 +72,7 @@ def test_cdshooks_workflows():
     """Test CDSHooks sandbox with patient-view workflow"""
     # Create SandboxClient
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/patient-view",
+        url="http://localhost:8000/cds/cds-services/patient-view",
         workflow="patient-view",
         protocol="rest",
     )

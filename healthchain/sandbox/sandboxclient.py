@@ -31,7 +31,7 @@ class SandboxClient:
     Simplified client for testing healthcare services with various data sources.
 
     This class provides an intuitive interface for:
-    - Loading test datasets (MIMIC-on-FHIR, Synthea, CSV)
+    - Loading test datasets (MIMIC-on-FHIR, Synthea)
     - Generating synthetic FHIR data
     - Sending requests to healthcare services
     - Managing request/response lifecycle
@@ -39,16 +39,14 @@ class SandboxClient:
     Examples:
         Load from dataset registry:
         >>> client = SandboxClient(
-        ...     api_url="http://localhost:8000",
-        ...     endpoint="/cds/cds-services/my-service"
+        ...     url="http://localhost:8000/cds/cds-services/my-service"
         ... )
         >>> client.load_from_registry("mimic-on-fhir", sample_size=10)
         >>> responses = client.send_requests()
 
         Load CDA file from path:
         >>> client = SandboxClient(
-        ...     api_url="http://localhost:8000",
-        ...     endpoint="/notereader/fhir/",
+        ...     url="http://localhost:8000/notereader/fhir/",
         ...     protocol="soap"
         ... )
         >>> client.load_from_path("./data/clinical_note.xml")
@@ -56,8 +54,7 @@ class SandboxClient:
 
         Generate data from free text:
         >>> client = SandboxClient(
-        ...     api_url="http://localhost:8000",
-        ...     endpoint="/cds/cds-services/discharge-summarizer"
+        ...     url="http://localhost:8000/cds/cds-services/discharge-summarizer"
         ... )
         >>> client.load_free_text(
         ...     csv_path="./data/notes.csv",
@@ -69,8 +66,7 @@ class SandboxClient:
 
     def __init__(
         self,
-        api_url: str,
-        endpoint: str,
+        url: str,
         workflow: Union[Workflow, str],
         protocol: Literal["rest", "soap"] = "rest",
         timeout: float = 10.0,
@@ -79,21 +75,19 @@ class SandboxClient:
         Initialize SandboxClient.
 
         Args:
-            api_url: Base URL of the service (e.g., "http://localhost:8000")
-            endpoint: Service endpoint path (e.g., "/cds/cds-services/my-service")
+            url: Full service URL (e.g., "http://localhost:8000/cds/cds-services/my-service")
             workflow: Workflow specification (required) - determines request type and validation
             protocol: Communication protocol - "rest" for CDS Hooks, "soap" for CDA
             timeout: Request timeout in seconds
 
         Raises:
-            ValueError: If api_url, endpoint, or workflow-protocol combination is invalid
+            ValueError: If url or workflow-protocol combination is invalid
         """
         try:
-            self.api = httpx.URL(api_url)
+            self.url = httpx.URL(url)
         except Exception as e:
-            raise ValueError(f"Invalid API URL: {str(e)}")
+            raise ValueError(f"Invalid URL: {str(e)}")
 
-        self.endpoint = endpoint
         self.workflow = Workflow(workflow) if isinstance(workflow, str) else workflow
         self.protocol = ApiProtocol.soap if protocol == "soap" else ApiProtocol.rest
         self.timeout = timeout
@@ -106,9 +100,7 @@ class SandboxClient:
         # Single validation point - fail fast on incompatible workflow-protocol
         self._validate_workflow_protocol()
 
-        log.info(
-            f"Initialized SandboxClient {self.sandbox_id} for {self.api}{self.endpoint}"
-        )
+        log.info(f"Initialized SandboxClient {self.sandbox_id} for {self.url}")
 
     def _validate_workflow_protocol(self) -> None:
         """
@@ -140,7 +132,7 @@ class SandboxClient:
     def load_from_registry(
         self,
         source: str,
-        data_path: str,
+        data_dir: str,
         **kwargs: Any,
     ) -> "SandboxClient":
         """
@@ -151,7 +143,7 @@ class SandboxClient:
 
         Args:
             source: Dataset name (e.g., "mimic-on-fhir", "synthea")
-            data_path: Path to the dataset files
+            data_dir: Path to the dataset directory
             **kwargs: Dataset-specific parameters (e.g., resource_types, sample_size)
 
         Returns:
@@ -159,23 +151,17 @@ class SandboxClient:
 
         Raises:
             ValueError: If dataset not found in registry
-            FileNotFoundError: If data_path doesn't exist
+            FileNotFoundError: If data_dir doesn't exist
 
         Examples:
-            Discover available datasets:
-            >>> from healthchain.sandbox import list_available_datasets
-            >>> print(list_available_datasets())
-
             Load MIMIC dataset:
             >>> client = SandboxClient(
-            ...     api_url="http://localhost:8000",
-            ...     endpoint="/cds/patient-view",
+            ...     url="http://localhost:8000/cds/patient-view",
             ...     workflow="patient-view",
-            ...     protocol="rest"
             ... )
             >>> client.load_from_registry(
             ...     "mimic-on-fhir",
-            ...     data_path="./data/mimic-fhir",
+            ...     data_dir="./data/mimic-fhir",
             ...     resource_types=["MimicMedication"],
             ...     sample_size=10
             ... )
@@ -184,7 +170,7 @@ class SandboxClient:
 
         log.info(f"Loading dataset from registry: {source}")
         try:
-            loaded_data = DatasetRegistry.load(source, data_path=data_path, **kwargs)
+            loaded_data = DatasetRegistry.load(source, data_dir=data_dir, **kwargs)
             self._construct_request(loaded_data)
             log.info(f"Loaded {source} dataset with {len(self.request_data)} requests")
         except KeyError:
@@ -200,31 +186,23 @@ class SandboxClient:
         pattern: Optional[str] = None,
     ) -> "SandboxClient":
         """
-        Load data from file system path.
+        Load data from a file or directory.
 
-        Supports loading single files or directories. File type is auto-detected
-        from extension and protocol:
-        - .xml files with SOAP protocol → CDA documents
-        - .json files with REST protocol → Pre-formatted Prefetch data
+        Supports single files or all matching files in a directory (with optional glob pattern).
+        For .xml (SOAP protocol) loads CDA; for .json (REST protocol) loads Prefetch.
 
         Args:
-            path: File path or directory path
-            pattern: Glob pattern for filtering files in directory (e.g., "*.xml")
+            path: File or directory path.
+            pattern: Glob pattern for files in directory (e.g., "*.xml").
 
         Returns:
-            Self for method chaining
+            Self.
 
         Raises:
-            FileNotFoundError: If path doesn't exist
-            ValueError: If no matching files found or unsupported file type
-
-        Examples:
-            Load single CDA file:
-            >>> client.load_from_path("./data/clinical_note.xml")
-
-            Load directory of CDA files:
-            >>> client.load_from_path("./data/cda_files/", pattern="*.xml")
+            FileNotFoundError: If path does not exist.
+            ValueError: If no matching files are found or if path is not file/dir.
         """
+
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Path not found: {path}")
@@ -283,35 +261,27 @@ class SandboxClient:
         self,
         csv_path: str,
         column_name: str,
+        generate_synthetic: bool = True,
         random_seed: Optional[int] = None,
         **kwargs: Any,
     ) -> "SandboxClient":
         """
-        Generates a CDS prefetch from free text notes.
-
-        Reads clinical notes from a CSV file and wraps it in FHIR DocumentReferences
-        in a CDS prefetch field for CDS Hooks workflows. Hydrates it with generated
-        FHIR resources as needed based on the workflow set at client initialization.
+        Load free-text notes from a CSV column and create FHIR DocumentReferences for CDS prefetch.
+        Optionally include synthetic FHIR resources based on the current workflow.
 
         Args:
-            csv_path: Path to CSV file containing clinical notes
-            column_name: Name of the column containing the text
-            random_seed: Seed for reproducible data generation
-            **kwargs: Additional parameters for data generation
+            csv_path: Path to the CSV file
+            column_name: Name of the text column
+            generate_synthetic: Whether to add synthetic FHIR resources (default: True)
+            random_seed: Seed for reproducible results
+            **kwargs: Extra parameters for data generation
 
         Returns:
-            Self for method chaining
+            self
 
         Raises:
-            FileNotFoundError: If CSV file doesn't exist
-            ValueError: If column not found
-
-        Examples:
-            >>> client.load_free_text(
-            ...     csv_path="./data/discharge_notes.csv",
-            ...     column_name="text",
-            ...     random_seed=42
-            ... )
+            FileNotFoundError: If the CSV file does not exist
+            ValueError: If the column is not found
         """
         from .generators import CdsDataGenerator
 
@@ -322,13 +292,20 @@ class SandboxClient:
             random_seed=random_seed,
             free_text_path=csv_path,
             column_name=column_name,
+            generate_resources=generate_synthetic,
             **kwargs,
         )
 
         self._construct_request(prefetch_data)
-        log.info(
-            f"Generated {len(self.request_data)} requests from free text for workflow {self.workflow.value}"
-        )
+
+        if generate_synthetic:
+            log.info(
+                f"Generated {len(self.request_data)} requests from free text with synthetic resources for workflow {self.workflow.value}"
+            )
+        else:
+            log.info(
+                f"Generated {len(self.request_data)} requests from free text only (no synthetic resources)"
+            )
 
         return self
 
@@ -377,12 +354,6 @@ class SandboxClient:
 
         Returns:
             List of request summary dictionaries containing metadata
-
-        Examples:
-            >>> client.load_free_text(csv_path="data.csv", column_name="text", workflow="encounter-discharge")
-            >>> previews = client.preview_requests(limit=3)
-            >>> for p in previews:
-            ...     print(f"Request {p['index']}: {p['type']} for {p['protocol']}")
         """
         requests = self.request_data[:limit] if limit else self.request_data
         previews = []
@@ -464,8 +435,7 @@ class SandboxClient:
                 "No requests to send. Load data first using load_from_registry(), load_from_path(), or load_free_text()"
             )
 
-        url = self.api.join(self.endpoint)
-        log.info(f"Sending {len(self.request_data)} requests to {url}")
+        log.info(f"Sending {len(self.request_data)} requests to {self.url}")
 
         with httpx.Client(follow_redirects=True) as client:
             responses: List[Dict] = []
@@ -476,7 +446,7 @@ class SandboxClient:
                     if self.protocol == ApiProtocol.soap:
                         headers = {"Content-Type": "text/xml; charset=utf-8"}
                         response = client.post(
-                            url=str(url),
+                            url=str(self.url),
                             data=request.document,
                             headers=headers,
                             timeout=timeout,
@@ -486,9 +456,9 @@ class SandboxClient:
                         responses.append(response_model.model_dump_xml())
                     else:
                         # REST/CDS Hooks
-                        log.debug(f"Making POST request to: {url}")
+                        log.debug(f"Making POST request to: {self.url}")
                         response = client.post(
-                            url=str(url),
+                            url=str(self.url),
                             json=request.model_dump(exclude_none=True),
                             timeout=timeout,
                         )
@@ -580,8 +550,7 @@ class SandboxClient:
         """
         return {
             "sandbox_id": str(self.sandbox_id),
-            "api_url": str(self.api),
-            "endpoint": self.endpoint,
+            "url": str(self.url),
             "protocol": self.protocol.value
             if hasattr(self.protocol, "value")
             else str(self.protocol),
@@ -610,7 +579,7 @@ class SandboxClient:
     def __repr__(self) -> str:
         """String representation of SandboxClient."""
         return (
-            f"SandboxClient(api_url='{self.api}', endpoint='{self.endpoint}', "
+            f"SandboxClient(url='{self.url}', "
             f"protocol='{self.protocol.value if hasattr(self.protocol, 'value') else self.protocol}', "
             f"requests={len(self.request_data)})"
         )

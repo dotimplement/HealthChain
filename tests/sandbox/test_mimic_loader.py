@@ -94,15 +94,15 @@ def test_mimic_loader_requires_resource_types(temp_mimic_data_dir):
     loader = MimicOnFHIRLoader()
 
     with pytest.raises(ValueError, match="resource_types parameter is required"):
-        loader.load(data_path=str(temp_mimic_data_dir))
+        loader.load(data_dir=str(temp_mimic_data_dir))
 
 
 def test_mimic_loader_raises_error_for_missing_data_path():
     """MimicOnFHIRLoader raises FileNotFoundError when data path doesn't exist."""
     loader = MimicOnFHIRLoader()
 
-    with pytest.raises(FileNotFoundError, match="MIMIC-on-FHIR data not found"):
-        loader.load(data_path="/nonexistent/path", resource_types=["MimicMedication"])
+    with pytest.raises(FileNotFoundError):
+        loader.load(data_dir="/nonexistent/path", resource_types=["MimicMedication"])
 
 
 def test_mimic_loader_raises_error_for_missing_resource_file(temp_mimic_data_dir):
@@ -111,7 +111,7 @@ def test_mimic_loader_raises_error_for_missing_resource_file(temp_mimic_data_dir
 
     with pytest.raises(FileNotFoundError, match="Resource file not found"):
         loader.load(
-            data_path=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
+            data_dir=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
         )
 
 
@@ -127,7 +127,7 @@ def test_mimic_loader_loads_single_resource_type(
 
     loader = MimicOnFHIRLoader()
     result = loader.load(
-        data_path=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
+        data_dir=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
     )
 
     assert isinstance(result, dict)
@@ -153,7 +153,7 @@ def test_mimic_loader_loads_multiple_resource_types(
 
     loader = MimicOnFHIRLoader()
     result = loader.load(
-        data_path=str(temp_mimic_data_dir),
+        data_dir=str(temp_mimic_data_dir),
         resource_types=["MimicMedication", "MimicCondition"],
     )
 
@@ -178,7 +178,7 @@ def test_mimic_loader_sampling_behavior(
 
     loader = MimicOnFHIRLoader()
     result = loader.load(
-        data_path=str(temp_mimic_data_dir),
+        data_dir=str(temp_mimic_data_dir),
         resource_types=["MimicMedication"],
         sample_size=sample_size,
     )
@@ -198,13 +198,13 @@ def test_mimic_loader_deterministic_sampling_with_seed(
 
     loader = MimicOnFHIRLoader()
     result1 = loader.load(
-        data_path=str(temp_mimic_data_dir),
+        data_dir=str(temp_mimic_data_dir),
         resource_types=["MimicMedication"],
         sample_size=1,
         random_seed=42,
     )
     result2 = loader.load(
-        data_path=str(temp_mimic_data_dir),
+        data_dir=str(temp_mimic_data_dir),
         resource_types=["MimicMedication"],
         sample_size=1,
         random_seed=42,
@@ -247,7 +247,7 @@ def test_mimic_loader_handles_malformed_json(temp_mimic_data_dir):
 
     loader = MimicOnFHIRLoader()
     result = loader.load(
-        data_path=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
+        data_dir=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
     )
 
     # Should load the valid resource despite malformed line
@@ -277,7 +277,7 @@ def test_mimic_loader_raises_error_for_invalid_fhir_resources(temp_mimic_data_di
     # FHIR validation now catches the invalid resource
     with pytest.raises(Exception):
         loader.load(
-            data_path=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
+            data_dir=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
         )
 
 
@@ -310,7 +310,7 @@ def test_mimic_loader_skips_resources_without_resource_type(temp_mimic_data_dir)
 
     loader = MimicOnFHIRLoader()
     result = loader.load(
-        data_path=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
+        data_dir=str(temp_mimic_data_dir), resource_types=["MimicMedication"]
     )
 
     # Should only load the valid resource

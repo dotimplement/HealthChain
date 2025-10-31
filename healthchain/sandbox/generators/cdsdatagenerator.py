@@ -18,24 +18,21 @@ logger = logging.getLogger(__name__)
 # TODO: generate test context - move from hook models
 class CdsDataGenerator:
     """
-    A class to generate CDS (Clinical Decision Support) data based on specified workflows and constraints.
+    Generates synthetic CDS (Clinical Decision Support) data for specified workflows.
 
-    This class provides functionality to generate synthetic FHIR resources for testing CDS systems.
-    It uses registered data generators to create resources like Patients, Encounters, Conditions etc.
-    based on configured workflows. It can also incorporate free text data from CSV files.
+    Uses registered generators to create FHIR resources (e.g., Patient, Encounter, Condition) according to workflow configuration.
+    Can optionally include free text data from a CSV file as DocumentReference.
 
     Attributes:
-        registry (dict): A registry mapping generator names to generator classes.
-        mappings (dict): A mapping of workflow names to lists of required generators.
-        generated_data (Dict[str, Resource]): The most recently generated FHIR resources.
-        workflow (str): The currently active workflow.
+        registry (dict): Maps generator names to classes.
+        mappings (dict): Maps workflows to required generators.
+        generated_data (Dict[str, Resource]): Most recently generated resources.
+        workflow (str): Currently active workflow.
 
     Example:
         >>> generator = CdsDataGenerator()
         >>> generator.set_workflow("encounter_discharge")
-        >>> data = generator.generate_prefetch(
-        ...     random_seed=42
-        ... )
+        >>> data = generator.generate_prefetch(random_seed=42)
     """
 
     # TODO: Add ordering and logic so that patient/encounter IDs are passed to subsequent generators
@@ -62,27 +59,25 @@ class CdsDataGenerator:
 
     def fetch_generator(self, generator_name: str) -> Callable:
         """
-        Fetches a data generator class by its name from the registry.
+        Return the generator class by name from the registry.
 
         Args:
-            generator_name (str): The name of the data generator to fetch (e.g. "PatientGenerator", "EncounterGenerator")
+            generator_name (str): Name of the data generator.
 
         Returns:
-            Callable: The data generator class that can be used to generate FHIR resources. Returns None if generator not found.
+            Callable: Generator class, or None if not found.
 
         Example:
-            >>> generator = CdsDataGenerator()
-            >>> patient_gen = generator.fetch_generator("PatientGenerator")
-            >>> patient = patient_gen.generate()
+            >>> gen = CdsDataGenerator().fetch_generator("PatientGenerator")
         """
         return self.registry.get(generator_name)
 
     def set_workflow(self, workflow: str) -> None:
         """
-        Sets the current workflow to be used for data generation.
+        Set the current workflow name to use for data generation.
 
-        Parameters:
-            workflow (str): The name of the workflow to set.
+        Args:
+            workflow (str): Workflow name.
         """
         self.workflow = workflow
 
@@ -92,48 +87,38 @@ class CdsDataGenerator:
         free_text_path: Optional[str] = None,
         column_name: Optional[str] = None,
         random_seed: Optional[int] = None,
+        generate_resources: bool = True,
     ) -> Dict[str, Resource]:
         """
-        Generates CDS data based on the current workflow, constraints, and optional free text data.
-
-        This method generates FHIR resources according to the configured workflow mapping. For each
-        resource type in the workflow, it uses the corresponding generator to create a FHIR resource.
-        If free text data is provided via CSV, it will also generate a DocumentReference containing
-        randomly selected text from the CSV.
+        Generate prefetch FHIR resources and/or DocumentReference.
 
         Args:
-            constraints (Optional[list]): A list of constraints to apply to the data generation.
-                Each constraint should match the format expected by the individual generators.
-            free_text_path (Optional[str]): Path to a CSV file containing free text data to be
-                included as DocumentReferences. If provided, column_name must also be specified.
-            column_name (Optional[str]): The name of the column in the CSV file containing the
-                free text data to use. Required if free_text_path is provided.
-            random_seed (Optional[int]): Seed value for random number generation to ensure
-                reproducible results. If not provided, generation will be truly random.
+            constraints (Optional[list]): Constraints for resource generation.
+            free_text_path (Optional[str]): CSV file containing free text.
+            column_name (Optional[str]): CSV column for free text.
+            random_seed (Optional[int]): Random seed.
+            generate_resources (bool): If True, generate synthetic FHIR resources.
 
         Returns:
-            Dict[str, Resource]: A dictionary mapping resource types to generated FHIR resources.
-                The keys are lowercase resource type names (e.g. "patient", "encounter").
-                If free text is provided, includes a "document" key with a DocumentReference.
+            Dict[str, Resource]: Generated resources keyed by resource type (lowercase), plus "document" if a free text entry is used.
 
         Raises:
-            ValueError: If the configured workflow is not found in the mappings
-            FileNotFoundError: If the free_text_path is provided but file not found
-            ValueError: If free_text_path provided without column_name
+            ValueError: If workflow is not recognized, or column name is missing.
+            FileNotFoundError: If free_text_path does not exist.
         """
         prefetch = {}
 
-        if self.workflow not in self.mappings.keys():
-            raise ValueError(f"Workflow {self.workflow} not found in mappings")
+        if generate_resources:
+            if self.workflow not in self.mappings:
+                raise ValueError(f"Workflow {self.workflow} not found in mappings")
 
-        for resource in self.mappings[self.workflow]:
-            generator_name = resource["generator"]
-            generator = self.fetch_generator(generator_name)
-            resource = generator.generate(
-                constraints=constraints, random_seed=random_seed
-            )
-
-            prefetch[resource.__resource_type__.lower()] = resource
+            for resource in self.mappings[self.workflow]:
+                generator_name = resource["generator"]
+                generator = self.fetch_generator(generator_name)
+                resource = generator.generate(
+                    constraints=constraints, random_seed=random_seed
+                )
+                prefetch[resource.__resource_type__.lower()] = resource
 
         parsed_free_text = (
             self.free_text_parser(free_text_path, column_name)
@@ -155,26 +140,21 @@ class CdsDataGenerator:
 
     def free_text_parser(self, path_to_csv: str, column_name: str) -> List[str]:
         """
-        Parse free text data from a CSV file.
-
-        This method reads a CSV file and extracts text data from a specified column. The text data
-        can later be used to create DocumentReference resources.
+        Read a column of free text from a CSV file.
 
         Args:
-            path_to_csv (str): Path to the CSV file containing the free text data.
-            column_name (str): Name of the column in the CSV file to extract text from.
+            path_to_csv (str): Path to CSV file.
+            column_name (str): Column name to extract.
 
         Returns:
-            List[str]: List of text strings extracted from the specified column.
+            List[str]: Extracted text values.
 
         Raises:
-            FileNotFoundError: If the specified CSV file does not exist or is not a file.
+            FileNotFoundError: If CSV file does not exist.
             ValueError: If column_name is not provided.
-            Exception: If any other error occurs while reading/parsing the CSV file.
         """
         text_data = []
 
-        # Check that path_to_csv is a valid path with pathlib
         path = Path(path_to_csv)
         if not path.is_file():
             raise FileNotFoundError(

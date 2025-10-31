@@ -26,7 +26,7 @@ class SyntheaLoader(DatasetLoader):
         >>> client = SandboxClient(...)
         >>> client.load_from_registry(
         ...     "synthea",
-        ...     data_path="./data/synthea/output/fhir",
+        ...     data_dir="./data/synthea/output/fhir",
         ...     sample_size=10
         ... )
     """
@@ -43,7 +43,7 @@ class SyntheaLoader(DatasetLoader):
 
     def load(
         self,
-        data_path: str,
+        data_dir: str,
         patient_ids: Optional[List[str]] = None,
         sample_size: Optional[int] = None,
         random_seed: Optional[int] = None,
@@ -53,7 +53,7 @@ class SyntheaLoader(DatasetLoader):
         Load Synthea FHIR data as dict.
 
         Args:
-            data_path: Path to Synthea FHIR output directory
+            data_dir: Path to Synthea FHIR output directory
             patient_ids: Specific patient IDs to load
             sample_size: Number of random patients to sample
             random_seed: Random seed for reproducible sampling
@@ -66,11 +66,11 @@ class SyntheaLoader(DatasetLoader):
             FileNotFoundError: If data path doesn't exist
             NotImplementedError: Full implementation pending
         """
-        data_path = Path(data_path)
-        if not data_path.exists():
+        data_dir = Path(data_dir)
+        if not data_dir.exists():
             raise FileNotFoundError(
-                f"Synthea data not found at: {data_path}. "
-                "Please provide a valid data_path."
+                f"Synthea data not found at: {data_dir}. "
+                "Please provide a valid data_dir."
             )
 
         # TODO: Implement Synthea FHIR bundle loading
