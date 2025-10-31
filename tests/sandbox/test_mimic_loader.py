@@ -131,9 +131,9 @@ def test_mimic_loader_loads_single_resource_type(
     )
 
     assert isinstance(result, dict)
-    assert "MedicationStatement" in result
+    assert "medicationstatement" in result
     # Result dict contains a Bundle
-    bundle = result["MedicationStatement"]
+    bundle = result["medicationstatement"]
     assert type(bundle).__name__ == "Bundle"
     assert len(bundle.entry) == 2
     assert bundle.entry[0].resource.id == "med-1"
@@ -157,11 +157,11 @@ def test_mimic_loader_loads_multiple_resource_types(
         resource_types=["MimicMedication", "MimicCondition"],
     )
 
-    assert "MedicationStatement" in result
-    assert "Condition" in result
+    assert "medicationstatement" in result
+    assert "condition" in result
     # Each result value is a Bundle
-    med_bundle = result["MedicationStatement"]
-    cond_bundle = result["Condition"]
+    med_bundle = result["medicationstatement"]
+    cond_bundle = result["condition"]
     assert len(med_bundle.entry) == 2
     assert len(cond_bundle.entry) == 1
 
@@ -183,7 +183,7 @@ def test_mimic_loader_sampling_behavior(
         sample_size=sample_size,
     )
 
-    bundle = result["MedicationStatement"]
+    bundle = result["medicationstatement"]
     assert len(bundle.entry) == expected_count
 
 
@@ -210,8 +210,8 @@ def test_mimic_loader_deterministic_sampling_with_seed(
         random_seed=42,
     )
 
-    bundle1 = result1["MedicationStatement"]
-    bundle2 = result2["MedicationStatement"]
+    bundle1 = result1["medicationstatement"]
+    bundle2 = result2["medicationstatement"]
     assert bundle1.entry[0].resource.id == bundle2.entry[0].resource.id
 
 
@@ -251,7 +251,7 @@ def test_mimic_loader_handles_malformed_json(temp_mimic_data_dir):
     )
 
     # Should load the valid resource despite malformed line
-    bundle = result["MedicationStatement"]
+    bundle = result["medicationstatement"]
     assert len(bundle.entry) == 1
 
 
@@ -314,5 +314,5 @@ def test_mimic_loader_skips_resources_without_resource_type(temp_mimic_data_dir)
     )
 
     # Should only load the valid resource
-    bundle = result["MedicationStatement"]
+    bundle = result["medicationstatement"]
     assert len(bundle.entry) == 1

@@ -34,7 +34,7 @@ def test_notereader_sandbox_integration():
     client._construct_request(test_document)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response with proper SOAP envelope structure
     with patch("httpx.Client") as mock_client_class:
@@ -83,7 +83,7 @@ def test_notereader_sandbox_workflow_execution():
     client._construct_request(clinical_document)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response with proper SOAP envelope structure
     with patch("httpx.Client") as mock_client_class:

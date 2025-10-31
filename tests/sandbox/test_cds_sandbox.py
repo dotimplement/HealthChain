@@ -39,8 +39,8 @@ def test_cdshooks_sandbox_integration():
     client._construct_request(prefetch_data)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
-    assert client.request_data[0].hook == "patient-view"
+    assert len(client.requests) == 1
+    assert client.requests[0].hook == "patient-view"
 
     # Mock HTTP response
     with patch("httpx.Client") as mock_client_class:
@@ -89,7 +89,7 @@ def test_cdshooks_workflows():
     client._construct_request(prefetch_data)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response
     with patch("httpx.Client") as mock_client_class:

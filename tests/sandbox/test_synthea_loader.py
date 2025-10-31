@@ -134,11 +134,11 @@ def test_synthea_loader_supports_multiple_file_specification_methods(
     result = loader.load(data_dir=str(temp_synthea_data_dir), **patient_spec)
 
     assert isinstance(result, dict)
-    assert "Patient" in result and "Condition" in result
+    assert "patient" in result and "condition" in result
     # Returns Bundle objects
-    assert type(result["Patient"]).__name__ == "Bundle"
-    assert len(result["Patient"].entry) == 1
-    assert len(result["Condition"].entry) == 2
+    assert type(result["patient"]).__name__ == "Bundle"
+    assert len(result["patient"].entry) == 1
+    assert len(result["condition"].entry) == 2
 
 
 def test_synthea_loader_filters_and_groups_resources_by_type(
@@ -155,9 +155,9 @@ def test_synthea_loader_filters_and_groups_resources_by_type(
     )
 
     # Only requested types included
-    assert set(result.keys()) == {"Condition", "MedicationStatement"}
-    assert len(result["Condition"].entry) == 2
-    assert len(result["MedicationStatement"].entry) == 1
+    assert set(result.keys()) == {"condition", "medicationstatement"}
+    assert len(result["condition"].entry) == 2
+    assert len(result["medicationstatement"].entry) == 1
 
 
 @pytest.mark.parametrize("sample_size,expected_count", [(1, 1), (2, 2)])
@@ -174,7 +174,7 @@ def test_synthea_loader_sampling_behavior(
         sample_size=sample_size,
     )
 
-    assert len(result["Condition"].entry) == expected_count
+    assert len(result["condition"].entry) == expected_count
 
 
 def test_synthea_loader_deterministic_sampling_with_seed(
@@ -198,8 +198,8 @@ def test_synthea_loader_deterministic_sampling_with_seed(
     )
 
     assert (
-        result1["Condition"].entry[0].resource.id
-        == result2["Condition"].entry[0].resource.id
+        result1["condition"].entry[0].resource.id
+        == result2["condition"].entry[0].resource.id
     )
 
 
@@ -295,5 +295,5 @@ def test_synthea_loader_skips_resources_without_resource_type(temp_synthea_data_
     result = loader.load(data_dir=str(temp_synthea_data_dir))
 
     # Should only load valid Patient resource
-    assert "Patient" in result
-    assert len(result["Patient"].entry) == 1
+    assert "patient" in result
+    assert len(result["patient"].entry) == 1

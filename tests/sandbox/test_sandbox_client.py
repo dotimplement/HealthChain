@@ -28,7 +28,7 @@ def test_load_from_path_single_xml_file(tmp_path):
     result = client.load_from_path(str(cda_file))
 
     assert result is client
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
 
 def test_load_from_path_directory_with_pattern(tmp_path):
@@ -46,7 +46,7 @@ def test_load_from_path_directory_with_pattern(tmp_path):
 
     client.load_from_path(str(tmp_path), pattern="*.xml")
 
-    assert len(client.request_data) == 2
+    assert len(client.requests) == 2
 
 
 def test_load_from_path_directory_all_files(tmp_path):
@@ -63,7 +63,7 @@ def test_load_from_path_directory_all_files(tmp_path):
 
     client.load_from_path(str(tmp_path))
 
-    assert len(client.request_data) == 2
+    assert len(client.requests) == 2
 
 
 def test_load_from_path_error_handling(tmp_path):
@@ -97,7 +97,7 @@ def test_load_free_text_generates_data(tmp_path):
         column_name="text",
         random_seed=42,
     )
-    assert len(client.request_data) > 0
+    assert len(client.requests) > 0
 
 
 def test_load_free_text_without_synthetic_data(tmp_path):
@@ -118,9 +118,9 @@ def test_load_free_text_without_synthetic_data(tmp_path):
         random_seed=42,
     )
 
-    assert len(client.request_data) > 0
+    assert len(client.requests) > 0
     # Verify request was created (but without checking prefetch content details)
-    assert client.request_data[0].hook == "encounter-discharge"
+    assert client.requests[0].hook == "encounter-discharge"
 
 
 def test_send_requests_without_data():
@@ -176,8 +176,8 @@ def test_load_from_path_json_prefetch_file(tmp_path):
 
     client.load_from_path(str(json_file))
 
-    assert len(client.request_data) == 1
-    assert client.request_data[0].hook == "patient-view"
+    assert len(client.requests) == 1
+    assert client.requests[0].hook == "patient-view"
 
 
 def test_load_from_path_invalid_json_prefetch(tmp_path):
@@ -189,7 +189,7 @@ def test_load_from_path_invalid_json_prefetch(tmp_path):
 
     # Should load the JSON data without error since we're using plain dicts now
     client.load_from_path(str(json_file))
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
 
 def test_save_results_distinguishes_protocols(tmp_path):
@@ -268,12 +268,12 @@ def test_clear_requests():
     # Load some data
     prefetch = {"patient": create_bundle()}
     client._construct_request(prefetch)
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Clear and verify
     result = client.clear_requests()
     assert result is client  # Method chaining
-    assert len(client.request_data) == 0
+    assert len(client.requests) == 0
 
 
 def test_preview_requests_provides_metadata():
