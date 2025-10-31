@@ -10,7 +10,7 @@ According to the [UK ONS synthetic data classification](https://www.ons.gov.uk/m
 
 ## CDS Data Generator
 
-The `.generate_prefetch()` method will return a `Prefetch` model with the `prefetch` field populated with a dictionary of FHIR resources. Each key in the dictionary corresponds to a FHIR resource type, and the value is a list of FHIR resources of that type. For more information, check out the [CDS Hooks documentation](https://cds-hooks.org/specification/current/#providing-fhir-resources-to-a-cds-service).
+The `.generate_prefetch()` method will return a dictionary of resources. Each key in the dictionary corresponds to a FHIR resource type, and the value is a list of FHIR resources or a Bundle of that type. For more information, check out the [CDS Hooks documentation](https://cds-hooks.org/specification/current/#providing-fhir-resources-to-a-cds-service).
 
 For each workflow, a pre-configured list of FHIR resources is randomly generated and placed in the `prefetch` field of a `CDSRequest`.
 
@@ -33,8 +33,7 @@ You can use the data generator with `SandboxClient.load_free_text()` or standalo
 
     # Create client
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/my-service",
+        url="http://localhost:8000/cds/cds-services/my-service",
         workflow="encounter-discharge"
     )
 
@@ -42,7 +41,6 @@ You can use the data generator with `SandboxClient.load_free_text()` or standalo
     client.load_free_text(
         csv_path="./data/discharge_notes.csv",
         column_name="text",
-        workflow="encounter-discharge",
         random_seed=42
     )
 

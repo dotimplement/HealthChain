@@ -224,8 +224,7 @@ from healthchain.sandbox import SandboxClient
 
 # Create sandbox client for SOAP/CDA testing
 client = SandboxClient(
-    api_url="http://localhost:8000",
-    endpoint="/notereader/ProcessDocument",
+    url="http://localhost:8000/notereader/ProcessDocument",
     workflow="sign-note-inpatient",
     protocol="soap"
 )
