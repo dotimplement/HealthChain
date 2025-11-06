@@ -1,12 +1,15 @@
 # Pipeline
 
-HealthChain pipelines enable FHIR-native workflows that integrate directly with EHR systems. Pipelines handle the complexities of healthcare data standards like [CDA (Clinical Document Architecture)](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) and [FHIR (Fast Healthcare Interoperability Resources)](https://build.fhir.org/), allowing you to focus on building AI models while maintaining production-ready interoperability.
+HealthChain pipelines help you quickly build data processing workflows that integrate seamlessly with EHR systems. They support healthcare formats like [FHIR](https://build.fhir.org/) out of the box and include built-in NLP to process free-text and structured clinical data—so you can focus on AI, not integration hassles.
 
-You can either use prebuilt pipelines optimized for common clinical workflows, or build custom pipelines from scratch for specialized use cases.
+Choose from prebuilt pipelines tailored to standard clinical workflows, or build custom pipelines for your own applications. Both approaches ensure production-ready interoperability and make it easy to adapt pipelines for any healthcare use case.
 
 ## Prebuilt 📦
 
-HealthChain comes with a set of prebuilt pipelines that are out-of-the-box implementations of common healthcare data processing tasks:
+HealthChain comes with a set of end-to-end pipeline implementations of common healthcare data processing tasks.
+
+These prebuilt pipelines handle FHIR conversion, validation, and EHR integration for you. They work out-of-the-box with [**Adapters**](./adapters/adapters.md) and [**Gateways**](../gateway/gateway.md), supporting CDS Hooks, NoteReader CDI, and FHIR APIs. They're great for a quick setup to build more complex integrations on top of.
+
 
 | Pipeline | Container | Use Case | Description | Example Application |
 |----------|-----------|----------|-------------|---------------------|
@@ -15,13 +18,36 @@ HealthChain comes with a set of prebuilt pipelines that are out-of-the-box imple
 <!-- | **QAPipeline** [TODO] | `Document` | Conversational AI | A Question Answering pipeline suitable for conversational AI applications | Developing a chatbot to answer patient queries about their medical records |
 | **ClassificationPipeline** [TODO] | `Tabular` | Predictive Analytics | A pipeline for machine learning classification tasks | Predicting patient readmission risk based on historical health data | -->
 
-Prebuilt pipelines are production-ready workflows that automatically handle FHIR conversion, validation, and formatting. They integrate seamlessly with EHR systems through [adapters](./adapters/adapters.md) and [gateways](../gateway/gateway.md), supporting standards like CDS Hooks and FHIR REST APIs.
-
-Load your models from Hugging Face, local files, or pipeline objects:
+When you load your data into a prebuilt pipeline, it receives and returns request and response data ready to send to EHR integration points:
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
+
+# Load from a pipeline object
+pipeline = MedicalCodingPipeline.load(pipeline_object)
+
+# Simple end-to-end processing
+cda_request = CdaRequest(document="<Clinical Document>")
+cda_response = pipeline.process_request(cda_request)
+```
+
+### Customizing Prebuilt Pipelines
+
+To customize a prebuilt pipeline, you can use the [pipeline management](#pipeline-management) methods to add, remove, and replace components.
+
+If you need more control and don't mind writing more code, you can subclass `BasePipeline` and implement your own pipeline logic.
+
+[(BasePipeline API Reference)](../../api/pipeline.md#healthchain.pipeline.base.BasePipeline)
+
+## NLP Integrations
+
+HealthChain integrates directly with popular NLP libraries like spaCy, HuggingFace Transformers, and LangChain. Easily add advanced NLP models and components into your pipelines to power state-of-the-art healthcare AI workflows.
+
+[(Full Documentation on NLP Integrations)](./integrations/integrations.md)
+
+```python
+from healthchain.pipeline import MedicalCodingPipeline
 
 # Load from Hugging Face
 pipeline = MedicalCodingPipeline.from_model_id(
@@ -31,59 +57,32 @@ pipeline = MedicalCodingPipeline.from_model_id(
 pipeline = MedicalCodingPipeline.from_local_model(
     '/path/to/model', source="spacy"
 )
-# Load from a pipeline object
-pipeline = MedicalCodingPipeline.load(pipeline_object)
-
-# Simple end-to-end processing
-cda_request = CdaRequest(document="<Clinical Document>")
-cda_response = pipeline.process_request(cda_request)
-
-# Or manual adapter control for more granular control
-from healthchain.io import CdaAdapter
-adapter = CdaAdapter()
-doc = adapter.parse(cda_request)
-doc = pipeline(doc)
-# Access: doc.fhir.problem_list, doc.fhir.medication_list
-response = adapter.format(doc)
 ```
-
-### Customizing Prebuilt Pipelines
-
-To customize a prebuilt pipeline, you can use the [pipeline management methods](#pipeline-management) to add, remove, and replace components. For example, you may want to change the model being used. [TODO]
-
-If you need more control and don't mind writing more code, you can subclass `BasePipeline` and implement your own pipeline logic.
-
-[(BasePipeline API Reference)](../../api/pipeline.md#healthchain.pipeline.base.BasePipeline)
-
-## Integrations
-
-HealthChain offers powerful integrations with popular NLP libraries, enhancing its capabilities and allowing you to build more sophisticated pipelines. These integrations include components for spaCy, Hugging Face Transformers, and LangChain, enabling you to leverage state-of-the-art NLP models and techniques within your HealthChain workflows.
-
-Integrations are covered in detail on the [Integrations](./integrations/integrations.md) homepage.
 
 ## Freestyle 🕺
 
-To build your own pipeline, you can start with an empty pipeline and add components to it. Initialize your pipeline with the appropriate container type, such as `Document` or `Tabular`. This is not essential, but it allows the pipeline to enforce type safety (If you don't specify the container type, it will be inferred from the first component added.)
+[**Containers**](./data_container.md) are at the core of HealthChain pipelines: they define your data type and flow through each pipeline step, just like spaCy’s `Doc`.
 
-You can see the full list of available containers at the [Container](./data_container.md) page.
+Specify the container (e.g. `Document` or `Tabular`) when creating your pipeline (`Pipeline[Document]()`). Each node processes and returns the container, enabling smooth, type-safe, modular workflows and direct FHIR conversion.
 
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io.containers import Document
 
 pipeline = Pipeline[Document]()
-
-# Or if you live dangerously
-# pipeline = Pipeline()
 ```
 
 To use a built pipeline, compile it by running `.build()`. This will return a compiled pipeline that you can run on your data.
 
 ```python
+# Compile the pipeline to create a callable object
 pipe = pipeline.build()
+
+# Create a Document with your clinical text and run it through the pipeline
 doc = pipe(Document("Patient is diagnosed with diabetes"))
 
-print(doc.entities)
+# Print the extracted problem list items
+print(doc.fhir.problem_list)
 ```
 
 ### Adding Nodes
@@ -181,26 +180,6 @@ pipeline.add_node(linker)
 
 [(BaseComponent API Reference)](../../api/component.md#healthchain.pipeline.components.base.BaseComponent)
 
-### Working with Healthcare Data Formats 🔄
-
-Adapters convert between healthcare formats (CDA, FHIR, CDS Hooks) and HealthChain's internal Document objects, enabling clean separation between ML processing and format handling. This allows your pipeline to work with any healthcare data source while maintaining FHIR-native outputs.
-
-```python
-from healthchain.io import CdaAdapter, Document
-
-adapter = CdaAdapter()
-
-# Parse healthcare data into Document
-doc = adapter.parse(cda_request)
-
-# Process with pure pipeline
-processed_doc = pipeline(doc)
-
-# Convert back to healthcare format
-response = adapter.format(processed_doc)
-```
-
-You can learn more about adapters at the [Adapters](./adapters/adapters.md) documentation page.
 
 ## Pipeline Management 🔨
 
@@ -298,4 +277,24 @@ print(pipeline.stages)
 #   - ClinicalEntityLinker
 # fhir_conversion:
 #   - FHIRProblemListExtractor
+```
+## Working with Healthcare Data Formats 🔄
+
+Adapters let you easily convert between healthcare formats (CDA, FHIR, CDS Hooks) and HealthChain Documents. Keep your ML pipeline format-agnostic while always getting FHIR-ready outputs.
+
+[(Full Documentation on Adapters)](./adapters/adapters.md)
+
+```python
+from healthchain.io import CdaAdapter, Document
+
+adapter = CdaAdapter()
+
+# Parse healthcare data into Document
+doc = adapter.parse(cda_request)
+
+# Process with pure pipeline
+processed_doc = pipeline(doc)
+
+# Convert back to healthcare format
+response = adapter.format(processed_doc)
 ```

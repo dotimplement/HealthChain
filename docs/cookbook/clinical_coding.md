@@ -231,6 +231,10 @@ client = SandboxClient(
 
 # Load sample CDA document
 client.load_from_path("./data/notereader_cda.xml")
+
+# Inspect CDA document before sending
+# for request in client.requests:
+#     print(request.document[:1000])  # View first 1000 chars of CDA XML
 ```
 
 ## Run the Complete Example
