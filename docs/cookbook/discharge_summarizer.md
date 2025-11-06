@@ -168,6 +168,10 @@ client.load_free_text(
     csv_path="data/discharge_notes.csv",
     column_name="text"
 )
+
+# Inspect requests before sending to verify data
+# for request in client.requests:
+#     print(request.prefetch.get('document'))  # Get DocumentReference
 ```
 
 !!! tip "Learn More About Test Data Generation"
