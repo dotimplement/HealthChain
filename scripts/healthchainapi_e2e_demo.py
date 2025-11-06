@@ -57,6 +57,11 @@ from fhir.resources.meta import Meta
 from healthchain.sandbox import SandboxClient
 from healthchain.fhir import create_document_reference
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 # Configuration
 CONFIG = {
     "server": {
@@ -409,8 +414,7 @@ def create_sandboxes():
 
     # NoteReader Sandbox
     notereader_client = SandboxClient(
-        api_url=base_url,
-        endpoint="/notereader/fhir/",
+        url=base_url + "/notereader/fhir/",
         workflow=CONFIG["workflows"]["notereader"],
         protocol="soap",
     )
@@ -420,8 +424,7 @@ def create_sandboxes():
 
     # CDS Hooks Sandbox
     cds_client = SandboxClient(
-        api_url=base_url,
-        endpoint="/cds/cds-services/discharge-summary",
+        url=base_url + "/cds/cds-services/discharge-summary",
         workflow=CONFIG["workflows"]["cds"],
         protocol="rest",
     )
@@ -430,7 +433,6 @@ def create_sandboxes():
     cds_client.load_free_text(
         csv_path=CONFIG["data"]["discharge_notes_path"],
         column_name="text",
-        workflow=CONFIG["workflows"]["cds"],
     )
 
     print_success("Sandbox environments created")

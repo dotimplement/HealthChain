@@ -5,7 +5,6 @@ import yaml
 import tempfile
 
 
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
@@ -353,26 +352,24 @@ def test_empty_document():
 
 @pytest.fixture
 def valid_prefetch_data():
-    """Provides a `Prefetch` model object for CDS Hooks testing.
+    """Provides a dict of FHIR resources for CDS Hooks testing.
 
     Contains a single prefetch key "document" with a DocumentReference resource.
     Use this for testing services that consume CDS Hooks prefetch data.
 
     Example:
         def test_prefetch_handler(valid_prefetch_data):
-            request = CDSRequest(prefetch=valid_prefetch_data.prefetch)
+            request = CDSRequest(prefetch=valid_prefetch_data)
             # ... test logic
 
     Returns:
-        healthchain.models.hooks.prefetch.Prefetch: A Pydantic model representing valid prefetch data.
+        dict: A dictionary containing FHIR resources for prefetch data.
     """
-    return Prefetch(
-        prefetch={
-            "document": create_document_reference(
-                content_type="text/plain", data="Test document content"
-            )
-        }
-    )
+    return {
+        "document": create_document_reference(
+            content_type="text/plain", data="Test document content"
+        )
+    }
 
 
 # #################################################

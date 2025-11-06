@@ -61,6 +61,62 @@ def create_resource_from_dict(
         return None
 
 
+def convert_prefetch_to_fhir_objects(
+    prefetch_dict: Dict[str, Any],
+) -> Dict[str, Resource]:
+    """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
+
+    Takes a prefetch dictionary where values may be either dict representations of FHIR
+    resources or already instantiated FHIR Resource objects, and ensures all values are
+    FHIR Resource objects.
+
+    Args:
+        prefetch_dict: Dictionary mapping keys to FHIR resource dicts or objects
+
+    Returns:
+        Dict[str, Resource]: Dictionary with same keys but all values as FHIR Resource objects
+
+    Example:
+        >>> prefetch = {
+        ...     "patient": {"resourceType": "Patient", "id": "123"},
+        ...     "condition": Condition(id="456", ...)
+        ... }
+        >>> fhir_objects = convert_prefetch_to_fhir_objects(prefetch)
+        >>> isinstance(fhir_objects["patient"], Patient)  # True
+        >>> isinstance(fhir_objects["condition"], Condition)  # True
+    """
+    from fhir.resources import get_fhir_model_class
+
+    result: Dict[str, Resource] = {}
+
+    for key, resource_data in prefetch_dict.items():
+        if isinstance(resource_data, dict):
+            # Convert dict to FHIR Resource object
+            resource_type = resource_data.get("resourceType")
+            if resource_type:
+                try:
+                    resource_class = get_fhir_model_class(resource_type)
+                    result[key] = resource_class(**resource_data)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to convert {resource_type} to FHIR object: {e}"
+                    )
+                    result[key] = resource_data
+            else:
+                logger.warning(
+                    f"No resourceType found for key '{key}', keeping as dict"
+                )
+                result[key] = resource_data
+        elif isinstance(resource_data, Resource):
+            # Already a FHIR object
+            result[key] = resource_data
+        else:
+            logger.warning(f"Unexpected type for key '{key}': {type(resource_data)}")
+            result[key] = resource_data
+
+    return result
+
+
 def create_single_codeable_concept(
     code: str,
     display: Optional[str] = None,

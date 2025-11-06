@@ -7,8 +7,7 @@ from healthchain.io.containers import Document
 from healthchain.io.base import BaseAdapter
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
-from healthchain.fhir import read_content_attachment
-from healthchain.models.hooks.prefetch import Prefetch
+from healthchain.fhir import read_content_attachment, convert_prefetch_to_fhir_objects
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +68,6 @@ class CdsFhirAdapter(BaseAdapter[CDSRequest, CDSResponse]):
 
         Raises:
             ValueError: If neither prefetch nor fhirServer is provided in cds_request
-            ValueError: If the prefetch data is invalid or cannot be processed
             NotImplementedError: If fhirServer is provided (FHIR server support not implemented)
         """
         if cds_request.prefetch is None and cds_request.fhirServer is None:
@@ -83,14 +81,13 @@ class CdsFhirAdapter(BaseAdapter[CDSRequest, CDSResponse]):
         # Create an empty Document object
         doc = Document(data="")
 
-        # Validate the prefetch data
-        validated_prefetch = Prefetch(prefetch=cds_request.prefetch)
-
-        # Set the prefetch resources
-        doc.fhir.prefetch_resources = validated_prefetch.prefetch
+        # Convert prefetch dict resources to FHIR objects
+        doc.fhir.prefetch_resources = convert_prefetch_to_fhir_objects(
+            cds_request.prefetch or {}
+        )
 
         # Extract text content from DocumentReference resource if provided
-        document_resource = validated_prefetch.prefetch.get(prefetch_document_key)
+        document_resource = doc.fhir.prefetch_resources.get(prefetch_document_key)
 
         if not document_resource:
             log.warning(

@@ -256,3 +256,35 @@ def extract_resources(
 
     bundle.entry = remaining_entries
     return extracted
+
+
+def count_resources(bundle: Bundle) -> dict[str, int]:
+    """Count resources by type in a bundle.
+
+    Args:
+        bundle: The FHIR Bundle to analyze
+
+    Returns:
+        Dictionary mapping resource type names to their counts.
+        Example: {"Condition": 2, "MedicationStatement": 1, "Patient": 1}
+
+    Example:
+        >>> bundle = create_bundle()
+        >>> add_resource(bundle, create_condition(...))
+        >>> add_resource(bundle, create_condition(...))
+        >>> add_resource(bundle, create_medication_statement(...))
+        >>> counts = count_resources(bundle)
+        >>> print(counts)
+        {'Condition': 2, 'MedicationStatement': 1}
+    """
+    if not bundle or not bundle.entry:
+        return {}
+
+    counts: dict[str, int] = {}
+    for entry in bundle.entry:
+        if entry.resource:
+            # Get the resource type from the class name
+            resource_type = entry.resource.__resource_type__
+            counts[resource_type] = counts.get(resource_type, 0) + 1
+
+    return counts

@@ -24,18 +24,17 @@ def test_notereader_sandbox_integration():
 
     # Create SandboxClient for SOAP/CDA
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
 
     # Load test document
     test_document = "<test>document</test>"
-    client._construct_request(test_document, client.workflow)
+    client._construct_request(test_document)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response with proper SOAP envelope structure
     with patch("httpx.Client") as mock_client_class:
@@ -74,18 +73,17 @@ def test_notereader_sandbox_workflow_execution():
     """Test executing a NoteReader workflow with SandboxClient"""
     # Create SandboxClient
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/notereader/fhir/",
+        url="http://localhost:8000/notereader/fhir/",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
 
     # Load clinical document
     clinical_document = "<ClinicalDocument>Test content</ClinicalDocument>"
-    client._construct_request(clinical_document, client.workflow)
+    client._construct_request(clinical_document)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response with proper SOAP envelope structure
     with patch("httpx.Client") as mock_client_class:
