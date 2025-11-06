@@ -64,7 +64,6 @@ class DatasetRegistry:
             )
 
         loader = cls._datasets[name]
-
         return loader.load(data_dir=data_dir, **kwargs)
 
     @classmethod

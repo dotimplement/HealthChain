@@ -213,15 +213,15 @@ from healthchain.sandbox import SandboxClient
 
 # Initialize client with your service URL and workflow
 client = SandboxClient(
-    url="http://localhost:8000/cds/patient-view",
-    workflow="patient-view"
+    url="http://localhost:8000/cds/encounter-discharge",
+    workflow="encounter-discharge"
 )
 
 # Load test data from a registered dataset
 client.load_from_registry(
     "synthea-patient",
     data_dir="./data/synthea",
-    resource_types=["Condition", "MedicationStatement"],
+    resource_types=["Condition", "DocumentReference"],
     sample_size=3
 )
 
