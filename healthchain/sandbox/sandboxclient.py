@@ -379,34 +379,38 @@ class SandboxClient:
         return previews
 
     def get_request_data(
-        self, format: Literal["raw", "dict", "json"] = "dict"
-    ) -> Union[List, str]:
+        self, format: Literal["dict", "json"] = "dict"
+    ) -> Union[List[Dict], str]:
         """
-        Get raw request data for inspection.
+        Get transformed request data for inspection.
 
-        Allows direct access to request data for debugging or custom processing.
+        Allows access to serialized request data for debugging or custom processing.
+        For direct access to Pydantic models, use the `requests` attribute:
+            >>> for request in client.requests:
+            >>>     print(request.model_dump())
 
         Args:
-            format: Return format - "raw" for list of request objects,
-                   "dict" for list of dictionaries, "json" for JSON string
+            format: Return format - "dict" for list of dictionaries,
+                   "json" for JSON string
 
         Returns:
             Request data in specified format
 
         Raises:
-            ValueError: If format is not one of "raw", "dict", or "json"
+            ValueError: If format is not "dict" or "json"
 
         Examples:
             >>> client.load_from_path("data.xml")
+            >>> # Access raw Pydantic models directly
+            >>> for request in client.requests:
+            >>>     print(request.model_dump(exclude_none=True))
             >>> # Get as dictionaries
             >>> dicts = client.get_request_data("dict")
             >>> # Get as JSON string
             >>> json_str = client.get_request_data("json")
             >>> print(json_str)
         """
-        if format == "raw":
-            return self.requests
-        elif format == "dict":
+        if format == "dict":
             result = []
             for req in self.requests:
                 if hasattr(req, "model_dump"):
@@ -420,7 +424,8 @@ class SandboxClient:
             return json.dumps(self.get_request_data("dict"), indent=2)
         else:
             raise ValueError(
-                f"Invalid format '{format}'. Must be 'raw', 'dict', or 'json'"
+                f"Invalid format '{format}'. Must be 'dict' or 'json'. "
+                f"For raw Pydantic models, access the 'requests' attribute directly."
             )
 
     def send_requests(self) -> List[Dict]:

@@ -323,7 +323,6 @@ def test_preview_requests_respects_limit():
 @pytest.mark.parametrize(
     "format_type,check",
     [
-        ("raw", lambda data: isinstance(data, list)),
         ("dict", lambda data: isinstance(data, list) and isinstance(data[0], dict)),
         ("json", lambda data: isinstance(data, str) and json.loads(data)),
     ],
