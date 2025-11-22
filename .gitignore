@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 output/
+models/
 scrap/
 .DS_Store
 .vscode/
