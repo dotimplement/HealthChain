@@ -7,16 +7,155 @@ In instances where there are multiple codes present for a single resource, the f
 """
 
 import pandas as pd
+import logging
 
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Union, Optional, Literal
 from collections import defaultdict
 from fhir.resources.bundle import Bundle
+from pydantic import BaseModel, field_validator, ConfigDict
 
 from healthchain.fhir.helpers import (
     calculate_age_from_birthdate,
     calculate_age_from_event_date,
     encode_gender,
 )
+
+logger = logging.getLogger(__name__)
+
+
+# Resource handler registry
+SUPPORTED_RESOURCES = {
+    "Patient": {
+        "handler": "_flatten_patient",
+        "description": "Patient demographics (age, gender)",
+        "output_columns": ["age", "gender"],
+    },
+    "Observation": {
+        "handler": "_flatten_observations",
+        "description": "Clinical observations (vitals, labs)",
+        "output_columns": "Dynamic based on observation codes",
+        "options": ["aggregation"],
+    },
+    "Condition": {
+        "handler": "_flatten_conditions",
+        "description": "Conditions/diagnoses as binary indicators",
+        "output_columns": "Dynamic: condition_{code}_{display}",
+    },
+    "MedicationStatement": {
+        "handler": "_flatten_medications",
+        "description": "Medications as binary indicators",
+        "output_columns": "Dynamic: medication_{code}_{display}",
+    },
+}
+
+
+class BundleConverterConfig(BaseModel):
+    """Configuration for FHIR Bundle to DataFrame conversion.
+
+    This configuration object controls which FHIR resources are processed and how
+    they are converted to DataFrame columns for ML model deployment.
+
+    Attributes:
+        resources: List of FHIR resource types to include in the conversion
+        observation_aggregation: How to aggregate multiple observation values
+        age_calculation: Method for calculating patient age
+        event_date_source: Which resource to extract event date from
+        event_date_strategy: Which date to use when multiple dates exist
+        resource_options: Resource-specific configuration options (extensible)
+
+    Example:
+        >>> config = BundleConverterConfig(
+        ...     resources=["Patient", "Observation", "Condition"],
+        ...     observation_aggregation="median"
+        ... )
+        >>> df = bundle_to_dataframe(bundle, config=config)
+    """
+
+    # Core resources to include
+    resources: List[str] = ["Patient", "Observation"]
+
+    # Observation-specific options
+    observation_aggregation: Literal["mean", "median", "max", "min", "last"] = "mean"
+
+    # Patient age calculation
+    age_calculation: Literal["current_date", "event_date"] = "current_date"
+    event_date_source: Literal["Observation", "Encounter"] = "Observation"
+    event_date_strategy: Literal["earliest", "latest", "first"] = "earliest"
+
+    # Resource-specific options (extensible for future use)
+    resource_options: Dict[str, Dict[str, Any]] = {}
+
+    model_config = ConfigDict(extra="allow")
+
+    @field_validator("resources")
+    @classmethod
+    def validate_resources(cls, v):
+        """Validate that requested resources are supported and warn about unsupported ones."""
+        supported = get_supported_resources()
+        unsupported = [r for r in v if r not in supported]
+        if unsupported:
+            logger.warning(
+                f"Unsupported resources will be skipped: {unsupported}. "
+                f"Supported resources: {supported}"
+            )
+        return v
+
+
+def get_supported_resources() -> List[str]:
+    """Get list of supported FHIR resource types.
+
+    Returns:
+        List of resource type names that can be converted to DataFrame columns
+
+    Example:
+        >>> resources = get_supported_resources()
+        >>> print(resources)
+        ['Patient', 'Observation', 'Condition', 'MedicationStatement']
+    """
+    return list(SUPPORTED_RESOURCES.keys())
+
+
+def get_resource_info(resource_type: str) -> Dict[str, Any]:
+    """Get detailed information about a supported resource type.
+
+    Args:
+        resource_type: FHIR resource type name
+
+    Returns:
+        Dictionary with resource handler information, or empty dict if unsupported
+
+    Example:
+        >>> info = get_resource_info("Observation")
+        >>> print(info["description"])
+        'Clinical observations (vitals, labs)'
+    """
+    return SUPPORTED_RESOURCES.get(resource_type, {})
+
+
+def print_supported_resources() -> None:
+    """Print user-friendly list of supported FHIR resources for conversion.
+
+    Example:
+        >>> from healthchain.fhir.converters import print_supported_resources
+        >>> print_supported_resources()
+        Supported FHIR Resources for ML Dataset Conversion:
+
+          ✓ Patient
+            Patient demographics (age, gender)
+            Columns: age, gender
+        ...
+    """
+    print("Supported FHIR Resources for ML Dataset Conversion:\n")
+    for resource, info in SUPPORTED_RESOURCES.items():
+        print(f"  ✓ {resource}")
+        print(f"    {info['description']}")
+        if isinstance(info["output_columns"], list):
+            print(f"    Columns: {', '.join(info['output_columns'])}")
+        else:
+            print(f"    Columns: {info['output_columns']}")
+        if info.get("options"):
+            print(f"    Options: {', '.join(info['options'])}")
+        print()
 
 
 def _get_field(resource: Dict, field_name: str, default=None):
@@ -215,46 +354,39 @@ def group_bundle_by_patient(
 
 def bundle_to_dataframe(
     bundle: Union[Bundle, Dict[str, Any]],
-    include_patient: bool = True,
-    include_observations: bool = True,
-    include_conditions: bool = False,
-    include_medications: bool = False,
-    observation_aggregation: str = "mean",
-    use_event_date_for_age: bool = False,
-    event_date_source: str = "Observation",
-    event_date_strategy: str = "earliest",
+    config: Optional[BundleConverterConfig] = None,
 ) -> pd.DataFrame:
     """Convert a FHIR Bundle to a pandas DataFrame.
 
-    Generic flattener that converts FHIR resources to Dataset format with one row per patient.
-    Observations are aggregated by code, and patient demographics are included.
-    Works with both FHIR objects and raw dictionaries.
+    Converts FHIR resources to a tabular format with one row per patient.
+    Uses a configuration object to control which resources are processed and how.
 
     Args:
         bundle: FHIR Bundle resource (object or dict)
-        include_patient: Include patient demographics (age, gender) (default: True)
-        include_observations: Include observations as columns (default: True)
-        include_conditions: Include condition codes as columns (default: False)
-        include_medications: Include medication codes as columns (default: False)
-        observation_aggregation: How to aggregate multiple observation values
-            Options: "mean", "median", "max", "min", "last" (default: "mean")
-        use_event_date_for_age: Use event date for age calculation (MIMIC-IV style) (default: False)
-        event_date_source: Which resource to extract event date from ("Observation" or "Encounter") (default: "Observation")
-        event_date_strategy: Which date to use ("earliest", "latest", "first") (default: "earliest")
+        config: BundleConverterConfig object specifying conversion behavior.
+            If None, uses default config (Patient + Observation with mean aggregation)
 
     Returns:
         DataFrame with one row per patient and columns for each feature
 
     Example:
-        >>> from fhir.resources.bundle import Bundle
-        >>> bundle = Bundle(**patient_data)
+        >>> from healthchain.fhir.converters import BundleConverterConfig
+        >>>
+        >>> # Default behavior
         >>> df = bundle_to_dataframe(bundle)
-        >>> print(df.columns)
-        Index(['patient_ref', 'age', 'gender', '8867-4_Heart_rate', ...], dtype='object')
-
-        >>> # MIMIC-IV style age calculation
-        >>> df = bundle_to_dataframe(bundle, use_event_date_for_age=True)
+        >>>
+        >>> # Custom config
+        >>> config = BundleConverterConfig(
+        ...     resources=["Patient", "Observation", "Condition"],
+        ...     observation_aggregation="median",
+        ...     age_calculation="event_date"
+        ... )
+        >>> df = bundle_to_dataframe(bundle, config=config)
     """
+    # Use default config if not provided
+    if config is None:
+        config = BundleConverterConfig()
+
     # Group resources by patient
     patient_data = group_bundle_by_patient(bundle)
 
@@ -266,49 +398,77 @@ def bundle_to_dataframe(
     for patient_ref, resources in patient_data.items():
         row = {"patient_ref": patient_ref}
 
-        # Add patient demographics
-        if include_patient and resources["patient"]:
-            patient = resources["patient"]
-            birth_date = _get_field(patient, "birthDate")
-            gender = _get_field(patient, "gender")
+        # Process each requested resource type using registry
+        for resource_type in config.resources:
+            handler_info = SUPPORTED_RESOURCES.get(resource_type)
 
-            # Calculate age based on configuration
-            if use_event_date_for_age:
-                event_date = extract_event_date(
-                    resources, event_date_source, event_date_strategy
-                )
-                row["age"] = calculate_age_from_event_date(birth_date, event_date)
-            else:
-                row["age"] = calculate_age_from_birthdate(birth_date)
+            if not handler_info:
+                # Skip unsupported resources gracefully (already warned by validator)
+                continue
 
-            row["gender"] = encode_gender(gender)
+            # Get handler function by name
+            handler_name = handler_info["handler"]
+            handler = globals()[handler_name]
 
-        # Add observations
-        if include_observations:
-            obs_features = _flatten_observations(
-                resources["observations"], observation_aggregation
-            )
-            row.update(obs_features)
-
-        # Add conditions
-        if include_conditions:
-            condition_features = _flatten_conditions(resources["conditions"])
-            row.update(condition_features)
-
-        # Add medications
-        if include_medications:
-            med_features = _flatten_medications(resources["medications"])
-            row.update(med_features)
+            # Call handler with standardized signature
+            features = handler(resources, config)
+            if features:
+                row.update(features)
 
         rows.append(row)
 
     return pd.DataFrame(rows)
 
 
+def _flatten_patient(
+    resources: Dict[str, Any], config: BundleConverterConfig
+) -> Dict[str, Any]:
+    """Flatten patient demographics into feature columns.
+
+    Args:
+        resources: Dictionary of patient resources
+        config: Converter configuration
+
+    Returns:
+        Dictionary with age and gender features
+    """
+    if not resources["patient"]:
+        return {}
+
+    features = {}
+    patient = resources["patient"]
+
+    birth_date = _get_field(patient, "birthDate")
+    gender = _get_field(patient, "gender")
+
+    # Calculate age based on configuration
+    if config.age_calculation == "event_date":
+        event_date = extract_event_date(
+            resources, config.event_date_source, config.event_date_strategy
+        )
+        features["age"] = calculate_age_from_event_date(birth_date, event_date)
+    else:
+        features["age"] = calculate_age_from_birthdate(birth_date)
+
+    features["gender"] = encode_gender(gender)
+
+    return features
+
+
 def _flatten_observations(
-    observations: List, aggregation: str = "mean"
+    resources: Dict[str, Any], config: BundleConverterConfig
 ) -> Dict[str, float]:
-    """Flatten observations into feature columns."""
+    """Flatten observations into feature columns.
+
+    Args:
+        resources: Dictionary of patient resources
+        config: Converter configuration
+
+    Returns:
+        Dictionary with observation features
+    """
+    observations = resources.get("observations", [])
+    aggregation = config.observation_aggregation
     import numpy as np
 
     # Group observations by code
@@ -364,9 +524,19 @@ def _flatten_observations(
     return features
 
 
-def _flatten_conditions(conditions: List) -> Dict[str, int]:
-    """Flatten conditions into binary indicator columns."""
+def _flatten_conditions(
+    resources: Dict[str, Any], config: BundleConverterConfig
+) -> Dict[str, int]:
+    """Flatten conditions into binary indicator columns.
 
+    Args:
+        resources: Dictionary of patient resources
+        config: Converter configuration
+
+    Returns:
+        Dictionary with condition indicator features
+    """
+    conditions = resources.get("conditions", [])
     features = {}
 
     for condition in conditions:
@@ -390,9 +560,19 @@ def _flatten_conditions(conditions: List) -> Dict[str, int]:
     return features
 
 
-def _flatten_medications(medications: List) -> Dict[str, int]:
-    """Flatten medications into binary indicator columns."""
+def _flatten_medications(
+    resources: Dict[str, Any], config: BundleConverterConfig
+) -> Dict[str, int]:
+    """Flatten medications into binary indicator columns.
 
+    Args:
+        resources: Dictionary of patient resources
+        config: Converter configuration
+
+    Returns:
+        Dictionary with medication indicator features
+    """
+    medications = resources.get("medications", [])
     features = {}
 
     for med in medications:

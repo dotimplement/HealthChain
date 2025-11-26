@@ -26,6 +26,14 @@ from healthchain.fhir.bundle_helpers import (
     count_resources,
 )
 
+from healthchain.fhir.converters import (
+    BundleConverterConfig,
+    bundle_to_dataframe,
+    get_supported_resources,
+    get_resource_info,
+    print_supported_resources,
+)
+
 __all__ = [
     # Resource creation
     "create_condition",
@@ -50,4 +58,10 @@ __all__ = [
     "merge_bundles",
     "extract_resources",
     "count_resources",
+    # Bundle to DataFrame conversion
+    "BundleConverterConfig",
+    "bundle_to_dataframe",
+    "get_supported_resources",
+    "get_resource_info",
+    "print_supported_resources",
 ]
