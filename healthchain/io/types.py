@@ -6,10 +6,10 @@ for FHIR to Dataset data conversion.
 
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
+from pydantic import BaseModel, Field, field_validator
 
 
-@dataclass
-class TimeWindow:
+class TimeWindow(BaseModel):
     """Defines a time window for filtering temporal data.
 
     Used to extract data from a specific time period relative to a reference point,
@@ -32,14 +32,21 @@ class TimeWindow:
 
     reference_field: str
     hours: int
-    offset_hours: int = 0
+    offset_hours: int = Field(default=0)
 
-    def __post_init__(self):
-        """Validate time window parameters."""
-        if self.hours <= 0:
+    @field_validator("hours")
+    @classmethod
+    def hours_must_be_positive(cls, v):
+        if v <= 0:
             raise ValueError("hours must be positive")
-        if self.offset_hours < 0:
+        return v
+
+    @field_validator("offset_hours")
+    @classmethod
+    def offset_hours_non_negative(cls, v):
+        if v < 0:
             raise ValueError("offset_hours must be non-negative")
+        return v
 
 
 @dataclass

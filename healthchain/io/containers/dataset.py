@@ -74,7 +74,7 @@ class Dataset(DataContainer[pd.DataFrame]):
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Dataset":
-        df = pd.DataFrame(**data["data"])
+        df = pd.DataFrame(data["data"])
         return cls(df)
 
     def to_csv(self, path: str, **kwargs) -> None:

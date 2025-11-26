@@ -5,13 +5,12 @@ FHIR resources to pandas DataFrame columns for ML model deployment.
 """
 
 import yaml
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
+from pydantic import BaseModel, field_validator, ConfigDict, model_validator
 
 
-@dataclass
-class FeatureMapping:
+class FeatureMapping(BaseModel):
     """Maps a single feature to its FHIR source."""
 
     name: str
@@ -25,8 +24,11 @@ class FeatureMapping:
     unit: Optional[str] = None
     display: Optional[str] = None
 
-    def __post_init__(self):
-        """Validate the feature mapping configuration."""
+    model_config = ConfigDict(extra="allow")
+
+    @model_validator(mode="after")
+    def validate_resource_requirements(self) -> "FeatureMapping":
+        """Validate the feature mapping configuration based on resource type."""
         if self.fhir_resource == "Observation":
             if not self.code:
                 raise ValueError(
@@ -41,6 +43,7 @@ class FeatureMapping:
                 raise ValueError(
                     f"Feature '{self.name}': Patient resources require a 'field'"
                 )
+        return self
 
     @classmethod
     def from_dict(cls, name: str, data: Dict[str, Any]) -> "FeatureMapping":
@@ -56,24 +59,30 @@ class FeatureMapping:
         return cls(name=name, **data)
 
 
-@dataclass
-class FeatureSchema:
+class FeatureSchema(BaseModel):
     """Schema defining how to extract features from FHIR resources."""
 
     name: str
     version: str
-    features: Dict[str, FeatureMapping] = field(default_factory=dict)
+    features: Dict[str, FeatureMapping] = {}
     description: Optional[str] = None
     model_info: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    model_config = ConfigDict(extra="allow")
+
+    @field_validator("features", mode="before")
+    @classmethod
+    def convert_feature_dicts(cls, v):
         """Convert feature dicts to FeatureMapping objects if needed."""
-        if self.features and isinstance(list(self.features.values())[0], dict):
-            self.features = {
-                name: FeatureMapping.from_dict(name, mapping)
-                for name, mapping in self.features.items()
-            }
+        if v and isinstance(v, dict):
+            # Check if values are dicts (need conversion) or already FeatureMapping
+            if v and isinstance(list(v.values())[0], dict):
+                return {
+                    name: FeatureMapping.from_dict(name, mapping)
+                    for name, mapping in v.items()
+                }
+        return v
 
     @classmethod
     def from_yaml(cls, path: Union[str, Path]) -> "FeatureSchema":
@@ -92,7 +101,7 @@ class FeatureSchema:
         with open(path, "r") as f:
             data = yaml.safe_load(f)
 
-        return cls.from_dict(data)
+        return cls.model_validate(data)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "FeatureSchema":
@@ -104,21 +113,7 @@ class FeatureSchema:
         Returns:
             FeatureSchema instance
         """
-        # Convert feature dicts to FeatureMapping objects
-        features_data = data.get("features", {})
-        features = {
-            name: FeatureMapping.from_dict(name, mapping)
-            for name, mapping in features_data.items()
-        }
-
-        return cls(
-            name=data["name"],
-            version=data["version"],
-            features=features,
-            description=data.get("description"),
-            model_info=data.get("model_info"),
-            metadata=data.get("metadata"),
-        )
+        return cls.model_validate(data)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert schema to dictionary format.
@@ -134,7 +129,7 @@ class FeatureSchema:
             "features": {
                 name: {
                     k: v
-                    for k, v in vars(mapping).items()
+                    for k, v in mapping.model_dump().items()
                     if k != "name" and v is not None
                 }
                 for name, mapping in self.features.items()

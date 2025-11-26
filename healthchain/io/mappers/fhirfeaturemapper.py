@@ -11,10 +11,11 @@ import numpy as np
 from fhir.resources.bundle import Bundle
 
 from healthchain.io.containers.featureschema import FeatureSchema
-from healthchain.fhir.converters import bundle_to_dataframe
+from healthchain.io.mappers.base import BaseMapper
+from healthchain.fhir.converters import bundle_to_dataframe, BundleConverterConfig
 
 
-class FHIRFeatureMapper:
+class FHIRFeatureMapper(BaseMapper[Bundle, pd.DataFrame]):
     """Schema-driven mapper from FHIR resources to DataFrame features.
 
     Uses a FeatureSchema to extract and transform specific features from FHIR Bundles.
@@ -24,6 +25,16 @@ class FHIRFeatureMapper:
 
     def __init__(self, schema: FeatureSchema):
         self.schema = schema
+
+    def map(self, source: Bundle) -> pd.DataFrame:
+        """Transform FHIR Bundle to DataFrame using default aggregation.
+        Args:
+            source: FHIR Bundle resource
+
+        Returns:
+            DataFrame with extracted features
+        """
+        return self.extract_features(source)
 
     def extract_features(
         self,
@@ -46,24 +57,11 @@ class FHIRFeatureMapper:
             >>> mapper = FHIRFeatureMapper(schema)
             >>> df = mapper.extract_features(bundle)
         """
-        # Extract age calculation metadata if present
-        metadata = self.schema.metadata or {}
-        age_calculation = metadata.get("age_calculation", "current_date")
-        use_event_date = age_calculation == "event_date"
-        event_date_source = metadata.get("event_date_source", "Observation")
-        event_date_strategy = metadata.get("event_date_strategy", "earliest")
+        # Build config from schema
+        config = self._build_config_from_schema(aggregation)
 
-        df = bundle_to_dataframe(
-            bundle,
-            include_patient=True,
-            include_observations=True,
-            include_conditions=False,
-            include_medications=False,
-            observation_aggregation=aggregation,
-            use_event_date_for_age=use_event_date,
-            event_date_source=event_date_source,
-            event_date_strategy=event_date_strategy,
-        )
+        # Extract features using config
+        df = bundle_to_dataframe(bundle, config=config)
 
         if df.empty:
             return pd.DataFrame(
@@ -83,6 +81,34 @@ class FHIRFeatureMapper:
         df_mapped = df_mapped[["patient_ref"] + feature_names]
 
         return df_mapped
+
+    def _build_config_from_schema(self, aggregation: str) -> BundleConverterConfig:
+        """Build converter config from feature schema.
+
+        Args:
+            aggregation: Aggregation method for observations
+
+        Returns:
+            BundleConverterConfig configured based on schema
+        """
+        # Determine which resources are needed from schema
+        resources = set()
+        for feature in self.schema.features.values():
+            resources.add(feature.fhir_resource)
+
+        # Extract age calculation metadata if present
+        metadata = self.schema.metadata or {}
+        age_calculation = metadata.get("age_calculation", "current_date")
+        event_date_source = metadata.get("event_date_source", "Observation")
+        event_date_strategy = metadata.get("event_date_strategy", "earliest")
+
+        return BundleConverterConfig(
+            resources=list(resources),
+            observation_aggregation=aggregation,
+            age_calculation=age_calculation,
+            event_date_source=event_date_source,
+            event_date_strategy=event_date_strategy,
+        )
 
     def _map_columns_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
         """Map generic DataFrame columns to schema feature names.

@@ -4,7 +4,7 @@ from typing import Optional, Any
 from fhir.resources.documentreference import DocumentReference
 
 from healthchain.io.containers import Document
-from healthchain.io.base import BaseAdapter
+from healthchain.io.adapters.base import BaseAdapter
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.fhir import read_content_attachment, convert_prefetch_to_fhir_objects
