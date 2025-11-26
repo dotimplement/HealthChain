@@ -4,6 +4,8 @@ Patterns:
 - add_*(): add data to resources with list fields safely (e.g. coding)
 - set_*(): set the field of specific resources with soft validation (e.g. category)
 - read_*(): return a human readable format of the data in a resource (e.g. attachments)
+
+Parameters marked REQUIRED are required by FHIR specification.
 """
 
 import logging
@@ -17,6 +19,10 @@ from fhir.resources.condition import Condition
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.documentreference import DocumentReference
+from fhir.resources.observation import Observation
+from fhir.resources.riskassessment import RiskAssessment
+from fhir.resources.patient import Patient
+from fhir.resources.quantity import Quantity
 from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.codeablereference import CodeableReference
 from fhir.resources.coding import Coding
@@ -24,6 +30,7 @@ from fhir.resources.attachment import Attachment
 from fhir.resources.resource import Resource
 from fhir.resources.reference import Reference
 from fhir.resources.meta import Meta
+from fhir.resources.identifier import Identifier
 
 
 logger = logging.getLogger(__name__)
@@ -321,6 +328,187 @@ def create_allergy_intolerance(
     return allergy
 
 
+def create_value_quantity_observation(
+    code: str,
+    value: float,
+    unit: str,
+    status: str = "final",
+    subject: Optional[str] = None,
+    system: str = "http://loinc.org",
+    display: Optional[str] = None,
+    effective_datetime: Optional[str] = None,
+) -> Observation:
+    """
+    Create a minimal FHIR Observation for vital signs or laboratory values.
+    If you need to create a more complex observation, use the FHIR Observation resource directly.
+    https://hl7.org/fhir/observation.html
+
+    Args:
+        status: REQUIRED. The status of the observation (default: "final")
+        code: REQUIRED. The observation code (e.g., LOINC code for the measurement)
+        value: The numeric value of the observation
+        unit: The unit of measure (e.g., "beats/min", "mg/dL")
+        system: The code system for the observation code (default: LOINC)
+        display: The display name for the observation code
+        effective_datetime: When the observation was made (ISO format). Uses current time if not provided.
+        subject: Reference to the patient (e.g. "Patient/123")
+
+    Returns:
+        Observation: A FHIR Observation resource with an auto-generated ID prefixed with 'hc-'
+    """
+    if not effective_datetime:
+        effective_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        )
+    subject_ref = None
+    if subject is not None:
+        subject_ref = Reference(reference=subject)
+
+    observation = Observation(
+        id=_generate_id(),
+        status=status,
+        code=create_single_codeable_concept(code, display, system),
+        subject=subject_ref,
+        effectiveDateTime=effective_datetime,
+        valueQuantity=Quantity(
+            value=value, unit=unit, system="http://unitsofmeasure.org", code=unit
+        ),
+    )
+
+    return observation
+
+
+def create_patient(
+    gender: Optional[str] = None,
+    birth_date: Optional[str] = None,
+    identifier: Optional[str] = None,
+    identifier_system: Optional[str] = "http://hospital.example.org",
+) -> Patient:
+    """
+    Create a minimal FHIR Patient resource with basic gender and birthdate
+    If you need to create a more complex patient, use the FHIR Patient resource directly
+    https://hl7.org/fhir/patient.html (No required fields).
+
+    Args:
+        gender: Administrative gender (male, female, other, unknown)
+        birth_date: Birth date in YYYY-MM-DD format
+        identifier: Optional identifier value for the patient (e.g., MRN)
+        identifier_system: The system for the identifier (default: "http://hospital.example.org")
+
+    Returns:
+        Patient: A FHIR Patient resource with an auto-generated ID prefixed with 'hc-'
+    """
+    patient_id = _generate_id()
+
+    patient_data = {"id": patient_id}
+
+    if birth_date:
+        patient_data["birthDate"] = birth_date
+
+    if gender:
+        patient_data["gender"] = gender.lower()
+
+    if identifier:
+        patient_data["identifier"] = [
+            Identifier(
+                system=identifier_system,
+                value=identifier,
+            )
+        ]
+
+    patient = Patient(**patient_data)
+    return patient
+
+
+def create_risk_assessment_from_prediction(
+    subject: str,
+    prediction: Dict[str, Any],
+    status: str = "final",
+    method: Optional[CodeableConcept] = None,
+    basis: Optional[List[Reference]] = None,
+    comment: Optional[str] = None,
+    occurrence_datetime: Optional[str] = None,
+) -> RiskAssessment:
+    """
+    Create a FHIR RiskAssessment from ML model prediction output.
+    If you need to create a more complex risk assessment, use the FHIR RiskAssessment resource directly.
+    https://hl7.org/fhir/riskassessment.html
+
+    Args:
+        subject: REQUIRED. Reference to the patient (e.g. "Patient/123")
+        prediction: Dictionary containing prediction details with keys:
+            - outcome: CodeableConcept or dict with code, display, system for the predicted outcome
+            - probability: float between 0 and 1 representing the risk probability
+            - qualitative_risk: Optional str indicating risk level (e.g., "high", "moderate", "low")
+        status: REQUIRED. The status of the assessment (default: "final")
+        method: Optional CodeableConcept describing the assessment method/model used
+        basis: Optional list of References to observations or other resources used as input
+        comment: Optional text comment about the assessment
+
+        occurrence_datetime: When the assessment was made (ISO format). Uses current time if not provided.
+
+    Returns:
+        RiskAssessment: A FHIR RiskAssessment resource with an auto-generated ID prefixed with 'hc-'
+
+    Example:
+        >>> prediction = {
+        ...     "outcome": {"code": "A41.9", "display": "Sepsis", "system": "http://hl7.org/fhir/sid/icd-10"},
+        ...     "probability": 0.85,
+        ...     "qualitative_risk": "high"
+        ... }
+        >>> risk = create_risk_assessment("Patient/123", prediction)
+    """
+    if not occurrence_datetime:
+        occurrence_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        )
+
+    outcome = prediction.get("outcome")
+    if isinstance(outcome, dict):
+        outcome_concept = create_single_codeable_concept(
+            code=outcome["code"],
+            display=outcome.get("display"),
+            system=outcome.get("system", "http://snomed.info/sct"),
+        )
+    else:
+        outcome_concept = outcome
+
+    prediction_data = {
+        "outcome": outcome_concept,
+    }
+
+    if "probability" in prediction:
+        prediction_data["probabilityDecimal"] = prediction["probability"]
+
+    if "qualitative_risk" in prediction:
+        prediction_data["qualitativeRisk"] = create_single_codeable_concept(
+            code=prediction["qualitative_risk"],
+            display=prediction["qualitative_risk"].capitalize(),
+            system="http://terminology.hl7.org/CodeSystem/risk-probability",
+        )
+
+    risk_assessment_data = {
+        "id": _generate_id(),
+        "status": status,
+        "subject": Reference(reference=subject),
+        "occurrenceDateTime": occurrence_datetime,
+        "prediction": [prediction_data],
+    }
+
+    if method:
+        risk_assessment_data["method"] = method
+
+    if basis:
+        risk_assessment_data["basis"] = basis
+
+    if comment:
+        risk_assessment_data["note"] = [{"text": comment}]
+
+    risk_assessment = RiskAssessment(**risk_assessment_data)
+
+    return risk_assessment
+
+
 # TODO: create a function that creates a DocumentReferenceContent to add to the DocumentReference
 def create_document_reference(
     data: Optional[Any] = None,
@@ -537,3 +725,102 @@ def read_content_attachment(
         attachments.append(result)
 
     return attachments
+
+
+def calculate_age_from_birthdate(birth_date: str) -> Optional[int]:
+    """Calculate age in years from a birth date string.
+
+    Args:
+        birth_date: Birth date in ISO format (YYYY-MM-DD or full ISO datetime)
+
+    Returns:
+        Age in years, or None if birth date is invalid
+    """
+    if not birth_date:
+        return None
+
+    try:
+        if isinstance(birth_date, str):
+            # Remove timezone info for simpler parsing
+            birth_date_clean = birth_date.replace("Z", "").split("T")[0]
+            birth_dt = datetime.datetime.strptime(birth_date_clean, "%Y-%m-%d")
+        else:
+            birth_dt = birth_date
+
+        # Calculate age
+        today = datetime.datetime.now()
+        age = today.year - birth_dt.year
+
+        # Adjust if birthday hasn't occurred this year
+        if (today.month, today.day) < (birth_dt.month, birth_dt.day):
+            age -= 1
+
+        return age
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def calculate_age_from_event_date(birth_date: str, event_date: str) -> Optional[int]:
+    """Calculate age in years from birth date and event date (MIMIC-IV style).
+
+    Uses the formula: age = year(eventDate) - year(birthDate)
+    This matches MIMIC-IV on FHIR de-identified age calculation.
+
+    Args:
+        birth_date: Birth date in ISO format (YYYY-MM-DD or full ISO datetime)
+        event_date: Event date in ISO format (YYYY-MM-DD or full ISO datetime)
+
+    Returns:
+        Age in years based on year difference, or None if dates are invalid
+
+    Example:
+        >>> calculate_age_from_event_date("1990-06-15", "2020-03-10")
+        30
+    """
+    if not birth_date or not event_date:
+        return None
+
+    try:
+        # Parse birth date
+        if isinstance(birth_date, str):
+            birth_date_clean = birth_date.replace("Z", "").split("T")[0]
+            birth_year = int(birth_date_clean.split("-")[0])
+        else:
+            birth_year = birth_date.year
+
+        # Parse event date
+        if isinstance(event_date, str):
+            event_date_clean = event_date.replace("Z", "").split("T")[0]
+            event_year = int(event_date_clean.split("-")[0])
+        else:
+            event_year = event_date.year
+
+        # MIMIC-IV style: simple year difference
+        age = event_year - birth_year
+
+        return age
+    except (ValueError, AttributeError, TypeError, IndexError):
+        return None
+
+
+def encode_gender(gender: str) -> Optional[int]:
+    """Encode gender as integer for ML models.
+
+    Standard encoding: Male=1, Female=0, Other/Unknown=None
+
+    Args:
+        gender: Gender string (case-insensitive)
+
+    Returns:
+        Encoded gender (1 for male, 0 for female, None for other/unknown)
+    """
+    if not gender:
+        return None
+
+    gender_lower = gender.lower()
+    if gender_lower in ["male", "m"]:
+        return 1
+    elif gender_lower in ["female", "f"]:
+        return 0
+    else:
+        return None
