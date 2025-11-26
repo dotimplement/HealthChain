@@ -5,7 +5,6 @@ from pathlib import Path
 from healthchain.io.containers.featureschema import FeatureSchema, FeatureMapping
 
 
-# TODO: Complete test coverage
 @pytest.mark.parametrize(
     "mapping_data,expected_error",
     [
@@ -53,20 +52,25 @@ def test_feature_schema_from_dict(minimal_schema):
 def test_feature_schema_to_dict_and_back_handles_unknown_and_nested_fields(
     minimal_schema,
 ):
-    """FeatureSchema.to_dict/from_dict: unknown feature-level fields raise TypeError, unknown top-level fields are ignored."""
-    # Add an unknown field at the top-level (should be ignored)
+    """FeatureSchema.to_dict/from_dict: unknown fields are allowed (Pydantic extra='allow')."""
+    # Add an unknown field at the top-level
     schema_dict = minimal_schema.to_dict()
     schema_dict["extra_top_level"] = "foo"
-    # Add extra/unknown fields at the feature level (should raise TypeError on from_dict)
+    # Add extra/unknown fields at the feature level
     schema_dict["features"]["heart_rate"]["unknown_field"] = 12345
     schema_dict["features"]["temperature"]["nested_field"] = {"inner": ["a", {"b": 7}]}
 
-    # Top-level unknown fields are ignored by FeatureSchema dataclass
-    # But unknown fields within "features" will cause a TypeError in FeatureMapping.__init__
-    with pytest.raises(TypeError) as excinfo:
-        FeatureSchema.from_dict(schema_dict)
-    # The error message will refer to the first unknown field encountered, either "unknown_field" or "nested_field"
-    assert "unexpected keyword argument" in str(excinfo.value)
+    # With Pydantic extra='allow', unknown fields are accepted and preserved
+    loaded = FeatureSchema.from_dict(schema_dict)
+
+    # Core fields should still be correct
+    assert loaded.name == minimal_schema.name
+    assert loaded.version == minimal_schema.version
+    assert len(loaded.features) == len(minimal_schema.features)
+
+    # Unknown fields are preserved in the model
+    assert "heart_rate" in loaded.features
+    assert loaded.features["heart_rate"].code == "8867-4"
 
 
 def test_feature_schema_to_yaml_and_back(minimal_schema):
@@ -141,3 +145,100 @@ def test_feature_schema_validate_dataframe_columns_various_cases(
         assert set(result["missing_optional"]) == missing_optional
     if unexpected:
         assert set(result["unexpected"]) == unexpected
+
+
+def test_feature_schema_get_features_by_resource(minimal_schema):
+    """FeatureSchema.get_features_by_resource filters features by FHIR resource type."""
+    observations = minimal_schema.get_features_by_resource("Observation")
+    patients = minimal_schema.get_features_by_resource("Patient")
+
+    assert len(observations) == 2  # heart_rate, temperature
+    assert "heart_rate" in observations
+    assert "temperature" in observations
+
+    assert len(patients) == 2  # age, gender_encoded
+    assert "age" in patients
+    assert "gender_encoded" in patients
+
+    # Non-existent resource type returns empty dict
+    assert minimal_schema.get_features_by_resource("Condition") == {}
+
+
+def test_feature_schema_get_observation_codes(minimal_schema):
+    """FeatureSchema.get_observation_codes returns mapping of codes to features."""
+    obs_codes = minimal_schema.get_observation_codes()
+
+    assert "8867-4" in obs_codes  # heart_rate code
+    assert "8310-5" in obs_codes  # temperature code
+    assert obs_codes["8867-4"].name == "heart_rate"
+    assert obs_codes["8310-5"].name == "temperature"
+
+
+def test_feature_schema_get_feature_names_preserves_order(minimal_schema):
+    """FeatureSchema.get_feature_names returns features in definition order."""
+    names = minimal_schema.get_feature_names()
+
+    assert isinstance(names, list)
+    assert len(names) == 4
+    # Order should match the features dict order
+    assert names == ["heart_rate", "temperature", "age", "gender_encoded"]
+
+
+def test_feature_schema_from_yaml_handles_malformed_file():
+    """FeatureSchema.from_yaml raises error for malformed YAML."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        f.write("invalid: yaml: content: [\n")  # Malformed YAML
+        temp_path = f.name
+
+    try:
+        with pytest.raises(
+            Exception
+        ):  # Could be yaml.YAMLError or other parsing errors
+            FeatureSchema.from_yaml(temp_path)
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_feature_mapping_from_dict_creates_instance():
+    """FeatureMapping.from_dict creates instance with name parameter."""
+    mapping_data = {
+        "fhir_resource": "Observation",
+        "code": "8867-4",
+        "code_system": "http://loinc.org",
+        "dtype": "float64",
+        "required": True,
+    }
+
+    mapping = FeatureMapping.from_dict("test_feature", mapping_data)
+
+    assert mapping.name == "test_feature"
+    assert mapping.code == "8867-4"
+    assert mapping.fhir_resource == "Observation"
+    assert mapping.required is True
+
+
+def test_feature_schema_handles_optional_fields(minimal_schema):
+    """FeatureSchema preserves optional metadata fields."""
+    # Check that optional fields can be None
+    assert minimal_schema.description is None or isinstance(
+        minimal_schema.description, str
+    )
+    assert minimal_schema.model_info is None or isinstance(
+        minimal_schema.model_info, dict
+    )
+
+    # Create schema with metadata
+    schema_with_metadata = FeatureSchema.from_dict(
+        {
+            "name": "test",
+            "version": "1.0",
+            "description": "Test description",
+            "model_info": {"type": "RandomForest"},
+            "metadata": {"custom_field": "value"},
+            "features": {},
+        }
+    )
+
+    assert schema_with_metadata.description == "Test description"
+    assert schema_with_metadata.model_info["type"] == "RandomForest"
+    assert schema_with_metadata.metadata["custom_field"] == "value"

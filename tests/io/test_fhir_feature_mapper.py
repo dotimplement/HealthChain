@@ -297,3 +297,63 @@ def test_mapper_aggregation_with_mixed_values():
 
     df_min = mapper.extract_features(bundle, aggregation="min")
     assert df_min["heart_rate"].iloc[0] == 50.0
+
+
+def test_mapper_with_schema_metadata_configuration():
+    """FHIRFeatureMapper uses schema metadata for age calculation."""
+    from healthchain.fhir import create_bundle, add_resource
+    from healthchain.fhir.helpers import (
+        create_patient,
+        create_value_quantity_observation,
+    )
+    from healthchain.io.containers.featureschema import FeatureSchema
+
+    schema = FeatureSchema.from_dict(
+        {
+            "name": "test_schema",
+            "version": "1.0",
+            "metadata": {
+                "age_calculation": "event_date",
+                "event_date_source": "Observation",
+                "event_date_strategy": "earliest",
+            },
+            "features": {
+                "heart_rate": {
+                    "fhir_resource": "Observation",
+                    "code": "8867-4",
+                    "code_system": "http://loinc.org",
+                    "dtype": "float64",
+                    "required": True,
+                },
+                "age": {
+                    "fhir_resource": "Patient",
+                    "field": "birthDate",
+                    "transform": "calculate_age",
+                    "dtype": "int64",
+                    "required": True,
+                },
+            },
+        }
+    )
+
+    bundle = create_bundle()
+    patient = create_patient("male", "1980-01-01")
+    patient.id = "123"
+
+    add_resource(bundle, patient)
+    add_resource(
+        bundle,
+        create_value_quantity_observation(
+            subject="Patient/123",
+            code="8867-4",
+            value=85.0,
+            unit="bpm",
+            effective_datetime="2020-01-01T00:00:00Z",
+        ),
+    )
+
+    mapper = FHIRFeatureMapper(schema)
+    df = mapper.extract_features(bundle)
+
+    # Age should be calculated from birthdate to event date (40 years)
+    assert df["age"].iloc[0] == 40

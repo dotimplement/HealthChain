@@ -122,27 +122,57 @@ def test_dataset_dtype_compatibility_allows_numeric_flexibility():
     assert dataset._dtypes_compatible("int32", "float64")
 
 
-def test_dataset_to_risk_assessment_creates_resources(sample_dataset):
-    """Dataset.to_risk_assessment creates RiskAssessment resources."""
+def test_dataset_to_risk_assessment_creates_resources_with_metadata(sample_dataset):
+    """Dataset.to_risk_assessment creates RiskAssessment resources with probabilities, model metadata, and comments."""
     predictions = np.array([0, 1])
     probabilities = np.array([0.15, 0.85])
 
+    # Test with model metadata
     risks = sample_dataset.to_risk_assessment(
-        predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
+        predictions,
+        probabilities,
+        outcome_code="A41.9",
+        outcome_display="Sepsis",
+        model_name="RandomForest",
+        model_version="1.0",
     )
 
+    # Basic structure
     assert len(risks) == 2
     assert risks[0].subject.reference == "Patient/1"
     assert risks[1].subject.reference == "Patient/2"
     assert risks[0].status == "final"
 
+    # Probabilities
+    assert risks[0].prediction[0].probabilityDecimal == 0.15
+    assert risks[1].prediction[0].probabilityDecimal == 0.85
 
-def test_dataset_to_risk_assessment_categorizes_risk_levels():
-    """Dataset.to_risk_assessment correctly categorizes risk levels."""
-    predictions = np.array([0, 1, 0])
-    probabilities = np.array([0.15, 0.85, 0.55])  # low, high, moderate
+    # Model metadata
+    assert risks[0].method is not None
+    assert risks[0].method.coding[0].code == "RandomForest"
+    assert "v1.0" in risks[0].method.coding[0].display
 
-    # Need 3 patients for this test
+    # Comments
+    assert risks[0].note is not None
+    assert "Negative" in risks[0].note[0].text
+    assert "15.00%" in risks[0].note[0].text
+    assert "low" in risks[0].note[0].text
+    assert "Positive" in risks[1].note[0].text
+    assert "85.00%" in risks[1].note[0].text
+    assert "high" in risks[1].note[0].text
+
+
+@pytest.mark.parametrize(
+    "predictions,probabilities,expected_risks",
+    [
+        ([0, 1, 0], [0.15, 0.85, 0.55], ["low", "high", "moderate"]),
+        ([0, 1, 0], [0.0, 1.0, 0.5], ["low", "high", "moderate"]),  # Edge cases
+    ],
+)
+def test_dataset_to_risk_assessment_categorizes_risk_levels(
+    predictions, probabilities, expected_risks
+):
+    """Dataset.to_risk_assessment correctly categorizes risk levels including edge probabilities."""
     data = pd.DataFrame(
         {
             "patient_ref": ["Patient/1", "Patient/2", "Patient/3"],
@@ -155,112 +185,110 @@ def test_dataset_to_risk_assessment_categorizes_risk_levels():
     dataset = Dataset(data)
 
     risks = dataset.to_risk_assessment(
-        predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
-    )
-
-    # Check qualitative risk levels
-    assert risks[0].prediction[0].qualitativeRisk.coding[0].code == "low"
-    assert risks[1].prediction[0].qualitativeRisk.coding[0].code == "high"
-    assert risks[2].prediction[0].qualitativeRisk.coding[0].code == "moderate"
-
-
-def test_dataset_to_risk_assessment_includes_probabilities(sample_dataset):
-    """Dataset.to_risk_assessment includes probability values."""
-    predictions = np.array([0, 1])
-    probabilities = np.array([0.25, 0.75])
-
-    risks = sample_dataset.to_risk_assessment(
-        predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
-    )
-
-    assert risks[0].prediction[0].probabilityDecimal == 0.25
-    assert risks[1].prediction[0].probabilityDecimal == 0.75
-
-
-def test_dataset_to_risk_assessment_includes_model_metadata(sample_dataset):
-    """Dataset.to_risk_assessment includes model name and version."""
-    predictions = np.array([0, 1])
-    probabilities = np.array([0.15, 0.85])
-
-    risks = sample_dataset.to_risk_assessment(
-        predictions,
-        probabilities,
+        np.array(predictions),
+        np.array(probabilities),
         outcome_code="A41.9",
         outcome_display="Sepsis",
-        model_name="RandomForest",
-        model_version="1.0",
     )
 
-    assert risks[0].method is not None
-    assert risks[0].method.coding[0].code == "RandomForest"
-    assert "v1.0" in risks[0].method.coding[0].display
+    for i, expected_risk in enumerate(expected_risks):
+        assert risks[i].prediction[0].qualitativeRisk.coding[0].code == expected_risk
 
 
-def test_dataset_to_risk_assessment_requires_matching_lengths(sample_dataset):
-    """Dataset.to_risk_assessment validates array lengths match DataFrame."""
-    predictions = np.array([0])  # Only 1, but dataset has 2 rows
-    probabilities = np.array([0.15, 0.85])
+@pytest.mark.parametrize(
+    "data_dict,predictions,probabilities,expected_error",
+    [
+        (
+            {"heart_rate": [85.0, 92.0], "age": [45, 62]},  # Missing patient_ref
+            [0, 1],
+            [0.15, 0.85],
+            "DataFrame must have 'patient_ref' column",
+        ),
+        (
+            {"patient_ref": ["Patient/1", "Patient/2"], "value": [1, 2]},
+            [0],  # Wrong prediction length
+            [0.15, 0.85],
+            "Predictions length .* must match",
+        ),
+        (
+            {"patient_ref": ["Patient/1", "Patient/2"], "value": [1, 2]},
+            [0, 1],
+            [0.15],  # Wrong probability length
+            "Probabilities length .* must match",
+        ),
+    ],
+)
+def test_dataset_to_risk_assessment_validation_errors(
+    data_dict, predictions, probabilities, expected_error
+):
+    """Dataset.to_risk_assessment validates required columns and array lengths."""
+    data = pd.DataFrame(data_dict)
+    dataset = Dataset(data)
 
-    with pytest.raises(ValueError, match="Predictions length .* must match"):
-        sample_dataset.to_risk_assessment(
-            predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
+    with pytest.raises(ValueError, match=expected_error):
+        dataset.to_risk_assessment(
+            np.array(predictions),
+            np.array(probabilities),
+            outcome_code="A41.9",
+            outcome_display="Sepsis",
         )
 
 
-def test_dataset_to_risk_assessment_requires_patient_ref_column():
-    """Dataset.to_risk_assessment requires patient_ref column."""
-    data = pd.DataFrame(
-        {
-            "heart_rate": [85.0, 92.0],  # Missing patient_ref
-            "age": [45, 62],
-        }
+def test_dataset_from_csv_loads_correctly(tmp_path):
+    """Dataset.from_csv loads CSV files into DataFrame."""
+    csv_file = tmp_path / "test.csv"
+    csv_file.write_text(
+        "patient_ref,heart_rate,age\nPatient/1,85.0,45\nPatient/2,92.0,62"
     )
+
+    dataset = Dataset.from_csv(str(csv_file))
+
+    assert len(dataset.data) == 2
+    assert "patient_ref" in dataset.columns
+    assert dataset.data["heart_rate"].iloc[0] == 85.0
+
+
+def test_dataset_from_dict_creates_dataframe():
+    """Dataset.from_dict creates DataFrame from dict."""
+    data_dict = {
+        "data": {"patient_ref": ["Patient/1", "Patient/2"], "heart_rate": [85.0, 92.0]}
+    }
+
+    dataset = Dataset.from_dict(data_dict)
+
+    assert len(dataset.data) == 2
+    assert "patient_ref" in dataset.columns
+    assert "heart_rate" in dataset.columns
+    assert dataset.data["heart_rate"].iloc[0] == 85.0
+
+
+def test_dataset_to_csv_saves_correctly(tmp_path, sample_dataset):
+    """Dataset.to_csv exports DataFrame to CSV."""
+    csv_file = tmp_path / "output.csv"
+
+    sample_dataset.to_csv(str(csv_file), index=False)
+
+    assert csv_file.exists()
+    df = pd.read_csv(csv_file)
+    assert len(df) == 2
+    assert "patient_ref" in df.columns
+
+
+def test_dataset_rejects_non_dataframe_input():
+    """Dataset validates input is a DataFrame in __post_init__."""
+    with pytest.raises(TypeError, match="data must be a pandas DataFrame"):
+        Dataset([{"patient_ref": "Patient/1"}])
+
+
+def test_dataset_to_risk_assessment_validates_probability_length():
+    """Dataset.to_risk_assessment validates probabilities array length."""
+    data = pd.DataFrame({"patient_ref": ["Patient/1", "Patient/2"], "value": [1, 2]})
     dataset = Dataset(data)
 
     predictions = np.array([0, 1])
-    probabilities = np.array([0.15, 0.85])
+    probabilities = np.array([0.15])  # Wrong length
 
-    with pytest.raises(ValueError, match="DataFrame must have 'patient_ref' column"):
+    with pytest.raises(ValueError, match="Probabilities length .* must match"):
         dataset.to_risk_assessment(
             predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
         )
-
-
-def test_dataset_to_risk_assessment_with_edge_probabilities():
-    """Dataset.to_risk_assessment handles edge probability values correctly."""
-    data = pd.DataFrame(
-        {"patient_ref": ["Patient/1", "Patient/2", "Patient/3"], "value": [1, 2, 3]}
-    )
-    dataset = Dataset(data)
-
-    predictions = np.array([0, 1, 0])
-    probabilities = np.array([0.0, 1.0, 0.5])  # Edge cases
-
-    risks = dataset.to_risk_assessment(
-        predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
-    )
-
-    # 0.0 should be low, 1.0 should be high, 0.5 should be moderate
-    assert risks[0].prediction[0].qualitativeRisk.coding[0].code == "low"
-    assert risks[1].prediction[0].qualitativeRisk.coding[0].code == "high"
-    assert risks[2].prediction[0].qualitativeRisk.coding[0].code == "moderate"
-
-
-def test_dataset_to_risk_assessment_includes_comments(sample_dataset):
-    """Dataset.to_risk_assessment generates descriptive comments."""
-    predictions = np.array([0, 1])
-    probabilities = np.array([0.15, 0.85])
-
-    risks = sample_dataset.to_risk_assessment(
-        predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
-    )
-
-    # Check comments contain prediction info
-    assert risks[0].note is not None
-    assert "Negative" in risks[0].note[0].text
-    assert "15.00%" in risks[0].note[0].text
-    assert "low" in risks[0].note[0].text
-
-    assert "Positive" in risks[1].note[0].text
-    assert "85.00%" in risks[1].note[0].text
-    assert "high" in risks[1].note[0].text
