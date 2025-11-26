@@ -8,7 +8,7 @@ from fhir.resources.attachment import Attachment
 from datetime import datetime
 
 
-from healthchain.fhir.helpers import (
+from healthchain.fhir import (
     create_resource_from_dict,
     create_single_codeable_concept,
     create_single_reaction,

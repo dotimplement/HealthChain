@@ -60,8 +60,9 @@ def test_mapper_fills_missing_observations_with_nan(
 
 def test_mapper_column_mapping_from_generic_to_schema():
     """FHIRFeatureMapper correctly maps generic column names to schema feature names."""
-    from healthchain.fhir import create_bundle, add_resource
-    from healthchain.fhir.helpers import (
+    from healthchain.fhir import (
+        create_bundle,
+        add_resource,
         create_patient,
         create_value_quantity_observation,
     )
@@ -163,8 +164,9 @@ def test_mapper_preserves_column_order_from_schema(observation_bundle, minimal_s
 
 def test_mapper_handles_multiple_patients():
     """FHIRFeatureMapper processes multiple patients in a bundle."""
-    from healthchain.fhir import create_bundle, add_resource
-    from healthchain.fhir.helpers import (
+    from healthchain.fhir import (
+        create_bundle,
+        add_resource,
         create_patient,
         create_value_quantity_observation,
     )
@@ -226,8 +228,9 @@ def test_mapper_handles_multiple_patients():
 
 def test_mapper_aggregation_with_mixed_values():
     """FHIRFeatureMapper aggregates correctly with extreme value differences."""
-    from healthchain.fhir import create_bundle, add_resource
-    from healthchain.fhir.helpers import (
+    from healthchain.fhir import (
+        create_bundle,
+        add_resource,
         create_patient,
         create_value_quantity_observation,
     )
@@ -301,8 +304,9 @@ def test_mapper_aggregation_with_mixed_values():
 
 def test_mapper_with_schema_metadata_configuration():
     """FHIRFeatureMapper uses schema metadata for age calculation."""
-    from healthchain.fhir import create_bundle, add_resource
-    from healthchain.fhir.helpers import (
+    from healthchain.fhir import (
+        create_bundle,
+        add_resource,
         create_patient,
         create_value_quantity_observation,
     )

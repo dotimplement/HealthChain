@@ -14,7 +14,7 @@ from collections import defaultdict
 from fhir.resources.bundle import Bundle
 from pydantic import BaseModel, field_validator, ConfigDict
 
-from healthchain.fhir.helpers import (
+from healthchain.fhir.utilities import (
     calculate_age_from_birthdate,
     calculate_age_from_event_date,
     encode_gender,

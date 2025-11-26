@@ -7,7 +7,7 @@ with focus on the dict-based conversion architecture.
 import pytest
 import pandas as pd
 
-from healthchain.fhir.converters import (
+from healthchain.fhir.dataframe import (
     extract_observation_value,
     group_bundle_by_patient,
     bundle_to_dataframe,
@@ -16,8 +16,9 @@ from healthchain.fhir.converters import (
     get_resource_info,
     BundleConverterConfig,
 )
-from healthchain.fhir import create_bundle, add_resource
-from healthchain.fhir.helpers import (
+from healthchain.fhir import (
+    create_bundle,
+    add_resource,
     create_patient,
     create_value_quantity_observation,
     create_condition,
@@ -128,7 +129,7 @@ def test_group_bundle_by_patient_groups_multiple_resource_types():
         ),
     )
 
-    from healthchain.fhir.helpers import (
+    from healthchain.fhir import (
         create_condition,
         create_medication_statement,
         create_allergy_intolerance,

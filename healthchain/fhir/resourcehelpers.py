@@ -1,18 +1,17 @@
-"""Convenience functions for creating minimal FHIR resources.
+"""FHIR resource creation and modification functions.
+
+This module provides convenience functions for creating and modifying FHIR resources.
+
 Patterns:
-- create_*(): create a new FHIR resource with sensible defaults - useful for dev, use with caution
-- add_*(): add data to resources with list fields safely (e.g. coding)
-- set_*(): set the field of specific resources with soft validation (e.g. category)
-- read_*(): return a human readable format of the data in a resource (e.g. attachments)
+- create_*(): create a new FHIR resource with sensible defaults
+- set_*(): set specific fields of resources with soft validation
+- add_*(): add data to resources safely
 
 Parameters marked REQUIRED are required by FHIR specification.
 """
 
 import logging
-import base64
 import datetime
-import uuid
-import importlib
 
 from typing import Optional, List, Dict, Any
 from fhir.resources.condition import Condition
@@ -24,196 +23,19 @@ from fhir.resources.riskassessment import RiskAssessment
 from fhir.resources.patient import Patient
 from fhir.resources.quantity import Quantity
 from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.codeablereference import CodeableReference
-from fhir.resources.coding import Coding
-from fhir.resources.attachment import Attachment
-from fhir.resources.resource import Resource
 from fhir.resources.reference import Reference
 from fhir.resources.meta import Meta
+from fhir.resources.coding import Coding
 from fhir.resources.identifier import Identifier
+from fhir.resources.resource import Resource
 
+from healthchain.fhir.elementhelpers import (
+    create_single_codeable_concept,
+    create_single_attachment,
+)
+from healthchain.fhir.utilities import _generate_id
 
 logger = logging.getLogger(__name__)
-
-
-def _generate_id() -> str:
-    """Generate a unique ID prefixed with 'hc-'.
-
-    Returns:
-        str: A unique ID string prefixed with 'hc-'
-    """
-    return f"hc-{str(uuid.uuid4())}"
-
-
-def create_resource_from_dict(
-    resource_dict: Dict, resource_type: str
-) -> Optional[Resource]:
-    """Create a FHIR resource instance from a dictionary
-
-    Args:
-        resource_dict: Dictionary representation of the resource
-        resource_type: Type of FHIR resource to create
-
-    Returns:
-        Optional[Resource]: FHIR resource instance or None if creation failed
-    """
-    try:
-        resource_module = importlib.import_module(
-            f"fhir.resources.{resource_type.lower()}"
-        )
-        resource_class = getattr(resource_module, resource_type)
-        return resource_class(**resource_dict)
-    except Exception as e:
-        logger.error(f"Failed to create FHIR resource: {str(e)}")
-        return None
-
-
-def convert_prefetch_to_fhir_objects(
-    prefetch_dict: Dict[str, Any],
-) -> Dict[str, Resource]:
-    """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
-
-    Takes a prefetch dictionary where values may be either dict representations of FHIR
-    resources or already instantiated FHIR Resource objects, and ensures all values are
-    FHIR Resource objects.
-
-    Args:
-        prefetch_dict: Dictionary mapping keys to FHIR resource dicts or objects
-
-    Returns:
-        Dict[str, Resource]: Dictionary with same keys but all values as FHIR Resource objects
-
-    Example:
-        >>> prefetch = {
-        ...     "patient": {"resourceType": "Patient", "id": "123"},
-        ...     "condition": Condition(id="456", ...)
-        ... }
-        >>> fhir_objects = convert_prefetch_to_fhir_objects(prefetch)
-        >>> isinstance(fhir_objects["patient"], Patient)  # True
-        >>> isinstance(fhir_objects["condition"], Condition)  # True
-    """
-    from fhir.resources import get_fhir_model_class
-
-    result: Dict[str, Resource] = {}
-
-    for key, resource_data in prefetch_dict.items():
-        if isinstance(resource_data, dict):
-            # Convert dict to FHIR Resource object
-            resource_type = resource_data.get("resourceType")
-            if resource_type:
-                try:
-                    resource_class = get_fhir_model_class(resource_type)
-                    result[key] = resource_class(**resource_data)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to convert {resource_type} to FHIR object: {e}"
-                    )
-                    result[key] = resource_data
-            else:
-                logger.warning(
-                    f"No resourceType found for key '{key}', keeping as dict"
-                )
-                result[key] = resource_data
-        elif isinstance(resource_data, Resource):
-            # Already a FHIR object
-            result[key] = resource_data
-        else:
-            logger.warning(f"Unexpected type for key '{key}': {type(resource_data)}")
-            result[key] = resource_data
-
-    return result
-
-
-def create_single_codeable_concept(
-    code: str,
-    display: Optional[str] = None,
-    system: Optional[str] = "http://snomed.info/sct",
-) -> CodeableConcept:
-    """
-    Create a minimal FHIR CodeableConcept with a single coding.
-
-    Args:
-        code: REQUIRED. The code value from the code system
-        display: The display name for the code
-        system: The code system (default: SNOMED CT)
-
-    Returns:
-        CodeableConcept: A FHIR CodeableConcept resource with a single coding
-    """
-    return CodeableConcept(coding=[Coding(system=system, code=code, display=display)])
-
-
-def create_single_reaction(
-    code: str,
-    display: Optional[str] = None,
-    system: Optional[str] = "http://snomed.info/sct",
-    severity: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Create a minimal FHIR Reaction with a single coding.
-
-    Creates a FHIR Reaction object with a single manifestation coding. The manifestation
-    describes the clinical reaction that was observed. The severity indicates how severe
-    the reaction was.
-
-    Args:
-        code: REQUIRED. The code value from the code system representing the reaction manifestation
-        display: The display name for the manifestation code
-        system: The code system for the manifestation code (default: SNOMED CT)
-        severity: The severity of the reaction (mild, moderate, severe)
-
-    Returns:
-        A list containing a single FHIR Reaction dictionary with manifestation and severity fields
-    """
-    return [
-        {
-            "manifestation": [
-                CodeableReference(
-                    concept=CodeableConcept(
-                        coding=[Coding(system=system, code=code, display=display)]
-                    )
-                )
-            ],
-            "severity": severity,
-        }
-    ]
-
-
-def create_single_attachment(
-    content_type: Optional[str] = None,
-    data: Optional[str] = None,
-    url: Optional[str] = None,
-    title: Optional[str] = "Attachment created by HealthChain",
-) -> Attachment:
-    """Create a minimal FHIR Attachment.
-
-    Creates a FHIR Attachment resource with basic fields. Either data or url should be provided.
-    If data is provided, it will be base64 encoded.
-
-    Args:
-        content_type: The MIME type of the content
-        data: The actual data content to be base64 encoded
-        url: The URL where the data can be found
-        title: A title for the attachment (default: "Attachment created by HealthChain")
-
-    Returns:
-        Attachment: A FHIR Attachment resource with basic metadata and content
-    """
-
-    if not data and not url:
-        logger.warning("No data or url provided for attachment")
-
-    if data:
-        data = base64.b64encode(data.encode("utf-8")).decode("utf-8")
-
-    return Attachment(
-        contentType=content_type,
-        data=data,
-        url=url,
-        title=title,
-        creation=datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        ),
-    )
 
 
 def create_condition(
@@ -509,7 +331,6 @@ def create_risk_assessment_from_prediction(
     return risk_assessment
 
 
-# TODO: create a function that creates a DocumentReferenceContent to add to the DocumentReference
 def create_document_reference(
     data: Optional[Any] = None,
     url: Optional[str] = None,
@@ -681,146 +502,3 @@ def add_coding_to_codeable_concept(
     codeable_concept.coding.append(Coding(system=system, code=code, display=display))
 
     return codeable_concept
-
-
-def read_content_attachment(
-    document_reference: DocumentReference,
-    include_data: bool = True,
-) -> Optional[List[Dict[str, Any]]]:
-    """Read the attachments in a human readable format from a FHIR DocumentReference content field.
-
-    Args:
-        document_reference: The FHIR DocumentReference resource
-        include_data: Whether to include the data of the attachments. If true, the data will be also be decoded (default: True)
-
-    Returns:
-        Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,
-            or None if no attachments are found:
-            [
-                {
-                    "data": str,
-                    "metadata": Dict[str, Any]
-                }
-            ]
-    """
-    if not document_reference.content:
-        return None
-
-    attachments = []
-    for content in document_reference.content:
-        attachment = content.attachment
-        result = {}
-
-        if include_data:
-            result["data"] = (
-                attachment.url if attachment.url else attachment.data.decode("utf-8")
-            )
-
-        result["metadata"] = {
-            "content_type": attachment.contentType,
-            "title": attachment.title,
-            "creation": attachment.creation,
-        }
-
-        attachments.append(result)
-
-    return attachments
-
-
-def calculate_age_from_birthdate(birth_date: str) -> Optional[int]:
-    """Calculate age in years from a birth date string.
-
-    Args:
-        birth_date: Birth date in ISO format (YYYY-MM-DD or full ISO datetime)
-
-    Returns:
-        Age in years, or None if birth date is invalid
-    """
-    if not birth_date:
-        return None
-
-    try:
-        if isinstance(birth_date, str):
-            # Remove timezone info for simpler parsing
-            birth_date_clean = birth_date.replace("Z", "").split("T")[0]
-            birth_dt = datetime.datetime.strptime(birth_date_clean, "%Y-%m-%d")
-        else:
-            birth_dt = birth_date
-
-        # Calculate age
-        today = datetime.datetime.now()
-        age = today.year - birth_dt.year
-
-        # Adjust if birthday hasn't occurred this year
-        if (today.month, today.day) < (birth_dt.month, birth_dt.day):
-            age -= 1
-
-        return age
-    except (ValueError, AttributeError, TypeError):
-        return None
-
-
-def calculate_age_from_event_date(birth_date: str, event_date: str) -> Optional[int]:
-    """Calculate age in years from birth date and event date (MIMIC-IV style).
-
-    Uses the formula: age = year(eventDate) - year(birthDate)
-    This matches MIMIC-IV on FHIR de-identified age calculation.
-
-    Args:
-        birth_date: Birth date in ISO format (YYYY-MM-DD or full ISO datetime)
-        event_date: Event date in ISO format (YYYY-MM-DD or full ISO datetime)
-
-    Returns:
-        Age in years based on year difference, or None if dates are invalid
-
-    Example:
-        >>> calculate_age_from_event_date("1990-06-15", "2020-03-10")
-        30
-    """
-    if not birth_date or not event_date:
-        return None
-
-    try:
-        # Parse birth date
-        if isinstance(birth_date, str):
-            birth_date_clean = birth_date.replace("Z", "").split("T")[0]
-            birth_year = int(birth_date_clean.split("-")[0])
-        else:
-            birth_year = birth_date.year
-
-        # Parse event date
-        if isinstance(event_date, str):
-            event_date_clean = event_date.replace("Z", "").split("T")[0]
-            event_year = int(event_date_clean.split("-")[0])
-        else:
-            event_year = event_date.year
-
-        # MIMIC-IV style: simple year difference
-        age = event_year - birth_year
-
-        return age
-    except (ValueError, AttributeError, TypeError, IndexError):
-        return None
-
-
-def encode_gender(gender: str) -> Optional[int]:
-    """Encode gender as integer for ML models.
-
-    Standard encoding: Male=1, Female=0, Other/Unknown=None
-
-    Args:
-        gender: Gender string (case-insensitive)
-
-    Returns:
-        Encoded gender (1 for male, 0 for female, None for other/unknown)
-    """
-    if not gender:
-        return None
-
-    gender_lower = gender.lower()
-    if gender_lower in ["male", "m"]:
-        return 1
-    elif gender_lower in ["female", "f"]:
-        return 0
-    else:
-        return None

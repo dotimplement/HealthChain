@@ -5,7 +5,7 @@ from pathlib import Path
 from healthchain.io.containers.featureschema import FeatureSchema
 from healthchain.io.containers.dataset import Dataset
 from healthchain.fhir import create_bundle
-from healthchain.fhir.helpers import create_patient, create_value_quantity_observation
+from healthchain.fhir import create_patient, create_value_quantity_observation
 
 
 @pytest.fixture

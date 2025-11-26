@@ -12,7 +12,7 @@ from healthchain.io.containers.base import DataContainer
 from healthchain.io.containers.featureschema import FeatureSchema
 from healthchain.io.mappers.fhirfeaturemapper import FHIRFeatureMapper
 from healthchain.io.types import ValidationResult
-from healthchain.fhir.helpers import (
+from healthchain.fhir.resourcehelpers import (
     create_risk_assessment_from_prediction,
     create_single_codeable_concept,
 )

@@ -12,7 +12,7 @@ from fhir.resources.bundle import Bundle
 
 from healthchain.io.containers.featureschema import FeatureSchema
 from healthchain.io.mappers.base import BaseMapper
-from healthchain.fhir.converters import bundle_to_dataframe, BundleConverterConfig
+from healthchain.fhir.dataframe import bundle_to_dataframe, BundleConverterConfig
 
 
 class FHIRFeatureMapper(BaseMapper[Bundle, pd.DataFrame]):

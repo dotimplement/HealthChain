@@ -4,7 +4,7 @@ from faker import Faker
 from fhir.resources.reference import Reference
 from fhir.resources.condition import ConditionStage, ConditionParticipant
 
-from healthchain.fhir.helpers import create_single_codeable_concept, create_condition
+from healthchain.fhir import create_single_codeable_concept, create_condition
 from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
