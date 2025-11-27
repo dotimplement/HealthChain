@@ -256,11 +256,9 @@ def test_read_attachment_with_url():
 def test_create_document_reference_content_with_data():
     """Test creating DocumentReferenceContent with inline data."""
     content = create_document_reference_content(
-        attachment_data="Test data",
-        content_type="text/plain",
-        title="Test Document"
+        attachment_data="Test data", content_type="text/plain", title="Test Document"
     )
-    
+
     assert "attachment" in content
     assert content["attachment"].contentType == "text/plain"
     assert content["attachment"].title == "Test Document"
@@ -273,9 +271,9 @@ def test_create_document_reference_content_with_url():
     content = create_document_reference_content(
         url="https://example.com/doc.pdf",
         content_type="application/pdf",
-        title="External Document"
+        title="External Document",
     )
-    
+
     assert "attachment" in content
     assert content["attachment"].url == "https://example.com/doc.pdf"
     assert content["attachment"].contentType == "application/pdf"
@@ -284,10 +282,9 @@ def test_create_document_reference_content_with_url():
 def test_create_document_reference_content_custom_language():
     """Test creating DocumentReferenceContent with custom language."""
     content = create_document_reference_content(
-        attachment_data="Données de test",
-        language="fr-FR"
+        attachment_data="Données de test", language="fr-FR"
     )
-    
+
     assert content["language"] == "fr-FR"
 
 
@@ -295,11 +292,15 @@ def test_create_document_reference_content_with_kwargs():
     """Test creating DocumentReferenceContent with additional fields."""
     content = create_document_reference_content(
         attachment_data="Test",
-        format=Coding(system="http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem", 
-                     code="urn:ihe:pcc:handp:2008")
+        format=Coding(
+            system="http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            code="urn:ihe:pcc:handp:2008",
+        ),
     )
-    
+
     assert "format" in content
+
+
 def test_create_resource_from_dict_success_and_failure():
     cond_dict = {
         "id": "x",
