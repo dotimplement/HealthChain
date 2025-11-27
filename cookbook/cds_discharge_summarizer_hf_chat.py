@@ -1,17 +1,18 @@
-import healthchain as hc
+import os
+import getpass
+
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.pipeline import SummarizationPipeline
-from healthchain.sandbox.use_cases import ClinicalDecisionSupport
-from healthchain.models import Prefetch, CDSRequest, CDSResponse
-from healthchain.data_generators import CdsDataGenerator
+from healthchain.models import CDSRequest, CDSResponse
 
 from langchain_huggingface.llms import HuggingFaceEndpoint
 from langchain_huggingface import ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-import getpass
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
@@ -65,23 +66,11 @@ def discharge_summarizer(request: CDSRequest) -> CDSResponse:
 app.register_service(cds, path="/cds")
 
 
-@hc.sandbox(api="http://localhost:8000")
-class DischargeNoteSummarizer(ClinicalDecisionSupport):
-    def __init__(self):
-        super().__init__(path="/cds/cds-services/discharge-summarizer")
-        self.data_generator = CdsDataGenerator()
-
-    @hc.ehr(workflow="encounter-discharge")
-    def load_data_in_client(self) -> Prefetch:
-        data = self.data_generator.generate_prefetch(
-            free_text_path="data/discharge_notes.csv", column_name="text"
-        )
-        return data
-
-
 if __name__ == "__main__":
     import uvicorn
     import threading
+
+    from healthchain.sandbox import SandboxClient
 
     # Start the API server in a separate thread
     def start_api():
@@ -90,6 +79,23 @@ if __name__ == "__main__":
     api_thread = threading.Thread(target=start_api, daemon=True)
     api_thread.start()
 
-    # Start the sandbox
-    summarizer = DischargeNoteSummarizer()
-    summarizer.start_sandbox()
+    # Create sandbox client and load test data
+    client = SandboxClient(
+        url="http://localhost:8000/cds/cds-services/discharge-summarizer",
+        workflow="encounter-discharge",
+    )
+    # Load discharge notes from CSV
+    client.load_free_text(
+        csv_path="data/discharge_notes.csv",
+        column_name="text",
+    )
+    # Send requests and get responses
+    responses = client.send_requests()
+
+    # Save results
+    client.save_results("./output/")
+
+    try:
+        api_thread.join()
+    except KeyboardInterrupt:
+        pass

@@ -127,6 +127,117 @@ async def test_search_operation_with_parameters(fhir_gateway):
 
 
 @pytest.mark.asyncio
+async def test_search_with_pagination(fhir_gateway):
+    """AsyncFHIRGateway.search fetches all pages when pagination is enabled."""
+    # Create mock bundles for pagination
+    page1 = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="1")}],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="2")}],
+        link=[{"relation": "next", "url": "Patient?page=3"}],
+    )
+    page3 = Bundle(type="searchset", entry=[{"resource": Patient(id="3")}])
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2, page3]
+    ) as mock_execute:
+        result = await fhir_gateway.search(
+            Patient, {"name": "Smith"}, follow_pagination=True
+        )
+
+        assert mock_execute.call_count == 3
+        assert result.entry is not None
+        assert len(result.entry) == 3
+        assert [entry.resource.id for entry in result.entry] == ["1", "2", "3"]
+
+
+@pytest.mark.asyncio
+async def test_search_with_max_pages(fhir_gateway):
+    """AsyncFHIRGateway.search respects maximum page limit."""
+    page1 = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="1")}],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="2")}],
+        link=[{"relation": "next", "url": "Patient?page=3"}],
+    )
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
+    ) as mock_execute:
+        result = await fhir_gateway.search(
+            Patient, {"name": "Smith"}, follow_pagination=True, max_pages=2
+        )
+
+        assert mock_execute.call_count == 2
+        assert result.entry is not None
+        assert len(result.entry) == 2
+        assert [entry.resource.id for entry in result.entry] == ["1", "2"]
+
+
+@pytest.mark.asyncio
+async def test_search_with_pagination_empty_next_link(fhir_gateway):
+    """AsyncFHIRGateway.search handles missing next links correctly."""
+    bundle = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="1")}],
+        link=[{"relation": "self", "url": "Patient?name=Smith"}],
+    )
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", return_value=bundle
+    ) as mock_execute:
+        result = await fhir_gateway.search(
+            Patient, {"name": "Smith"}, follow_pagination=True
+        )
+
+        mock_execute.assert_called_once()
+        assert result.entry is not None
+        assert len(result.entry) == 1
+        assert result.entry[0].resource.id == "1"
+
+
+@pytest.mark.asyncio
+async def test_search_with_pagination_and_provenance(fhir_gateway):
+    """AsyncFHIRGateway.search combines pagination with provenance metadata."""
+    page1 = Bundle(
+        type="searchset",
+        entry=[{"resource": Patient(id="1")}],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(type="searchset", entry=[{"resource": Patient(id="2")}])
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
+    ) as mock_execute:
+        result = await fhir_gateway.search(
+            Patient,
+            {"name": "Smith"},
+            source="test_source",
+            follow_pagination=True,
+            add_provenance=True,
+            provenance_tag="aggregated",
+        )
+
+        assert mock_execute.call_count == 2
+        assert result.entry is not None
+        assert len(result.entry) == 2
+
+        # Check provenance metadata
+        for entry in result.entry:
+            assert entry.resource.meta is not None
+            assert entry.resource.meta.source == "urn:healthchain:source:test_source"
+            assert entry.resource.meta.tag[0].code == "aggregated"
+
+
+@pytest.mark.asyncio
 async def test_modify_context_for_existing_resource(fhir_gateway, test_patient):
     """Modify context manager fetches, yields, and updates existing resources."""
     mock_client = AsyncMock()

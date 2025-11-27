@@ -10,17 +10,21 @@ from datetime import datetime
 
 
 from healthchain.fhir.helpers import (
+    create_resource_from_dict,
     create_single_codeable_concept,
     create_single_reaction,
     create_condition,
     create_medication_statement,
     create_allergy_intolerance,
-    set_problem_list_item_category,
+    set_condition_category,
     create_single_attachment,
     create_document_reference,
     create_document_reference_content,
     read_content_attachment,
+    add_provenance_metadata,
+    add_coding_to_codeable_concept,
 )
+import pytest
 
 
 def test_create_single_codeable_concept():
@@ -77,7 +81,7 @@ def test_create_condition():
     assert condition.code.coding[0].display == "Test Condition"
     assert condition.code.coding[0].system == "http://test.system"
 
-    set_problem_list_item_category(condition)
+    set_condition_category(condition, "problem-list-item")
     assert condition.category[0].coding[0].code == "problem-list-item"
 
 
@@ -296,3 +300,38 @@ def test_create_document_reference_content_with_kwargs():
     )
     
     assert "format" in content
+def test_create_resource_from_dict_success_and_failure():
+    cond_dict = {
+        "id": "x",
+        "clinicalStatus": {"coding": [{"code": "active"}]},
+        "subject": {"reference": "Patient/1"},
+    }
+    ok = create_resource_from_dict(cond_dict, "Condition")
+    assert ok is not None
+    bad = create_resource_from_dict({}, "NotAType")
+    assert bad is None
+
+
+def test_add_provenance_metadata_sets_source_and_tag():
+    cond = create_condition(subject="Patient/1", code="E11.9")
+    updated = add_provenance_metadata(cond, "epic", "aggregated", "Aggregated")
+    assert updated.meta.source.endswith(":epic")
+    assert updated.meta.lastUpdated is not None
+    assert any(t.code == "aggregated" for t in (updated.meta.tag or []))
+
+
+def test_add_coding_to_codeable_concept_appends():
+    cc = create_single_codeable_concept("123", "X")
+    updated = add_coding_to_codeable_concept(cc, "456", "http://sys", "Y")
+    assert any(c.code == "456" and c.system == "http://sys" for c in updated.coding)
+
+
+def test_set_condition_category_invalid_raises():
+    cond = create_condition(subject="Patient/1", code="E11.9")
+    with pytest.raises(ValueError):
+        set_condition_category(cond, "not-valid")
+
+
+def test_create_condition_without_code_is_none():
+    cond = create_condition(subject="Patient/1")
+    assert cond.code is None

@@ -1,6 +1,6 @@
 import logging
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, Optional
 
 from fhir.resources.bundle import Bundle
 from fhir.resources.capabilitystatement import CapabilityStatement
@@ -10,6 +10,7 @@ from healthchain.gateway.clients.fhir.base import FHIRServerInterface
 from healthchain.gateway.clients.fhir.sync.connection import FHIRConnectionManager
 from healthchain.gateway.fhir.base import BaseFHIRGateway
 from healthchain.gateway.fhir.errors import FHIRErrorHandler
+from healthchain.fhir import add_provenance_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -232,6 +233,10 @@ class FHIRGateway(BaseFHIRGateway):
         resource_type: Type[Resource],
         params: Dict[str, Any] = None,
         source: str = None,
+        add_provenance: bool = False,
+        provenance_tag: str = None,
+        follow_pagination: bool = False,
+        max_pages: Optional[int] = None,
     ) -> Bundle:
         """
         Search for FHIR resources (sync version).
@@ -240,12 +245,26 @@ class FHIRGateway(BaseFHIRGateway):
             resource_type: The FHIR resource type class
             params: Search parameters (e.g., {"name": "Smith", "active": "true"})
             source: Source name to search in (uses first available if None)
+            add_provenance: If True, automatically add provenance metadata to resources
+            provenance_tag: Optional tag code for provenance (e.g., "aggregated", "transformed")
+            follow_pagination: If True, automatically fetch all pages
+            max_pages: Maximum number of pages to fetch (None for unlimited)
 
         Returns:
             Bundle containing search results
 
         Example:
+            # Basic search
             bundle = gateway.search(Patient, {"name": "Smith"}, "epic")
+
+            # Search with automatic provenance
+            bundle = gateway.search(
+                Condition,
+                {"patient": "123"},
+                "epic",
+                add_provenance=True,
+                provenance_tag="aggregated"
+            )
         """
 
         bundle = self._execute_with_client(
@@ -254,10 +273,53 @@ class FHIRGateway(BaseFHIRGateway):
             resource_type=resource_type,
             client_args=(resource_type, params),
         )
+
+        # Handle pagination if requested
+        if follow_pagination:
+            all_entries = bundle.entry or []
+            page_count = 1
+
+            while bundle.link:
+                next_link = next(
+                    (link for link in bundle.link if link.relation == "next"), None
+                )
+                if not next_link or (max_pages and page_count >= max_pages):
+                    break
+
+                # Extract the relative URL from the next link
+                # next_url = next_link.url.split("/")[-2:]  # Get resource_type/_search part
+                next_params = dict(
+                    pair.split("=") for pair in next_link.url.split("?")[1].split("&")
+                )
+
+                bundle = self._execute_with_client(
+                    "search",
+                    source=source,
+                    resource_type=resource_type,
+                    client_args=(resource_type, next_params),
+                )
+
+                if bundle.entry:
+                    all_entries.extend(bundle.entry)
+                page_count += 1
+
+            bundle.entry = all_entries
+
+        # Add provenance metadata if requested
+        if add_provenance and bundle.entry:
+            source_name = source or next(iter(self.connection_manager.sources.keys()))
+            for entry in bundle.entry:
+                if entry.resource:
+                    entry.resource = add_provenance_metadata(
+                        entry.resource,
+                        source_name,
+                        provenance_tag,
+                        provenance_tag.capitalize() if provenance_tag else None,
+                    )
+
         type_name = resource_type.__resource_type__
-        result_count = len(bundle.entry) if bundle.entry else 0
         logger.info(
-            f"FHIR operation: search on {type_name} with params {params}, found {result_count} results"
+            f"FHIR operation: search on {type_name}, found {len(bundle.entry) if bundle.entry else 0} results"
         )
 
         return bundle

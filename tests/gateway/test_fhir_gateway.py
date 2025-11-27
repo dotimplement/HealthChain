@@ -3,10 +3,12 @@ from unittest.mock import Mock, patch
 from typing import Dict, Any
 
 from fhir.resources.patient import Patient
-from fhir.resources.bundle import Bundle
+from fhir.resources.bundle import Bundle, BundleEntry
+from fhir.resources.condition import Condition
 
 from healthchain.gateway.fhir import FHIRGateway
 from healthchain.gateway.fhir.errors import FHIRConnectionError
+from healthchain.fhir import create_condition
 
 
 class MockConnectionManager:
@@ -199,3 +201,191 @@ def test_gateway_concurrent_operation_resource_management():
 
         # Verify concurrent access was tracked
         assert client_usage_count == 5
+
+
+def test_search_with_auto_provenance():
+    """Gateway.search automatically adds provenance metadata when requested."""
+    gateway = FHIRGateway()
+    gateway.add_source("test_source", "fhir://test.example.com/fhir")
+
+    condition1 = create_condition(
+        subject="Patient/123", code="E11.9", display="Type 2 diabetes"
+    )
+    condition2 = create_condition(
+        subject="Patient/123", code="I10", display="Hypertension"
+    )
+
+    mock_bundle = Bundle(
+        type="searchset",
+        entry=[
+            BundleEntry(resource=condition1),
+            BundleEntry(resource=condition2),
+        ],
+    )
+
+    mock_client = Mock()
+    mock_client.search.return_value = mock_bundle
+
+    with patch.object(gateway, "get_client", return_value=mock_client):
+        result = gateway.search(
+            Condition,
+            {"patient": "Patient/123"},
+            "test_source",
+            add_provenance=True,
+            provenance_tag="aggregated",
+        )
+
+        assert result.entry is not None
+        assert len(result.entry) == 2
+        first_condition = result.entry[0].resource
+        assert first_condition.meta is not None
+        assert first_condition.meta.source == "urn:healthchain:source:test_source"
+        assert first_condition.meta.lastUpdated is not None
+        assert first_condition.meta.tag[0].code == "aggregated"
+        assert first_condition.meta.tag[0].display == "Aggregated"
+
+
+def test_search_without_auto_provenance():
+    """Gateway.search without auto-provenance leaves resources unchanged."""
+    gateway = FHIRGateway()
+    gateway.add_source("test_source", "fhir://test.example.com/fhir")
+
+    condition = create_condition(subject="Patient/123", code="E11.9")
+    condition.meta = None
+
+    mock_bundle = Bundle(type="searchset", entry=[BundleEntry(resource=condition)])
+    mock_client = Mock()
+    mock_client.search.return_value = mock_bundle
+
+    with patch.object(gateway, "get_client", return_value=mock_client):
+        result = gateway.search(
+            Condition, {"patient": "Patient/123"}, "test_source", add_provenance=False
+        )
+        assert result.entry is not None
+        assert len(result.entry) == 1
+        assert result.entry[0].resource.meta is None
+
+
+def test_search_with_empty_bundle():
+    """Gateway.search with auto-provenance handles empty bundles gracefully."""
+    gateway = FHIRGateway()
+    gateway.add_source("test_source", "fhir://test.example.com/fhir")
+
+    mock_bundle = Bundle(type="searchset", entry=None)
+    mock_client = Mock()
+    mock_client.search.return_value = mock_bundle
+
+    with patch.object(gateway, "get_client", return_value=mock_client):
+        result = gateway.search(
+            Condition,
+            {"patient": "Patient/123"},
+            "test_source",
+            add_provenance=True,
+            provenance_tag="aggregated",
+        )
+        assert result.entry is None
+
+
+def test_search_with_pagination(fhir_gateway):
+    """Gateway.search fetches all pages when pagination is enabled."""
+    # Create mock bundles for pagination
+    page1 = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="1"))],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="2"))],
+        link=[{"relation": "next", "url": "Patient?page=3"}],
+    )
+    page3 = Bundle(type="searchset", entry=[BundleEntry(resource=Patient(id="3"))])
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2, page3]
+    ) as mock_execute:
+        result = fhir_gateway.search(Patient, {"name": "Smith"}, follow_pagination=True)
+
+        assert mock_execute.call_count == 3
+        assert result.entry is not None
+        assert len(result.entry) == 3
+        assert [entry.resource.id for entry in result.entry] == ["1", "2", "3"]
+
+
+def test_search_with_max_pages(fhir_gateway):
+    """Gateway.search respects maximum page limit."""
+    # Create mock bundles for pagination
+    page1 = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="1"))],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="2"))],
+        link=[{"relation": "next", "url": "Patient?page=3"}],
+    )
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
+    ) as mock_execute:
+        result = fhir_gateway.search(
+            Patient, {"name": "Smith"}, follow_pagination=True, max_pages=2
+        )
+
+        assert mock_execute.call_count == 2
+        assert result.entry is not None
+        assert len(result.entry) == 2
+        assert [entry.resource.id for entry in result.entry] == ["1", "2"]
+
+
+def test_search_with_pagination_empty_next_link(fhir_gateway):
+    """Gateway.search handles missing next links correctly."""
+    # Create mock bundle without next link
+    bundle = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="1"))],
+        link=[{"relation": "self", "url": "Patient?name=Smith"}],
+    )
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", return_value=bundle
+    ) as mock_execute:
+        result = fhir_gateway.search(Patient, {"name": "Smith"}, follow_pagination=True)
+
+        mock_execute.assert_called_once()
+        assert result.entry is not None
+        assert len(result.entry) == 1
+        assert result.entry[0].resource.id == "1"
+
+
+def test_search_with_pagination_and_provenance(fhir_gateway):
+    """Gateway.search combines pagination with provenance metadata."""
+    page1 = Bundle(
+        type="searchset",
+        entry=[BundleEntry(resource=Patient(id="1"))],
+        link=[{"relation": "next", "url": "Patient?page=2"}],
+    )
+    page2 = Bundle(type="searchset", entry=[BundleEntry(resource=Patient(id="2"))])
+
+    with patch.object(
+        fhir_gateway, "_execute_with_client", side_effect=[page1, page2]
+    ) as mock_execute:
+        result = fhir_gateway.search(
+            Patient,
+            {"name": "Smith"},
+            source="test_source",
+            follow_pagination=True,
+            add_provenance=True,
+            provenance_tag="aggregated",
+        )
+
+        assert mock_execute.call_count == 2
+        assert result.entry is not None
+        assert len(result.entry) == 2
+
+        # Check provenance metadata
+        for entry in result.entry:
+            assert entry.resource.meta is not None
+            assert entry.resource.meta.source == "urn:healthchain:source:test_source"
+            assert entry.resource.meta.tag[0].code == "aggregated"

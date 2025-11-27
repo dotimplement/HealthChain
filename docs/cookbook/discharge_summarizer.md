@@ -1,27 +1,36 @@
 # Build a CDS Hooks Service for Discharge Summarization
 
-This tutorial shows you how to build a CDS service that integrates with EHR systems. We'll automatically summarize discharge notes and return actionable recommendations using the [CDS Hooks standard](https://cds-hooks.org/).
+This example shows you how to build a CDS service that integrates with EHR systems. We'll automatically summarize discharge notes and return actionable recommendations using the [CDS Hooks standard](https://cds-hooks.org/).
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
 
+![](../assets/images/hc-use-cases-clinical-integration.png) *Illustrative Architecture - actual implementation may vary.*
+
 ## Setup
 
-Make sure you have a [Hugging Face API token](https://huggingface.co/docs/hub/security-tokens) and set it as the `HUGGINGFACEHUB_API_TOKEN` environment variable.
+### Install Dependencies
 
-```python
-import getpass
-import os
-
-if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
-    os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass(
-      "Enter your token: "
-    )
+```bash
+pip install healthchain python-dotenv
 ```
+
+This example uses a Hugging Face model for the summarization task, so make sure you have a [Hugging Face API token](https://huggingface.co/docs/hub/security-tokens) and set it as the `HUGGINGFACEHUB_API_TOKEN` environment variable.
+
 
 If you are using a chat model, make sure you have the necessary `langchain` packages installed.
 
 ```bash
 pip install langchain langchain-huggingface
+```
+
+### Download Sample Data
+
+Download the sample data `discharge_notes.csv` into a `data/` folder in your project root using `wget`:
+
+```bash
+mkdir -p data
+cd data
+wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/discharge_notes.csv
 ```
 
 ## Initialize the pipeline
@@ -79,7 +88,7 @@ The `SummarizationPipeline` automatically:
 
 - Parses FHIR resources from CDS Hooks requests
 - Extracts clinical text from discharge documents
-- Formats outputs as CDS cards according to the CDS Hooks specification
+- Formats outputs as CDS cards
 
 ## Add the CDS FHIR Adapter
 
@@ -97,111 +106,107 @@ cds_adapter.parse(request)
 cds_adapter.format(doc)
 ```
 
-What it does:
+!!! info "What this adapter does"
 
-- Parses FHIR resources from CDS requests
-- Extracts text from [DocumentReference](https://www.hl7.org/fhir/documentreference.html) resources
-- Formats responses as CDS cards
+    - Parses FHIR resources from CDS Hooks requests
+    - Extracts text from [DocumentReference](https://www.hl7.org/fhir/documentreference.html) resources
+    - Formats responses as CDS cards according to the CDS Hooks specification
 
-## Set up the CDS service
+## Set Up the CDS Hook Handler
 
-Now let's create the CDS service. [HealthChainAPI](../reference/gateway/api.md) gives you discovery endpoints, validation, and docs automatically.
+Create the [CDS Hooks handler](../reference/gateway/cdshooks.md) to receive discharge note requests, run the AI summarization pipeline, and return results as CDS cards.
 
 ```python
-from healthchain.gateway import HealthChainAPI, CDSHooksService
+from healthchain.gateway import CDSHooksService
 from healthchain.models import CDSRequest, CDSResponse
-from healthchain.io import CdsFhirAdapter
 
-def create_pipeline():
-    """Build the discharge summarization pipeline"""
-    # Configure your pipeline (using previous examples)
-    return pipeline
+# Initialize the CDS service
+cds_service = CDSHooksService()
 
-def create_app():
-    """Create the CDS Hooks application"""
-    pipeline = create_pipeline()
-    adapter = CdsFhirAdapter()
+# Define the CDS service function
+@cds_service.hook("encounter-discharge", id="discharge-summary")
+def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
+    """Process discharge summaries with AI"""
+    # Parse CDS request to internal Document format
+    doc = cds_adapter.parse(request)
 
-    # Initialize the CDS service
-    cds_service = CDSHooksService()
+    # Process through AI pipeline
+    processed_doc = pipeline(doc)
 
-    # Define the CDS service function
-    @cds_service.hook("encounter-discharge", id="discharge-summary")
-    def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
-        """Process discharge summaries with AI"""
-        # Parse CDS request to internal Document format
-        doc = adapter.parse(request)
-
-        # Process through AI pipeline
-        processed_doc = pipeline(doc)
-
-        # Format response with CDS cards
-        response = adapter.format(processed_doc)
-        return response
-
-    # Register the service with the API gateway
-    app = HealthChainAPI(title="Discharge Summary CDS Service")
-    app.register_service(cds_service)
-
-    return app
+    # Format response with CDS cards
+    response = cds_adapter.format(processed_doc)
+    return response
 ```
 
+## Build the Service
 
-## Test with sample clinical data
-
-Let's test the service with some sample discharge notes using the [sandbox utility](../reference/utilities/sandbox.md) and the [CdsDataGenerator](../reference/utilities/data_generator.md):
+Register the CDS service with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints:
 
 ```python
-from healthchain.data_generators import CdsDataGenerator
+from healthchain.gateway import HealthChainAPI
 
-data_generator = CdsDataGenerator()
-data = data_generator.generate(
-  free_text_path="data/discharge_notes.csv", column_name="text"
-)
-print(data.model_dump())
-# {
-#    "prefetch": {
-#        "entry": [
-#        {
-#            "resource": {
-#                "resourceType": "Bundle",
-#                ...
-#            }
-#        }
-#    ]
-# }
+app = HealthChainAPI(title="Discharge Summary CDS Service")
+app.register_service(cds_service)
 ```
 
-The data generator returns a `Prefetch` object, which ensures that the data is parsed correctly by the CDS service.
+## Test with Sample Data
 
-## Run the complete example
+HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the CDS hooks workflow end-to-end. It loads your sample free text data and formats it into CDS requests, sends it to your service, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally and inspect the inputs and outputs before connecting to a real EHR instance.
 
-Run the service with `uvicorn`:
+
+```python
+from healthchain.sandbox import SandboxClient
+
+# Create sandbox client for testing
+client = SandboxClient(
+    url="http://localhost:8000/cds/cds-services/discharge-summarizer",
+    workflow="encounter-discharge"
+)
+
+# Load discharge notes from CSV and generate FHIR data
+client.load_free_text(
+    csv_path="data/discharge_notes.csv",
+    column_name="text"
+)
+
+# Inspect requests before sending to verify data
+# for request in client.requests:
+#     print(request.prefetch.get('document'))  # Get DocumentReference
+```
+
+!!! tip "Learn More About Test Data Generation"
+
+    Read more about the test FHIR data generator for CDS hooks [here](../reference/utilities/data_generator.md)
+
+## Run the Complete Example
+
+Put it all together and run both the service and sandbox client:
 
 ```python
 import uvicorn
+import threading
 
-app = create_app()
+# Start the API server in a separate thread
+def start_api():
+    uvicorn.run(app, port=8000)
 
-uvicorn.run(app)
+api_thread = threading.Thread(target=start_api, daemon=True)
+api_thread.start()
+
+# Send requests and save responses with sandbox client
+client.send_requests()
+client.save_results("./output/")
 ```
 
-## What happens when you run this
+!!! tip "Service Endpoints"
 
-## Workflow Overview
+    Once running, your service will be available at:
 
-=== "1. Service Startup"
-    - **URL:** [http://localhost:8000/](http://localhost:8000/)
-    - **Service discovery:** `/cds-services`
-    - **CDS endpoint:** `/cds-services/discharge-summary`
-    - **API docs:** `/docs`
+    - **Service discovery**: `http://localhost:8000/cds-services`
+    - **Discharge summary endpoint**: `http://localhost:8000/cds-services/discharge-summary`
 
-=== "2. Request Processing"
-    - Receives CDS Hooks requests from EHR systems
-    - Summarizes discharge notes using AI
-    - Returns CDS cards with clinical recommendations
+??? example "Example CDS Response"
 
-=== "3. Example CDS Response"
     ```json
     {
       "cards": [
@@ -224,3 +229,31 @@ uvicorn.run(app)
       ]
     }
     ```
+
+## What You've Built
+
+A CDS Hooks service for discharge workflows that integrates seamlessly with EHR systems:
+
+- **Standards-compliant** - Implements the CDS Hooks specification for EHR interoperability
+- **AI-powered summarization** - Processes discharge notes using transformer models or LLMs
+- **Actionable recommendations** - Returns structured cards with discharge planning tasks
+- **Flexible pipeline** - Supports both fine-tuned models and prompt-engineered LLMs
+- **Auto-discovery** - Provides service discovery endpoint for EHR registration
+
+!!! info "Use Cases"
+
+    - **Discharge Planning Coordination**
+      Automatically extract and highlight critical discharge tasks (appointments, medications, equipment needs) to reduce care coordination errors and readmissions.
+
+    - **Clinical Decision Support**
+      Provide real-time recommendations during discharge workflows, surfacing potential issues like medication interactions or missing follow-up appointments.
+
+    - **Documentation Efficiency**
+      Generate concise discharge summaries from lengthy clinical notes, saving clinicians time while ensuring all critical information is captured.
+
+!!! tip "Next Steps"
+
+    - **Enhance prompts**: Tune your clinical prompts to extract specific discharge criteria or care plan elements.
+    - **Add validation**: Implement checks for required discharge elements (medications, follow-ups, equipment).
+    - **Multi-card support**: Expand to generate separate cards for different discharge aspects (medication reconciliation, transportation, follow-up scheduling).
+    - **Integrate with workflows**: Deploy to Epic App Orchard or Cerner Code Console for production EHR integration.

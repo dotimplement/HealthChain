@@ -1,4 +1,10 @@
-"""Convenience functions for creating minimal FHIR resources."""
+"""Convenience functions for creating minimal FHIR resources.
+Patterns:
+- create_*(): create a new FHIR resource with sensible defaults - useful for dev, use with caution
+- add_*(): add data to resources with list fields safely (e.g. coding)
+- set_*(): set the field of specific resources with soft validation (e.g. category)
+- read_*(): return a human readable format of the data in a resource (e.g. attachments)
+"""
 
 import logging
 import base64
@@ -17,6 +23,8 @@ from fhir.resources.coding import Coding
 from fhir.resources.attachment import Attachment
 from fhir.resources.resource import Resource
 from fhir.resources.reference import Reference
+from fhir.resources.meta import Meta
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +59,62 @@ def create_resource_from_dict(
     except Exception as e:
         logger.error(f"Failed to create FHIR resource: {str(e)}")
         return None
+
+
+def convert_prefetch_to_fhir_objects(
+    prefetch_dict: Dict[str, Any],
+) -> Dict[str, Resource]:
+    """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
+
+    Takes a prefetch dictionary where values may be either dict representations of FHIR
+    resources or already instantiated FHIR Resource objects, and ensures all values are
+    FHIR Resource objects.
+
+    Args:
+        prefetch_dict: Dictionary mapping keys to FHIR resource dicts or objects
+
+    Returns:
+        Dict[str, Resource]: Dictionary with same keys but all values as FHIR Resource objects
+
+    Example:
+        >>> prefetch = {
+        ...     "patient": {"resourceType": "Patient", "id": "123"},
+        ...     "condition": Condition(id="456", ...)
+        ... }
+        >>> fhir_objects = convert_prefetch_to_fhir_objects(prefetch)
+        >>> isinstance(fhir_objects["patient"], Patient)  # True
+        >>> isinstance(fhir_objects["condition"], Condition)  # True
+    """
+    from fhir.resources import get_fhir_model_class
+
+    result: Dict[str, Resource] = {}
+
+    for key, resource_data in prefetch_dict.items():
+        if isinstance(resource_data, dict):
+            # Convert dict to FHIR Resource object
+            resource_type = resource_data.get("resourceType")
+            if resource_type:
+                try:
+                    resource_class = get_fhir_model_class(resource_type)
+                    result[key] = resource_class(**resource_data)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to convert {resource_type} to FHIR object: {e}"
+                    )
+                    result[key] = resource_data
+            else:
+                logger.warning(
+                    f"No resourceType found for key '{key}', keeping as dict"
+                )
+                result[key] = resource_data
+        elif isinstance(resource_data, Resource):
+            # Already a FHIR object
+            result[key] = resource_data
+        else:
+            logger.warning(f"Unexpected type for key '{key}': {type(resource_data)}")
+            result[key] = resource_data
+
+    return result
 
 
 def create_single_codeable_concept(
@@ -143,29 +207,6 @@ def create_single_attachment(
             "%Y-%m-%dT%H:%M:%S%z"
         ),
     )
-
-
-def set_problem_list_item_category(condition: Condition) -> Condition:
-    """Set the category of a FHIR Condition to problem-list-item.
-
-    Sets the category field of a FHIR Condition resource to indicate it is a problem list item.
-    This is commonly used to distinguish conditions that are part of the patient's active
-    problem list from other types of conditions (e.g. encounter-diagnosis).
-
-    Args:
-        condition: The FHIR Condition resource to modify
-
-    Returns:
-        Condition: The modified FHIR Condition resource with problem-list-item category set
-    """
-    condition.category = [
-        create_single_codeable_concept(
-            code="problem-list-item",
-            display="Problem List Item",
-            system="http://terminology.hl7.org/CodeSystem/condition-category",
-        )
-    ]
-    return condition
 
 
 def create_condition(
@@ -398,6 +439,131 @@ def create_document_reference_content(
     content.update(kwargs)
     
     return content
+def set_condition_category(condition: Condition, category: str) -> Condition:
+    """
+    Set the category of a FHIR Condition to either 'problem-list-item' or 'encounter-diagnosis'.
+
+    Args:
+        condition: The FHIR Condition resource to modify
+        category: The category to set. Must be 'problem-list-item' or 'encounter-diagnosis'.
+
+    Returns:
+        Condition: The modified FHIR Condition resource with the specified category set
+
+    Raises:
+        ValueError: If the category is not one of the allowed values.
+    """
+    allowed_categories = {
+        "problem-list-item": {
+            "code": "problem-list-item",
+            "display": "Problem List Item",
+        },
+        "encounter-diagnosis": {
+            "code": "encounter-diagnosis",
+            "display": "Encounter Diagnosis",
+        },
+    }
+    if category not in allowed_categories:
+        raise ValueError(
+            f"Invalid category '{category}'. Must be one of: {list(allowed_categories.keys())}"
+        )
+
+    cat_info = allowed_categories[category]
+    condition.category = [
+        create_single_codeable_concept(
+            code=cat_info["code"],
+            display=cat_info["display"],
+            system="http://terminology.hl7.org/CodeSystem/condition-category",
+        )
+    ]
+    return condition
+
+
+def add_provenance_metadata(
+    resource: Resource,
+    source: str,
+    tag_code: Optional[str] = None,
+    tag_display: Optional[str] = None,
+) -> Resource:
+    """Add provenance metadata to a FHIR resource.
+
+    Adds source system identifier, timestamp, and optional processing tags to track
+    data lineage and transformations for audit trails.
+
+    Args:
+        resource: The FHIR resource to annotate
+        source: Name of the source system (e.g., "epic", "cerner")
+        tag_code: Optional tag code for processing operations (e.g., "aggregated", "deduplicated")
+        tag_display: Optional display text for the tag
+
+    Returns:
+        Resource: The resource with added provenance metadata
+
+    Example:
+        >>> condition = create_condition(subject="Patient/123", code="E11.9")
+        >>> condition = add_provenance_metadata(condition, "epic", "aggregated", "Aggregated from source")
+    """
+    if not resource.meta:
+        resource.meta = Meta()
+
+    # Add source system identifier
+    resource.meta.source = f"urn:healthchain:source:{source}"
+
+    # Update timestamp
+    resource.meta.lastUpdated = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    # Add processing tag if provided
+    if tag_code:
+        if not resource.meta.tag:
+            resource.meta.tag = []
+
+        resource.meta.tag.append(
+            Coding(
+                system="https://dotimplement.github.io/HealthChain/fhir/tags",
+                code=tag_code,
+                display=tag_display or tag_code,
+            )
+        )
+
+    return resource
+
+
+def add_coding_to_codeable_concept(
+    codeable_concept: CodeableConcept,
+    code: str,
+    system: str,
+    display: Optional[str] = None,
+) -> CodeableConcept:
+    """Add a coding to an existing CodeableConcept.
+
+    Useful for adding standardized codes (e.g., SNOMED CT) to resources that already
+    have codes from other systems (e.g., ICD-10).
+
+    Args:
+        codeable_concept: The CodeableConcept to add coding to
+        code: The code value from the code system
+        system: The code system URI
+        display: Optional display text for the code
+
+    Returns:
+        CodeableConcept: The updated CodeableConcept with the new coding added
+
+    Example:
+        >>> # Add SNOMED CT code to a condition that has ICD-10
+        >>> condition_code = condition.code
+        >>> condition_code = add_coding_to_codeable_concept(
+        ...     condition_code,
+        ...     code="44054006",
+        ...     system="http://snomed.info/sct",
+        ...     display="Type 2 diabetes mellitus"
+        ... )
+    """
+    if not codeable_concept.coding:
+        codeable_concept.coding = []
+
+    codeable_concept.coding.append(Coding(system=system, code=code, display=display))
+
+    return codeable_concept
 
 
 def read_content_attachment(

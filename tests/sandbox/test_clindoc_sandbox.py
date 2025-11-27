@@ -1,17 +1,16 @@
+import base64
 from unittest.mock import patch, MagicMock
 
-import healthchain as hc
+from healthchain.sandbox import SandboxClient
 from healthchain.gateway.soap.notereader import NoteReaderService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.sandbox.use_cases import ClinicalDocumentation
-from healthchain.fhir import create_document_reference
 
 
 def test_notereader_sandbox_integration():
-    """Test NoteReaderService integration with sandbox decorator"""
-    # Use HealthChainAPI instead of FastAPI
+    """Test NoteReaderService integration with SandboxClient"""
+    # Use HealthChainAPI
     app = HealthChainAPI()
     note_service = NoteReaderService()
 
@@ -23,63 +22,95 @@ def test_notereader_sandbox_integration():
     # Register service with HealthChainAPI
     app.register_service(note_service, "/notereader")
 
-    # Define a sandbox class that uses the NoteReader service
-    @hc.sandbox("http://localhost:8000/")
-    class TestNotereaderSandbox(ClinicalDocumentation):
-        def __init__(self):
-            super().__init__()
-            self.test_document = "<test>document</test>"
+    # Create SandboxClient for SOAP/CDA
+    client = SandboxClient(
+        url="http://localhost:8000/notereader/fhir/",
+        workflow="sign-note-inpatient",
+        protocol="soap",
+    )
 
-        @hc.ehr(workflow="sign-note-inpatient")
-        def load_document_reference(self):
-            return create_document_reference(
-                data=self.test_document,
-                content_type="text/xml",
-                description="Test document",
-            )
+    # Load test document
+    test_document = "<test>document</test>"
+    client._construct_request(test_document)
 
-    # Create an instance of the sandbox
-    sandbox_instance = TestNotereaderSandbox()
+    # Verify request was constructed
+    assert len(client.requests) == 1
 
-    # Patch the client request method to avoid actual HTTP requests
-    with patch.object(sandbox_instance, "_client") as mock_client:
+    # Mock HTTP response with proper SOAP envelope structure
+    with patch("httpx.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value.__enter__.return_value = mock_client
+
+        # Create proper SOAP response with base64-encoded CDA
+        cda_content = "<processed>document</processed>"
+        encoded_cda = base64.b64encode(cda_content.encode("utf-8")).decode("utf-8")
+        soap_response = f"""
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                          xmlns:tns="urn:epic-com:Common.2013.Services">
+            <soapenv:Body>
+                <tns:ProcessDocumentResponse>
+                    <tns:Document>{encoded_cda}</tns:Document>
+                </tns:ProcessDocumentResponse>
+            </soapenv:Body>
+        </soapenv:Envelope>
+        """
+
         mock_response = MagicMock()
-        mock_response.text = "<processed>document</processed>"
-        mock_client.send_soap_request.return_value = mock_response
+        mock_response.text = soap_response
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_client.post.return_value = mock_response
 
-        # Verify the sandbox can be initialized with the workflow
-        assert hasattr(sandbox_instance, "load_document_reference")
+        # Send requests
+        responses = client.send_requests()
+
+        # Verify response
+        assert len(responses) == 1
+        assert "<processed>document</processed>" in responses[0]
 
 
 def test_notereader_sandbox_workflow_execution():
-    """Test executing a NoteReader workflow in the sandbox"""
+    """Test executing a NoteReader workflow with SandboxClient"""
+    # Create SandboxClient
+    client = SandboxClient(
+        url="http://localhost:8000/notereader/fhir/",
+        workflow="sign-note-inpatient",
+        protocol="soap",
+    )
 
-    # Create a sandbox class with NoteReader
-    @hc.sandbox("http://localhost:8000/")
-    class TestNotereaderWithData(ClinicalDocumentation):
-        def __init__(self):
-            super().__init__()
-            self.data_processed = False
+    # Load clinical document
+    clinical_document = "<ClinicalDocument>Test content</ClinicalDocument>"
+    client._construct_request(clinical_document)
 
-        @hc.ehr(workflow="sign-note-inpatient")
-        def get_clinical_document(self):
-            return create_document_reference(
-                data="<ClinicalDocument>Test content</ClinicalDocument>",
-                content_type="text/xml",
-                description="Test CDA document",
-            )
+    # Verify request was constructed
+    assert len(client.requests) == 1
 
-    # Create sandbox instance
-    sandbox = TestNotereaderWithData()
+    # Mock HTTP response with proper SOAP envelope structure
+    with patch("httpx.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value.__enter__.return_value = mock_client
 
-    # Mock the client to avoid HTTP requests
-    with patch.object(sandbox, "_client") as mock_client:
-        # Mock response from server
+        # Create proper SOAP response with base64-encoded CDA
+        cda_content = "<processed>document</processed>"
+        encoded_cda = base64.b64encode(cda_content.encode("utf-8")).decode("utf-8")
+        soap_response = f"""
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                          xmlns:tns="urn:epic-com:Common.2013.Services">
+            <soapenv:Body>
+                <tns:ProcessDocumentResponse>
+                    <tns:Document>{encoded_cda}</tns:Document>
+                </tns:ProcessDocumentResponse>
+            </soapenv:Body>
+        </soapenv:Envelope>
+        """
+
         mock_response = MagicMock()
-        mock_response.text = "<processed>document</processed>"
+        mock_response.text = soap_response
         mock_response.status_code = 200
-        mock_client.send_soap_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
+        mock_client.post.return_value = mock_response
 
-        # Set up the sandbox with correct attributes for testing
-        sandbox._client.workflow = MagicMock()
-        sandbox._client.workflow.value = "sign-note-inpatient"
+        # Send requests and verify
+        responses = client.send_requests()
+        assert len(responses) == 1
+        assert "<processed>document</processed>" in responses[0]
