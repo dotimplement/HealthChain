@@ -12,11 +12,11 @@
 [![License][license-badge]][license]
 [![Python Versions][python-versions-badge]][pypi]
 [![Build Status][build-badge]][build]
+[![AI-Assisted Development][ai-badge]][claude-md]
 
 [![Substack][substack-badge]][substack]
 [![Discord][discord-badge]][discord]
 
-[![AI-Assisted Development][ai-badge]][claude-md]
 
 
 </div>
