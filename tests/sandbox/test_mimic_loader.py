@@ -316,3 +316,115 @@ def test_mimic_loader_skips_resources_without_resource_type(temp_mimic_data_dir)
     # Should only load the valid resource
     bundle = result["medicationstatement"]
     assert len(bundle.entry) == 1
+
+
+def test_mimic_loader_as_dict_returns_plain_dict(
+    temp_mimic_data_dir, mock_medication_resources
+):
+    """MimicOnFHIRLoader with as_dict=True returns plain dict (not Pydantic Bundle)."""
+    fhir_dir = temp_mimic_data_dir / "fhir"
+    create_ndjson_gz_file(
+        fhir_dir / "MimicMedication.ndjson.gz", mock_medication_resources
+    )
+
+    loader = MimicOnFHIRLoader()
+    result = loader.load(
+        data_dir=str(temp_mimic_data_dir),
+        resource_types=["MimicMedication"],
+        as_dict=True,
+    )
+
+    # Should return a plain dict, not Dict[str, Bundle]
+    assert isinstance(result, dict)
+    assert "type" in result
+    assert result["type"] == "collection"
+    assert "entry" in result
+    assert isinstance(result["entry"], list)
+    assert len(result["entry"]) == 2
+
+
+def test_mimic_loader_as_dict_combines_multiple_resource_types(
+    temp_mimic_data_dir, mock_medication_resources, mock_condition_resources
+):
+    """MimicOnFHIRLoader with as_dict=True combines all resources into single bundle."""
+    fhir_dir = temp_mimic_data_dir / "fhir"
+    create_ndjson_gz_file(
+        fhir_dir / "MimicMedication.ndjson.gz", mock_medication_resources
+    )
+    create_ndjson_gz_file(
+        fhir_dir / "MimicCondition.ndjson.gz", mock_condition_resources
+    )
+
+    loader = MimicOnFHIRLoader()
+    result = loader.load(
+        data_dir=str(temp_mimic_data_dir),
+        resource_types=["MimicMedication", "MimicCondition"],
+        as_dict=True,
+    )
+
+    # Should be a single bundle dict with all resources combined
+    assert isinstance(result, dict)
+    assert result["type"] == "collection"
+    assert len(result["entry"]) == 3  # 2 medications + 1 condition
+
+    # Verify resource types are mixed
+    resource_types = {entry["resource"]["resourceType"] for entry in result["entry"]}
+    assert resource_types == {"MedicationStatement", "Condition"}
+
+
+def test_mimic_loader_default_returns_validated_bundles(
+    temp_mimic_data_dir, mock_medication_resources, mock_condition_resources
+):
+    """MimicOnFHIRLoader with as_dict=False (default) returns validated Bundle objects."""
+    fhir_dir = temp_mimic_data_dir / "fhir"
+    create_ndjson_gz_file(
+        fhir_dir / "MimicMedication.ndjson.gz", mock_medication_resources
+    )
+    create_ndjson_gz_file(
+        fhir_dir / "MimicCondition.ndjson.gz", mock_condition_resources
+    )
+
+    loader = MimicOnFHIRLoader()
+    result = loader.load(
+        data_dir=str(temp_mimic_data_dir),
+        resource_types=["MimicMedication", "MimicCondition"],
+        as_dict=False,  # Explicit default
+    )
+
+    # Should return Dict[str, Bundle] with validated Pydantic objects
+    assert isinstance(result, dict)
+    assert "medicationstatement" in result
+    assert "condition" in result
+
+    # Each value should be a Pydantic Bundle
+    assert type(result["medicationstatement"]).__name__ == "Bundle"
+    assert type(result["condition"]).__name__ == "Bundle"
+    assert len(result["medicationstatement"].entry) == 2
+    assert len(result["condition"].entry) == 1
+
+
+def test_mimic_loader_as_dict_structure_matches_fhir_bundle(
+    temp_mimic_data_dir, mock_medication_resources
+):
+    """MimicOnFHIRLoader with as_dict=True produces valid FHIR Bundle structure."""
+    fhir_dir = temp_mimic_data_dir / "fhir"
+    create_ndjson_gz_file(
+        fhir_dir / "MimicMedication.ndjson.gz", mock_medication_resources
+    )
+
+    loader = MimicOnFHIRLoader()
+    result = loader.load(
+        data_dir=str(temp_mimic_data_dir),
+        resource_types=["MimicMedication"],
+        as_dict=True,
+    )
+
+    # Verify FHIR Bundle structure
+    assert result["type"] == "collection"
+    assert isinstance(result["entry"], list)
+
+    # Each entry should have resource field
+    for entry in result["entry"]:
+        assert "resource" in entry
+        assert "resourceType" in entry["resource"]
+        assert entry["resource"]["resourceType"] == "MedicationStatement"

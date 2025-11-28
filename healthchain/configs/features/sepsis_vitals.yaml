@@ -1,0 +1,85 @@
+name: sepsis_prediction_features
+version: "1.0"
+description: Feature schema for sepsis prediction model trained on MIMIC-IV data
+
+model_info:
+  model_type: Random Forest / XGBoost / Logistic Regression
+  training_data: MIMIC-IV Clinical Database Demo
+  target: Sepsis (ICD-9/ICD-10 codes)
+  prediction_window: First 24 hours of ICU stay
+
+metadata:
+  age_calculation: event_date
+  event_date_source: Observation
+  event_date_strategy: earliest
+
+features:
+  heart_rate:
+    fhir_resource: Observation
+    code: "220045"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+    display: Heart Rate
+    unit: bpm
+    dtype: float64
+    required: true
+
+  temperature:
+    fhir_resource: Observation
+    code: "223761"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+    display: Temperature Fahrenheit
+    unit: °F
+    dtype: float64
+    required: true
+
+  respiratory_rate:
+    fhir_resource: Observation
+    code: "220210"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items
+    display: Respiratory Rate
+    unit: insp/min
+    dtype: float64
+    required: true
+
+  wbc:
+    fhir_resource: Observation
+    code: "51301"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-d-labitems
+    display: White Blood Cells
+    unit: K/uL
+    dtype: float64
+    required: true
+
+  lactate:
+    fhir_resource: Observation
+    code: "50843"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-d-labitems
+    display: Lactate Dehydrogenase, Ascites
+    unit: IU/L
+    dtype: float64
+    required: true
+
+  creatinine:
+    fhir_resource: Observation
+    code: "50912"
+    code_system: http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-d-labitems
+    display: Creatinine
+    unit: mg/dL
+    dtype: float64
+    required: true
+
+  age:
+    fhir_resource: Patient
+    field: birthDate
+    transform: calculate_age
+    dtype: int64
+    required: true
+    display: Patient age calculated from birth date
+
+  gender_encoded:
+    fhir_resource: Patient
+    field: gender
+    transform: encode_gender
+    dtype: int64
+    required: true
+    display: Administrative gender (M=1, F=0)
