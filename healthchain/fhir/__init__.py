@@ -9,8 +9,10 @@ from healthchain.fhir.helpers import (
     set_condition_category,
     read_content_attachment,
     create_document_reference,
+    create_document_reference_content,
     create_single_attachment,
     create_resource_from_dict,
+    convert_prefetch_to_fhir_objects,
     add_provenance_metadata,
     add_coding_to_codeable_concept,
 )
@@ -22,6 +24,7 @@ from healthchain.fhir.bundle_helpers import (
     set_resources,
     merge_bundles,
     extract_resources,
+    count_resources,
 )
 
 __all__ = [
@@ -34,8 +37,10 @@ __all__ = [
     "set_condition_category",
     "read_content_attachment",
     "create_document_reference",
+    "create_document_reference_content",
     "create_single_attachment",
     "create_resource_from_dict",
+    "convert_prefetch_to_fhir_objects",
     # Resource modification
     "add_provenance_metadata",
     "add_coding_to_codeable_concept",
@@ -46,4 +51,5 @@ __all__ = [
     "set_resources",
     "merge_bundles",
     "extract_resources",
+    "count_resources",
 ]

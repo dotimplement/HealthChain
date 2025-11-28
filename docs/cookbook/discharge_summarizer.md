@@ -159,17 +159,19 @@ from healthchain.sandbox import SandboxClient
 
 # Create sandbox client for testing
 client = SandboxClient(
-    api_url="http://localhost:8000",
-    endpoint="/cds/cds-services/discharge-summarizer",
+    url="http://localhost:8000/cds/cds-services/discharge-summarizer",
     workflow="encounter-discharge"
 )
 
 # Load discharge notes from CSV and generate FHIR data
 client.load_free_text(
     csv_path="data/discharge_notes.csv",
-    column_name="text",
-    workflow="encounter-discharge"
+    column_name="text"
 )
+
+# Inspect requests before sending to verify data
+# for request in client.requests:
+#     print(request.prefetch.get('document'))  # Get DocumentReference
 ```
 
 !!! tip "Learn More About Test Data Generation"

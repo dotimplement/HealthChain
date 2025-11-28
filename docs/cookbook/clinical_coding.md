@@ -224,14 +224,17 @@ from healthchain.sandbox import SandboxClient
 
 # Create sandbox client for SOAP/CDA testing
 client = SandboxClient(
-    api_url="http://localhost:8000",
-    endpoint="/notereader/ProcessDocument",
+    url="http://localhost:8000/notereader/ProcessDocument",
     workflow="sign-note-inpatient",
     protocol="soap"
 )
 
 # Load sample CDA document
 client.load_from_path("./data/notereader_cda.xml")
+
+# Inspect CDA document before sending
+# for request in client.requests:
+#     print(request.document[:1000])  # View first 1000 chars of CDA XML
 ```
 
 ## Run the Complete Example

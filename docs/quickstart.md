@@ -1,14 +1,18 @@
 # Quickstart
 
 After [installing HealthChain](installation.md), get up to speed quickly with the core components before diving further into the [full documentation](reference/index.md)!
+HealthChain has three main components:
 
-HealthChain provides three core tools for healthcare AI integration: **Gateway** for connecting to multiple healthcare systems, **Pipelines** for FHIR-native AI workflows, and **InteropEngine** for healthcare data format conversion between FHIR, CDA, and HL7v2.
+- **Gateway:** Connect to multiple healthcare systems with a single API.
+- **Pipelines:** Easily build data processing pipelines for both clinical text and [FHIR](https://www.hl7.org/fhir/) data.
+- **InteropEngine:** Seamlessly convert between data formats like [FHIR](https://www.hl7.org/fhir/), [HL7 CDA](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7), and [HL7v2](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185).
 
-## Core Components
 
-### HealthChainAPI Gateway 🔌
+## Core Components 🧩
 
-The HealthChainAPI provides a unified interface for connecting your AI models to multiple healthcare systems through a single API. Handle FHIR, CDS Hooks, and SOAP/CDA protocols with OAuth2 authentication.
+### Gateway 🔌
+
+The [**HealthChainAPI**](./reference/gateway/api.md) provides a unified interface for connecting your AI application and models to multiple healthcare systems through a single API. It automatically handles [FHIR API](https://www.hl7.org/fhir/http.html), [CDS Hooks](https://cds-hooks.org/), and [SOAP/CDA protocols](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7) with [OAuth2 authentication](https://oauth.net/2/).
 
 [(Full Documentation on Gateway)](./reference/gateway/gateway.md)
 
@@ -41,51 +45,52 @@ app.register_gateway(fhir)
 
 ### Pipeline 🛠️
 
-HealthChain Pipelines provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with electronic health record (EHR) systems.
+HealthChain [**Pipelines**](./reference/pipeline/pipeline.md) provide a flexible way to build and manage processing pipelines for NLP and ML tasks that can easily integrate with electronic health record (EHR) systems.
 
 You can build pipelines with three different approaches:
 
-#### 1. Build Your Own Pipeline with Inline Functions
+#### 1. Quick Inline Functions
 
-This is the most flexible approach, ideal for quick experiments and prototyping. Initialize a pipeline type hinted with the container type you want to process, then add components to your pipeline with the `@add_node` decorator.
+For quick experiments, start by picking the right [**Container**](./reference/pipeline/data_container.md) when you initialize your pipeline (e.g. `Pipeline[Document]()` for clinical text).
 
-Compile the pipeline with `.build()` to use it.
+Containers make your pipeline FHIR-native by loading and transforming your data (free text, EHR resources, etc.) into structured FHIR-ready formats. Just add your processing functions with `@add_node`, compile with `.build()`, and your pipeline is ready to process FHIR data end-to-end.
+
+[(Full Documentation on Container)](./reference/pipeline/data_container.md)
 
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io import Document
+from healthchain.fhir import create_condition
 
-nlp_pipeline = Pipeline[Document]()
+pipeline = Pipeline[Document]()
 
-@nlp_pipeline.add_node
-def tokenize(doc: Document) -> Document:
-    doc.tokens = doc.text.split()
+@pipeline.add_node
+def extract_diabetes(doc: Document) -> Document:
+    """Adds a FHIR Condition for diabetes if mentioned in the text."""
+    if "diabetes" in doc.text.lower():
+        condition = create_condition(
+            code="73211009",
+            display="Diabetes mellitus",
+        )
+        doc.fhir.problem_list.append(condition)
+
     return doc
 
-@nlp_pipeline.add_node
-def pos_tag(doc: Document) -> Document:
-    doc.pos_tags = ["NOUN" if token[0].isupper() else "VERB" for token in doc.tokens]
-    return doc
+pipe = pipeline.build()
 
-nlp = nlp_pipeline.build()
+doc = Document("Patient has a history of diabetes.")
+doc = pipe(doc)
 
-doc = Document("Patient has a fracture of the left femur.")
-doc = nlp(doc)
-
-print(doc.tokens)
-print(doc.pos_tags)
-
-# ['Patient', 'has', 'fracture', 'of', 'left', 'femur.']
-# ['NOUN', 'VERB', 'VERB', 'VERB', 'VERB', 'VERB']
+print(doc.fhir.problem_list)  # FHIR Condition
 ```
 
-#### 2. Build Your Own Pipeline with Components, Models, and Connectors
+#### 2. Build With Components and Adapters
 
-Components are stateful - they're classes instead of functions. They can be useful for grouping related processing steps together, setting configurations, or wrapping specific model loading steps.
+[**Components**](./reference/) are reusable, stateful classes that encapsulate specific processing logic, model loading, or configuration for your pipeline. Use them to organize complex workflows, handle model state, or integrate third-party libraries with minimal setup.
 
-HealthChain comes with a few pre-built components, but you can also easily add your own. You can find more details on the [Components](./reference/pipeline/components/components.md) and [Integrations](./reference/pipeline/integrations/integrations.md) documentation pages.
+HealthChain provides a set of ready-to-use [**NLP Integrations**](./reference/pipeline/integrations/integrations.md) for common clinical NLP and ML tasks, and you can easily implement your own.
 
-Add components to your pipeline with the `.add_node()` method and compile with `.build()`.
+[(Full Documentation on Components)](./reference/pipeline/components/components.md)
 
 ```python
 from healthchain.pipeline import Pipeline
@@ -104,17 +109,13 @@ doc = Document("Patient presents with hypertension.")
 output = pipe(doc)
 ```
 
-Let's go one step further! You can use [Adapters](./reference/pipeline/adapters/adapters.md) to work directly with [CDA](https://www.hl7.org.uk/standards/hl7-standards/cda-clinical-document-architecture/) and [FHIR](https://hl7.org/fhir/) data received from healthcare system APIs. Adapters handle format conversion while keeping your pipeline pure ML processing.
+You can process legacy healthcare data formats too. [**Adapters**](./reference/pipeline/adapters/adapters.md) convert between healthcare formats like [CDA](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7) and your pipeline — just parse, process, and format without worrying about low-level data conversion.
+
+[(Full Documentation on Adapters)](./reference/pipeline/adapters/adapters.md)
 
 ```python
-from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components import SpacyNLP
 from healthchain.io import CdaAdapter
 from healthchain.models import CdaRequest
-
-pipeline = Pipeline()
-pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
-pipe = pipeline.build()
 
 # Use adapter for format conversion
 adapter = CdaAdapter()
@@ -128,20 +129,13 @@ output = adapter.format(processed_doc)
 
 #### 3. Use Prebuilt Pipelines
 
-Prebuilt pipelines are pre-configured collections of Components and Models optimized for specific healthcare AI use cases. They offer the highest level of abstraction and are the easiest way to get started.
+Prebuilt pipelines are the fastest way to jump into healthcare AI with minimal setup: just load and run. Each pipeline bundles best-practice components and models for common clinical tasks (like coding or summarization) and handles all FHIR/CDA conversion for you. Easily customize or extend pipelines by adding/removing components, or swap models as needed.
 
-For a full list of available prebuilt pipelines and details on how to configure and customize them, see the [Pipelines](./reference/pipeline/pipeline.md) documentation page.
+[(Full Documentation on Pipelines)](./reference/pipeline/pipeline.md#prebuilt-)
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
-
-# Load from pre-built chain
-chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
-pipeline = MedicalCodingPipeline.load(chain, source="langchain")
-
-# Or load from model ID
-pipeline = MedicalCodingPipeline.from_model_id("facebook/bart-large-cnn", source="huggingface")
 
 # Or load from local model
 pipeline = MedicalCodingPipeline.from_local_model("./path/to/model", source="spacy")
@@ -152,7 +146,7 @@ output = pipeline.process_request(cda_request)
 
 ### Interoperability 🔄
 
-The HealthChain Interoperability module provides tools for converting between different healthcare data formats, including HL7 FHIR, HL7 CDA, and HL7v2 messages.
+The HealthChain Interoperability module provides tools for converting between different healthcare data formats, including FHIR, CDA, and HL7v2 messages.
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
@@ -176,30 +170,88 @@ cda_document = engine.from_fhir(fhir_resources, dest_format=FormatType.CDA)
 
 ## Utilities ⚙️
 
-### Sandbox Testing
+### Sandbox Client 🧪
 
-Test your AI applications in realistic healthcare contexts with `SandboxClient` for CDS Hooks and clinical documentation workflows.
+Use [**SandboxClient**](./reference/utilities/sandbox.md) to quickly test your app against real-world EHR scenarios like CDS Hooks or Clinical Documentation Improvement (CDI) workflows. Load test datasets, send requests to your service, and validate responses in a few lines of code.
 
 [(Full Documentation on Sandbox)](./reference/utilities/sandbox.md)
+
+#### Workflows
+
+A [**workflow**](./reference/utilities/sandbox.md#workflow-protocol-compatibility) represents a specific event in an EHR system that triggers your service (e.g., `patient-view` when opening a patient chart, `encounter-discharge` when discharging a patient).
+
+Workflows determine the request structure, required FHIR resources, and validation rules. Different workflows are compatible with different protocols:
+
+| Workflow Type                      | Protocol   | Example Workflows                                      |
+|-------------------------------------|------------|--------------------------------------------------------|
+| **CDS Hooks**                      | REST       | `patient-view`, `order-select`, `order-sign`, `encounter-discharge` |
+| **Clinical Documentation**          | SOAP       | `sign-note-inpatient`, `sign-note-outpatient`          |
+
+
+#### Available Dataset Loaders
+
+[**Dataset Loaders**](./reference/utilities/sandbox.md#dataset-loaders) are shortcuts for loading common clinical test datasets from file. Currently available:
+
+| Dataset Key        | Description                                 | FHIR Version | Source                                                                                  | Download Link                                                                                  |
+|--------------------|---------------------------------------------|--------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `mimic-on-fhir`    | **MIMIC-IV on FHIR Demo Dataset**        | R4           | [PhysioNet Project](https://physionet.org/content/mimic-iv-fhir-demo/2.1.0/)                  | [Download ZIP](https://physionet.org/content/mimic-iv-fhir-demo/get-zip/2.1.0/) (49.5 MB)      |
+| `synthea-patient`  | **Synthea FHIR Patient Records**    | R4           | [Synthea Downloads](https://synthea.mitre.org/downloads)                                  | [Download ZIP](https://arc.net/l/quote/hoquexhy) (100 Sample, 36 MB)                           |
+
+
+```python
+from healthchain.sandbox import list_available_datasets
+
+# See all registered datasets with descriptions
+datasets = list_available_datasets()
+print(datasets)
+```
+
+#### Basic Usage
 
 ```python
 from healthchain.sandbox import SandboxClient
 
-# Create client and load test data
+# Initialize client with your service URL and workflow
 client = SandboxClient(
-    api_url="http://localhost:8000",
-    endpoint="/cds/cds-services/my-service",
+    url="http://localhost:8000/cds/encounter-discharge",
     workflow="encounter-discharge"
 )
 
-# Load from datasets or files
-client.load_from_registry("synthea", num_patients=5)
+# Load test data from a registered dataset
+client.load_from_registry(
+    "synthea-patient",
+    data_dir="./data/synthea",
+    resource_types=["Condition", "DocumentReference"],
+    sample_size=3
+)
+
+# Optionally inspect before sending
+client.preview_requests()  # See what will be sent
+client.get_status()        # Check client state
+
+# Send requests to your service
 responses = client.send_requests()
 ```
 
-### FHIR Helpers
+For clinical documentation workflows using SOAP/CDA:
 
-The `fhir` module provides a set of helper functions for working with FHIR resources.
+```python
+# Use context manager for automatic result saving
+with SandboxClient(
+    url="http://localhost:8000/notereader/ProcessDocument",
+    workflow="sign-note-inpatient",
+    protocol="soap"
+) as client:
+    client.load_from_path("./cookbook/data/notereader_cda.xml")
+    responses = client.send_requests()
+    # Results automatically saved to ./output/ on success
+```
+
+### FHIR Helpers 🔥
+
+Use `healthchain.fhir` helpers to quickly create and manipulate FHIR resources (like `Condition`, `Observation`, etc.) in your code, ensuring they’re standards-compliant with minimal boilerplate.
+
+[(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
 
 ```python
 from healthchain.fhir import create_condition
@@ -211,38 +263,6 @@ condition = create_condition(
     subject="Patient/Foo",
     clinical_status="active"
 )
-```
-
-[(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
-
-### Data Generator
-
-You can use the data generator to generate synthetic FHIR data for testing.
-
-The `CdsDataGenerator` generates synthetic [FHIR](https://hl7.org/fhir/) data as [Pydantic](https://docs.pydantic.dev/) models suitable for different CDS workflows. Use it standalone or with `SandboxClient.load_free_text()` to include text-based data.
-
-[(Full Documentation on Data Generators)](./reference/utilities/data_generator.md)
-
-```python
-from healthchain.sandbox.generators import CdsDataGenerator
-from healthchain.sandbox.workflows import Workflow
-
-# Initialize data generator
-data_generator = CdsDataGenerator()
-
-# Generate FHIR resources for specific workflow
-data_generator.set_workflow(Workflow.encounter_discharge)
-data = data_generator.generate_prefetch()
-
-print(data.model_dump())
-
-# {
-#    "prefetch": {
-#        "encounter": {
-#            "resourceType": ...
-#        }
-#    }
-# }
 ```
 
 ## Going further ✨

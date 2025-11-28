@@ -1,4 +1,4 @@
-# HealthChain Integrations
+# NLP Integrations
 
 This document provides an overview of the integration components available in the HealthChain package. These components allow you to easily incorporate popular NLP libraries into your HealthChain pipelines.
 

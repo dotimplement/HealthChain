@@ -3,8 +3,8 @@ import warnings
 from .sandboxclient import SandboxClient
 from .datasets import DatasetRegistry, DatasetLoader, list_available_datasets
 
-
 # Import loaders to trigger auto-registration
+from . import loaders  # noqa: F401
 
 __all__ = [
     "SandboxClient",

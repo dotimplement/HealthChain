@@ -5,6 +5,7 @@ from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.codeablereference import CodeableReference
 from fhir.resources.documentreference import DocumentReference
 from fhir.resources.attachment import Attachment
+from fhir.resources.coding import Coding
 from datetime import datetime
 
 
@@ -18,6 +19,7 @@ from healthchain.fhir.helpers import (
     set_condition_category,
     create_single_attachment,
     create_document_reference,
+    create_document_reference_content,
     read_content_attachment,
     add_provenance_metadata,
     add_coding_to_codeable_concept,
@@ -249,6 +251,54 @@ def test_read_attachment_with_url():
     assert attachments[0]["metadata"]["content_type"] == "application/pdf"
     assert attachments[0]["metadata"]["title"] == "Test URL Doc"
     assert attachments[0]["metadata"]["creation"] is not None
+
+
+def test_create_document_reference_content_with_data():
+    """Test creating DocumentReferenceContent with inline data."""
+    content = create_document_reference_content(
+        attachment_data="Test data", content_type="text/plain", title="Test Document"
+    )
+
+    assert "attachment" in content
+    assert content["attachment"].contentType == "text/plain"
+    assert content["attachment"].title == "Test Document"
+    assert content["attachment"].data is not None
+    assert content["language"] == "en-US"
+
+
+def test_create_document_reference_content_with_url():
+    """Test creating DocumentReferenceContent with URL."""
+    content = create_document_reference_content(
+        url="https://example.com/doc.pdf",
+        content_type="application/pdf",
+        title="External Document",
+    )
+
+    assert "attachment" in content
+    assert content["attachment"].url == "https://example.com/doc.pdf"
+    assert content["attachment"].contentType == "application/pdf"
+
+
+def test_create_document_reference_content_custom_language():
+    """Test creating DocumentReferenceContent with custom language."""
+    content = create_document_reference_content(
+        attachment_data="Données de test", language="fr-FR"
+    )
+
+    assert content["language"] == "fr-FR"
+
+
+def test_create_document_reference_content_with_kwargs():
+    """Test creating DocumentReferenceContent with additional fields."""
+    content = create_document_reference_content(
+        attachment_data="Test",
+        format=Coding(
+            system="http://ihe.net/fhir/ValueSet/IHE.FormatCode.codesystem",
+            code="urn:ihe:pcc:handp:2008",
+        ),
+    )
+
+    assert "format" in content
 
 
 def test_create_resource_from_dict_success_and_failure():

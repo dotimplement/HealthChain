@@ -5,7 +5,6 @@ from healthchain.gateway.cds import CDSHooksService
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse, Card
-from healthchain.models.hooks.prefetch import Prefetch
 from healthchain.fhir import create_bundle, create_condition
 
 
@@ -29,20 +28,19 @@ def test_cdshooks_sandbox_integration():
 
     # Create SandboxClient
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/test-patient-view",
+        url="http://localhost:8000/cds/cds-services/test-patient-view",
         workflow="patient-view",
         protocol="rest",
     )
 
     # Load test data
     test_bundle = create_bundle()
-    prefetch_data = Prefetch(prefetch={"patient": test_bundle})
-    client._construct_request(prefetch_data, client.workflow)
+    prefetch_data = {"patient": test_bundle}
+    client._construct_request(prefetch_data)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
-    assert client.request_data[0].hook == "patient-view"
+    assert len(client.requests) == 1
+    assert client.requests[0].hook == "patient-view"
 
     # Mock HTTP response
     with patch("httpx.Client") as mock_client_class:
@@ -74,8 +72,7 @@ def test_cdshooks_workflows():
     """Test CDSHooks sandbox with patient-view workflow"""
     # Create SandboxClient
     client = SandboxClient(
-        api_url="http://localhost:8000",
-        endpoint="/cds/cds-services/patient-view",
+        url="http://localhost:8000/cds/cds-services/patient-view",
         workflow="patient-view",
         protocol="rest",
     )
@@ -88,11 +85,11 @@ def test_cdshooks_workflows():
     patient_bundle.entry = [{"resource": condition}]
 
     # Load data into client
-    prefetch_data = Prefetch(prefetch={"patient": patient_bundle})
-    client._construct_request(prefetch_data, client.workflow)
+    prefetch_data = {"patient": patient_bundle}
+    client._construct_request(prefetch_data)
 
     # Verify request was constructed
-    assert len(client.request_data) == 1
+    assert len(client.requests) == 1
 
     # Mock HTTP response
     with patch("httpx.Client") as mock_client_class:

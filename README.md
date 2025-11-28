@@ -189,6 +189,30 @@ if __name__ == "__main__":
     uvicorn.run(app, port=8000)
 ```
 
+### Testing with Sandbox [[Docs](https://dotimplement.github.io/HealthChain/reference/utilities/sandbox)]
+
+```python
+from healthchain.sandbox import SandboxClient
+
+# Test CDS Hooks service with synthetic data
+client = SandboxClient(
+    url="http://localhost:8000/cds/cds-services/discharge-summary",
+    workflow="encounter-discharge"
+)
+
+# Load from test datasets
+client.load_from_registry(
+    "synthea-patient",
+    data_dir="./data/synthea",
+    resource_types=["Condition", "DocumentReference"],
+    sample_size=5
+)
+
+# Send requests and save results
+responses = client.send_requests()
+client.save_results("./output/")
+```
+
 ## Road Map
 
 - [ ] 🔍 Data provenance and audit trails tracking

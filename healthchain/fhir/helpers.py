@@ -61,6 +61,62 @@ def create_resource_from_dict(
         return None
 
 
+def convert_prefetch_to_fhir_objects(
+    prefetch_dict: Dict[str, Any],
+) -> Dict[str, Resource]:
+    """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
+
+    Takes a prefetch dictionary where values may be either dict representations of FHIR
+    resources or already instantiated FHIR Resource objects, and ensures all values are
+    FHIR Resource objects.
+
+    Args:
+        prefetch_dict: Dictionary mapping keys to FHIR resource dicts or objects
+
+    Returns:
+        Dict[str, Resource]: Dictionary with same keys but all values as FHIR Resource objects
+
+    Example:
+        >>> prefetch = {
+        ...     "patient": {"resourceType": "Patient", "id": "123"},
+        ...     "condition": Condition(id="456", ...)
+        ... }
+        >>> fhir_objects = convert_prefetch_to_fhir_objects(prefetch)
+        >>> isinstance(fhir_objects["patient"], Patient)  # True
+        >>> isinstance(fhir_objects["condition"], Condition)  # True
+    """
+    from fhir.resources import get_fhir_model_class
+
+    result: Dict[str, Resource] = {}
+
+    for key, resource_data in prefetch_dict.items():
+        if isinstance(resource_data, dict):
+            # Convert dict to FHIR Resource object
+            resource_type = resource_data.get("resourceType")
+            if resource_type:
+                try:
+                    resource_class = get_fhir_model_class(resource_type)
+                    result[key] = resource_class(**resource_data)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to convert {resource_type} to FHIR object: {e}"
+                    )
+                    result[key] = resource_data
+            else:
+                logger.warning(
+                    f"No resourceType found for key '{key}', keeping as dict"
+                )
+                result[key] = resource_data
+        elif isinstance(resource_data, Resource):
+            # Already a FHIR object
+            result[key] = resource_data
+        else:
+            logger.warning(f"Unexpected type for key '{key}': {type(resource_data)}")
+            result[key] = resource_data
+
+    return result
+
+
 def create_single_codeable_concept(
     code: str,
     display: Optional[str] = None,
@@ -265,7 +321,6 @@ def create_allergy_intolerance(
     return allergy
 
 
-# TODO: create a function that creates a DocumentReferenceContent to add to the DocumentReference
 def create_document_reference(
     data: Optional[Any] = None,
     url: Optional[str] = None,
@@ -310,6 +365,80 @@ def create_document_reference(
     )
 
     return document_reference
+
+
+def create_document_reference_content(
+    attachment_data: Optional[str] = None,
+    url: Optional[str] = None,
+    content_type: str = "text/plain",
+    language: Optional[str] = "en-US",
+    title: Optional[str] = None,
+    **kwargs,
+) -> Dict[str, Any]:
+    """Create a FHIR DocumentReferenceContent object.
+
+    Creates a DocumentReferenceContent structure that can be added to a DocumentReference.
+    Either attachment_data or url must be provided. If attachment_data is provided, it will
+    be base64 encoded automatically.
+
+    Args:
+        attachment_data: The content data (text that will be base64 encoded)
+        url: URL where the content can be accessed
+        content_type: MIME type (e.g., 'text/plain', 'text/html', 'application/pdf') (default: text/plain)
+        language: Language code (default: en-US)
+        title: Optional title for the content (default: "Attachment created by HealthChain")
+        **kwargs: Additional DocumentReferenceContent fields (e.g., format, profile)
+
+    Returns:
+        Dict[str, Any]: A FHIR DocumentReferenceContent dictionary with attachment and optional language
+
+    Example:
+        >>> # Create content with inline data
+        >>> content = create_document_reference_content(
+        ...     attachment_data="Patient presents with fever...",
+        ...     content_type="text/plain",
+        ...     title="Clinical Note"
+        ... )
+        >>>
+        >>> # Create content with URL reference
+        >>> content = create_document_reference_content(
+        ...     url="https://example.com/document.pdf",
+        ...     content_type="application/pdf",
+        ...     title="Lab Report"
+        ... )
+        >>>
+        >>> # Add content to a DocumentReference
+        >>> doc_ref = DocumentReference(
+        ...     id="doc-1",
+        ...     status="current",
+        ...     content=[content]
+        ... )
+    """
+    if not attachment_data and not url:
+        logger.warning(
+            "No attachment_data or url provided for DocumentReferenceContent"
+        )
+
+    if title is None:
+        title = "Attachment created by HealthChain"
+
+    attachment = create_single_attachment(
+        content_type=content_type,
+        data=attachment_data,
+        url=url,
+        title=title,
+    )
+
+    content: Dict[str, Any] = {
+        "attachment": attachment,
+    }
+
+    if language:
+        content["language"] = language
+
+    content.update(kwargs)
+
+    return content
 
 
 def set_condition_category(condition: Condition, category: str) -> Condition:
