@@ -15,6 +15,7 @@
 
 [![Substack][substack-badge]][substack]
 [![Discord][discord-badge]][discord]
+![AI-Assisted Development][ai-badge]
 
 
 </div>
@@ -242,6 +243,7 @@ This project builds on [fhir.resources](https://github.com/nazrulworld/fhir.reso
 [build-badge]: https://img.shields.io/github/actions/workflow/status/dotimplement/healthchain/ci.yml?branch=main&style=flat-square&color=%2379a8a9
 [discord-badge]: https://img.shields.io/badge/chat-%235965f2?style=flat-square&logo=discord&logoColor=white
 [substack-badge]: https://img.shields.io/badge/Cool_Things_In_HealthTech-%23c094ff?style=flat-square&logo=substack&logoColor=white
+[ai-badge]: https://img.shields.io/badge/AI--Assisted_Development_Friendly-CLAUDE.MD-%23FF6B6B?style=flat-square&logo=anthropic&logoColor=white
 
 [pypi]: https://pypi.org/project/healthchain/
 [pypistats]: https://pepy.tech/project/healthchain
