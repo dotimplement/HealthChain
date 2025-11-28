@@ -32,15 +32,15 @@ We believe that every contribution, big or small, makes a difference. Thank you 
 
 ## How to Contribute Code
 
-This project uses `poetry` for dependency management. For more information see the [poetry documentation](https://python-poetry.org/docs/).
+This project uses `uv` for dependency management. For more information see the [uv documentation](https://docs.astral.sh/uv/).
 
 1. Fork the repository to your own GitHub account. For more details check out [github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
 
 2. Clone the forked repository to your local machine.
 
-3. Run `poetry install --with dev` to install all the necessary development dependencies.
+3. Run `uv sync --all-extras --dev` to install all the necessary development dependencies.
 
-4. Try running `poetry run pytest` to check that all is working as expected.
+4. Try running `uv run pytest` to check that all is working as expected.
 
 5. Create a new branch for your feature or bugfix.
 
@@ -72,12 +72,12 @@ This project uses `poetry` for dependency management. For more information see t
 
 We use `Mkdocs` for our documentation site. To download the dependencies for documentation, run:
 ```shell
-poetry install --with docs
+uv sync --group docs
 ```
 
 To preview the docs page in development:
 ```shell
-poetry run mkdocs serve
+uv run mkdocs serve
 ```
 #### Writing Clear Documentation
 
