@@ -233,8 +233,8 @@ class HealthChainAPI(FastAPI):
         # Case 2: WSGI services (like NoteReaderService) - only for services
         if (
             component_type == "service"
-            and hasattr(component, "create_wsgi_app")
-            and callable(component.create_wsgi_app)
+            and hasattr(component, "create_fastapi_router")
+            and callable(component.create_fastapi_router)
         ):
             self._register_wsgi_service(
                 component, component_name, endpoints_registry, path
@@ -249,7 +249,7 @@ class HealthChainAPI(FastAPI):
         else:
             logger.warning(
                 f"Service {component_name} does not implement APIRouter or WSGI patterns. "
-                f"Services must either inherit from APIRouter or implement create_wsgi_app()."
+                f"Services must either inherit from APIRouter or implement create_fastapi_router()."
             )
 
     def _register_api_router(
@@ -286,7 +286,7 @@ class HealthChainAPI(FastAPI):
     ) -> None:
         """Register a WSGI service."""
         # Create WSGI app
-        wsgi_app = service.create_wsgi_app()
+        wsgi_app = service.create_fastapi_router()
 
         # Determine mount path with fallback chain
         mount_path = (

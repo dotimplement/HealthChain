@@ -1,5 +1,3 @@
-from .epicserverfault import ServerFault
-from .epicclientfault import ClientFault
-from .epicresponse import Response
+from .fault_model import ClientFault, ServerFault, Response
 
 __all__ = ["ServerFault", "ClientFault", "Response"]
