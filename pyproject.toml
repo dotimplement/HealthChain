@@ -6,7 +6,7 @@ authors = [
     { name = "Jennifer Jiang-Kells", email = "jenniferjiangkells@gmail.com" },
     { name = "Adam Kells", email = "adamjkells93@gmail.com" },
 ]
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.13"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 keywords = [
