@@ -16,6 +16,7 @@ from healthchain.fhir.resourcehelpers import (
 from healthchain.fhir.elementhelpers import (
     create_single_codeable_concept,
     create_single_reaction,
+    create_document_reference_content,
     create_single_attachment,
 )
 
@@ -61,6 +62,7 @@ __all__ = [
     # Element creation
     "create_single_codeable_concept",
     "create_single_reaction",
+    "create_document_reference_content",
     "create_single_attachment",
     # Resource modification
     "set_condition_category",
