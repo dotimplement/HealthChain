@@ -8,6 +8,7 @@ from healthchain.fhir.resourcehelpers import (
     create_patient,
     create_risk_assessment_from_prediction,
     create_document_reference,
+    create_document_reference_content,
     set_condition_category,
     add_provenance_metadata,
     add_coding_to_codeable_concept,
