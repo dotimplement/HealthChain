@@ -61,6 +61,10 @@ __all__ = [
     # Element creation
     "create_single_codeable_concept",
     "create_single_reaction",
+    "set_condition_category",
+    "read_content_attachment",
+    "create_document_reference",
+    "create_document_reference_content",
     "create_single_attachment",
     # Resource modification
     "set_condition_category",
