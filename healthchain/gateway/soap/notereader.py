@@ -10,17 +10,13 @@ import logging
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 from pydantic import BaseModel
-from spyne import Application
-from spyne.protocol.soap import Soap11
-from spyne.server.wsgi import WsgiApplication
 
 from healthchain.gateway.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.soap.events import create_notereader_event
-from healthchain.gateway.soap.utils.epiccds import CDSServices
-from healthchain.gateway.soap.utils.model import ClientFault, ServerFault
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
+from healthchain.gateway.soap.fastapi_server import create_fastapi_soap_router
 
 logger = logging.getLogger(__name__)
 
@@ -213,63 +209,17 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
             logger.error(f"Error processing result to CdaResponse: {str(e)}")
             return CdaResponse(document="", error="Invalid response format")
 
-    def create_wsgi_app(self) -> WsgiApplication:
-        """
-        Creates a WSGI application for the SOAP service.
-
-        This method sets up the WSGI application with proper SOAP protocol
-        configuration and handler registration.
-
-        Returns:
-            A configured WsgiApplication ready to mount in FastAPI
-
-        Raises:
-            ValueError: If no ProcessDocument handler is registered
-        """
-        # TODO: Maybe you want to be more explicit that you only need to register a handler for ProcessDocument
-        # Can you register multiple services in the same app? Who knows?? Let's find out!!
-
+    def create_fastapi_router(self):
         if "ProcessDocument" not in self._handlers:
-            raise ValueError(
-                "No ProcessDocument handler registered. "
-                "You must register a handler before creating the WSGI app. "
-                "Use @service.method('ProcessDocument') to register a handler."
-            )
+            raise ValueError("No ProcessDocument handler registered")
 
-        # Create adapter for SOAP service integration
-        def service_adapter(cda_request: CdaRequest) -> CdaResponse:
-            # This calls the handle method to process the request
-            try:
-                # This will be executed synchronously in the SOAP context
-                handler = self._handlers["ProcessDocument"]
-                result = handler(cda_request)
-                processed_result = self._process_result(result)
+        handler = self._handlers["ProcessDocument"]
 
-                # Emit event if we have an event dispatcher
-                if self.events.dispatcher and self.use_events:
-                    self._emit_document_event(
-                        "ProcessDocument", cda_request, processed_result
-                    )
-
-                return processed_result
-            except Exception as e:
-                logger.error(f"Error in SOAP service adapter: {str(e)}")
-                return CdaResponse(document="", error=str(e))
-
-        # Assign the service adapter function to CDSServices._service
-        CDSServices._service = service_adapter
-
-        # Configure the Spyne application
-        application = Application(
-            [CDSServices],
-            name=self.config.service_name,
-            tns=self.config.namespace,
-            in_protocol=Soap11(validator="lxml"),
-            out_protocol=Soap11(),
-            classes=[ServerFault, ClientFault],
+        return create_fastapi_soap_router(
+            service_name=self.config.service_name,
+            namespace=self.config.namespace,
+            handler=handler,
         )
-        # Create WSGI app
-        return WsgiApplication(application)
 
     def _emit_document_event(
         self, operation: str, request: CdaRequest, response: CdaResponse
