@@ -169,3 +169,6 @@ scrap/
 .cursor/
 .private/
 .idea/
+
+# Personal AI context (keep local)
+CLAUDE.LOCAL.MD
