@@ -10,30 +10,34 @@ on:
     branches: [ "main" ]
     types: [opened, synchronize, reopened, ready_for_review]
 
+
 jobs:
   test:
     if: github.event.pull_request.draft == false
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
-        poetry-version: [1.8.2]
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v3
-      - name: "Setup Python, Poetry and Dependencies"
-        uses: packetcoders/action-setup-cache-python-poetry@main
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{matrix.python-version}}
-          poetry-version: ${{matrix.poetry-version}}
-      - name: Install package
-        run: |
-          poetry install --no-interaction
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
       - name: Lint with Ruff
         run: |
-          poetry run ruff format
-          poetry run ruff check
+          uv run ruff format
+          uv run ruff check
         continue-on-error: true
+
       - name: Run tests
-        run: |
-          poetry run pytest
+        run: uv run pytest

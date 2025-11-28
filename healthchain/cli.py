@@ -4,7 +4,7 @@ import subprocess
 
 def run_file(filename):
     try:
-        result = subprocess.run(["poetry", "run", "python", filename], check=True)
+        result = subprocess.run(["uv", "run", "python", filename], check=True)
         print(result.stdout)
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while trying to run the file: {e}")
