@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 output/
+models/
 scrap/
 .DS_Store
 .vscode/
@@ -168,3 +169,6 @@ scrap/
 .cursor/
 .private/
 .idea/
+
+# Personal AI context (keep local)
+CLAUDE.LOCAL.MD
