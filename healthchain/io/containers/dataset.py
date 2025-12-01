@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Union, Optional
 
@@ -23,6 +23,10 @@ class Dataset(DataContainer[pd.DataFrame]):
     """
     A container for tabular data optimized for ML inference, lightweight wrapper around a pandas DataFrame.
 
+    Attributes:
+        data: The pandas DataFrame containing the dataset.
+        metadata: Dict for storing pipeline results (predictions, probabilities, etc.)
+
     Methods:
         from_csv: Load Dataset from CSV.
         from_dict: Load Dataset from dict.
@@ -30,6 +34,8 @@ class Dataset(DataContainer[pd.DataFrame]):
         to_csv: Save Dataset to CSV.
         to_risk_assessment: Convert predictions to FHIR RiskAssessment.
     """
+
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         if not isinstance(self.data, pd.DataFrame):
