@@ -32,6 +32,9 @@ class NoteReaderConfig(BaseModel):
     namespace: str = "urn:epic-com:Common.2013.Services"
     system_type: str = "EHR_CDA"
     default_mount_path: str = "/notereader"
+    wsdl_path: Optional[str] = (
+        "healthchain/templates/epic_service.wsdl"  # Path to WSDL file
+    )
 
 
 class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
@@ -56,8 +59,11 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
                 error=None
             )
 
-        # Register the service with the API
-        app.register_service(service)
+        # Get the FastAPI router
+        router = service.create_fastapi_router()
+
+        # Mount in FastAPI app
+        app.include_router(router, prefix="/notereader")
         ```
     """
 
@@ -97,6 +103,13 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
 
         Returns:
             Decorator function that registers the handler
+
+        Example:
+            ```python
+            @service.method("ProcessDocument")
+            def process_document(request: CdaRequest) -> CdaResponse:
+                return CdaResponse(document="processed", error=None)
+            ```
         """
 
         def decorator(handler):
@@ -108,6 +121,9 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
     def handle(self, operation: str, **params) -> Union[CdaResponse, Dict]:
         """
         Process a SOAP request using registered handlers.
+
+        This method provides backward compatibility for existing code
+        that calls handle() directly instead of going through the SOAP router.
 
         Args:
             operation: The SOAP method name e.g. ProcessDocument
@@ -121,12 +137,12 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
             logger.warning(f"No handler registered for operation: {operation}")
             return CdaResponse(document="", error=f"No handler for {operation}")
 
-        # Extract or build the request object
+        # Extract the request object
         request = self._extract_request(operation, params)
         if not request:
             return CdaResponse(document="", error="Invalid request parameters")
 
-        # Execute the handler with the request
+        # Execute the handler
         return self._execute_handler(operation, request)
 
     def _extract_request(self, operation: str, params: Dict) -> Optional[CdaRequest]:
@@ -141,7 +157,7 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
             CdaRequest object or None if request couldn't be constructed
         """
         try:
-            # Case 1: Direct CdaRequest passed as a parameter
+            # Case 1: Direct CdaRequest passed as 'request' parameter
             if "request" in params and isinstance(params["request"], CdaRequest):
                 return params["request"]
 
@@ -180,11 +196,96 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
             result = handler(request)
 
             # Process the result
-            return self._process_result(result)
+            response = self._process_result(result)
+
+            # Emit event if enabled
+            if self.use_events:
+                self._emit_document_event(operation, request, response)
+
+            return response
 
         except Exception as e:
             logger.error(f"Error in {operation} handler: {str(e)}", exc_info=True)
-            return CdaResponse(document="", error=str(e))
+            error_response = CdaResponse(document="", error=str(e))
+
+            # Emit event for error case too
+            if self.use_events:
+                self._emit_document_event(operation, request, error_response)
+
+            return error_response
+
+    def create_fastapi_router(self):
+        """
+        Creates a FastAPI router for the SOAP service.
+
+        This method sets up the FastAPI router with proper SOAP protocol
+        configuration and handler registration. The router includes event
+        emission if an event dispatcher is configured.
+
+        Returns:
+            APIRouter: A configured FastAPI router ready to mount
+
+        Raises:
+            ValueError: If no ProcessDocument handler is registered
+
+        Example:
+            ```python
+            service = NoteReaderService()
+
+            @service.method("ProcessDocument")
+            def handler(req):
+                return CdaResponse(document="ok", error=None)
+
+            router = service.create_fastapi_router()
+            app.include_router(router, prefix="/soap")
+            ```
+        """
+        if "ProcessDocument" not in self._handlers:
+            raise ValueError(
+                "No ProcessDocument handler registered. "
+                "Use @service.method('ProcessDocument') to register a handler."
+            )
+
+        # Get the base handler
+        base_handler = self._handlers["ProcessDocument"]
+
+        # Create a wrapper that handles events and error processing
+        def handler_with_events(request: CdaRequest) -> CdaResponse:
+            """Wrapper that adds event emission to the handler"""
+            try:
+                # Call the user's handler
+                result = base_handler(request)
+
+                # Process result to ensure it's a CdaResponse
+                response = self._process_result(result)
+
+                # Emit event if enabled (even if dispatcher is None, let emit_event handle it)
+                if self.use_events:
+                    self._emit_document_event("ProcessDocument", request, response)
+
+                return response
+
+            except Exception as e:
+                logger.error(
+                    f"Error in ProcessDocument handler: {str(e)}", exc_info=True
+                )
+                error_response = CdaResponse(document="", error=str(e))
+
+                # Emit event for error case too
+                if self.use_events:
+                    self._emit_document_event(
+                        "ProcessDocument", request, error_response
+                    )
+
+                return error_response
+
+        # Create and return the FastAPI router
+        return create_fastapi_soap_router(
+            service_name=self.config.service_name,
+            namespace=self.config.namespace,
+            handler=handler_with_events,
+            wsdl_path=self.config.wsdl_path,  # Pass WSDL path
+        )
 
     def _process_result(self, result: Any) -> CdaResponse:
         """
@@ -199,27 +300,18 @@ class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):
         # If the result is already a CdaResponse, return it
         if isinstance(result, CdaResponse):
             return result
+
         try:
             # Try to convert to CdaResponse if possible
             if isinstance(result, dict):
                 return CdaResponse(**result)
+
             logger.warning(f"Unexpected result type from handler: {type(result)}")
             return CdaResponse(document=str(result), error=None)
+
         except Exception as e:
             logger.error(f"Error processing result to CdaResponse: {str(e)}")
             return CdaResponse(document="", error="Invalid response format")
-
-    def create_fastapi_router(self):
-        if "ProcessDocument" not in self._handlers:
-            raise ValueError("No ProcessDocument handler registered")
-
-        handler = self._handlers["ProcessDocument"]
-
-        return create_fastapi_soap_router(
-            service_name=self.config.service_name,
-            namespace=self.config.namespace,
-            handler=handler,
-        )
 
     def _emit_document_event(
         self, operation: str, request: CdaRequest, response: CdaResponse
