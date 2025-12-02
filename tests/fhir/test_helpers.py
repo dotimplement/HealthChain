@@ -9,7 +9,7 @@ from fhir.resources.coding import Coding
 from datetime import datetime
 
 
-from healthchain.fhir.helpers import (
+from healthchain.fhir import (
     create_resource_from_dict,
     create_single_codeable_concept,
     create_single_reaction,
@@ -23,6 +23,8 @@ from healthchain.fhir.helpers import (
     read_content_attachment,
     add_provenance_metadata,
     add_coding_to_codeable_concept,
+    calculate_age_from_birthdate,
+    calculate_age_from_event_date,
 )
 import pytest
 
@@ -336,3 +338,72 @@ def test_set_condition_category_invalid_raises():
 def test_create_condition_without_code_is_none():
     cond = create_condition(subject="Patient/1")
     assert cond.code is None
+
+
+def test_calculate_age_from_birthdate():
+    """Test standard age calculation from birth date."""
+    # Test with date 30 years ago
+    from datetime import datetime
+
+    birth_year = datetime.now().year - 30
+    birth_date = f"{birth_year}-06-15"
+
+    age = calculate_age_from_birthdate(birth_date)
+    assert age is not None
+    # Age should be 29 or 30 depending on current date
+    assert age in [29, 30]
+
+
+def test_calculate_age_from_birthdate_with_full_datetime():
+    """Test age calculation with full ISO datetime."""
+    from datetime import datetime
+
+    birth_year = datetime.now().year - 25
+    birth_date = f"{birth_year}-03-10T10:30:00Z"
+
+    age = calculate_age_from_birthdate(birth_date)
+    assert age is not None
+    assert age in [24, 25]
+
+
+def test_calculate_age_from_birthdate_invalid():
+    """Test age calculation with invalid date."""
+    assert calculate_age_from_birthdate(None) is None
+    assert calculate_age_from_birthdate("") is None
+    assert calculate_age_from_birthdate("invalid") is None
+
+
+def test_calculate_age_from_event_date():
+    """Test MIMIC-IV style age calculation using event date."""
+    birth_date = "1990-06-15"
+    event_date = "2020-03-10"
+
+    age = calculate_age_from_event_date(birth_date, event_date)
+    assert age == 30  # 2020 - 1990 = 30
+
+
+def test_calculate_age_from_event_date_with_full_datetime():
+    """Test MIMIC-IV style calculation with full ISO datetime."""
+    birth_date = "1985-12-25T08:00:00Z"
+    event_date = "2023-01-15T14:30:00Z"
+
+    age = calculate_age_from_event_date(birth_date, event_date)
+    assert age == 38  # 2023 - 1985 = 38
+
+
+def test_calculate_age_from_event_date_same_year():
+    """Test MIMIC-IV style calculation when birth and event in same year."""
+    birth_date = "2020-01-01"
+    event_date = "2020-12-31"
+
+    age = calculate_age_from_event_date(birth_date, event_date)
+    assert age == 0  # Same year = 0
+
+
+def test_calculate_age_from_event_date_invalid():
+    """Test MIMIC-IV style calculation with invalid dates."""
+    assert calculate_age_from_event_date(None, "2020-01-01") is None
+    assert calculate_age_from_event_date("1990-01-01", None) is None
+    assert calculate_age_from_event_date("", "2020-01-01") is None
+    assert calculate_age_from_event_date("invalid", "2020-01-01") is None
+    assert calculate_age_from_event_date("1990-01-01", "invalid") is None

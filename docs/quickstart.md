@@ -51,11 +51,11 @@ You can build pipelines with three different approaches:
 
 #### 1. Quick Inline Functions
 
-For quick experiments, start by picking the right [**Container**](./reference/pipeline/data_container.md) when you initialize your pipeline (e.g. `Pipeline[Document]()` for clinical text).
+For quick experiments, start by picking the right [**Container**](./reference/io/containers/containers.md) when you initialize your pipeline (e.g. `Pipeline[Document]()` for clinical text).
 
 Containers make your pipeline FHIR-native by loading and transforming your data (free text, EHR resources, etc.) into structured FHIR-ready formats. Just add your processing functions with `@add_node`, compile with `.build()`, and your pipeline is ready to process FHIR data end-to-end.
 
-[(Full Documentation on Container)](./reference/pipeline/data_container.md)
+[(Full Documentation on Containers)](./reference/io/containers/containers.md)
 
 ```python
 from healthchain.pipeline import Pipeline
@@ -109,9 +109,9 @@ doc = Document("Patient presents with hypertension.")
 output = pipe(doc)
 ```
 
-You can process legacy healthcare data formats too. [**Adapters**](./reference/pipeline/adapters/adapters.md) convert between healthcare formats like [CDA](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7) and your pipeline — just parse, process, and format without worrying about low-level data conversion.
+You can process legacy healthcare data formats too. [**Adapters**](./reference/io/adapters/adapters.md) convert between healthcare formats like [CDA](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=7) and your pipeline — just parse, process, and format without worrying about low-level data conversion.
 
-[(Full Documentation on Adapters)](./reference/pipeline/adapters/adapters.md)
+[(Full Documentation on Adapters)](./reference/io/adapters/adapters.md)
 
 ```python
 from healthchain.io import CdaAdapter

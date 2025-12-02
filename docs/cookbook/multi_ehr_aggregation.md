@@ -142,7 +142,7 @@ uvicorn.run(app)
 
 For additional processing like terminology mapping or quality checks, create a Document [Pipeline](../reference/pipeline/pipeline.md).
 
-Document pipelines are optimized for text and structured data processing, such as FHIR resources. When you initialize a [Document](../reference/pipeline/data_container.md) with FHIR [Bundle](https://www.hl7.org/fhir/condition.html) data, it automatically extracts and separates metadata resources from the clinical resources for easier inspection and error handling:
+Document pipelines are optimized for text and structured data processing, such as FHIR resources. When you initialize a [Document](../reference/io/containers/document.md) with FHIR [Bundle](https://www.hl7.org/fhir/condition.html) data, it automatically extracts and separates metadata resources from the clinical resources for easier inspection and error handling:
 
 ```python
 # Initialize Document with a Bundle

@@ -92,7 +92,7 @@ The `SummarizationPipeline` automatically:
 
 ## Add the CDS FHIR Adapter
 
-The [CdsFhirAdapter](../reference/pipeline/adapters/cdsfhiradapter.md) converts between CDS Hooks requests and HealthChain's [Document](../reference/pipeline/data_container.md) format. This makes it easy to work with FHIR data in CDS workflows.
+The [CdsFhirAdapter](../reference/io/adapters/cdsfhiradapter.md) converts between CDS Hooks requests and HealthChain's [Document](../reference/io/containers/document.md) format. This makes it easy to work with FHIR data in CDS workflows.
 
 ```python
 from healthchain.io import CdsFhirAdapter

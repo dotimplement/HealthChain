@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from healthchain.io.containers import Document
-from healthchain.io.base import BaseAdapter
+from healthchain.io.adapters.base import BaseAdapter
 from healthchain.interop import create_interop, FormatType, InteropEngine
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse

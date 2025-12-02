@@ -7,7 +7,7 @@ from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.documentreference import DocumentReference
 
-from healthchain.fhir.bundle_helpers import (
+from healthchain.fhir.bundlehelpers import (
     create_bundle,
     add_resource,
     get_resources,
