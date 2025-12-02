@@ -318,10 +318,32 @@ class FhirData:
         return self.get_resources("Condition")
 
     @problem_list.setter
-    def problem_list(self, conditions: List[Condition]) -> None:
-        # TODO: should make this behaviour more explicit whether it's adding or replacing
-        """Set problem list in the bundle."""
-        self.add_resources(conditions, "Condition")
+    def problem_list(self, value: Union[List[Condition], Dict[str, Any]]) -> None:
+        """
+        Set problem list in the bundle.
+
+        By default, this adds the provided conditions to any existing conditions in the bundle.
+        To replace existing conditions instead, pass a dictionary with 'resources' and 'replace' keys.
+
+        Args:
+            value: Either a list of Condition resources (adds by default) or a dict with:
+                - 'resources': List of Condition resources
+                - 'replace': bool, whether to replace existing resources (default: False)
+
+        Examples:
+            >>> # Add to existing conditions (default behavior)
+            >>> fhir.problem_list = [condition1, condition2]
+            >>> # Replace existing conditions
+            >>> fhir.problem_list = {'resources': [condition1], 'replace': True}
+        """
+        if isinstance(value, dict):
+            resources = value.get("resources", [])
+            replace = value.get("replace", False)
+        else:
+            resources = value
+            replace = False
+
+        self.add_resources(resources, "Condition", replace=replace)
 
     @property
     def medication_list(self) -> List[MedicationStatement]:
@@ -329,12 +351,34 @@ class FhirData:
         return self.get_resources("MedicationStatement")
 
     @medication_list.setter
-    def medication_list(self, medications: List[MedicationStatement]) -> None:
-        """Set medication list in the bundle.
-        Medication statements are stored as MedicationStatement resources in the bundle.
-        See: https://www.hl7.org/fhir/medicationstatement.html
+    def medication_list(
+        self, value: Union[List[MedicationStatement], Dict[str, Any]]
+    ) -> None:
         """
-        self.add_resources(medications, "MedicationStatement")
+        Set medication list in the bundle.
+
+        By default, this adds the provided medications to any existing medications in the bundle.
+        To replace existing medications instead, pass a dictionary with 'resources' and 'replace' keys.
+
+        Args:
+            value: Either a list of MedicationStatement resources (adds by default) or a dict with:
+                - 'resources': List of MedicationStatement resources
+                - 'replace': bool, whether to replace existing resources (default: False)
+
+        Examples:
+            >>> # Add to existing medications (default behavior)
+            >>> fhir.medication_list = [medication1, medication2]
+            >>> # Replace existing medications
+            >>> fhir.medication_list = {'resources': [medication1], 'replace': True}
+        """
+        if isinstance(value, dict):
+            resources = value.get("resources", [])
+            replace = value.get("replace", False)
+        else:
+            resources = value
+            replace = False
+
+        self.add_resources(resources, "MedicationStatement", replace=replace)
 
     @property
     def allergy_list(self) -> List[AllergyIntolerance]:
@@ -342,12 +386,34 @@ class FhirData:
         return self.get_resources("AllergyIntolerance")
 
     @allergy_list.setter
-    def allergy_list(self, allergies: List[AllergyIntolerance]) -> None:
-        """Set allergy list in the bundle.
-        Allergy intolerances are stored as AllergyIntolerance resources in the bundle.
-        See: https://www.hl7.org/fhir/allergyintolerance.html
+    def allergy_list(
+        self, value: Union[List[AllergyIntolerance], Dict[str, Any]]
+    ) -> None:
         """
-        self.add_resources(allergies, "AllergyIntolerance")
+        Set allergy list in the bundle.
+
+        By default, this adds the provided allergies to any existing allergies in the bundle.
+        To replace existing allergies instead, pass a dictionary with 'resources' and 'replace' keys.
+
+        Args:
+            value: Either a list of AllergyIntolerance resources (adds by default) or a dict with:
+                - 'resources': List of AllergyIntolerance resources
+                - 'replace': bool, whether to replace existing resources (default: False)
+
+        Examples:
+            >>> # Add to existing allergies (default behavior)
+            >>> fhir.allergy_list = [allergy1, allergy2]
+            >>> # Replace existing allergies
+            >>> fhir.allergy_list = {'resources': [allergy1], 'replace': True}
+        """
+        if isinstance(value, dict):
+            resources = value.get("resources", [])
+            replace = value.get("replace", False)
+        else:
+            resources = value
+            replace = False
+
+        self.add_resources(resources, "AllergyIntolerance", replace=replace)
 
     def get_prefetch_resources(self, key: str) -> List[Any]:
         """Get resources of a specific type from the prefetch bundle."""
