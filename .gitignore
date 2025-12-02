@@ -167,7 +167,8 @@ scrap/
 .ruff_cache/
 .python-version
 .cursor/
-.private/
+.local/
+.keys/
 .idea/
 
 # Personal AI context (keep local)
