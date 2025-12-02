@@ -1,0 +1,407 @@
+{
+  "patient": {
+    "id": "5f3dcdb5-bd27-58f5-b990-859b6bcc2d73",
+    "meta": {
+      "profile": [
+        "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-patient"
+      ]
+    },
+    "name": [
+      {
+        "use": "official",
+        "family": "Patient_10038999"
+      }
+    ],
+    "gender": "male",
+    "birthDate": "2086-05-22",
+    "extension": [
+      {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+        "extension": [
+          {
+            "url": "ombCategory",
+            "valueCoding": {
+              "code": "2106-3",
+              "system": "urn:oid:2.16.840.1.113883.6.238",
+              "display": "White"
+            }
+          },
+          {
+            "url": "text",
+            "valueString": "White"
+          }
+        ]
+      },
+      {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+        "extension": [
+          {
+            "url": "ombCategory",
+            "valueCoding": {
+              "code": "2186-5",
+              "system": "urn:oid:2.16.840.1.113883.6.238",
+              "display": "Not Hispanic or Latino"
+            }
+          },
+          {
+            "url": "text",
+            "valueString": "Not Hispanic or Latino"
+          }
+        ]
+      },
+      {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+        "valueCode": "M"
+      }
+    ],
+    "identifier": [
+      {
+        "value": "10038999",
+        "system": "http://mimic.mit.edu/fhir/mimic/identifier/patient"
+      }
+    ],
+    "resourceType": "Patient",
+    "communication": [
+      {
+        "language": {
+          "coding": [
+            {
+              "code": "en",
+              "system": "urn:ietf:bcp:47"
+            }
+          ]
+        }
+      }
+    ],
+    "maritalStatus": {
+      "coding": [
+        {
+          "code": "S",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus"
+        }
+      ]
+    },
+    "managingOrganization": {
+      "reference": "Organization/ee172322-118b-5716-abbc-18e4c5437e15"
+    }
+  },
+  "heart_rate": {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "entry": [
+      {
+        "resource": {
+          "id": "ccbb50b3-c1e2-5a78-8f40-fda91f209773",
+          "code": {
+            "coding": [
+              {
+                "code": "220045",
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items",
+                "display": "Heart Rate"
+              }
+            ]
+          },
+          "meta": {
+            "profile": [
+              "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-observation-chartevents"
+            ]
+          },
+          "issued": "2131-05-22T22:38:00-04:00",
+          "status": "final",
+          "subject": {
+            "reference": "Patient/5f3dcdb5-bd27-58f5-b990-859b6bcc2d73"
+          },
+          "category": [
+            {
+              "coding": [
+                {
+                  "code": "Routine Vital Signs",
+                  "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-observation-category"
+                }
+              ]
+            }
+          ],
+          "encounter": {
+            "reference": "Encounter/24339e36-0b8e-5f30-91bc-d4b7d9919c3c"
+          },
+          "resourceType": "Observation",
+          "valueQuantity": {
+            "code": "bpm",
+            "unit": "bpm",
+            "value": 110,
+            "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+          },
+          "effectiveDateTime": "2131-05-22T22:38:00-04:00"
+        }
+      }
+    ]
+  },
+  "temperature": {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "entry": [
+      {
+        "resource": {
+          "id": "3c53284d-5069-54bd-8496-3a739180babe",
+          "code": {
+            "coding": [
+              {
+                "code": "223761",
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items",
+                "display": "Temperature Fahrenheit"
+              }
+            ]
+          },
+          "meta": {
+            "profile": [
+              "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-observation-chartevents"
+            ]
+          },
+          "issued": "2131-05-22T22:38:00-04:00",
+          "status": "final",
+          "subject": {
+            "reference": "Patient/5f3dcdb5-bd27-58f5-b990-859b6bcc2d73"
+          },
+          "category": [
+            {
+              "coding": [
+                {
+                  "code": "Routine Vital Signs",
+                  "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-observation-category"
+                }
+              ]
+            }
+          ],
+          "encounter": {
+            "reference": "Encounter/24339e36-0b8e-5f30-91bc-d4b7d9919c3c"
+          },
+          "resourceType": "Observation",
+          "valueQuantity": {
+            "code": "\u00b0F",
+            "unit": "\u00b0F",
+            "value": 98.8,
+            "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+          },
+          "effectiveDateTime": "2131-05-22T22:38:00-04:00"
+        }
+      }
+    ]
+  },
+  "respiratory_rate": {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "entry": [
+      {
+        "resource": {
+          "id": "9331ed77-b563-5abe-bf84-4ac7053b9fe9",
+          "code": {
+            "coding": [
+              {
+                "code": "220210",
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-chartevents-d-items",
+                "display": "Respiratory Rate"
+              }
+            ]
+          },
+          "meta": {
+            "profile": [
+              "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-observation-chartevents"
+            ]
+          },
+          "issued": "2131-05-22T22:38:00-04:00",
+          "status": "final",
+          "subject": {
+            "reference": "Patient/5f3dcdb5-bd27-58f5-b990-859b6bcc2d73"
+          },
+          "category": [
+            {
+              "coding": [
+                {
+                  "code": "Respiratory",
+                  "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-observation-category"
+                }
+              ]
+            }
+          ],
+          "encounter": {
+            "reference": "Encounter/24339e36-0b8e-5f30-91bc-d4b7d9919c3c"
+          },
+          "resourceType": "Observation",
+          "valueQuantity": {
+            "code": "insp/min",
+            "unit": "insp/min",
+            "value": 20,
+            "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+          },
+          "effectiveDateTime": "2131-05-22T22:38:00-04:00"
+        }
+      }
+    ]
+  },
+  "wbc": {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "entry": [
+      {
+        "resource": {
+          "id": "0b9aaaa5-43c1-51a5-b1d2-a6156968513e",
+          "code": {
+            "coding": [
+              {
+                "code": "51301",
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-d-labitems",
+                "display": "White Blood Cells"
+              }
+            ]
+          },
+          "meta": {
+            "profile": [
+              "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-observation-labevents"
+            ]
+          },
+          "issued": "2131-05-28T03:24:00-04:00",
+          "status": "final",
+          "subject": {
+            "reference": "Patient/5f3dcdb5-bd27-58f5-b990-859b6bcc2d73"
+          },
+          "category": [
+            {
+              "coding": [
+                {
+                  "code": "laboratory",
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "specimen": {
+            "reference": "Specimen/6025339e-8821-54a8-99dc-ae56d8c705d1"
+          },
+          "encounter": {
+            "reference": "Encounter/7f95fc8e-1f36-54a6-96f9-798fd9c7e93b"
+          },
+          "extension": [
+            {
+              "url": "http://mimic.mit.edu/fhir/mimic/StructureDefinition/lab-priority",
+              "valueString": "STAT"
+            }
+          ],
+          "identifier": [
+            {
+              "value": "455202",
+              "system": "http://mimic.mit.edu/fhir/mimic/identifier/observation-labevents"
+            }
+          ],
+          "resourceType": "Observation",
+          "valueQuantity": {
+            "code": "K/uL",
+            "unit": "K/uL",
+            "value": 8.6,
+            "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+          },
+          "referenceRange": [
+            {
+              "low": {
+                "code": "K/uL",
+                "unit": "K/uL",
+                "value": 4,
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+              },
+              "high": {
+                "code": "K/uL",
+                "unit": "K/uL",
+                "value": 10,
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+              }
+            }
+          ],
+          "effectiveDateTime": "2131-05-28T02:56:00-04:00"
+        }
+      }
+    ]
+  },
+  "creatinine": {
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "entry": [
+      {
+        "resource": {
+          "id": "e9ea65d0-b198-58c1-bcbe-e436150d6e4d",
+          "code": {
+            "coding": [
+              {
+                "code": "50912",
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-d-labitems",
+                "display": "Creatinine"
+              }
+            ]
+          },
+          "meta": {
+            "profile": [
+              "http://mimic.mit.edu/fhir/mimic/StructureDefinition/mimic-observation-labevents"
+            ]
+          },
+          "issued": "2131-05-28T03:37:00-04:00",
+          "status": "final",
+          "subject": {
+            "reference": "Patient/5f3dcdb5-bd27-58f5-b990-859b6bcc2d73"
+          },
+          "category": [
+            {
+              "coding": [
+                {
+                  "code": "laboratory",
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "display": "Laboratory"
+                }
+              ]
+            }
+          ],
+          "specimen": {
+            "reference": "Specimen/00d5feac-4fe1-5fdb-ac62-01bff201f55c"
+          },
+          "encounter": {
+            "reference": "Encounter/7f95fc8e-1f36-54a6-96f9-798fd9c7e93b"
+          },
+          "extension": [
+            {
+              "url": "http://mimic.mit.edu/fhir/mimic/StructureDefinition/lab-priority",
+              "valueString": "STAT"
+            }
+          ],
+          "identifier": [
+            {
+              "value": "455210",
+              "system": "http://mimic.mit.edu/fhir/mimic/identifier/observation-labevents"
+            }
+          ],
+          "resourceType": "Observation",
+          "valueQuantity": {
+            "code": "mg/dL",
+            "unit": "mg/dL",
+            "value": 0.8,
+            "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+          },
+          "referenceRange": [
+            {
+              "low": {
+                "code": "mg/dL",
+                "unit": "mg/dL",
+                "value": 0.5,
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+              },
+              "high": {
+                "code": "mg/dL",
+                "unit": "mg/dL",
+                "value": 1.2,
+                "system": "http://mimic.mit.edu/fhir/mimic/CodeSystem/mimic-units"
+              }
+            }
+          ],
+          "effectiveDateTime": "2131-05-28T02:56:00-04:00"
+        }
+      }
+    ]
+  }
+}
