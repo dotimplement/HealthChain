@@ -2,17 +2,17 @@
 """
 Sepsis Risk Prediction via CDS Hooks
 
-Real-time sepsis alerts when clinician opens patient chart.
-Uses pre-extracted MIMIC patient data for fast demos.
+Real-time sepsis alerts triggered when clinician opens a patient chart.
+Uses pre-extracted MIMIC patient data for demos.
 
 Demo patients extracted from MIMIC-on-FHIR using:
     python scripts/extract_mimic_demo_patients.py
 
 Requirements:
-- pip install healthchain joblib xgboost
+    pip install healthchain joblib xgboost
 
 Run:
-- python sepsis_cds_hooks.py
+    python cookbook/sepsis_cds_hooks.py
 """
 
 from pathlib import Path
@@ -89,8 +89,6 @@ def create_app():
 
         # print("Result:")
         # print(result.data.head(10))
-        # print("Metadata:")
-        # print(result.metadata)
 
         probability = float(result.metadata["probabilities"][0])
         risk = (
@@ -98,7 +96,7 @@ def create_app():
         )
 
         if risk in ["high", "moderate"]:
-            summary = f"⚠️ Sepsis Risk: {risk.upper()} ({probability:.0%})"
+            summary = f"Sepsis Risk: {risk.upper()} ({probability:.0%})"
             indicator = "critical" if risk == "high" else "warning"
             detail = (
                 "**AI Guidance:**\n"

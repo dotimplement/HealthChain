@@ -1,80 +1,76 @@
 #!/usr/bin/env python3
 """
-Extract Demo Patient Prefetch from MIMIC-on-FHIR
+Extract Demo Patients from MIMIC-on-FHIR
 
-Creates CDS Hooks prefetch files with only the observations needed for
-sepsis prediction, keyed by feature name. Much smaller than full bundles!
+Extracts patient data for sepsis prediction demos. Creates small files with
+only the observations needed for the model.
 
-Customize:
-    - MIMIC_DIR: Path to your MIMIC-on-FHIR dataset
-    - MODEL_PATH: Path to your trained model pickle
-    - SCHEMA_PATH: Feature schema defining which observations to extract
-    - OUTPUT_DIR: Where to save extracted patient files
-    - NUM_PATIENTS_PER_RISK: How many patients to extract per risk level
+Usage:
+    # For CDS Hooks demo (prefetch format)
+    python scripts/extract_mimic_demo_patients.py --minimal
 
-Run:
-    python scripts/extract_mimic_demo_patients.py
+    # For FHIR batch demo (upload to Medplum)
+    python scripts/extract_mimic_demo_patients.py --minimal --upload
 
-Output format:
-    {
-      "patient": {...Patient resource...},
-      "heart_rate": {"resourceType": "Bundle", "entry": [...]},
-      "temperature": {"resourceType": "Bundle", "entry": [...]},
-      ...
-    }
+Output formats:
+  Default (prefetch for CDS Hooks):
+    {"patient": {...}, "heart_rate": {"entry": [...]}, ...}
+
+  --bundle (for FHIR server upload):
+    {"resourceType": "Bundle", "type": "transaction", "entry": [...]}
+
+Requires:
+    - MIMIC_FHIR_PATH env var (or --mimic flag)
+    - MEDPLUM_* env vars (if using --upload)
 """
 
+import argparse
 import json
+import os
+import uuid
 from pathlib import Path
 
 import joblib
 import yaml
 
-from healthchain.sandbox.loaders import MimicOnFHIRLoader
 from healthchain.io import Dataset
 from healthchain.pipeline import Pipeline
-
-import os
+from healthchain.sandbox.loaders import MimicOnFHIRLoader
 
 try:
     from dotenv import load_dotenv
 
     load_dotenv()
 except ImportError:
-    print(
-        "Warning: dotenv not installed. Please manually set the MIMIC_FHIR_PATH environment variable."
-    )
+    pass
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+DEFAULT_MODEL_PATH = "cookbook/models/sepsis_model.pkl"
+DEFAULT_SCHEMA_PATH = "healthchain/configs/features/sepsis_vitals.yaml"
+DEFAULT_OUTPUT_DIR = Path("cookbook/data/mimic_demo_patients")
 
 
 # =============================================================================
-# CUSTOMIZE THESE
-# =============================================================================
-
-MIMIC_DIR = os.getenv("MIMIC_FHIR_PATH")
-MODEL_PATH = "cookbook/models/sepsis_model.pkl"
-SCHEMA_PATH = "healthchain/configs/features/sepsis_vitals.yaml"
-OUTPUT_DIR = Path("cookbook/data/mimic_demo_patients")
-
-# Number of patients to extract per risk level (high/moderate/low)
-NUM_PATIENTS_PER_RISK = 1
-
+# HELPER FUNCTIONS
 # =============================================================================
 
 
 def load_observation_codes(schema_path: str) -> dict:
-    """Load feature schema and extract observation codes."""
+    """Extract observation codes from feature schema."""
     with open(schema_path) as f:
         schema = yaml.safe_load(f)
-
-    codes = {}
-    for feature_name, config in schema["features"].items():
-        if config.get("fhir_resource") == "Observation":
-            codes[config["code"]] = feature_name
-    return codes
+    return {
+        config["code"]: name
+        for name, config in schema["features"].items()
+        if config.get("fhir_resource") == "Observation"
+    }
 
 
 def create_pipeline(model, feature_names) -> Pipeline[Dataset]:
-    """Build prediction pipeline."""
+    """Build prediction pipeline for risk stratification."""
     pipeline = Pipeline[Dataset]()
 
     @pipeline.add_node
@@ -85,44 +81,51 @@ def create_pipeline(model, feature_names) -> Pipeline[Dataset]:
     @pipeline.add_node
     def run_inference(dataset: Dataset) -> Dataset:
         features = dataset.data[feature_names]
-        probabilities = model.predict_proba(features)[:, 1]
-        dataset.metadata["probabilities"] = probabilities
+        dataset.metadata["probabilities"] = model.predict_proba(features)[:, 1]
         return dataset
 
     return pipeline
 
 
 def get_observation_code(resource: dict) -> str:
-    """Extract MIMIC code from Observation resource."""
+    """Extract MIMIC code from Observation."""
     for coding in resource.get("code", {}).get("coding", []):
         if "mimic" in coding.get("system", ""):
             return coding.get("code", "")
     return ""
 
 
-def extract_patient_prefetch(bundle: dict, patient_ref: str, obs_codes: dict) -> dict:
-    """Extract keyed prefetch for a patient with only needed observations."""
+# =============================================================================
+# EXTRACTION FUNCTIONS
+# =============================================================================
+
+
+def extract_patient_prefetch(
+    bundle: dict, patient_ref: str, obs_codes: dict, minimal: bool = False
+) -> dict:
+    """Extract keyed prefetch for a patient (CDS Hooks format)."""
     patient_id = patient_ref.split("/")[-1]
     prefetch = {}
     feature_obs = {name: [] for name in obs_codes.values()}
 
     for entry in bundle["entry"]:
         resource = entry.get("resource", {})
-        resource_type = resource.get("resourceType", "")
+        rtype = resource.get("resourceType", "")
 
-        if resource_type == "Patient" and resource.get("id") == patient_id:
+        if rtype == "Patient" and resource.get("id") == patient_id:
             prefetch["patient"] = resource
-
-        elif resource_type == "Observation":
-            subject = resource.get("subject", {})
-            if subject.get("reference", "").endswith(patient_id):
+        elif rtype == "Observation":
+            ref = resource.get("subject", {}).get("reference", "")
+            if ref.endswith(patient_id):
                 code = get_observation_code(resource)
                 if code in obs_codes:
                     feature_obs[obs_codes[code]].append(entry)
 
-    for feature_name, entries in feature_obs.items():
+    for name, entries in feature_obs.items():
         if entries:
-            prefetch[feature_name] = {
+            if minimal:
+                entries = entries[-1:]  # Keep only latest
+            prefetch[name] = {
                 "resourceType": "Bundle",
                 "type": "searchset",
                 "entry": entries,
@@ -131,29 +134,125 @@ def extract_patient_prefetch(bundle: dict, patient_ref: str, obs_codes: dict) ->
     return prefetch
 
 
-def main():
-    print("=" * 60)
-    print("MIMIC Demo Patient Extraction")
-    print("=" * 60)
+def prefetch_to_bundle(prefetch: dict) -> dict:
+    """Convert prefetch to FHIR transaction Bundle (for server upload)."""
+    entries = []
+    # Use urn:uuid references so Medplum properly links Observations to Patient.
+    patient_uuid = f"urn:uuid:{uuid.uuid4()}"
 
-    if MIMIC_DIR is None:
-        print("Error: MIMIC_FHIR_PATH environment variable is not set.")
+    # Patient
+    if "patient" in prefetch:
+        entries.append(
+            {
+                "fullUrl": patient_uuid,
+                "resource": prefetch["patient"].copy(),
+                "request": {"method": "POST", "url": "Patient"},
+            }
+        )
+
+    # Observations (with updated subject reference)
+    for key, value in prefetch.items():
+        if key == "patient" or not isinstance(value, dict):
+            continue
+        for entry in value.get("entry", []):
+            resource = entry.get("resource", {})
+            if resource.get("resourceType") == "Observation":
+                obs = resource.copy()
+                obs["subject"] = {"reference": patient_uuid}
+                entries.append(
+                    {
+                        "fullUrl": f"urn:uuid:{uuid.uuid4()}",
+                        "resource": obs,
+                        "request": {"method": "POST", "url": "Observation"},
+                    }
+                )
+
+    return {"resourceType": "Bundle", "type": "transaction", "entry": entries}
+
+
+def upload_bundle(gateway, bundle_data: dict) -> str:
+    """Upload bundle to Medplum, return server-assigned Patient ID."""
+    from fhir.resources.bundle import Bundle as FHIRBundle
+
+    response = gateway.transaction(FHIRBundle(**bundle_data), source="medplum")
+
+    # Extract Patient ID from response
+    if response.entry:
+        for entry in response.entry:
+            if entry.response and entry.response.location:
+                loc = entry.response.location
+                if "Patient/" in loc:
+                    return loc.split("Patient/")[1].split("/")[0]
+    return None
+
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Extract demo patients from MIMIC-on-FHIR"
+    )
+    parser.add_argument("--mimic", type=str, help="Path to MIMIC-on-FHIR dataset")
+    parser.add_argument(
+        "--model", type=str, default=DEFAULT_MODEL_PATH, help="Model pickle path"
+    )
+    parser.add_argument(
+        "--schema", type=str, default=DEFAULT_SCHEMA_PATH, help="Feature schema YAML"
+    )
+    parser.add_argument(
+        "--minimal", action="store_true", help="Keep only 1 obs per feature (~12KB)"
+    )
+    parser.add_argument("--bundle", action="store_true", help="Output as FHIR Bundle")
+    parser.add_argument("--upload", action="store_true", help="Upload to Medplum")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--num-patients-per-risk", type=int, default=1)
+    args = parser.parse_args()
+
+    mimic_dir = args.mimic or os.getenv("MIMIC_FHIR_PATH")
+    if not mimic_dir:
+        print("Error: Set MIMIC_FHIR_PATH or use --mimic")
         return
 
-    # Load configs
-    obs_codes = load_observation_codes(SCHEMA_PATH)
-    print(f"Features to extract: {list(obs_codes.values())}")
+    # --upload implies --bundle
+    if args.upload:
+        args.bundle = True
 
-    model_data = joblib.load(MODEL_PATH)
+    # Set up FHIRGateway for upload
+    gateway = None
+    if args.upload:
+        from healthchain.gateway import FHIRGateway
+        from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+
+        try:
+            config = FHIRAuthConfig.from_env("MEDPLUM")
+            gateway = FHIRGateway()
+            gateway.add_source("medplum", config.to_connection_string())
+            print("✓ Medplum configured")
+        except Exception as e:
+            print(f"✗ Medplum failed: {e}")
+            return
+
+    print("=" * 60)
+    print("MIMIC Demo Patient Extraction" + (" (MINIMAL)" if args.minimal else ""))
+    print("=" * 60)
+
+    # Load schema and model
+    obs_codes = load_observation_codes(args.schema)
+    print(f"Features: {list(obs_codes.values())}")
+
+    model_data = joblib.load(args.model)
     model = model_data["model"]
     feature_names = model_data["metadata"]["feature_names"]
-    print(f"Model features: {feature_names}")
 
     # Load MIMIC data
     print("\nLoading MIMIC-on-FHIR...")
     loader = MimicOnFHIRLoader()
     bundle = loader.load(
-        data_dir=MIMIC_DIR,
+        data_dir=mimic_dir,
         resource_types=[
             "MimicObservationChartevents",
             "MimicObservationLabevents",
@@ -164,10 +263,9 @@ def main():
     print(f"Loaded {len(bundle['entry']):,} resources")
 
     # Run predictions
-    print("\nExtracting features and predicting...")
-    dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
-    pipeline = create_pipeline(model, feature_names)
-    result = pipeline(dataset)
+    print("\nExtracting features...")
+    dataset = Dataset.from_fhir_bundle(bundle, schema=args.schema)
+    result = create_pipeline(model, feature_names)(dataset)
 
     df = result.data.copy()
     df["probability"] = result.metadata["probabilities"]
@@ -178,39 +276,66 @@ def main():
     print(f"\nRisk distribution ({len(df)} patients):")
     print(df["risk"].value_counts().to_string())
 
-    # Select patients per risk level
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    patients_to_extract = []
+    # Extract patients
+    args.output.mkdir(parents=True, exist_ok=True)
+    print(f"\nExtracting to {args.output}/")
 
     for risk_level in ["high", "moderate", "low"]:
-        risk_patients = df[df["risk"] == risk_level]
-        for i in range(min(NUM_PATIENTS_PER_RISK, len(risk_patients))):
-            patient = risk_patients.iloc[i]
+        risk_df = df[df["risk"] == risk_level]
+        if len(risk_df) == 0:
+            continue
+
+        risk_df = risk_df.sample(
+            n=min(args.num_patients_per_risk, len(risk_df)), random_state=args.seed
+        )
+
+        for i, (_, patient) in enumerate(risk_df.iterrows()):
             label = (
                 f"{risk_level}_risk"
-                if NUM_PATIENTS_PER_RISK == 1
+                if args.num_patients_per_risk == 1
                 else f"{risk_level}_risk_{i+1}"
             )
-            patients_to_extract.append((label, patient))
+            prefetch = extract_patient_prefetch(
+                bundle, patient["patient_ref"], obs_codes, args.minimal
+            )
 
-    # Extract and save
-    print(f"\nExtracting to {OUTPUT_DIR}/")
-    for label, patient in patients_to_extract:
-        prefetch = extract_patient_prefetch(bundle, patient["patient_ref"], obs_codes)
+            # Output format
+            if args.bundle:
+                output_data = prefetch_to_bundle(prefetch)
+                suffix = "_bundle.json"
+            else:
+                output_data = prefetch
+                suffix = "_patient.json"
 
-        output_file = OUTPUT_DIR / f"{label}_patient.json"
-        with open(output_file, "w") as f:
-            json.dump(prefetch, f, indent=2, default=str)
+            # Save file
+            with open(args.output / f"{label}{suffix}", "w") as f:
+                json.dump(output_data, f, indent=2, default=str)
 
-        obs_count = sum(
-            len(v.get("entry", [])) for k, v in prefetch.items() if k != "patient"
-        )
-        features_with_data = [k for k in prefetch if k != "patient"]
-        print(
-            f"  {label}: {patient['probability']:.1%} risk, {obs_count} obs ({', '.join(features_with_data)})"
-        )
+            obs_count = sum(
+                len(v.get("entry", [])) for k, v in prefetch.items() if k != "patient"
+            )
+            patient_id = patient["patient_ref"].split("/")[-1]
 
-    print("\nDone! Use these files with SandboxClient.load_from_path()")
+            # Upload if requested
+            status = ""
+            if args.upload and gateway:
+                server_id = upload_bundle(gateway, output_data)
+                status = (
+                    f" ✓ uploaded (ID: {server_id})" if server_id else " ✓ uploaded"
+                )
+
+            print(
+                f"  {label}: {patient_id} ({patient['probability']:.1%}, {obs_count} obs){status}"
+            )
+
+    # Print next steps
+    print("\n" + "=" * 60)
+    if args.upload:
+        print("✓ Uploaded to Medplum! Update patient IDs in sepsis_fhir_batch.py")
+    elif args.bundle:
+        print("Re-run with --upload to upload to Medplum")
+    else:
+        print("CDS: client.load_from_path('cookbook/data/mimic_demo_patients/')")
 
 
 if __name__ == "__main__":
