@@ -21,6 +21,7 @@ import joblib
 from dotenv import load_dotenv
 
 from healthchain.gateway import HealthChainAPI, CDSHooksService
+from healthchain.fhir import prefetch_to_bundle
 from healthchain.io import Dataset
 from healthchain.models import CDSRequest, CDSResponse
 from healthchain.models.responses.cdsresponse import Card
@@ -72,16 +73,8 @@ def create_app():
         if not prefetch:
             return CDSResponse(cards=[])
 
-        # Merge keyed prefetch into single bundle
-        # Format: {"patient": {...}, "heart_rate": {"entry": [...]}, ...}
-        entries = []
-        for key, value in prefetch.items():
-            if key == "patient":
-                entries.append({"resource": value})
-            elif isinstance(value, dict) and "entry" in value:
-                entries.extend(value["entry"])
-
-        bundle = {"type": "collection", "entry": entries}
+        # Flatten keyed prefetch into single bundle
+        bundle = prefetch_to_bundle(prefetch)
 
         # FHIR → Dataset → Prediction
         dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
@@ -124,6 +117,7 @@ def create_app():
 
     app = HealthChainAPI(title="Sepsis CDS Hooks")
     app.register_service(cds, path="/cds")
+
     return app
 
 
@@ -149,7 +143,7 @@ if __name__ == "__main__":
         url="http://localhost:8000/cds/cds-services/sepsis-risk",
         workflow="patient-view",
     )
-    client.load_from_path(DEMO_PATIENTS_DIR)
+    client.load_from_path(DEMO_PATIENTS_DIR, pattern="*_patient.json")
     responses = client.send_requests()
     client.save_results(save_request=True, save_response=True, directory="./output/")
 

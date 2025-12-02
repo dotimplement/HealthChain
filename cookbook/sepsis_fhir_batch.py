@@ -19,16 +19,21 @@ from pathlib import Path
 from typing import List
 
 import joblib
+import logging
 from dotenv import load_dotenv
 from fhir.resources.patient import Patient
 from fhir.resources.observation import Observation
+from fhir.resources.riskassessment import RiskAssessment
 
 from healthchain.gateway import HealthChainAPI, FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.fhir import merge_bundles
 from healthchain.io import Dataset
 from healthchain.pipeline import Pipeline
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # Configuration
 SCRIPT_DIR = Path(__file__).parent
@@ -51,13 +56,19 @@ try:
     config = FHIRAuthConfig.from_env("MEDPLUM")
     MEDPLUM_URL = config.to_connection_string()
 except Exception:
-    pass
+    logger.warning("Failed to load Medplum config")
 
 try:
     config = FHIRAuthConfig.from_env("EPIC")
     EPIC_URL = config.to_connection_string()
 except Exception:
-    pass
+    logger.warning("Failed to load Epic config")
+
+
+def get_risk_summary(ra: RiskAssessment) -> tuple[str, float]:
+    """Extract risk level and probability from a RiskAssessment."""
+    pred = ra.prediction[0]
+    return pred.qualitativeRisk.coding[0].code, pred.probabilityDecimal
 
 
 def create_pipeline() -> Pipeline[Dataset]:
@@ -83,8 +94,8 @@ def create_pipeline() -> Pipeline[Dataset]:
 
 def screen_patient(
     gateway: FHIRGateway, pipeline: Pipeline, patient_id: str, source: str
-):
-    """Screen a single patient for sepsis risk."""
+) -> RiskAssessment | None:
+    """Screen a single patient for sepsis risk. Returns RiskAssessment or None."""
     # Query patient data from FHIR server
     obs_bundle = gateway.search(
         Observation, {"patient": patient_id, "_count": "100"}, source
@@ -92,30 +103,21 @@ def screen_patient(
     patient_bundle = gateway.search(Patient, {"_id": patient_id}, source)
 
     # Merge into single bundle
-    entries = []
-    if patient_bundle.entry:
-        entries.extend([e.model_dump() for e in patient_bundle.entry])
-    if obs_bundle.entry:
-        entries.extend([e.model_dump() for e in obs_bundle.entry])
+    bundle = merge_bundles([patient_bundle, obs_bundle])
 
-    if not entries:
-        return None, "No data found"
+    if not bundle.entry:
+        return None
 
     # FHIR → Dataset → Prediction
-    bundle = {"type": "collection", "entry": entries}
     dataset = Dataset.from_fhir_bundle(bundle, schema=str(SCHEMA_PATH))
 
     if len(dataset.data) == 0:
-        return None, "No matching features"
+        return None
 
     result = pipeline(dataset)
-    probability = float(result.metadata["probabilities"][0])
-    risk = "high" if probability > 0.7 else "moderate" if probability > 0.4 else "low"
 
     # Create and save RiskAssessment
     risk_assessments = result.to_risk_assessment(
-        result.metadata["predictions"],
-        result.metadata["probabilities"],
         outcome_code="A41.9",
         outcome_display="Sepsis",
         model_name="sepsis_xgboost_v1",
@@ -124,32 +126,27 @@ def screen_patient(
     for ra in risk_assessments:
         gateway.create(ra, source=source)
 
-    return risk_assessments[
-        0
-    ] if risk_assessments else None, f"{risk.upper()} ({probability:.0%})"
+    return risk_assessments[0] if risk_assessments else None
 
 
-def batch_screen(gateway: FHIRGateway, patient_ids: List[str], source: str = "medplum"):
+def batch_screen(
+    gateway: FHIRGateway, patient_ids: List[str], source: str = "medplum"
+) -> None:
     """Screen multiple patients for sepsis risk."""
     pipeline = create_pipeline()
-    results = []
 
     for patient_id in patient_ids:
         try:
-            ra, status = screen_patient(gateway, pipeline, patient_id, source)
+            ra = screen_patient(gateway, pipeline, patient_id, source)
             if ra:
-                results.append(
-                    {"patient": patient_id, "status": status, "risk_assessment": ra.id}
+                risk, prob = get_risk_summary(ra)
+                print(
+                    f"  {patient_id}: {risk.upper()} ({prob:.0%}) → RiskAssessment/{ra.id}"
                 )
-                print(f"  {patient_id}: {status} → RiskAssessment/{ra.id}")
             else:
-                results.append({"patient": patient_id, "status": status})
-                print(f"  {patient_id}: {status}")
+                print(f"  {patient_id}: No data")
         except Exception as e:
-            results.append({"patient": patient_id, "error": str(e)})
             print(f"  {patient_id}: Error - {e}")
-
-    return results
 
 
 def create_app():
@@ -159,10 +156,10 @@ def create_app():
     # Add configured sources
     if MEDPLUM_URL:
         gateway.add_source("medplum", MEDPLUM_URL)
-        print("✓ Medplum configured")
+        logger.info("✓ Medplum configured")
     if EPIC_URL:
         gateway.add_source("epic", EPIC_URL)
-        print("✓ Epic configured")
+        logger.info("✓ Epic configured")
 
     app = HealthChainAPI(title="Sepsis Batch Screening")
     app.register_gateway(gateway, path="/fhir")
@@ -170,7 +167,6 @@ def create_app():
     return app, gateway
 
 
-# Create app at module level
 app, gateway = create_app()
 
 
