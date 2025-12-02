@@ -13,6 +13,9 @@ Dive into real-world, production-ready examples to learn how to build interopera
 
 ## 📚 How-To Guides
 
+- 🔬 **[Deploy ML Models: Real-Time Alerts & Batch Screening](./ml_model_deployment.md)**
+  *Deploy the same ML model two ways: CDS Hooks for point-of-care sepsis alerts, and FHIR Gateway for population-level batch screening with RiskAssessment resources.*
+
 - 🚦 **[Multi-Source Patient Data Aggregation](./multi_ehr_aggregation.md)**
   *Merge patient data from multiple FHIR sources (Epic, Cerner, etc.), deduplicate conditions, prove provenance, and robustly handle cross-vendor errors. Foundation for retrieval-augmented generation (RAG) and analytics workflows.*
 
