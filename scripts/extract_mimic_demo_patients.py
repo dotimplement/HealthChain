@@ -280,6 +280,8 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     print(f"\nExtracting to {args.output}/")
 
+    uploaded_ids = []  # Track server-assigned IDs for copy-paste output
+
     for risk_level in ["high", "moderate", "low"]:
         risk_df = df[df["risk"] == risk_level]
         if len(risk_df) == 0:
@@ -320,9 +322,11 @@ def main():
             status = ""
             if args.upload and gateway:
                 server_id = upload_bundle(gateway, output_data)
-                status = (
-                    f" ✓ uploaded (ID: {server_id})" if server_id else " ✓ uploaded"
-                )
+                if server_id:
+                    uploaded_ids.append((server_id, risk_level))
+                    status = f" ✓ uploaded (ID: {server_id})"
+                else:
+                    status = " ✓ uploaded"
 
             print(
                 f"  {label}: {patient_id} ({patient['probability']:.1%}, {obs_count} obs){status}"
@@ -331,7 +335,13 @@ def main():
     # Print next steps
     print("\n" + "=" * 60)
     if args.upload:
-        print("✓ Uploaded to Medplum! Update patient IDs in sepsis_fhir_batch.py")
+        print("✓ Uploaded to Medplum!")
+        if uploaded_ids:
+            print("\nCopy this into sepsis_fhir_batch.py:\n")
+            print("DEMO_PATIENT_IDS = [")
+            for server_id, risk in uploaded_ids:
+                print(f'    "{server_id}",  # {risk} risk')
+            print("]")
     elif args.bundle:
         print("Re-run with --upload to upload to Medplum")
     else:
