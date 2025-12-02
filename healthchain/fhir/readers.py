@@ -37,6 +37,34 @@ def create_resource_from_dict(
         return None
 
 
+def prefetch_to_bundle(prefetch: Dict[str, Any]) -> Dict[str, Any]:
+    """Flatten CDS Hooks prefetch into a collection Bundle dict.
+
+    Converts the keyed prefetch format (used in CDS Hooks) into a flat bundle
+    suitable for Dataset.from_fhir_bundle().
+
+    Args:
+        prefetch: CDS Hooks prefetch dict with format:
+            {"patient": {...}, "observations": {"entry": [...]}, ...}
+
+    Returns:
+        Bundle dict with type "collection" and flattened entries
+
+    Example:
+        >>> prefetch = request.prefetch
+        >>> bundle = prefetch_to_bundle(prefetch)
+        >>> dataset = Dataset.from_fhir_bundle(bundle, schema=schema)
+    """
+    entries = []
+    for key, value in prefetch.items():
+        if isinstance(value, dict):
+            if "entry" in value:  # Searchset bundle
+                entries.extend(value["entry"])
+            elif "resourceType" in value:  # Single resource
+                entries.append({"resource": value})
+    return {"type": "collection", "entry": entries}
+
+
 def convert_prefetch_to_fhir_objects(
     prefetch_dict: Dict[str, Any],
 ) -> Dict[str, Resource]:

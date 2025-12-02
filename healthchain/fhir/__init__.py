@@ -23,6 +23,7 @@ from healthchain.fhir.elementhelpers import (
 from healthchain.fhir.readers import (
     create_resource_from_dict,
     convert_prefetch_to_fhir_objects,
+    prefetch_to_bundle,
     read_content_attachment,
 )
 
@@ -74,6 +75,7 @@ __all__ = [
     # Conversions and readers
     "create_resource_from_dict",
     "convert_prefetch_to_fhir_objects",
+    "prefetch_to_bundle",
     "read_content_attachment",
     # Bundle operations
     "create_bundle",
