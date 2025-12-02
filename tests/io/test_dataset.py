@@ -128,9 +128,9 @@ def test_dataset_to_risk_assessment_creates_resources_with_metadata(sample_datas
     probabilities = np.array([0.15, 0.85])
 
     # Test with model metadata
+    sample_dataset.metadata["predictions"] = predictions
+    sample_dataset.metadata["probabilities"] = probabilities
     risks = sample_dataset.to_risk_assessment(
-        predictions,
-        probabilities,
         outcome_code="A41.9",
         outcome_display="Sepsis",
         model_name="RandomForest",
@@ -183,10 +183,10 @@ def test_dataset_to_risk_assessment_categorizes_risk_levels(
         }
     )
     dataset = Dataset(data)
+    dataset.metadata["predictions"] = np.array(predictions)
+    dataset.metadata["probabilities"] = np.array(probabilities)
 
     risks = dataset.to_risk_assessment(
-        np.array(predictions),
-        np.array(probabilities),
         outcome_code="A41.9",
         outcome_display="Sepsis",
     )
@@ -224,11 +224,11 @@ def test_dataset_to_risk_assessment_validation_errors(
     """Dataset.to_risk_assessment validates required columns and array lengths."""
     data = pd.DataFrame(data_dict)
     dataset = Dataset(data)
+    dataset.metadata["predictions"] = np.array(predictions)
+    dataset.metadata["probabilities"] = np.array(probabilities)
 
     with pytest.raises(ValueError, match=expected_error):
         dataset.to_risk_assessment(
-            np.array(predictions),
-            np.array(probabilities),
             outcome_code="A41.9",
             outcome_display="Sepsis",
         )
@@ -284,11 +284,8 @@ def test_dataset_to_risk_assessment_validates_probability_length():
     """Dataset.to_risk_assessment validates probabilities array length."""
     data = pd.DataFrame({"patient_ref": ["Patient/1", "Patient/2"], "value": [1, 2]})
     dataset = Dataset(data)
-
-    predictions = np.array([0, 1])
-    probabilities = np.array([0.15])  # Wrong length
+    dataset.metadata["predictions"] = np.array([0, 1])
+    dataset.metadata["probabilities"] = np.array([0.15])  # Wrong length
 
     with pytest.raises(ValueError, match="Probabilities length .* must match"):
-        dataset.to_risk_assessment(
-            predictions, probabilities, outcome_code="A41.9", outcome_display="Sepsis"
-        )
+        dataset.to_risk_assessment(outcome_code="A41.9", outcome_display="Sepsis")

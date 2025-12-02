@@ -27,14 +27,12 @@ print("Columns:", dataset.columns)
 validation_result = dataset.validate(schema="path/to/schema.yaml")
 print("Validation Result:", validation_result)
 
-# 4. Run inference using your ML model
-predictions = model.predict(dataset.data)
-probabilities = model.predict_proba(dataset.data)[:, 1]
+# 4. Run inference using your ML model and store in metadata
+dataset.metadata["predictions"] = model.predict(dataset.data)
+dataset.metadata["probabilities"] = model.predict_proba(dataset.data)[:, 1]
 
 # 5. Convert predictions to FHIR RiskAssessment resources for downstream use
 risk_assessments = dataset.to_risk_assessment(
-    predictions=predictions,
-    probabilities=probabilities,
     outcome_code="A41.9",
     outcome_display="Sepsis, unspecified",
     model_name="SepsisRiskModel",
