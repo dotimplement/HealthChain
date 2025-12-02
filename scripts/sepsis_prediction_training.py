@@ -12,6 +12,7 @@ Run:
 - python sepsis_prediction_training.py
 """
 
+import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -898,8 +899,10 @@ def save_model(
 
 def main():
     """Main training pipeline."""
-    # Data directory
-    data_dir = "../datasets/mimic-iv-clinical-database-demo-2.2"
+    # Data directory (set via MIMIC_CSV_PATH or use default)
+    data_dir = os.getenv(
+        "MIMIC_CSV_PATH", "../datasets/mimic-iv-clinical-database-demo-2.2"
+    )
 
     # Output path (relative to script location)
     script_dir = Path(__file__).parent

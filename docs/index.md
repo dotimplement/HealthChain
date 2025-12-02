@@ -10,7 +10,7 @@ HealthChain is an open-source Python toolkit that streamlines productionizing he
 
 <div class="grid cards" markdown>
 
--   :material-tools:{ .lg .middle } __FHIR-native ML Pipelines__
+-   :material-tools:{ .lg .middle } __FHIR-native Pipelines__
 
     ---
 

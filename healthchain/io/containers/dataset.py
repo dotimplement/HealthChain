@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Union, Optional
 
@@ -23,6 +23,10 @@ class Dataset(DataContainer[pd.DataFrame]):
     """
     A container for tabular data optimized for ML inference, lightweight wrapper around a pandas DataFrame.
 
+    Attributes:
+        data: The pandas DataFrame containing the dataset.
+        metadata: Dict for storing pipeline results (predictions, probabilities, etc.)
+
     Methods:
         from_csv: Load Dataset from CSV.
         from_dict: Load Dataset from dict.
@@ -30,6 +34,8 @@ class Dataset(DataContainer[pd.DataFrame]):
         to_csv: Save Dataset to CSV.
         to_risk_assessment: Convert predictions to FHIR RiskAssessment.
     """
+
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         if not isinstance(self.data, pd.DataFrame):
@@ -194,8 +200,6 @@ class Dataset(DataContainer[pd.DataFrame]):
 
     def to_risk_assessment(
         self,
-        predictions: np.ndarray,
-        probabilities: np.ndarray,
         outcome_code: str,
         outcome_display: str,
         outcome_system: str = "http://hl7.org/fhir/sid/icd-10",
@@ -203,6 +207,8 @@ class Dataset(DataContainer[pd.DataFrame]):
         model_version: Optional[str] = None,
         high_threshold: float = 0.7,
         moderate_threshold: float = 0.4,
+        predictions: Optional[np.ndarray] = None,
+        probabilities: Optional[np.ndarray] = None,
     ) -> List[RiskAssessment]:
         """Convert model predictions to FHIR RiskAssessment resources.
 
@@ -210,8 +216,6 @@ class Dataset(DataContainer[pd.DataFrame]):
         including in FHIR Bundles or sending to FHIR servers.
 
         Args:
-            predictions: Binary predictions array (0/1)
-            probabilities: Probability scores array (0-1)
             outcome_code: Code for the predicted outcome (e.g., "A41.9" for sepsis)
             outcome_display: Display text for the outcome (e.g., "Sepsis")
             outcome_system: Code system for the outcome (default: ICD-10)
@@ -219,22 +223,31 @@ class Dataset(DataContainer[pd.DataFrame]):
             model_version: Version of the ML model (optional)
             high_threshold: Threshold for high risk (default: 0.7)
             moderate_threshold: Threshold for moderate risk (default: 0.4)
+            predictions: Binary predictions array (0/1). Defaults to metadata["predictions"]
+            probabilities: Probability scores array (0-1). Defaults to metadata["probabilities"]
 
         Returns:
             List of RiskAssessment resources, one per patient
 
         Example:
-            >>> predictions = np.array([0, 1, 0])
-            >>> probabilities = np.array([0.15, 0.85, 0.32])
             >>> risk_assessments = dataset.to_risk_assessment(
-            ...     predictions,
-            ...     probabilities,
             ...     outcome_code="A41.9",
             ...     outcome_display="Sepsis, unspecified",
             ...     model_name="RandomForest",
             ...     model_version="1.0"
             ... )
         """
+        # Fall back to metadata if not provided
+        if predictions is None:
+            predictions = self.metadata.get("predictions")
+        if probabilities is None:
+            probabilities = self.metadata.get("probabilities")
+
+        if predictions is None or probabilities is None:
+            raise ValueError(
+                "predictions and probabilities must be provided or available in metadata"
+            )
+
         if len(predictions) != len(self.data):
             raise ValueError(
                 f"Predictions length ({len(predictions)}) must match "
