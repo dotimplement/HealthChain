@@ -1,212 +1,41 @@
-"""Convenience functions for creating minimal FHIR resources.
+"""FHIR resource creation and modification functions.
+
+This module provides convenience functions for creating and modifying FHIR resources.
+
 Patterns:
-- create_*(): create a new FHIR resource with sensible defaults - useful for dev, use with caution
-- add_*(): add data to resources with list fields safely (e.g. coding)
-- set_*(): set the field of specific resources with soft validation (e.g. category)
-- read_*(): return a human readable format of the data in a resource (e.g. attachments)
+- create_*(): create a new FHIR resource with sensible defaults
+- set_*(): set specific fields of resources with soft validation
+- add_*(): add data to resources safely
+
+Parameters marked REQUIRED are required by FHIR specification.
 """
 
 import logging
-import base64
 import datetime
-import uuid
-import importlib
 
-from typing import Optional, List, Dict, Any
+from typing import List, Optional, Dict, Any
+from fhir.resources.coding import Coding
 from fhir.resources.condition import Condition
+from fhir.resources.identifier import Identifier
 from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.documentreference import DocumentReference
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.codeablereference import CodeableReference
-from fhir.resources.coding import Coding
-from fhir.resources.attachment import Attachment
+from fhir.resources.observation import Observation
 from fhir.resources.resource import Resource
+from fhir.resources.riskassessment import RiskAssessment
+from fhir.resources.patient import Patient
+from fhir.resources.quantity import Quantity
+from fhir.resources.codeableconcept import CodeableConcept
 from fhir.resources.reference import Reference
 from fhir.resources.meta import Meta
 
+from healthchain.fhir.elementhelpers import (
+    create_single_codeable_concept,
+    create_single_attachment,
+)
+from healthchain.fhir.utilities import _generate_id
 
 logger = logging.getLogger(__name__)
-
-
-def _generate_id() -> str:
-    """Generate a unique ID prefixed with 'hc-'.
-
-    Returns:
-        str: A unique ID string prefixed with 'hc-'
-    """
-    return f"hc-{str(uuid.uuid4())}"
-
-
-def create_resource_from_dict(
-    resource_dict: Dict, resource_type: str
-) -> Optional[Resource]:
-    """Create a FHIR resource instance from a dictionary
-
-    Args:
-        resource_dict: Dictionary representation of the resource
-        resource_type: Type of FHIR resource to create
-
-    Returns:
-        Optional[Resource]: FHIR resource instance or None if creation failed
-    """
-    try:
-        resource_module = importlib.import_module(
-            f"fhir.resources.{resource_type.lower()}"
-        )
-        resource_class = getattr(resource_module, resource_type)
-        return resource_class(**resource_dict)
-    except Exception as e:
-        logger.error(f"Failed to create FHIR resource: {str(e)}")
-        return None
-
-
-def convert_prefetch_to_fhir_objects(
-    prefetch_dict: Dict[str, Any],
-) -> Dict[str, Resource]:
-    """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
-
-    Takes a prefetch dictionary where values may be either dict representations of FHIR
-    resources or already instantiated FHIR Resource objects, and ensures all values are
-    FHIR Resource objects.
-
-    Args:
-        prefetch_dict: Dictionary mapping keys to FHIR resource dicts or objects
-
-    Returns:
-        Dict[str, Resource]: Dictionary with same keys but all values as FHIR Resource objects
-
-    Example:
-        >>> prefetch = {
-        ...     "patient": {"resourceType": "Patient", "id": "123"},
-        ...     "condition": Condition(id="456", ...)
-        ... }
-        >>> fhir_objects = convert_prefetch_to_fhir_objects(prefetch)
-        >>> isinstance(fhir_objects["patient"], Patient)  # True
-        >>> isinstance(fhir_objects["condition"], Condition)  # True
-    """
-    from fhir.resources import get_fhir_model_class
-
-    result: Dict[str, Resource] = {}
-
-    for key, resource_data in prefetch_dict.items():
-        if isinstance(resource_data, dict):
-            # Convert dict to FHIR Resource object
-            resource_type = resource_data.get("resourceType")
-            if resource_type:
-                try:
-                    resource_class = get_fhir_model_class(resource_type)
-                    result[key] = resource_class(**resource_data)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to convert {resource_type} to FHIR object: {e}"
-                    )
-                    result[key] = resource_data
-            else:
-                logger.warning(
-                    f"No resourceType found for key '{key}', keeping as dict"
-                )
-                result[key] = resource_data
-        elif isinstance(resource_data, Resource):
-            # Already a FHIR object
-            result[key] = resource_data
-        else:
-            logger.warning(f"Unexpected type for key '{key}': {type(resource_data)}")
-            result[key] = resource_data
-
-    return result
-
-
-def create_single_codeable_concept(
-    code: str,
-    display: Optional[str] = None,
-    system: Optional[str] = "http://snomed.info/sct",
-) -> CodeableConcept:
-    """
-    Create a minimal FHIR CodeableConcept with a single coding.
-
-    Args:
-        code: REQUIRED. The code value from the code system
-        display: The display name for the code
-        system: The code system (default: SNOMED CT)
-
-    Returns:
-        CodeableConcept: A FHIR CodeableConcept resource with a single coding
-    """
-    return CodeableConcept(coding=[Coding(system=system, code=code, display=display)])
-
-
-def create_single_reaction(
-    code: str,
-    display: Optional[str] = None,
-    system: Optional[str] = "http://snomed.info/sct",
-    severity: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Create a minimal FHIR Reaction with a single coding.
-
-    Creates a FHIR Reaction object with a single manifestation coding. The manifestation
-    describes the clinical reaction that was observed. The severity indicates how severe
-    the reaction was.
-
-    Args:
-        code: REQUIRED. The code value from the code system representing the reaction manifestation
-        display: The display name for the manifestation code
-        system: The code system for the manifestation code (default: SNOMED CT)
-        severity: The severity of the reaction (mild, moderate, severe)
-
-    Returns:
-        A list containing a single FHIR Reaction dictionary with manifestation and severity fields
-    """
-    return [
-        {
-            "manifestation": [
-                CodeableReference(
-                    concept=CodeableConcept(
-                        coding=[Coding(system=system, code=code, display=display)]
-                    )
-                )
-            ],
-            "severity": severity,
-        }
-    ]
-
-
-def create_single_attachment(
-    content_type: Optional[str] = None,
-    data: Optional[str] = None,
-    url: Optional[str] = None,
-    title: Optional[str] = "Attachment created by HealthChain",
-) -> Attachment:
-    """Create a minimal FHIR Attachment.
-
-    Creates a FHIR Attachment resource with basic fields. Either data or url should be provided.
-    If data is provided, it will be base64 encoded.
-
-    Args:
-        content_type: The MIME type of the content
-        data: The actual data content to be base64 encoded
-        url: The URL where the data can be found
-        title: A title for the attachment (default: "Attachment created by HealthChain")
-
-    Returns:
-        Attachment: A FHIR Attachment resource with basic metadata and content
-    """
-
-    if not data and not url:
-        logger.warning("No data or url provided for attachment")
-
-    if data:
-        data = base64.b64encode(data.encode("utf-8")).decode("utf-8")
-
-    return Attachment(
-        contentType=content_type,
-        data=data,
-        url=url,
-        title=title,
-        creation=datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        ),
-    )
 
 
 def create_condition(
@@ -319,6 +148,187 @@ def create_allergy_intolerance(
     )
 
     return allergy
+
+
+def create_value_quantity_observation(
+    code: str,
+    value: float,
+    unit: str,
+    status: str = "final",
+    subject: Optional[str] = None,
+    system: str = "http://loinc.org",
+    display: Optional[str] = None,
+    effective_datetime: Optional[str] = None,
+) -> Observation:
+    """
+    Create a minimal FHIR Observation for vital signs or laboratory values.
+    If you need to create a more complex observation, use the FHIR Observation resource directly.
+    https://hl7.org/fhir/observation.html
+
+    Args:
+        status: REQUIRED. The status of the observation (default: "final")
+        code: REQUIRED. The observation code (e.g., LOINC code for the measurement)
+        value: The numeric value of the observation
+        unit: The unit of measure (e.g., "beats/min", "mg/dL")
+        system: The code system for the observation code (default: LOINC)
+        display: The display name for the observation code
+        effective_datetime: When the observation was made (ISO format). Uses current time if not provided.
+        subject: Reference to the patient (e.g. "Patient/123")
+
+    Returns:
+        Observation: A FHIR Observation resource with an auto-generated ID prefixed with 'hc-'
+    """
+    if not effective_datetime:
+        effective_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        )
+    subject_ref = None
+    if subject is not None:
+        subject_ref = Reference(reference=subject)
+
+    observation = Observation(
+        id=_generate_id(),
+        status=status,
+        code=create_single_codeable_concept(code, display, system),
+        subject=subject_ref,
+        effectiveDateTime=effective_datetime,
+        valueQuantity=Quantity(
+            value=value, unit=unit, system="http://unitsofmeasure.org", code=unit
+        ),
+    )
+
+    return observation
+
+
+def create_patient(
+    gender: Optional[str] = None,
+    birth_date: Optional[str] = None,
+    identifier: Optional[str] = None,
+    identifier_system: Optional[str] = "http://hospital.example.org",
+) -> Patient:
+    """
+    Create a minimal FHIR Patient resource with basic gender and birthdate
+    If you need to create a more complex patient, use the FHIR Patient resource directly
+    https://hl7.org/fhir/patient.html (No required fields).
+
+    Args:
+        gender: Administrative gender (male, female, other, unknown)
+        birth_date: Birth date in YYYY-MM-DD format
+        identifier: Optional identifier value for the patient (e.g., MRN)
+        identifier_system: The system for the identifier (default: "http://hospital.example.org")
+
+    Returns:
+        Patient: A FHIR Patient resource with an auto-generated ID prefixed with 'hc-'
+    """
+    patient_id = _generate_id()
+
+    patient_data = {"id": patient_id}
+
+    if birth_date:
+        patient_data["birthDate"] = birth_date
+
+    if gender:
+        patient_data["gender"] = gender.lower()
+
+    if identifier:
+        patient_data["identifier"] = [
+            Identifier(
+                system=identifier_system,
+                value=identifier,
+            )
+        ]
+
+    patient = Patient(**patient_data)
+    return patient
+
+
+def create_risk_assessment_from_prediction(
+    subject: str,
+    prediction: Dict[str, Any],
+    status: str = "final",
+    method: Optional[CodeableConcept] = None,
+    basis: Optional[List[Reference]] = None,
+    comment: Optional[str] = None,
+    occurrence_datetime: Optional[str] = None,
+) -> RiskAssessment:
+    """
+    Create a FHIR RiskAssessment from ML model prediction output.
+    If you need to create a more complex risk assessment, use the FHIR RiskAssessment resource directly.
+    https://hl7.org/fhir/riskassessment.html
+
+    Args:
+        subject: REQUIRED. Reference to the patient (e.g. "Patient/123")
+        prediction: Dictionary containing prediction details with keys:
+            - outcome: CodeableConcept or dict with code, display, system for the predicted outcome
+            - probability: float between 0 and 1 representing the risk probability
+            - qualitative_risk: Optional str indicating risk level (e.g., "high", "moderate", "low")
+        status: REQUIRED. The status of the assessment (default: "final")
+        method: Optional CodeableConcept describing the assessment method/model used
+        basis: Optional list of References to observations or other resources used as input
+        comment: Optional text comment about the assessment
+
+        occurrence_datetime: When the assessment was made (ISO format). Uses current time if not provided.
+
+    Returns:
+        RiskAssessment: A FHIR RiskAssessment resource with an auto-generated ID prefixed with 'hc-'
+
+    Example:
+        >>> prediction = {
+        ...     "outcome": {"code": "A41.9", "display": "Sepsis", "system": "http://hl7.org/fhir/sid/icd-10"},
+        ...     "probability": 0.85,
+        ...     "qualitative_risk": "high"
+        ... }
+        >>> risk = create_risk_assessment("Patient/123", prediction)
+    """
+    if not occurrence_datetime:
+        occurrence_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S%z"
+        )
+
+    outcome = prediction.get("outcome")
+    if isinstance(outcome, dict):
+        outcome_concept = create_single_codeable_concept(
+            code=outcome["code"],
+            display=outcome.get("display"),
+            system=outcome.get("system", "http://snomed.info/sct"),
+        )
+    else:
+        outcome_concept = outcome
+
+    prediction_data = {
+        "outcome": outcome_concept,
+    }
+
+    if "probability" in prediction:
+        prediction_data["probabilityDecimal"] = prediction["probability"]
+
+    if "qualitative_risk" in prediction:
+        prediction_data["qualitativeRisk"] = create_single_codeable_concept(
+            code=prediction["qualitative_risk"],
+            display=prediction["qualitative_risk"].capitalize(),
+            system="http://terminology.hl7.org/CodeSystem/risk-probability",
+        )
+
+    risk_assessment_data = {
+        "id": _generate_id(),
+        "status": status,
+        "subject": Reference(reference=subject),
+        "occurrenceDateTime": occurrence_datetime,
+        "prediction": [prediction_data],
+    }
+
+    if method:
+        risk_assessment_data["method"] = method
+
+    if basis:
+        risk_assessment_data["basis"] = basis
+
+    if comment:
+        risk_assessment_data["note"] = [{"text": comment}]
+
+    risk_assessment = RiskAssessment(**risk_assessment_data)
+
+    return risk_assessment
 
 
 def create_document_reference(
@@ -566,47 +576,3 @@ def add_coding_to_codeable_concept(
     codeable_concept.coding.append(Coding(system=system, code=code, display=display))
 
     return codeable_concept
-
-
-def read_content_attachment(
-    document_reference: DocumentReference,
-    include_data: bool = True,
-) -> Optional[List[Dict[str, Any]]]:
-    """Read the attachments in a human readable format from a FHIR DocumentReference content field.
-
-    Args:
-        document_reference: The FHIR DocumentReference resource
-        include_data: Whether to include the data of the attachments. If true, the data will be also be decoded (default: True)
-
-    Returns:
-        Optional[List[Dict[str, Any]]]: List of dictionaries containing attachment data and metadata,
-            or None if no attachments are found:
-            [
-                {
-                    "data": str,
-                    "metadata": Dict[str, Any]
-                }
-            ]
-    """
-    if not document_reference.content:
-        return None
-
-    attachments = []
-    for content in document_reference.content:
-        attachment = content.attachment
-        result = {}
-
-        if include_data:
-            result["data"] = (
-                attachment.url if attachment.url else attachment.data.decode("utf-8")
-            )
-
-        result["metadata"] = {
-            "content_type": attachment.contentType,
-            "title": attachment.title,
-            "creation": attachment.creation,
-        }
-
-        attachments.append(result)
-
-    return attachments

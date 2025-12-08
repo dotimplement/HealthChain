@@ -464,7 +464,7 @@ class SandboxClient:
                         log.debug(f"Making POST request to: {self.url}")
                         response = client.post(
                             url=str(self.url),
-                            json=request.model_dump(exclude_none=True),
+                            json=request.model_dump(exclude_none=True, mode="json"),
                             timeout=timeout,
                         )
                         response.raise_for_status()
@@ -472,7 +472,9 @@ class SandboxClient:
                         try:
                             response_data = response.json()
                             cds_response = CDSResponse(**response_data)
-                            responses.append(cds_response.model_dump(exclude_none=True))
+                            responses.append(
+                                cds_response.model_dump(mode="json", exclude_none=True)
+                            )
                         except json.JSONDecodeError:
                             log.error(
                                 f"Invalid JSON response from {self.url}. "
@@ -507,51 +509,56 @@ class SandboxClient:
 
         return responses
 
-    def save_results(self, directory: Union[str, Path] = "./output/") -> None:
+    def save_results(
+        self,
+        directory: Union[str, Path] = "./output/",
+        save_request: bool = True,
+        save_response: bool = True,
+    ) -> None:
         """
-        Save request and response data to disk.
+        Save request and/or response data to disk.
 
         Args:
             directory: Directory to save data to (default: "./output/")
+            save_request: Whether to save request data (default: True)
+            save_response: Whether to save response data (default: True)
         """
-        if not self.responses:
+        if not self.responses and save_response:
             raise RuntimeError(
                 "No responses to save. Send requests first using send_requests()"
             )
 
         save_dir = Path(directory)
-        request_path = ensure_directory_exists(save_dir / "requests")
-
-        # Determine file extension based on protocol
         extension = "xml" if self.protocol == ApiProtocol.soap else "json"
 
-        # Save requests
-        if self.protocol == ApiProtocol.soap:
-            request_data = [request.model_dump_xml() for request in self.requests]
-        else:
-            request_data = [
-                request.model_dump(exclude_none=True) for request in self.requests
-            ]
+        if save_request:
+            request_path = ensure_directory_exists(save_dir / "requests")
+            if self.protocol == ApiProtocol.soap:
+                request_data = [request.model_dump_xml() for request in self.requests]
+            else:
+                request_data = [
+                    request.model_dump(mode="json", exclude_none=True)
+                    for request in self.requests
+                ]
+            save_data_to_directory(
+                request_data,
+                "request",
+                self.sandbox_id,
+                request_path,
+                extension,
+            )
+            log.info(f"Saved request data at {request_path}/")
 
-        save_data_to_directory(
-            request_data,
-            "request",
-            self.sandbox_id,
-            request_path,
-            extension,
-        )
-        log.info(f"Saved request data at {request_path}/")
-
-        # Save responses
-        response_path = ensure_directory_exists(save_dir / "responses")
-        save_data_to_directory(
-            self.responses,
-            "response",
-            self.sandbox_id,
-            response_path,
-            extension,
-        )
-        log.info(f"Saved response data at {response_path}/")
+        if save_response:
+            response_path = ensure_directory_exists(save_dir / "responses")
+            save_data_to_directory(
+                self.responses,
+                "response",
+                self.sandbox_id,
+                response_path,
+                extension,
+            )
+            log.info(f"Saved response data at {response_path}/")
 
     def get_status(self) -> Dict[str, Any]:
         """

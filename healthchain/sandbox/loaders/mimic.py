@@ -7,7 +7,7 @@ Loads patient data from the MIMIC-IV-on-FHIR dataset for testing and demos.
 import logging
 import random
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from fhir.resources.R4B.bundle import Bundle
 
@@ -54,28 +54,49 @@ class MimicOnFHIRLoader(DatasetLoader):
         resource_types: Optional[List[str]] = None,
         sample_size: Optional[int] = None,
         random_seed: Optional[int] = None,
+        as_dict: bool = False,
         **kwargs,
-    ) -> Dict:
+    ) -> Union[Dict[str, Bundle], Dict[str, Any]]:
         """
-        Load MIMIC-on-FHIR data as a dict of FHIR Bundles.
+        Load MIMIC-on-FHIR data as FHIR Bundle(s).
 
         Args:
             data_dir: Path to root MIMIC-on-FHIR directory (expects a /fhir subdir with .ndjson.gz files)
             resource_types: Resource type names to load (e.g., ["MimicMedication"]). Required.
             sample_size: Number of resources to randomly sample per type (loads all if None)
             random_seed: Seed for sampling
+            as_dict: If True, return single bundle dict (fast, no validation - for ML workflows).
+                If False, return dict of validated Bundle objects grouped by resource type (for CDS Hooks).
+                Default: False
             **kwargs: Reserved for future use
 
         Returns:
-            Dict mapping resource type (e.g., "MedicationStatement") to FHIR R4B Bundle
+            If as_dict=False: Dict[str, Bundle] - validated Pydantic Bundle objects grouped by resource type
+                Example: {"observation": Bundle(...), "patient": Bundle(...)}
+            If as_dict=True: Dict[str, Any] - single combined bundle dict (no validation)
+                Example: {"type": "collection", "entry": [...]}
 
         Raises:
             FileNotFoundError: If directory or resource files not found
             ValueError: If resource_types is None/empty or resources fail validation
 
-        Example:
+        Examples:
+            CDS Hooks prefetch format (validated, grouped by resource type):
             >>> loader = MimicOnFHIRLoader()
-            >>> loader.load(data_dir="./data/mimic-iv-fhir", resource_types=["MimicMedication"], sample_size=100)
+            >>> prefetch = loader.load(
+            ...     data_dir="./data/mimic-iv-fhir",
+            ...     resource_types=["MimicMedication", "MimicCondition"]
+            ... )
+            >>> prefetch["medicationstatement"]  # Pydantic Bundle object
+
+            ML workflow (single bundle dict, fast, no validation):
+            >>> bundle = loader.load(
+            ...     data_dir="./data/mimic-iv-fhir",
+            ...     resource_types=["MimicObservationChartevents", "MimicPatient"],
+            ...     as_dict=True
+            ... )
+            >>> from healthchain.io import Dataset
+            >>> dataset = Dataset.from_fhir_bundle(bundle, schema="sepsis_vitals.yaml")
         """
 
         data_dir = Path(data_dir)
@@ -141,6 +162,15 @@ class MimicOnFHIRLoader(DatasetLoader):
                 f"No valid resources loaded from specified resource types: {resource_types}"
             )
 
+        # ML workflow
+        if as_dict:
+            all_entries = []
+            for resources in resources_by_type.values():
+                all_entries.extend([{"resource": r} for r in resources])
+
+            return {"type": "collection", "entry": all_entries}
+
+        # CDS Hooks prefetch
         bundles = {}
         for fhir_type, resources in resources_by_type.items():
             bundles[fhir_type.lower()] = Bundle(

@@ -18,6 +18,7 @@ nav:
       - Multi-Source Data Integration: cookbook/multi_ehr_aggregation.md
       - Automated Clinical Coding: cookbook/clinical_coding.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
+      - ML Model Deployment: cookbook/ml_model_deployment.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:
@@ -28,17 +29,24 @@ nav:
         - Protocols:
           - CDS Hooks: reference/gateway/cdshooks.md
           - SOAP/CDA: reference/gateway/soap_cda.md
+      - I/O:
+        - Containers:
+          - Overview: reference/io/containers/containers.md
+          - Document: reference/io/containers/document.md
+          - Dataset: reference/io/containers/dataset.md
+        - Adapters:
+          - Overview: reference/io/adapters/adapters.md
+          - CDA Adapter: reference/io/adapters/cdaadapter.md
+          - CDS FHIR Adapter: reference/io/adapters/cdsfhiradapter.md
+        - Mappers:
+          - Overview: reference/io/mappers/mappers.md
+          - FHIR Feature Mapper: reference/io/mappers/fhir_feature.md
       - Pipeline:
         - Overview: reference/pipeline/pipeline.md
-        - Data Container: reference/pipeline/data_container.md
         - Components:
           - Overview: reference/pipeline/components/components.md
           - CdsCardCreator: reference/pipeline/components/cdscardcreator.md
           - FHIRProblemListExtractor: reference/pipeline/components/fhirproblemextractor.md
-        - Adapters:
-          - Overview: reference/pipeline/adapters/adapters.md
-          - CDA Adapter: reference/pipeline/adapters/cdaadapter.md
-          - CDS FHIR Adapter: reference/pipeline/adapters/cdsfhiradapter.md
         - Prebuilt Pipelines:
           - Medical Coding: reference/pipeline/prebuilt_pipelines/medicalcoding.md
           - Summarization: reference/pipeline/prebuilt_pipelines/summarization.md

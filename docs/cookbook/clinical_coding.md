@@ -50,7 +50,7 @@ MEDPLUM_SCOPE=openid
 
 ## Add the CDA Adapter
 
-First we'll need to convert the incoming CDA XML to FHIR. The [CdaAdapter](../reference/pipeline/adapters/cdaadapter.md) enables round-trip conversion between CDA and FHIR using the [InteropEngine](../reference/interop/engine.md) for seamless legacy-to-modern data integration.
+First we'll need to convert the incoming CDA XML to FHIR. The [CdaAdapter](../reference/io/adapters/cdaadapter.md) enables round-trip conversion between CDA and FHIR using the [InteropEngine](../reference/interop/engine.md) for seamless legacy-to-modern data integration.
 
 
 ```python

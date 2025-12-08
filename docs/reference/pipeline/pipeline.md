@@ -8,7 +8,7 @@ Choose from prebuilt pipelines tailored to standard clinical workflows, or build
 
 HealthChain comes with a set of end-to-end pipeline implementations of common healthcare data processing tasks.
 
-These prebuilt pipelines handle FHIR conversion, validation, and EHR integration for you. They work out-of-the-box with [**Adapters**](./adapters/adapters.md) and [**Gateways**](../gateway/gateway.md), supporting CDS Hooks, NoteReader CDI, and FHIR APIs. They're great for a quick setup to build more complex integrations on top of.
+These prebuilt pipelines handle FHIR conversion, validation, and EHR integration for you. They work out-of-the-box with [**Adapters**](../io/adapters/adapters.md) and [**Gateways**](../gateway/gateway.md), supporting CDS Hooks, NoteReader CDI, and FHIR APIs. They're great for a quick setup to build more complex integrations on top of.
 
 
 | Pipeline | Container | Use Case | Description | Example Application |
@@ -61,9 +61,9 @@ pipeline = MedicalCodingPipeline.from_local_model(
 
 ## Freestyle 🕺
 
-[**Containers**](./data_container.md) are at the core of HealthChain pipelines: they define your data type and flow through each pipeline step, just like spaCy’s `Doc`.
+[**Containers**](../io/containers/containers.md) are at the core of HealthChain pipelines: they define your data type and flow through each pipeline step, just like spaCy's `Doc`.
 
-Specify the container (e.g. `Document` or `Tabular`) when creating your pipeline (`Pipeline[Document]()`). Each node processes and returns the container, enabling smooth, type-safe, modular workflows and direct FHIR conversion.
+Specify the container (e.g. [Document](../io/containers/document.md) or [Dataset](../io/containers/dataset.md)) when creating your pipeline (`Pipeline[Document]()`). Each node processes and returns the container, enabling smooth, type-safe, modular workflows and direct FHIR conversion.
 
 ```python
 from healthchain.pipeline import Pipeline
@@ -282,7 +282,7 @@ print(pipeline.stages)
 
 Adapters let you easily convert between healthcare formats (CDA, FHIR, CDS Hooks) and HealthChain Documents. Keep your ML pipeline format-agnostic while always getting FHIR-ready outputs.
 
-[(Full Documentation on Adapters)](./adapters/adapters.md)
+[(Full Documentation on Adapters)](../io/adapters/adapters.md)
 
 ```python
 from healthchain.io import CdaAdapter, Document
