@@ -187,7 +187,7 @@ def create_fastapi_soap_router(
                 except Exception as e:
                     logger.exception("Error serving WSDL")
                     return Response(
-                        content=f"Error serving WSDL: {str(e)}", status_code=500
+                        content="An internal error has occurred while serving WSDL.", status_code=500
                     )
 
     @router.post("/", summary=f"{service_name} SOAP entrypoint")
