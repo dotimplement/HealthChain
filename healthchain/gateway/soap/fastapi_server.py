@@ -194,7 +194,8 @@ def create_fastapi_soap_router(
     async def soap_entrypoint(request: Request):
         raw = await request.body()
         try:
-            xml = ET.fromstring(raw)
+            parser = ET.XMLParser(resolve_entities=False)
+            xml = ET.fromstring(raw, parser=parser)
         except ET.XMLSyntaxError as e:
             logger.exception("Invalid XML received")
             return Response(
