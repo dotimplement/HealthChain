@@ -9,7 +9,8 @@ import logging
 
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from pathlib import Path
 
 from healthchain.gateway.base import BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
@@ -32,9 +33,28 @@ class NoteReaderConfig(BaseModel):
     namespace: str = "urn:epic-com:Common.2013.Services"
     system_type: str = "EHR_CDA"
     default_mount_path: str = "/notereader"
-    wsdl_path: Optional[str] = (
-        "healthchain/templates/epic_service.wsdl"  # Path to WSDL file
-    )
+    wsdl_path: Optional[str] = None
+
+    @model_validator(mode="after")
+    def resolve_wsdl_path(self):
+        """Auto-resolve WSDL path relative to healthchain package if not explicitly set"""
+        if self.wsdl_path is None:
+            try:
+                import healthchain
+
+                healthchain_root = Path(healthchain.__file__).parent
+                wsdl_file = healthchain_root / "templates" / "epic_service.wsdl"
+
+                if wsdl_file.exists():
+                    self.wsdl_path = str(wsdl_file)
+                    print(f"✅ Auto-detected WSDL at: {self.wsdl_path}")
+                else:
+                    print(f"⚠️  WSDL not found at: {wsdl_file}")
+                    print("   SOAP service will work but ?wsdl endpoint unavailable")
+            except Exception as e:
+                print(f"⚠️  Could not auto-detect WSDL path: {e}")
+
+        return self
 
 
 class NoteReaderService(BaseProtocolHandler[CdaRequest, CdaResponse]):

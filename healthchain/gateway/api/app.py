@@ -11,7 +11,6 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from termcolor import colored
@@ -236,7 +235,7 @@ class HealthChainAPI(FastAPI):
             and hasattr(component, "create_fastapi_router")
             and callable(component.create_fastapi_router)
         ):
-            self._register_wsgi_service(
+            self._register_mounted_service(
                 component, component_name, endpoints_registry, path
             )
             return
@@ -277,18 +276,16 @@ class HealthChainAPI(FastAPI):
         else:
             logger.debug(f"Registered {component_name} as router (routes unknown)")
 
-    def _register_wsgi_service(
+    def _register_mounted_service(  # Renamed from _register_wsgi_service
         self,
         service: BaseProtocolHandler,
         service_name: str,
         endpoints_registry: Dict[str, set],
         path: Optional[str] = None,
     ) -> None:
-        """Register a WSGI service."""
-        # Create WSGI app
-        wsgi_app = service.create_fastapi_router()
+        """Register a service with a custom router."""
+        router_or_app = service.create_fastapi_router()
 
-        # Determine mount path with fallback chain
         mount_path = (
             path
             or getattr(service.config, "default_mount_path", None)
@@ -296,10 +293,25 @@ class HealthChainAPI(FastAPI):
             or f"/{service_name.lower().replace('service', '').replace('gateway', '')}"
         )
 
-        # Mount the WSGI app
-        self.mount(mount_path, WSGIMiddleware(wsgi_app))
-        endpoints_registry[service_name].add(f"WSGI:{mount_path}")
-        logger.debug(f"Registered WSGI service {service_name} at {mount_path}")
+        logger.info(f"🔧 Registering {service_name} at: {mount_path}")
+        logger.info(f"   Router type: {type(router_or_app)}")
+
+        # Use include_router for APIRouter instances
+        if isinstance(router_or_app, APIRouter):
+            if hasattr(router_or_app, "routes"):
+                logger.info(f"   Routes in router: {len(router_or_app.routes)}")
+                for route in router_or_app.routes:
+                    if hasattr(route, "methods") and hasattr(route, "path"):
+                        logger.info(f"     - {route.methods} {route.path}")
+
+            self.include_router(router_or_app, prefix=mount_path)
+            endpoints_registry[service_name].add(f"INCLUDED:{mount_path}")
+            logger.info(f"✅ Included router {service_name} at {mount_path}")
+        else:
+            # For FastAPI apps, use mount
+            self.mount(mount_path, router_or_app)
+            endpoints_registry[service_name].add(f"MOUNTED:{mount_path}")
+            logger.info(f"✅ Mounted app {service_name} at {mount_path}")
 
     def register_gateway(
         self,

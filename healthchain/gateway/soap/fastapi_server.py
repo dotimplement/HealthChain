@@ -23,7 +23,9 @@ def build_soap_envelope(body_xml: ET._Element) -> bytes:
     Wrap the provided body element in a SOAP Envelope/Body and return bytes.
     The body_xml element should already be namespaced (if desired).
     """
-    envelope = ET.Element(ET.QName(SOAP_NS, "Envelope"), nsmap=NSMAP)
+    # Define namespace map with tns prefix for the WSDL namespace
+    nsmap = {"soap": SOAP_NS, "tns": WSDL_NS}
+    envelope = ET.Element(ET.QName(SOAP_NS, "Envelope"), nsmap=nsmap)
     body = ET.SubElement(envelope, ET.QName(SOAP_NS, "Body"))
     body.append(body_xml)
     return ET.tostring(envelope, xml_declaration=True, encoding="utf-8")
@@ -173,21 +175,22 @@ def create_fastapi_soap_router(
 
                     # Replace placeholder location with actual server URL
                     base_url = str(request.base_url).rstrip("/")
-                    path = request.url.path
+                    path = request.url.path.rstrip("/")
                     actual_location = f"{base_url}{path}"
 
                     # Replace the location in WSDL
                     wsdl_content = wsdl_content.replace(
-                        "http://127.0.0.1:8000/notereader/", actual_location
+                        "http://localhost:8000/notereader", actual_location
                     )
 
                     return Response(
                         content=wsdl_content, media_type="text/xml; charset=utf-8"
                     )
-                except Exception as e:
+                except Exception:
                     logger.exception("Error serving WSDL")
                     return Response(
-                        content="An internal error has occurred while serving WSDL.", status_code=500
+                        content="An internal error has occurred while serving WSDL.",
+                        status_code=500,
                     )
 
     @router.post("/", summary=f"{service_name} SOAP entrypoint")
@@ -232,6 +235,8 @@ def create_fastapi_soap_router(
         for child in operation_el:
             local = child.tag.split("}")[-1]
             soap_params[local] = safe_text_of(child)
+
+        logger.info(f"Received SOAP request with params: {list(soap_params.keys())}")
 
         # Map WSDL element names to CdaRequest field names
         # WSDL: SessionID, WorkType, OrganizationID, Document
@@ -284,6 +289,27 @@ def create_fastapi_soap_router(
         # Call the provided handler (user-provided ProcessDocument function)
         try:
             resp_obj = handler(request_obj)
+            logger.info(
+                f"Handler returned response: document_length={len(resp_obj.document) if resp_obj.document else 0}, error={resp_obj.error}"
+            )
+
+            # IMPORTANT: Handler returns plain XML (like Spyne did internally)
+            # But the SOAP protocol expects base64-encoded Document in the response
+            # So we need to base64-encode it here before sending
+            if resp_obj.document and isinstance(resp_obj.document, str):
+                # Check if it's already base64 or plain XML
+                if resp_obj.document.strip().startswith(
+                    "<?xml"
+                ) or resp_obj.document.strip().startswith("<"):
+                    # Plain XML - need to base64 encode it
+                    import base64
+
+                    resp_obj.document = base64.b64encode(
+                        resp_obj.document.encode("utf-8")
+                    ).decode("ascii")
+                    logger.info("Encoded plain XML document to base64")
+                # else: already base64, leave as-is
+
         except Exception as e:
             logger.exception("Handler threw exception")
             # Server fault
@@ -296,31 +322,29 @@ def create_fastapi_soap_router(
             )
 
         # Convert response object to SOAP response element
-        # IMPORTANT: WSDL-compliant structure with ProcessDocumentResult wrapper
+        # IMPORTANT: Match WSDL structure exactly - NO ProcessDocumentResult wrapper!
         # <ProcessDocumentResponse>
-        #   <ProcessDocumentResult>
-        #     <Document>...</Document>
-        #     <Error>...</Error>
-        #   </ProcessDocumentResult>
+        #   <Document>...</Document>
+        #   <Error>...</Error>
         # </ProcessDocumentResponse>
 
         resp_el = ET.Element(ET.QName(namespace, "ProcessDocumentResponse"))
-        result_el = ET.SubElement(resp_el, ET.QName(namespace, "ProcessDocumentResult"))
 
-        # Document element (optional) - as base64Binary per WSDL
-        doc_el = ET.SubElement(result_el, ET.QName(namespace, "Document"))
+        # Document element (optional) - check what format CdaAdapter returns
+        doc_el = ET.SubElement(resp_el, ET.QName(namespace, "Document"))
         if resp_obj.document is not None:
-            # WSDL specifies base64Binary for Document
-            # Encode as base64 if it's a string
+            # CdaAdapter might return base64-encoded data
+            # Just pass it through as-is
             if isinstance(resp_obj.document, str):
-                doc_el.text = base64.b64encode(
-                    resp_obj.document.encode("utf-8")
-                ).decode("ascii")
+                doc_el.text = resp_obj.document
+            elif isinstance(resp_obj.document, bytes):
+                # If bytes, assume it's already encoded properly
+                doc_el.text = resp_obj.document.decode("ascii")
             else:
-                doc_el.text = base64.b64encode(resp_obj.document).decode("ascii")
+                doc_el.text = str(resp_obj.document)
 
         # Error element (optional)
-        err_el = ET.SubElement(result_el, ET.QName(namespace, "Error"))
+        err_el = ET.SubElement(resp_el, ET.QName(namespace, "Error"))
         if resp_obj.error is not None:
             err_el.text = str(resp_obj.error)
 
