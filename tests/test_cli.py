@@ -60,7 +60,7 @@ def test_init_configs_success_provides_usage_instructions(mock_init_templates):
 @patch("subprocess.run")
 def test_run_file_handles_execution_errors_gracefully(mock_run):
     """run_file provides clear error message when script execution fails."""
-    mock_run.side_effect = subprocess.CalledProcessError(1, "poetry")
+    mock_run.side_effect = subprocess.CalledProcessError(1, "uv")
 
     with patch("builtins.print") as mock_print:
         run_file("failing_script.py")
