@@ -182,6 +182,9 @@ def create_fastapi_soap_router(
                     wsdl_content = wsdl_content.replace(
                         "http://localhost:8000/notereader", actual_location
                     )
+                    wsdl_content = wsdl_content.replace(
+                        "http://127.0.0.1:8000/notereader/", actual_location
+                    )
 
                     return Response(
                         content=wsdl_content, media_type="text/xml; charset=utf-8"
@@ -293,22 +296,26 @@ def create_fastapi_soap_router(
                 f"Handler returned response: document_length={len(resp_obj.document) if resp_obj.document else 0}, error={resp_obj.error}"
             )
 
-            # IMPORTANT: Handler returns plain XML (like Spyne did internally)
-            # But the SOAP protocol expects base64-encoded Document in the response
-            # So we need to base64-encode it here before sending
+            # IMPORTANT: Response Document must be base64-encoded per protocol
+            # Check if handler returned plain text or already-encoded base64
             if resp_obj.document and isinstance(resp_obj.document, str):
-                # Check if it's already base64 or plain XML
-                if resp_obj.document.strip().startswith(
-                    "<?xml"
-                ) or resp_obj.document.strip().startswith("<"):
-                    # Plain XML - need to base64 encode it
-                    import base64
+                # Try to decode as base64 to test if it's already encoded
+                is_already_base64 = False
+                try:
+                    # If this succeeds, it's valid base64
+                    base64.b64decode(resp_obj.document, validate=True)
+                    is_already_base64 = True
+                    logger.info("Document is already base64-encoded")
+                except Exception:
+                    # Not valid base64, need to encode it
+                    pass
 
+                if not is_already_base64:
+                    # Encode the plain text to base64
                     resp_obj.document = base64.b64encode(
                         resp_obj.document.encode("utf-8")
                     ).decode("ascii")
-                    logger.info("Encoded plain XML document to base64")
-                # else: already base64, leave as-is
+                    logger.info("Encoded plain text document to base64")
 
         except Exception as e:
             logger.exception("Handler threw exception")
@@ -322,33 +329,47 @@ def create_fastapi_soap_router(
             )
 
         # Convert response object to SOAP response element
-        # IMPORTANT: Match WSDL structure exactly - NO ProcessDocumentResult wrapper!
-        # <ProcessDocumentResponse>
-        #   <Document>...</Document>
-        #   <Error>...</Error>
-        # </ProcessDocumentResponse>
+        # IMPORTANT: Match Spyne WSDL structure WITH ProcessDocumentResult wrapper!
+        # <tns:ProcessDocumentResponse>
+        #   <tns:ProcessDocumentResult>
+        #     <tns:Document>base64string</tns:Document>
+        #     <tns:Error>string</tns:Error>
+        #   </tns:ProcessDocumentResult>
+        # </tns:ProcessDocumentResponse>
 
-        resp_el = ET.Element(ET.QName(namespace, "ProcessDocumentResponse"))
+        # Create response with explicit namespace map including tns prefix
+        nsmap_response = {"tns": namespace}
+        resp_el = ET.Element(
+            ET.QName(namespace, "ProcessDocumentResponse"), nsmap=nsmap_response
+        )
 
-        # Document element (optional) - check what format CdaAdapter returns
-        doc_el = ET.SubElement(resp_el, ET.QName(namespace, "Document"))
+        # Add the ProcessDocumentResult wrapper (required by Spyne WSDL)
+        result_wrapper = ET.SubElement(
+            resp_el, ET.QName(namespace, "ProcessDocumentResult")
+        )
+
+        # Document element (optional) - as base64-encoded string
+        doc_el = ET.SubElement(result_wrapper, ET.QName(namespace, "Document"))
         if resp_obj.document is not None:
-            # CdaAdapter might return base64-encoded data
-            # Just pass it through as-is
             if isinstance(resp_obj.document, str):
                 doc_el.text = resp_obj.document
             elif isinstance(resp_obj.document, bytes):
-                # If bytes, assume it's already encoded properly
+                # If bytes, decode to ASCII string (base64 is ASCII-safe)
                 doc_el.text = resp_obj.document.decode("ascii")
             else:
                 doc_el.text = str(resp_obj.document)
 
         # Error element (optional)
-        err_el = ET.SubElement(resp_el, ET.QName(namespace, "Error"))
+        err_el = ET.SubElement(result_wrapper, ET.QName(namespace, "Error"))
         if resp_obj.error is not None:
             err_el.text = str(resp_obj.error)
 
         envelope_bytes = build_soap_envelope(resp_el)
+
+        logger.info(
+            f"Sending SOAP response with document length: {len(resp_obj.document) if resp_obj.document else 0}"
+        )
+
         return Response(
             content=envelope_bytes,
             media_type="text/xml; charset=utf-8",

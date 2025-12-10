@@ -19,7 +19,7 @@ from healthchain.models.responses.cdaresponse import CdaResponse
 # Namespace mappings for parsing SOAP responses
 SOAP_NAMESPACES = {
     "soap": "http://schemas.xmlsoap.org/soap/envelope/",
-    "ns0": "urn:epic-com:Common.2013.Services",
+    "tns": "urn:epic-com:Common.2013.Services",
 }
 
 
@@ -31,7 +31,7 @@ def parse_soap_response(response_content: bytes) -> ET._Element:
 def get_document_from_response(response_content: bytes) -> str:
     """Extract and decode the Document element from SOAP response"""
     xml = parse_soap_response(response_content)
-    doc_element = xml.find(".//ns0:Document", SOAP_NAMESPACES)
+    doc_element = xml.find(".//tns:Document", SOAP_NAMESPACES)
     if doc_element is not None and doc_element.text:
         # Document is base64 encoded per WSDL
         return base64.b64decode(doc_element.text).decode("utf-8")
@@ -41,7 +41,7 @@ def get_document_from_response(response_content: bytes) -> str:
 def get_error_from_response(response_content: bytes) -> str:
     """Extract the Error element text from SOAP response"""
     xml = parse_soap_response(response_content)
-    error_element = xml.find(".//ns0:Error", SOAP_NAMESPACES)
+    error_element = xml.find(".//tns:Error", SOAP_NAMESPACES)
     if error_element is not None:
         return error_element.text or ""
     return ""
@@ -113,21 +113,9 @@ class TestSOAPValidation:
             document="<xml>test</xml>",
         )
 
-        print("\n" + "=" * 60)
-        print("REQUEST:")
-        print("=" * 60)
-        print(soap_request)
-        print("=" * 60)
-
         response = client.post("/soap/", content=soap_request)
 
-        print("\n" + "=" * 60)
-        print(f"RESPONSE STATUS: {response.status_code}")
-        print("=" * 60)
-        print(response.content.decode("utf-8", errors="replace"))
-        print("=" * 60 + "\n")
-
-        # Don't assert, just observe
+        assert response.status_code == 200
 
     def test_missing_session_id(self, client):
         """Test that missing SessionID returns SOAP fault"""
@@ -207,11 +195,17 @@ class TestProcessDocument:
         import base64
         import lxml.etree as ET
 
+        # Encode the document as base64 (as required by WSDL)
+        plain_document = "<ClinicalDocument>test data</ClinicalDocument>"
+        encoded_document = base64.b64encode(plain_document.encode("utf-8")).decode(
+            "ascii"
+        )
+
         soap_request = build_soap_request(
             session_id="12345",
             work_type="TestWork",
             organization_id="OrgID",
-            document="<ClinicalDocument>test data</ClinicalDocument>",
+            document=encoded_document,  # Send base64-encoded
         )
 
         response = client.post("/soap/", content=soap_request)
@@ -225,10 +219,10 @@ class TestProcessDocument:
         # Find the Document element (it's base64 encoded per WSDL)
         namespaces = {
             "soap": "http://schemas.xmlsoap.org/soap/envelope/",
-            "ns0": "urn:epic-com:Common.2013.Services",
+            "tns": "urn:epic-com:Common.2013.Services",
         }
 
-        doc_element = xml.find(".//ns0:Document", namespaces)
+        doc_element = xml.find(".//tns:Document", namespaces)
         assert doc_element is not None, "Document element should be present"
 
         # Decode base64 content
@@ -237,6 +231,7 @@ class TestProcessDocument:
             assert (
                 "Processed:" in decoded
             ), f"Expected 'Processed:' in decoded document, got: {decoded}"
+            assert plain_document in decoded, "Expected original document in response"
 
     def test_handler_returns_error(self):
         """Test when handler returns a CdaResponse with error"""
@@ -262,7 +257,7 @@ class TestProcessDocument:
 
         # Should return 200 with error in response
         assert response.status_code == 200
-        assert b"<Error>" in response.content or b"<ns0:Error>" in response.content
+        assert b"<Error>" in response.content or b"<tns:Error>" in response.content
         assert b"Processing failed" in response.content
 
     def test_handler_raises_exception(self):
@@ -289,7 +284,7 @@ class TestProcessDocument:
 
         # Should return 200 with error in response (error handled gracefully)
         assert response.status_code == 200
-        assert b"<Error>" in response.content or b"<ns0:Error>" in response.content
+        assert b"<Error>" in response.content or b"<tns:Error>" in response.content
         assert b"Something went wrong" in response.content
 
     def test_document_with_special_characters(self, client):
