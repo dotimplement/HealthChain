@@ -8,7 +8,7 @@ Unlike the legacy connector pattern, adapters are used explicitly and provide cl
 
 Adapters parse data from specific healthcare formats into FHIR resources and store them in a `Document` container for processing.
 
-([Document API Reference](../../api/containers.md#healthchain.io.containers.document.Document))
+([Document API Reference](../../../api/containers.md#healthchain.io.containers.document))
 
 | Adapter | Input Format | Output Format | FHIR Resources | Document Access |
 |---------|--------------|---------------|----------------|-----------------|
@@ -67,7 +67,7 @@ print(f"Allergies: {doc.fhir.allergy_list}")
 response = adapter.format(doc)        # Document → CdaResponse
 ```
 
-For more details on the Document container, see [Document](../containers/document.md).
+For more details on the Document container, see [Document](../../io/containers/document.md).
 
 ## Adapter Configuration
 

@@ -230,7 +230,7 @@ No FHIR parsing code needed—define the mapping once, use it everywhere.
 
 !!! tip "Explore Interactively"
 
-    Step through the full flow in [notebooks/fhir_ml_workflow.ipynb](../../notebooks/fhir_ml_workflow.ipynb): FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.
+    Step through the full flow in [notebooks/fhir_ml_workflow.ipynb](https://github.com/dotimplement/HealthChain/blob/main/notebooks/fhir_ml_workflow.ipynb): FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.
 
 Now let's see how this pipeline plugs into each deployment pattern.
 

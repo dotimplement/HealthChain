@@ -108,4 +108,4 @@ dataset.remove_column('temp_feature')  # Drop a feature
 
 ## API Reference
 
-See the [Dataset API Reference](../../api/containers.md#healthchain.io.containers.dataset) for detailed class documentation.
+See the [Dataset API Reference](../../../api/containers.md#healthchain.io.containers.dataset) for detailed class documentation.
