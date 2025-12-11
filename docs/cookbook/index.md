@@ -25,6 +25,9 @@ Dive into real-world, production-ready examples to learn how to build interopera
 - 📝 **[Summarize Discharge Notes with CDS Hooks](./discharge_summarizer.md)**
   *Deploy a CDS Hooks-compliant service that listens for discharge events, auto-generates concise plain-language summaries, and delivers actionable clinical cards directly into the EHR workflow.*
 
+- 🔐 **[OAuth2/OIDC Authentication with Keycloak](./oauth2_authentication.md)**
+  *Secure your HealthChain API with JWT token validation, role-based access control (RBAC), and OIDC integration. Includes complete Keycloak setup and examples with Auth0, Okta, and Azure AD.*
+
 ---
 
 !!! info "What next?"
