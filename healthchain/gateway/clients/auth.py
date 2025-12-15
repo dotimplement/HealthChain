@@ -32,6 +32,7 @@ class OAuth2Config(BaseModel):
     scope: Optional[str] = None
     audience: Optional[str] = None  # For Epic and other systems that require audience
     use_jwt_assertion: bool = False  # Use JWT client assertion instead of client secret
+    key_id: Optional[str] = None  # Key ID (kid) for JWT header - required for JWKS
 
     def model_post_init(self, __context) -> None:
         """Validate that exactly one of client_secret or client_secret_path is provided."""
@@ -219,8 +220,9 @@ class OAuth2TokenManager:
             ),  # Expires in 5 minutes
         }
 
-        # Create and sign JWT
-        signed_jwt = JWT().encode(claims, key, alg="RS384")
+        # Create and sign JWT with optional kid header
+        headers = {"kid": self.config.key_id} if self.config.key_id else None
+        signed_jwt = JWT().encode(claims, key, alg="RS384", optional_headers=headers)
 
         return signed_jwt
 
@@ -356,7 +358,8 @@ class AsyncOAuth2TokenManager:
             ),  # Expires in 5 minutes
         }
 
-        # Create and sign JWT
-        signed_jwt = JWT().encode(claims, key, alg="RS384")
+        # Create and sign JWT with optional kid header
+        headers = {"kid": self.config.key_id} if self.config.key_id else None
+        signed_jwt = JWT().encode(claims, key, alg="RS384", optional_headers=headers)
 
         return signed_jwt

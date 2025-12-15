@@ -232,4 +232,4 @@ print(doc.models.get_output("my_model", "task"))
 
 ## API Reference
 
-See [Document API Reference](../../api/containers.md#healthchain.io.containers.document) for full details.
+See [Document API Reference](../../../api/containers.md#healthchain.io.containers.document) for full details.

@@ -47,6 +47,7 @@ class FHIRAuthConfig(BaseModel):
     scope: Optional[str] = "system/*.read system/*.write"
     audience: Optional[str] = None
     use_jwt_assertion: bool = False  # Use JWT client assertion (Epic/SMART style)
+    key_id: Optional[str] = None  # Key ID (kid) for JWT header - required for JWKS
 
     @property
     def requires_auth(self) -> bool:
@@ -99,6 +100,7 @@ class FHIRAuthConfig(BaseModel):
             scope=self.scope,
             audience=self.audience,
             use_jwt_assertion=self.use_jwt_assertion,
+            key_id=self.key_id,
         )
 
     @classmethod
@@ -119,6 +121,7 @@ class FHIRAuthConfig(BaseModel):
             {env_prefix}_TIMEOUT (optional, default: 30)
             {env_prefix}_VERIFY_SSL (optional, default: true)
             {env_prefix}_USE_JWT_ASSERTION (optional, default: false)
+            {env_prefix}_KEY_ID (optional, for JWKS identification)
 
         Returns:
             FHIRAuthConfig instance
@@ -161,6 +164,7 @@ class FHIRAuthConfig(BaseModel):
         use_jwt_assertion = (
             os.getenv(f"{env_prefix}_USE_JWT_ASSERTION", "false").lower() == "true"
         )
+        key_id = os.getenv(f"{env_prefix}_KEY_ID")
 
         return cls(
             client_id=client_id,
@@ -173,6 +177,7 @@ class FHIRAuthConfig(BaseModel):
             timeout=timeout,
             verify_ssl=verify_ssl,
             use_jwt_assertion=use_jwt_assertion,
+            key_id=key_id,
         )
 
     def to_connection_string(self) -> str:
@@ -215,6 +220,8 @@ class FHIRAuthConfig(BaseModel):
             params["verify_ssl"] = "false"
         if self.use_jwt_assertion:
             params["use_jwt_assertion"] = "true"
+        if self.key_id:
+            params["key_id"] = self.key_id
 
         # Build connection string
         query_string = urllib.parse.urlencode(params)
@@ -411,4 +418,5 @@ def parse_fhir_auth_connection_string(connection_string: str) -> FHIRAuthConfig:
         timeout=int(params.get("timeout", 30)),
         verify_ssl=params.get("verify_ssl", "true").lower() == "true",
         use_jwt_assertion=params.get("use_jwt_assertion", "false").lower() == "true",
+        key_id=params.get("key_id"),
     )
