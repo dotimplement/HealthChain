@@ -8,6 +8,10 @@ simple pipeline processing and provenance tracking.
 Requirements:
 - pip install healthchain python-dotenv
 
+FHIR Sources:
+- Epic Sandbox: Set EPIC_* environment variables
+- Cerner Open Sandbox: No auth needed
+
 Run:
 - python data_aggregation.py
 """
@@ -96,9 +100,7 @@ def create_app():
         doc = Document(data=merged_bundle)
         doc = pipeline(doc)
 
-        # print([outcome.model_dump() for outcome in doc.fhir.operation_outcomes])
-
-        return doc.fhir.bundle.model_dump()
+        return doc.fhir.bundle
 
     app = HealthChainAPI()
     app.register_gateway(gateway)
