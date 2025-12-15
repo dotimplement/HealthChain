@@ -1,12 +1,23 @@
-[tool.poetry]
+[project]
 name = "healthchain"
 version = "0.0.0"
 description = "Open source framework for productionizing healthcare AI"
-authors = ["Jennifer Jiang-Kells <jenniferjiangkells@gmail.com>", "Adam Kells <adamjkells93@gmail.com>"]
-license = "Apache-2.0"
+authors = [
+    { name = "Jennifer Jiang-Kells", email = "jenniferjiangkells@gmail.com" },
+    { name = "Adam Kells", email = "adamjkells93@gmail.com" },
+]
+requires-python = ">=3.10,<3.12"
 readme = "README.md"
-documentation = "https://dotimplement.github.io/HealthChain/"
-keywords = ["nlp", "ai", "llm", "healthcare", "ehr", "mlops", "fhir"]
+license = { text = "Apache-2.0" }
+keywords = [
+    "nlp",
+    "ai",
+    "llm",
+    "healthcare",
+    "ehr",
+    "mlops",
+    "fhir",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -16,58 +27,64 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+dependencies = [
+    "pydantic>=2.0.0,<2.11.0",
+    "eval_type_backport>=0.1.0,<0.2",
+    "pandas>=1.0.0,<3.0.0",
+    "spacy>=3.0.0,<4.0.0",
+    "numpy<2.0.0",
+    "colorama>=0.4.6,<0.5",
+    "faker>=25.1.0,<26",
+    "termcolor>=2.4.0,<3",
+    "jinja2>=3.1.3,<4",
+    "fastapi>=0.115.3,<0.116",
+    "starlette>=0.40.0,<0.42.0",
+    "uvicorn>=0.24.0,<0.25",
+    "httpx>=0.27.0,<0.28",
+    "spyne>=2.14.0,<3",
+    "lxml>=5.2.2,<6",
+    "xmltodict>=0.13.0,<0.14",
+    "fhir-resources>=8.0.0,<9",
+    "python-liquid>=1.13.0,<2",
+    "regex!=2019.12.17",
+    "fastapi-events>=0.12.2,<0.13",
+    "jwt>=1.3.1,<2",
+    "pyyaml>=6.0.3,<7",
+]
 include = [
     "healthchain/templates/*",
     "healthchain/configs/**/*.yaml",
-    "healthchain/configs/**/*.liquid"
+    "healthchain/configs/**/*.liquid",
 ]
 
-[tool.poetry.urls]
-"Homepage" = "https://dotimplement.github.io/HealthChain/"
-"Repository" = "https://github.com/dotimplement/HealthChain"
+[project.urls]
+Homepage = "https://dotimplement.github.io/HealthChain/"
+Repository = "https://github.com/dotimplement/HealthChain"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-pydantic = ">=2.0.0,<2.11.0"
-eval_type_backport = "^0.1.0"
-pandas = ">=1.0.0,<3.0.0"
-spacy = ">=3.0.0,<4.0.0"
-numpy = "<2.0.0"
-colorama = "^0.4.6"
-faker = "^25.1.0"
-termcolor = "^2.4.0"
-jinja2 = "^3.1.3"
-fastapi = "^0.115.3"
-starlette = ">=0.40.0,<0.42.0"
-uvicorn = "^0.24.0"
-httpx = "^0.27.0"
-spyne = "^2.14.0"
-lxml = "^5.2.2"
-xmltodict = "^0.13.0"
-fhir-resources = "^8.0.0"
-python-liquid = "^1.13.0"
-regex = "!=2019.12.17"
-fastapi-events = "^0.12.2"
-jwt = "^1.3.1"
-pyyaml = "^6.0.3"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.4.2"
-pytest = "^8.2.0"
-pre-commit = "^3.5.0"
-pytest-asyncio = "^0.24.0"
-ipykernel = "^6.29.5"
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.6.1"
-mkdocs-material = "^9.5.34"
-mkdocstrings = "^0.26.0"
-mkdocstrings-python = "^1.11.1"
-
-[tool.poetry.scripts]
+[project.scripts]
 healthchain = "healthchain.cli:main"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.4.2,<0.5",
+    "pytest>=8.2.0,<9",
+    "pre-commit>=3.5.0,<4",
+    "pytest-asyncio>=0.24.0,<0.25",
+    "ipykernel>=6.29.5,<7",
+]
+docs = [
+    "mkdocs>=1.6.1,<2",
+    "mkdocs-material>=9.5.34,<10",
+    "mkdocstrings>=0.26.0,<0.27",
+    "mkdocstrings-python>=1.11.1,<2",
+]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "docs",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

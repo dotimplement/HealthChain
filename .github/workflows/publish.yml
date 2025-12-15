@@ -12,18 +12,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"  # Use a version compatible with >=3.8,<3.12
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: 1.8.2  # Match local version
+        python-version: "3.11"
     - name: Bump version
-      run: poetry version $(git describe --tags --abbrev=0)
+      run: |
+        VERSION=$(git describe --tags --abbrev=0)
+        uvx --from=toml-cli toml set --toml-path=pyproject.toml project.version "${VERSION#v}"
     - name: Build a binary wheel and a source tarball
-      run: poetry build
+      run: uv build
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
