@@ -1,103 +1,218 @@
 # Contributing
 
-First of all, thank you for being interested in contributing to HealthChain, we welcome contributions of all kinds! Listed below are some of the ways you can get involved.
+Thank you for your interest in contributing to HealthChain!
 
-## Reporting Issues
+Before you start, please read this guide to understand how to propose changes, open pull requests, and collaborate effectively.
+
+## ✅ Before you open a pull request
+To keep reviews efficient and maintain project quality, PRs must meet these basics (or may be closed without in‑depth review):
+
+- [ ] Small, focused on a single change or issue
+- [ ] Links to at least one [`GitHub Issue`](https://github.com/dotimplement/HealthChain/issues) or [`RFC`](https://github.com/dotimplement/HealthChain/tree/main/docs/rfcs) (Request for Comments) with context and trade‑offs explained in the description
+- [ ] All tests pass locally; new functionality has tests and docs
+- [ ] For `core`, `Stage: Research 🔬`, or `Stage: Design 🎨` labels: has accepted RFC
+- [ ] When unsure about scope: opened a [GitHub Discussion](https://github.com/dotimplement/HealthChain/discussions) first, not a speculative PR
+
+## Contributing health & domain expertise
+
+Real‑world experience from healthcare, public health, and digital health products is crucial for making HealthChain useful and safe.
+
+You can contribute domain expertise by:
+
+- Opening [`Issues`](https://github.com/dotimplement/HealthChain/issues) or [`Discussions`](https://github.com/dotimplement/HealthChain/discussions) that describe real workflows, data models (e.g. FHIR resources), regulatory or security constraints, and integration needs.
+- Commenting on `Stage: Research 🔬` and `Stage: Design 🎨` issues with context from clinical practice, informatics, or implementation experience.
+- Co‑authoring RFCs that capture requirements for consent, auditing, interoperability, and safety‑related behaviors.
+
+When you open a domain‑focused issue, please include:
+
+- Context (setting, jurisdiction, type of organization).
+- The problem you are trying to solve.
+- Any relevant standards (FHIR profiles, policies, regulations) and links.
+
+## 🤝 For integrators, companies, and partners
+
+If you are exploring HealthChain for use in your product or organization, or want to co‑design an integration or partnership:
+
+**For substantial partnerships or integrations:**
+- Shoot me an [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain) or [schedule a call](CALENDLY_LINK_HERE)
+- Join [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel
+
+**For technical discussions:**
+- Open an issue with the `partnership` label describing your use case, data sources, and timelines
+- Use [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) to sketch architecture options
+
+**We're particularly interested in:**
+- Pilot deployments and production integrations
+- Co-maintained adapters for specific EHR systems
+- Sponsored features with committed engineering resources
+- Research collaborations and case studies
+
+This helps us triage opportunities and align on support, timelines, and responsibilities.
+
+
+## 🐛 Reporting Issues
 
 Found a bug? Have a suggestion for a new feature? You can help us improve by:
 
-- **Submitting Bug Reports**: Clearly describe the issue, including steps to reproduce it, the expected outcome, and any relevant screenshots or logs.
-- **Suggesting Enhancements**: Share your ideas for new features or improvements. Please provide as much detail as possible to help us understand your vision.
+- **Submitting Bug Reports**: Clearly describe the issue, steps to reproduce, expected outcome, actual outcome, and any relevant logs or screenshots.
+- **Suggesting Enhancements**: Describe the problem you face, not only your proposed solution. Include user stories, constraints, and any alternatives considered.
 
-## Improving Documentation
+For broad, exploratory ideas or "is this a good idea?" questions, please prefer [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) over large PRs.
 
-Good documentation helps others understand and use our project. You can contribute by:
+- Use the `Ideas` category for high‑level proposals.
+- Link any related Discussion from the corresponding issue if applicable.
+- Once there is a concrete proposal, move to an RFC PR so we have a stable, version‑controlled record of the design.
 
-- **Updating Existing Documentation**: Fix typos, clarify instructions, and ensure all information is up to date.
-- **Creating New Documentation**: Write new guides, tutorials, or examples that help users and developers get the most out of our project.
+## 📚 Improving Documentation
 
-## Writing Code
+Good documentation is critical in healthcare. You can help by:
 
-If you're a developer, there are many ways you can contribute code:
+- **Updating Existing Documentation**: Fixing inaccuracies, clarifying concepts, and keeping examples and setup instructions current.
+- **Creating New Documentation**: Writing guides, tutorials, implementation notes, or health‑domain explainers that help others adopt and safely operate HealthChain.
 
-- **Fixing Bugs**: Look through the issue tracker and find bugs that you can fix. Be sure to reference the issue number in your commit messages.
-- **Implementing Features**: Work on new features or enhancements. Discuss your ideas with the maintainers first to make sure they align with the project's goals.
-- **Improving Tests**: Increase test coverage and ensure the codebase is robust and reliable.
+When writing docs:
 
-## Join Our Discord
+- Prefer clear, concise language and use headings and lists for structure.
+- Include code snippets or configuration examples where helpful.
+- Call out assumptions, limitations, and safety‑relevant behaviour explicitly.
 
-Are you a domain expert with valuable insights? We encourage you to join our [Discord community](https://discord.gg/UQC6uAepUz) and share your wisdom. Your expertise can help shape the future of the project and guide us in making informed decisions.
+## 💻 Writing Code
 
-We believe that every contribution, big or small, makes a difference. Thank you for being a part of our community!
+**New to HealthChain?** Look for [`good first issue`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
 
-## How to Contribute Code
+You can contribute code by:
 
-This project uses `uv` for dependency management. For more information see the [uv documentation](https://docs.astral.sh/uv/).
+- **Fixing Bugs**: Pick issues labelled [`Issue: Bug 🐛`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22Issue%3A+Bug+%F0%9F%90%9B%22) and reference the issue number in your commits and PR.
+- **Implementing Features**: For non‑trivial features, start with an issue or Discussion to confirm scope and fit, and use the RFC process for anything touching core areas.
+- **Improving Tests**: Increase coverage, add regression tests for fixed bugs, and improve reliability of existing test suites.
 
-1. Fork the repository to your own GitHub account. For more details check out [github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+### Core Changes and RFCs
 
-2. Clone the forked repository to your local machine.
+Some changes have a large impact on security, architecture, and stability. These are gated by an RFC (Request for Comments) process and specific labels:
 
-3. Run `uv sync --all-extras --dev` to install all the necessary development dependencies.
+- `Stage: Research 🔬`: The problem and constraints are being explored; we are collecting context and options, not implementations.
+- `Stage: Design 🎨`: The problem is understood and we are working towards a concrete design; implementation is not yet agreed.
+- `core`: High‑impact or security‑sensitive changes (e.g. authentication, authorization, data model, API contracts, persistence, deployment architecture).
 
-4. Try running `uv run pytest` to check that all is working as expected.
+For issues with any of these labels:
 
-5. Create a new branch for your feature or bugfix.
+- An agreed RFC is required before implementation PRs are opened.
+- Implementation PRs must link to the accepted RFC and follow the agreed approach.
+- PRs that bypass this process may be closed without detailed review.
+
+For larger changes, especially related to authentication/authorization, persistence, public API, or deployment/operations:
+
+- Check for an existing `Stage: Research 🔬`, `Stage: Design 🎨`, or `core` issue.
+- Comment on the issue or start a [`GitHub Discussion`](https://github.com/dotimplement/HealthChain/discussions) if the problem or approach is unclear.
+- Follow the [`RFC process`](#how-to-create-an-rfc) before opening an implementation PR.
+
+**Quick reference:**
+- 🔴 **RFC required**: Auth, specification implementation (SMART on FHIR, CDS Hooks, etc.), security, persistence, API contracts
+- 🟡 **Discussion recommended**: New gateways/pipelines, significant I/O loaders, breaking changes
+- 🟢 **No RFC needed**: Bug fixes, docs, tests, small refactors
+
+## 📋 How to Create an RFC
+
+For `Stage: Research 🔬`, `Stage: Design 🎨`, and `core` issues, RFCs are used to agree on the approach before writing significant code.
+
+RFCs live in this repository under `docs/rfcs/`. To propose an RFC:
+
+1. Pick an open issue with a stage/core label, or open a new issue describing the problem and context.
+2. Copy `docs/rfcs/000-template.md` to `docs/rfcs/NNN-short-title.md` (replace `NNN` with the next number and `short-title` with a short description).
+3. Fill in the template with problem, goals, proposed design, risks, and impact.
+4. Open a pull request titled `RFC: <Short title>`, linking to the related issue (and any Discussions).
+5. Maintainers and contributors will review, ask questions, and suggest changes.
+6. Once there is consensus, a maintainer will set the `Status` to `Accepted` or `Rejected` and merge or close the PR.
+
+### After an RFC is Accepted
+
+- You (or another contributor) can open implementation PRs that state `Implements RFC NNN: <title>` and link back to the RFC.
+- If an implementation PR diverges from the accepted RFC in a significant way, we may ask for a follow‑up RFC or additional design discussion.
+
+## 💬 Join our Discord
+
+If you are:
+
+- Evaluating HealthChain for your organisation or product
+- A clinician, informatician, or health data specialist
+- Interested in co‑designing features, integrations, or pilots
+
+…join our [Discord](https://discord.gg/UQC6uAepUz) for quick questions and discussions. This is often the easiest way to discuss integrations, deployment questions, and partnership ideas before formalizing them in issues or RFCs.
+
+## ⚙️ How to Contribute Code
+
+This project uses `uv` for dependency management. See the [uv documentation](https://docs.astral.sh/uv/) for more information.
+
+1. [Fork the repository to your own GitHub account](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+2. Clone your fork locally.
+3. Run `uv sync --all-extras --dev` to install all development dependencies.
+4. Run `uv run pytest` to ensure tests pass.
+5. Create a new branch for your change:
 
     ```shell
     git checkout -b my-feature-branch
     ```
-
-6. Pre-commit is a package for checking and auto-formatting code to have a consistent style. If you don't have pre-commit installed locally then you may need to follow the instructions [here](https://pre-commit.com/). You can then install our hooks by running:
-
+6. Install pre‑commit hooks (after installing [pre-commit](https://pre-commit.com/)):
     ```shell
     pre-commit install
     ```
-
-7. Make your changes and commit them with descriptive commit messages.
+7. Make your changes and commit them with descriptive messages:
 
     ```shell
     git commit -m "Add new feature to do X"
     ```
-
-8. Push your changes to your forked repository.
+8. Push your changes to your fork:
 
     ```shell
     git push origin my-feature-branch
     ```
-
-9. Open a pull request on the original repository.
+9.  Open a pull request on the main repository.
 
 ### Contributing to Documentation
 
-We use `Mkdocs` for our documentation site. To download the dependencies for documentation, run:
-```shell
-uv sync --group docs
-```
+To work on the documentation site ([MkDocs](https://www.mkdocs.org/)):
 
-To preview the docs page in development:
-```shell
-uv run mkdocs serve
-```
-#### Writing Clear Documentation
+- Install the doc dependencies:
 
-- **Be Concise**: Use clear and concise language to explain concepts and instructions.
-- **Use Headings**: Organize content with headings and subheadings to improve readability.
-- **Code Examples**: Include code examples to illustrate usage and functionality.
-- **Consistent Style**: Follow a consistent style and format throughout the documentation.
-- **Active Voice**: Write in the active voice to make instructions direct and easy to follow.
-- **Bullet Points**: Use bullet points or numbered lists for steps and key points.
+    ```shell
+    uv sync --group docs
+    ```
+- Run the docs site locally:
 
-## Testing
+    ```shell
+    uv run mkdocs serve
+    ```
+When contributing docs:
 
-Make sure to add tests for any new functionality you add. Run all tests to ensure that your changes do not break existing functionality.
+- Use clear headings and subheadings.
+- Prefer examples and concrete scenarios, especially for health workflows and integrations.
+- Keep style consistent and use active voice.
 
-## Pull Request Process
+## 🧪 Testing
 
-1. Ensure your changes comply with the style guide.
-2. Ensure all tests pass.
-3. Open a pull request with a clear title and description of your changes.
-4. A project maintainer will review your pull request and may request changes.
-5. Once approved, your pull request will be merged.
+All new functionality must include tests, and all existing tests must pass.
 
-Thank you for your contributions!
+- Add or update unit/integration tests to cover your changes.
+- Run `uv run pytest` before opening or updating a PR.
+- If tests are flaky or slow, mention this in the PR so maintainers can help improve them.
+
+
+## 🔍 Pull request expectations
+
+When opening a PR:
+
+- Ensure your changes follow the style guide and pass all tests.
+- Use a clear, descriptive title and explain what the PR does and why.
+- Link related issues and RFCs (e.g. Closes #123, Implements RFC 004).
+- Describe how you tested your changes and any known limitations or follow‑ups.
+- Drive‑by PRs that are large, low‑context, untested, or touch core areas without prior discussion are unlikely to be merged and may be closed to keep review load manageable.
+
+## 🤖 Tooling and AI Assistance
+
+We welcome and encourage the use of AI tools to support development, but contributors remain responsible for the changes they submit. All code changes must be understood and reviewed by humans.
+
+- If you used AI for significant parts of a change, mention this in the PR description.
+- Make sure you understand every line of code and can explain the design and trade‑offs.
+- Ensure tests and docs are updated; AI‑generated, untested, or unexplained PRs — especially on core issues — may be closed without detailed review.
+
+For broader project context, see the [CLAUDE.md](CLAUDE.md) file.
