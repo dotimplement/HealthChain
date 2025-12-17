@@ -141,10 +141,9 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - Presented at [NHS Python Open Source Conference](https://github.com/nhs-r-community/conference-2024/blob/main/Talks/2024-11-21_jiang-kells_building-healthchain.md) ([watch talk](https://www.youtube.com/watch?v=_ZqlPsDUdSY&t=1967s))
 - [Built from NHS AI deployment experience](https://open.substack.com/pub/jenniferjiangkells/p/healthchain-building-the-tool-i-wish) – read the origin story
 
-**For Partnerships & Production Use:**
-Exploring HealthChain for your product or organization? [Email me](mailto:jenniferjiangkells@gmail.com) or join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) to discuss integrations, pilots, or collaborations.
+## 🤝 Partnerships & Production Use
 
-Join [Discord](https://discord.gg/UQC6uAepUz) for technical discussions.
+Exploring HealthChain for your product or organization? Drop in our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) or [get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations.
 
 ## Usage Examples
 
@@ -246,13 +245,11 @@ HealthChain is built for production healthcare systems. We prioritize contributo
 - **FHIR expertise** – designed or implemented FHIR APIs and interoperability solutions
 - **Healthcare security background** – auth, privacy, compliance in regulated environments
 
-If that's you, we want your input. Mention your background in your first issue/PR for fast-track review.
-
 **Get started:**
 - See the [project board](https://github.com/orgs/dotimplement/projects/1/views/1) for current roadmap and active work
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and RFC process
 - Discuss ideas in [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions)
-- Partnerships? [Email me](mailto:jenniferjiangkells@gmail.com?subject=HealthChain) or join [Discord](https://discord.gg/UQC6uAepUz)
+- Join our [Discord](https://discord.gg/UQC6uAepUz) community
 
 
 ## 🤗 Acknowledgements
