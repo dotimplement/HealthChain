@@ -245,6 +245,8 @@ HealthChain is built for production healthcare systems. We prioritize contributo
 - **FHIR expertise** – designed or implemented FHIR APIs and interoperability solutions
 - **Healthcare security background** – auth, privacy, compliance in regulated environments
 
+If that's you, we'd love your input!
+
 **Get started:**
 - See the [project board](https://github.com/orgs/dotimplement/projects/1/views/1) for current roadmap and active work
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and RFC process
