@@ -1,0 +1,230 @@
+# Healthcare Data Converter Configuration
+# ========================================
+#
+# This configuration file controls the behavior of the Healthcare Data
+# Format Conversion application. Modify these settings to customize
+# the conversion pipeline for your specific needs.
+
+# Application Settings
+app:
+  name: "Healthcare Data Converter"
+  version: "1.0.0"
+  description: "Convert between FHIR and CDA formats"
+
+# Default Conversion Settings
+conversion:
+  # Default validation level: strict, warn, or ignore
+  validation_level: warn
+
+  # Default CDA document type when converting from FHIR
+  default_document_type: ccd
+
+  # Include human-readable narrative sections in CDA output
+  include_narrative: true
+
+  # Preserve original resource IDs when possible
+  preserve_ids: true
+
+  # Maximum batch size for bulk operations
+  max_batch_size: 100
+
+  # Processing timeout in seconds
+  timeout: 300
+
+# FHIR Configuration
+fhir:
+  # FHIR version (R4 is currently supported)
+  version: "R4"
+
+  # Supported resource types for conversion
+  supported_resources:
+    - Condition
+    - MedicationStatement
+    - MedicationRequest
+    - AllergyIntolerance
+    - Observation
+    - Procedure
+    - Immunization
+    - DiagnosticReport
+    - DocumentReference
+    - Encounter
+    - Patient
+    - Practitioner
+    - Organization
+
+  # Default patient reference format
+  patient_reference_format: "Patient/{id}"
+
+# CDA Configuration
+cda:
+  # CDA Release version
+  version: "R2"
+
+  # Supported document types
+  document_types:
+    ccd:
+      name: "Continuity of Care Document"
+      template_id: "2.16.840.1.113883.10.20.22.1.1"
+      code: "34133-9"
+      code_system: "2.16.840.1.113883.6.1"
+
+    discharge_summary:
+      name: "Discharge Summary"
+      template_id: "2.16.840.1.113883.10.20.22.1.8"
+      code: "18842-5"
+      code_system: "2.16.840.1.113883.6.1"
+
+    progress_note:
+      name: "Progress Note"
+      template_id: "2.16.840.1.113883.10.20.22.1.9"
+      code: "11506-3"
+      code_system: "2.16.840.1.113883.6.1"
+
+    consultation_note:
+      name: "Consultation Note"
+      template_id: "2.16.840.1.113883.10.20.22.1.4"
+      code: "11488-4"
+      code_system: "2.16.840.1.113883.6.1"
+
+    history_and_physical:
+      name: "History and Physical"
+      template_id: "2.16.840.1.113883.10.20.22.1.3"
+      code: "34117-2"
+      code_system: "2.16.840.1.113883.6.1"
+
+    operative_note:
+      name: "Operative Note"
+      template_id: "2.16.840.1.113883.10.20.22.1.7"
+      code: "11504-8"
+      code_system: "2.16.840.1.113883.6.1"
+
+    procedure_note:
+      name: "Procedure Note"
+      template_id: "2.16.840.1.113883.10.20.22.1.6"
+      code: "28570-0"
+      code_system: "2.16.840.1.113883.6.1"
+
+    referral_note:
+      name: "Referral Note"
+      template_id: "2.16.840.1.113883.10.20.22.1.14"
+      code: "57133-1"
+      code_system: "2.16.840.1.113883.6.1"
+
+  # Section configurations
+  sections:
+    problems:
+      loinc_code: "11450-4"
+      display_name: "Problem List"
+      fhir_resource: Condition
+
+    medications:
+      loinc_code: "10160-0"
+      display_name: "Medications"
+      fhir_resource: MedicationStatement
+
+    allergies:
+      loinc_code: "48765-2"
+      display_name: "Allergies and Adverse Reactions"
+      fhir_resource: AllergyIntolerance
+
+    vital_signs:
+      loinc_code: "8716-3"
+      display_name: "Vital Signs"
+      fhir_resource: Observation
+
+    procedures:
+      loinc_code: "47519-4"
+      display_name: "Procedures"
+      fhir_resource: Procedure
+
+    immunizations:
+      loinc_code: "11369-6"
+      display_name: "Immunizations"
+      fhir_resource: Immunization
+
+    results:
+      loinc_code: "30954-2"
+      display_name: "Results"
+      fhir_resource: DiagnosticReport
+
+    encounters:
+      loinc_code: "46240-8"
+      display_name: "Encounters"
+      fhir_resource: Encounter
+
+# Code System Mappings
+code_systems:
+  # FHIR URL to CDA OID mappings
+  mappings:
+    "http://snomed.info/sct":
+      oid: "2.16.840.1.113883.6.96"
+      name: "SNOMED CT"
+
+    "http://loinc.org":
+      oid: "2.16.840.1.113883.6.1"
+      name: "LOINC"
+
+    "http://www.nlm.nih.gov/research/umls/rxnorm":
+      oid: "2.16.840.1.113883.6.88"
+      name: "RxNorm"
+
+    "http://hl7.org/fhir/sid/icd-10-cm":
+      oid: "2.16.840.1.113883.6.90"
+      name: "ICD-10-CM"
+
+    "http://hl7.org/fhir/sid/ndc":
+      oid: "2.16.840.1.113883.6.69"
+      name: "NDC"
+
+    "http://hl7.org/fhir/sid/cvx":
+      oid: "2.16.840.1.113883.12.292"
+      name: "CVX"
+
+# API Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+  # CORS settings
+  cors:
+    enabled: true
+    origins:
+      - "*"
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+    headers:
+      - "*"
+
+  # Rate limiting (requests per minute per client)
+  rate_limit:
+    enabled: false
+    requests_per_minute: 100
+
+  # Request size limits
+  max_request_size_mb: 50
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Log file settings (optional)
+  file:
+    enabled: false
+    path: "./logs/converter.log"
+    max_size_mb: 100
+    backup_count: 5
+
+# Performance Tuning
+performance:
+  # Number of worker threads for batch processing
+  worker_threads: 4
+
+  # Enable caching of parsed templates
+  template_caching: true
+
+  # Maximum concurrent conversions
+  max_concurrent: 10

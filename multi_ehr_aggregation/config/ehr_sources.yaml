@@ -1,0 +1,88 @@
+# Multi-EHR Data Aggregation Configuration
+# Configure your EHR data sources here
+
+ehr_sources:
+  # Epic EHR System
+  - name: "Epic_MainHospital"
+    base_url: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
+    system_type: "Epic"
+    auth_type: "oauth2"
+    enabled: true
+    priority: 1
+    credentials:
+      client_id: "${EPIC_CLIENT_ID}"
+      client_secret: "${EPIC_CLIENT_SECRET}"
+      token_url: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
+
+  # Cerner EHR System
+  - name: "Cerner_CommunityClinic"
+    base_url: "https://fhir-ehr-code.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d"
+    system_type: "Cerner"
+    auth_type: "oauth2"
+    enabled: true
+    priority: 2
+    credentials:
+      client_id: "${CERNER_CLIENT_ID}"
+      client_secret: "${CERNER_CLIENT_SECRET}"
+      token_url: "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/token"
+
+  # Generic FHIR Server
+  - name: "HAPI_FHIR_Test"
+    base_url: "http://hapi.fhir.org/baseR4"
+    system_type: "Generic_FHIR"
+    auth_type: "none"
+    enabled: true
+    priority: 3
+
+  # athenahealth
+  - name: "Athena_SpecialtyCare"
+    base_url: "https://api.platform.athenahealth.com/fhir/r4"
+    system_type: "athenahealth"
+    auth_type: "oauth2"
+    enabled: false  # Disabled by default
+    priority: 4
+    credentials:
+      client_id: "${ATHENA_CLIENT_ID}"
+      client_secret: "${ATHENA_CLIENT_SECRET}"
+
+# Aggregation Settings
+aggregation:
+  deduplication_enabled: true
+  normalize_codes: true
+  merge_strategy: "priority"  # priority | most_recent | most_complete
+
+  # Deduplication rules
+  deduplication_rules:
+    match_threshold: 0.9  # Similarity threshold for fuzzy matching
+    match_fields:
+      Patient: ["identifier", "name", "birthDate"]
+      Observation: ["code", "effectiveDateTime", "value"]
+      Condition: ["code", "onsetDateTime"]
+      MedicationRequest: ["medicationCodeableConcept", "authoredOn"]
+
+# Data Quality
+data_quality:
+  min_completeness_score: 0.5
+  max_data_age_days: 90
+  require_patient_demographics: true
+  validate_fhir_resources: true
+
+# Export Settings
+export:
+  default_format: "json"  # json | csv | parquet
+  include_metadata: true
+  include_source_attribution: true
+  anonymize: false  # Set to true for de-identified exports
+
+# Performance
+performance:
+  max_concurrent_sources: 5
+  request_timeout_seconds: 30
+  retry_attempts: 3
+  cache_ttl_minutes: 15
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG | INFO | WARNING | ERROR
+  log_file: "logs/multi_ehr_aggregation.log"
+  log_format: "json"  # json | text
