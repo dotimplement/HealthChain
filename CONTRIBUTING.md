@@ -35,7 +35,7 @@ If you are exploring HealthChain for use in your product or organization, or wan
 
 **For substantial partnerships or integrations:**
 - Shoot me an [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain)
-- Join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm GMT) for direct Q&A
+- Join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) for direct Q&A
 - Join the [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel
 
 **For feature collaborations:**
@@ -142,7 +142,7 @@ If you are:
 - A clinician, informatician, or health data specialist
 - Interested in co‑designing features, integrations, or pilots
 
-…join our [Discord](https://discord.gg/UQC6uAepUz) for quick questions and discussions. This is often the easiest way to discuss integrations, deployment questions, and partnership ideas before formalizing them in issues or RFCs.
+…join our [Discord](https://discord.gg/UQC6uAepUz) community for quick questions and discussions. This is often the easiest way to discuss integrations, deployment questions, and partnership ideas before formalizing them in issues or RFCs.
 
 ## ⚙️ How to Contribute Code
 

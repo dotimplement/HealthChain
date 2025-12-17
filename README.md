@@ -142,7 +142,7 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - [Built from NHS AI deployment experience](https://open.substack.com/pub/jenniferjiangkells/p/healthchain-building-the-tool-i-wish) – read the origin story
 
 **For Partnerships & Production Use:**
-Exploring HealthChain for your product or organization? [Email me](mailto:jenniferjiangkells@gmail.com) or join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm GMT) to discuss integrations, pilots, or collaborations.
+Exploring HealthChain for your product or organization? [Email me](mailto:jenniferjiangkells@gmail.com) or join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) to discuss integrations, pilots, or collaborations.
 
 Join [Discord](https://discord.gg/UQC6uAepUz) for technical discussions.
 
@@ -230,10 +230,10 @@ client.save_results("./output/")
 
 ## 🛣️ Road Map
 
-- [ ] 🔍 Data provenance and audit trails tracking
-- [ ] 🔒 HIPAA compliance and security
+- [ ] 🔍 Data provenance and observability
+- [ ] 🔒 Production security and compliance (Authentication, audit logging, HIPAA)
 - [ ] 🔄 HL7v2 parsing, FHIR profile conversion and OMOP mapping support
-- [ ] 🚀 Enhanced deployment support with observability and telemetry (Docker, Kubernetes, etc.)
+- [ ] 🚀 Enhanced deployment support (Docker, Kubernetes, telemetry)
 - [ ] 📊 Model performance monitoring with MLFlow integration
 - [ ] 🤖 MCP server integration
 
