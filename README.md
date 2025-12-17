@@ -142,9 +142,9 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - [Built from NHS AI deployment experience](https://open.substack.com/pub/jenniferjiangkells/p/healthchain-building-the-tool-i-wish) – read the origin story
 
 **For Partnerships & Production Use:**
-Exploring HealthChain for your product or organization? [Email me](mailto:jenniferjiangkells@gmail.com) or [schedule a call](CALENDLY_LINK_HERE) to discuss integrations, pilots, or collaborations.
+Exploring HealthChain for your product or organization? [Email me](mailto:jenniferjiangkells@gmail.com) or join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm GMT) to discuss integrations, pilots, or collaborations.
 
-Join our [Discord](https://discord.gg/UQC6uAepUz) for technical discussions.
+Join [Discord](https://discord.gg/UQC6uAepUz) for technical discussions.
 
 ## Usage Examples
 
@@ -249,6 +249,7 @@ HealthChain is built for production healthcare systems. We prioritize contributo
 If that's you, we want your input. Mention your background in your first issue/PR for fast-track review.
 
 **Get started:**
+- See the [project board](https://github.com/orgs/dotimplement/projects/1/views/1) for current roadmap and active work
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and RFC process
 - Discuss ideas in [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions)
 - Partnerships? [Email me](mailto:jenniferjiangkells@gmail.com?subject=HealthChain) or join [Discord](https://discord.gg/UQC6uAepUz)

@@ -11,7 +11,7 @@ To keep reviews efficient and maintain project quality, PRs must meet these basi
 - [ ] Links to at least one [`GitHub Issue`](https://github.com/dotimplement/HealthChain/issues) or [`RFC`](https://github.com/dotimplement/HealthChain/tree/main/docs/rfcs) (Request for Comments) with context and trade‑offs explained in the description
 - [ ] All tests pass locally; new functionality has tests and docs
 - [ ] For `core`, `Stage: Research 🔬`, or `Stage: Design 🎨` labels: has accepted RFC
-- [ ] When unsure about scope: opened a [GitHub Discussion](https://github.com/dotimplement/HealthChain/discussions) first, not a speculative PR
+- [ ] Not sure about scope? Open a [GitHub Discussion](https://github.com/dotimplement/HealthChain/discussions) first
 
 ## Contributing health & domain expertise
 
@@ -34,21 +34,24 @@ When you open a domain‑focused issue, please include:
 If you are exploring HealthChain for use in your product or organization, or want to co‑design an integration or partnership:
 
 **For substantial partnerships or integrations:**
-- Shoot me an [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain) or [schedule a call](CALENDLY_LINK_HERE)
-- Join [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel
+- Shoot me an [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain)
+- Join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm GMT) for direct Q&A
+- Join the [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel
 
-**For technical discussions:**
-- Open an issue with the `partnership` label describing your use case, data sources, and timelines
-- Use [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) to sketch architecture options
+**For feature collaborations:**
+Once we've aligned on a collaboration, we'll track it using GitHub issues with stage labels:
+- **Stage: Research 🔬** = Gathering requirements and exploring the problem space
+- **Stage: Design 🎨** = Designing the solution (often via RFC for core features)
+- Co-authored RFCs welcome for features you're willing to help build/maintain
+
+**For exploratory technical discussions:**
+Use [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) to brainstorm architecture options and gather community input.
 
 **We're particularly interested in:**
 - Pilot deployments and production integrations
 - Co-maintained adapters for specific EHR systems
 - Sponsored features with committed engineering resources
 - Research collaborations and case studies
-
-This helps us triage opportunities and align on support, timelines, and responsibilities.
-
 
 ## 🐛 Reporting Issues
 
@@ -78,7 +81,9 @@ When writing docs:
 
 ## 💻 Writing Code
 
-**New to HealthChain?** Look for [`good first issue`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
+>**New to HealthChain?** Look for [`good first issue`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
+
+**Check the [project board](https://github.com/orgs/dotimplement/projects/1/views/1)** to see current priorities and what's actively being worked on.
 
 You can contribute code by:
 
@@ -205,14 +210,14 @@ When opening a PR:
 - Use a clear, descriptive title and explain what the PR does and why.
 - Link related issues and RFCs (e.g. Closes #123, Implements RFC 004).
 - Describe how you tested your changes and any known limitations or follow‑ups.
-- Drive‑by PRs that are large, low‑context, untested, or touch core areas without prior discussion are unlikely to be merged and may be closed to keep review load manageable.
+
 
 ## 🤖 Tooling and AI Assistance
 
-We welcome and encourage the use of AI tools to support development, but contributors remain responsible for the changes they submit. All code changes must be understood and reviewed by humans.
+We welcome and encourage the use of AI tools to support development, but contributors remain responsible for the changes they submit.
 
-- If you used AI for significant parts of a change, mention this in the PR description.
 - Make sure you understand every line of code and can explain the design and trade‑offs.
-- Ensure tests and docs are updated; AI‑generated, untested, or unexplained PRs — especially on core issues — may be closed without detailed review.
+- All code changes must be understood and reviewed by humans.
+- Maintainers reserve the right to close low-context, unexplained, AI-generated PRs without detailed review.
 
 For broader project context, see the [CLAUDE.md](CLAUDE.md) file.
