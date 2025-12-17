@@ -78,8 +78,6 @@ nav:
       - api/fhir_helpers.md
   - Community:
       - community/index.md
-      - Contribution Guide: community/contribution_guide.md
-      - Resources: community/resources.md
 
 copyright: dotimplement
 theme:
