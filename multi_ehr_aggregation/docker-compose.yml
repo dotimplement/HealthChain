@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  multi-ehr-aggregation:
+    build:
+      context: ..
+      dockerfile: multi_ehr_aggregation/Dockerfile
+    image: multi-ehr-aggregation:latest
+    container_name: multi-ehr-aggregation
+    environment:
+      - PYTHONUNBUFFERED=1
+      # EHR credentials (override in .env file)
+      - EPIC_CLIENT_ID=${EPIC_CLIENT_ID:-}
+      - EPIC_CLIENT_SECRET=${EPIC_CLIENT_SECRET:-}
+      - CERNER_CLIENT_ID=${CERNER_CLIENT_ID:-}
+      - CERNER_CLIENT_SECRET=${CERNER_CLIENT_SECRET:-}
+    volumes:
+      # Mount data directory for exports
+      - ./data:/app/data
+      # Mount config for customization
+      - ./config:/app/config:ro
+    restart: "no"
+
+  # Run specific examples
+  basic-example:
+    build:
+      context: ..
+      dockerfile: multi_ehr_aggregation/Dockerfile
+    image: multi-ehr-aggregation:latest
+    container_name: multi-ehr-basic-example
+    command: python examples/basic_aggregation.py
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - examples
+
+  batch-example:
+    build:
+      context: ..
+      dockerfile: multi_ehr_aggregation/Dockerfile
+    image: multi-ehr-aggregation:latest
+    container_name: multi-ehr-batch-example
+    command: python examples/batch_aggregation.py
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - examples
+
+  analytics-example:
+    build:
+      context: ..
+      dockerfile: multi_ehr_aggregation/Dockerfile
+    image: multi-ehr-aggregation:latest
+    container_name: multi-ehr-analytics-example
+    command: python examples/analytics_dashboard.py
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - examples
+
+  # Test runner
+  test:
+    build:
+      context: ..
+      dockerfile: multi_ehr_aggregation/Dockerfile
+    image: multi-ehr-aggregation:latest
+    container_name: multi-ehr-test
+    command: pytest tests/ -v --asyncio-mode=auto
+    profiles:
+      - test

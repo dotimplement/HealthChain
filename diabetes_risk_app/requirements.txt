@@ -1,0 +1,20 @@
+# Diabetes Risk App Dependencies
+# Install healthchain from parent directory or PyPI
+
+# Core dependencies
+fastapi>=0.115.3,<0.116
+uvicorn>=0.24.0,<0.25
+pydantic>=2.0.0,<2.11.0
+pandas>=1.0.0,<3.0.0
+numpy<2.0.0
+pyyaml>=6.0.3,<7
+
+# ML dependencies
+scikit-learn>=1.3.0
+
+# Testing
+pytest>=8.0.0
+httpx>=0.27.0,<0.28
+
+# HealthChain (install from parent directory or PyPI)
+# pip install ../  OR  pip install healthchain

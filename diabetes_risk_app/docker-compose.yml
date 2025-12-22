@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  diabetes-risk-app:
+    build:
+      context: ..
+      dockerfile: diabetes_risk_app/Dockerfile
+    image: diabetes-risk-app:latest
+    container_name: diabetes-risk-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/cds-services')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Test runner service
+  test:
+    build:
+      context: ..
+      dockerfile: diabetes_risk_app/Dockerfile
+    image: diabetes-risk-app:latest
+    container_name: diabetes-risk-test
+    command: pytest tests/ -v
+    profiles:
+      - test

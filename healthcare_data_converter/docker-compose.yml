@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  healthcare-data-converter:
+    build:
+      context: ..
+      dockerfile: healthcare_data_converter/Dockerfile
+    image: healthcare-data-converter:latest
+    container_name: healthcare-data-converter
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+    volumes:
+      # Mount config for customization
+      - ./configs:/app/healthcare_data_converter/configs:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # CLI service for one-off conversions
+  converter-cli:
+    build:
+      context: ..
+      dockerfile: healthcare_data_converter/Dockerfile
+    image: healthcare-data-converter:latest
+    container_name: healthcare-converter-cli
+    entrypoint: ["python", "-m", "healthcare_data_converter.cli"]
+    command: ["info"]
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - cli
+
+  # Test runner service
+  test:
+    build:
+      context: ..
+      dockerfile: healthcare_data_converter/Dockerfile
+    image: healthcare-data-converter:latest
+    container_name: healthcare-converter-test
+    command: pytest -v --asyncio-mode=auto
+    profiles:
+      - test
