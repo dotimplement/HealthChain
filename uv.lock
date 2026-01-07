@@ -562,7 +562,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "regex" },
     { name = "spacy" },
-    { name = "spyne" },
     { name = "starlette" },
     { name = "termcolor" },
     { name = "uvicorn" },
@@ -603,7 +602,6 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
     { name = "regex", specifier = "!=2019.12.17" },
     { name = "spacy", specifier = ">=3.0.0,<4.0.0" },
-    { name = "spyne", specifier = ">=2.14.0,<3" },
     { name = "starlette", specifier = ">=0.40.0,<0.42.0" },
     { name = "termcolor", specifier = ">=2.4.0,<3" },
     { name = "uvicorn", specifier = ">=0.24.0,<0.25" },
@@ -1841,15 +1839,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/67/3d/926db774c9c98acf6
 wheels = [
     { url = "https://files.pythonhosted.org/packages/33/78/d1a1a026ef3af911159398c939b1509d5c36fe524c7b644f34a5146c4e16/spacy_loggers-1.0.5-py3-none-any.whl", hash = "sha256:196284c9c446cc0cdb944005384270d775fdeaf4f494d8e269466cfa497ef645", size = 22343, upload-time = "2023-09-11T12:26:50.586Z" },
 ]
-
-[[package]]
-name = "spyne"
-version = "2.14.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytz" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/90/5f80d1c14c89fd8820e5f4dc1ab649f20de30059e235d48125f07c98a883/spyne-2.14.0.tar.gz", hash = "sha256:063e950e179a7d5b06b577c9f2c9091a70d40217f1a853076b3709caa2bf3a16", size = 528323, upload-time = "2022-02-03T02:53:36.801Z" }
 
 [[package]]
 name = "srsly"
