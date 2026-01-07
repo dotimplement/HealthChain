@@ -17,7 +17,7 @@ from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.soap.events import create_notereader_event
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
-from healthchain.gateway.soap.fastapi_server import create_fastapi_soap_router
+from healthchain.gateway.soap.fastapiserver import create_fastapi_soap_router
 
 logger = logging.getLogger(__name__)
 
