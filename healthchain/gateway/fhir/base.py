@@ -385,7 +385,6 @@ class BaseFHIRGateway(BaseGateway):
             methods=["GET"],
             summary=summary,
             description=description,
-            response_model_exclude_none=True,
             response_class=FHIRResponse,
             tags=self.tags,
             include_in_schema=True,
@@ -403,6 +402,10 @@ class BaseFHIRGateway(BaseGateway):
             try:
                 handler_func = fhir._resource_handlers[resource_type][operation]
                 result = handler_func(*args)
+
+                # Serialize FHIR resources excluding None values
+                if isinstance(result, Resource):
+                    return result.model_dump(exclude_none=True)
                 return result
             except Exception as e:
                 logger.error(f"Error in {operation} handler: {str(e)}")

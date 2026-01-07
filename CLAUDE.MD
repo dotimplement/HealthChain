@@ -1,193 +1,167 @@
 # HealthChain - Claude Code Context
 
-## Project Overview
+> **Purpose**: This file guides AI assistants and developers working on HealthChain. It encodes coding standards, constraints, and workflows to keep architecture and domain judgment in human hands. It's a working document that will be updated as the project evolves.
 
-HealthChain is an open-source Python framework for productionizing healthcare AI applications with native protocol understanding. It provides built-in FHIR support, real-time EHR connectivity, and production-ready deployment capabilities for AI/ML engineers working with healthcare systems.
+## 0. Project Overview
 
-**Key Problem Solved**: EHR data is specific, complex, and fragmented. HealthChain eliminates months of custom integration work by providing native understanding of healthcare protocols and data formats.
+HealthChain is an open-source Python framework for productionizing healthcare AI applications with native protocol understanding. It provides built-in FHIR support, real-time EHR connectivity, and deployment tooling for healthcare AI/ML systems.
+
+**Key Problem**: EHR data is specific, complex, and fragmented. HealthChain eliminates months of custom integration work by understanding healthcare protocols and data formats out of the box.
 
 **Target Users**:
 - HealthTech engineers building clinical workflow integrations
 - LLM/GenAI developers aggregating multi-EHR data
 - ML researchers deploying models as healthcare APIs
 
-## Architecture & Structure
+For more background, see @README.md and @docs/index.md.
+
+---
+
+## 1. Non-Negotiable Golden Rules
+
+| # | AI *may* do | AI *must NOT* do |
+|---|-------------|------------------|
+| G-0 | When unsure about implementation details or requirements, ask developer for clarification before making changes. | ❌ Write changes or use tools when you are not sure about something project specific, or if you don't have context for a particular feature/decision. |
+| G-1 | Generate code inside `healthchain/` or explicitly pointed files. | ❌ Modify or create test files without explicit approval. |
+| G-2 | For changes >200 LOC or >3 files, propose a plan and wait for confirmation. | ❌ Refactor large modules without human guidance. |
+| G-3 | Follow lint/style configs (`pyproject.toml`, `.ruff.toml`). Use `ruff` for formatting. | ❌ Reformat code to any other style. |
+| G-4 | Stay within the current task context. Inform the dev if it'd be better to start afresh. | ❌ Continue work from a prior prompt after "new task" – start a fresh session. |
+
+---
+
+## 2. Testing Discipline
+
+| What | AI CAN Do | AI MUST NOT Do |
+|------|-----------|----------------|
+| Implementation | Generate business logic | Write new tests without confirmation |
+| Test Planning | Suggest test scenarios and coverage gaps | Implement test code during design phase |
+| Debugging | Analyze test failures and suggest fixes | Modify test expectations without approval |
+
+**Key principle**: Tests encode business requirements and human intent. AI assistance is welcome for suggestions, maintenance, and execution, but new test creation always requires explicit confirmation.
+
+---
+
+## 3. Build, Test & Utility Commands
+
+Use `uv` for all development tasks:
+
+```bash
+# Testing
+uv run pytest
+
+# Linting & Formatting
+uv run ruff check . --fix              # Lint and auto-fix
+uv run ruff format .                   # Format code
+
+# Dependency Management
+uv sync                                # Install/sync dependencies
+uv add <package>                       # Add dependency
+uv add --dev <package>                 # Add dev dependency
+```
+
+---
+
+## 4. Coding Standards
+
+- **Python**: 3.10-3.11, prefer sync for legacy EHR compatibility; async available for modern systems but use only when explicitly needed
+- **Dependencies**: Pydantic v2 (<2.11.0), NumPy <2.0.0 (spaCy compatibility)
+- **Environment**: Use `uv` to manage dependencies and run commands (`uv run <command>`)
+- **Formatting**: `ruff` enforces project style
+- **Typing**: Always use explicit type hints, even for obvious types; Pydantic v2 models for external data
+- **Naming**:
+  - Code: `snake_case` (functions/vars), `PascalCase` (classes), `SCREAMING_SNAKE` (constants)
+  - Files: No underscores, e.g., `fhiradapter.py` not `fhir_adapter.py`
+- **Error Handling**: Prefer specific exceptions over generic
+- **Documentation**: Docstrings for public APIs only
+- **Healthcare Standards**: Follow HL7 FHIR and CDS Hooks specifications
+- **Testing**: Separate test files matching source file patterns. Use flat functions instead of classes for tests.
+
+---
+
+## 5. Project Layout & Core Components
 
 ```
 healthchain/
-├── cli.py                 # Command-line interface
-├── config/                # Configuration management
-├── configs/               # YAML and Liquid templates
-├── fhir/                  # FHIR resource utilities and helpers
-├── gateway/               # API gateways (FHIR, CDS Hooks)
-├── interop/               # Format conversion (FHIR ↔ CDA)
-├── io/                    # Document and data I/O
-├── models/                # Pydantic data models
-├── pipeline/              # Pipeline components and NLP integrations
-├── sandbox/               # Testing utilities with synthetic data
-├── templates/             # Code generation templates
-└── utils/                 # Shared utilities
+├── cli.py        # CLI entrypoint
+├── config/       # Configuration management
+├── configs/      # YAML + Liquid configs/templates
+├── fhir/         # FHIR utilities and helpers
+├── gateway/      # API gateways (FHIR, CDS Hooks)
+├── interop/      # Format conversion (FHIR ↔ CDA, etc.)
+├── io/           # Data containers, adapters, mappers (external formats ↔ HealthChain)
+├── models/       # Pydantic data models
+├── pipeline/     # Pipeline components and NLP integrations
+├── sandbox/      # CDS Hooks testing scenarios & data loaders
+├── templates/    # Code generation templates
+└── utils/        # Shared utilities
 
-tests/                     # Test suite
-cookbook/                  # Usage examples and tutorials
-docs/                      # MkDocs documentation
+tests/            # Test suite
+cookbook/         # Usage examples and tutorials
+docs/             # MkDocs documentation
 ```
 
-## Core Modules
+### Key Modules (When to Use What)
 
-### 1. Pipeline (`healthchain/pipeline/`)
-- Build medical NLP pipelines with components like SpacyNLP
-- Process clinical documents with automatic FHIR conversion
-- Type-safe pipeline composition using generics
+| Module | Purpose |
+|--------|---------|
+| `pipeline/` | Document/patient NLP with `Pipeline[T]` generics |
+| `gateway/` | EHR connectivity and protocol handling (CDS Hooks, FHIR APIs, SOAP/CDA) |
+| `fhir/` | FHIR resource utilities (fhir.resources models) and helpers |
+| `interop/` | Format conversion with Liquid templates + YAML (FHIR ↔ CDA, etc.) |
+| `io/` | **Containers**: FHIR+AI native structures<br>**Mappers**: semantic mapping (ML features, OMOP)<br>**Adapters**: interface with external formats (CDA, CSV) |
+| `sandbox/` | Testing client for healthcare services (CDS Hooks, SOAP) & dataset loaders for common test datasets (MIMIC-IV on FHIR, Synthea, etc.) |
 
-### 2. Gateway (`healthchain/gateway/`)
-- **FHIRGateway**: Connect to multiple FHIR sources, aggregate patient data
-- **CDSHooksGateway**: Real-time clinical decision support integration with Epic/Cerner
-- **HealthChainAPI**: FastAPI-based application framework
+### Key File References
 
-### 3. FHIR Utilities (`healthchain/fhir/`)
-- Type-safe FHIR resource creation and validation
-- Bundle manipulation and resource extraction
-- Recently refactored for clearer separation of concerns
+**FHIR Utilities Pattern**: @healthchain/fhir/
+**Adapter Pattern**: @healthchain/io/adapters/
+**Container Pattern**: @healthchain/io/containers/
+**Mapper Pattern**: @healthchain/io/mappers/
+**Pipeline Pattern**: @healthchain/pipeline/
+**Gateway Pattern**: @healthchain/gateway/
 
-### 4. Interop (`healthchain/interop/`)
-- Convert between FHIR and CDA formats
-- Configuration-driven templates using Liquid
-- Support for various healthcare data standards
+---
 
-### 5. Sandbox (`healthchain/sandbox/`)
-- Test CDS Hooks services with synthetic data
-- Load from test datasets (Synthea, MIMIC)
-- Request/response validation and debugging
+## 6. Common Workflows
 
-### 6. I/O (`healthchain/io/`)
-- Document processing and management
-- Data loading for ML workflows
-- Recently refactored for better organization
+### AI Assistant Workflow
 
-## Development Guidelines
+When responding to user instructions, follow this process:
 
-### Code Style
-- **Linter**: Ruff for code formatting and linting
-- **Type Hints**: Use Pydantic models and type annotations throughout
-- **Python Version**: Support 3.9-3.11 (not 3.12+)
-- **Testing**: pytest with async support (`pytest-asyncio`)
+1. **Consult Relevant Guidance**: Review this CLAUDE.md and relevant patterns in @healthchain/ for the request. Look up relevant files, information, best practices, etc. using the internet or tools if necessary.
+2. **Clarify Ambiguities**: If anything is unclear, ask targeted questions before proceeding. Don't make assumptions about business logic or domain requirements.
+3. **Break Down & Plan**:
+   - Break down, think through the problem, and create a rough plan
+   - Reference project conventions and best practices
+   - **Trivial tasks**: Start immediately
+   - **Non-trivial tasks** (>200 LOC or >3 files): Present plan → wait for user confirmation
+4. **Execute**:
+   - Make small, focused diffs
+   - Prefer existing abstractions over new ones
+   - Run: `uv run ruff check . --fix && uv run ruff format .`
+   - If stuck, return to step 3 to re-plan
+5. **Review**: Summarize files changed, key design decisions, and any follow-ups or TODOs
+6. **Session Boundaries**: If request isn't related to current context, suggest starting fresh to avoid confusion
 
-### Key Dependencies
-- **fhir.resources**: FHIR resource models (v8.0.0+)
-- **FastAPI/Starlette**: API framework
-- **Pydantic**: Data validation (v2.x, <2.11.0)
-- **spaCy**: NLP processing (v3.x)
-- **python-liquid**: Template engine for data conversion
+### Adding New FHIR Resource Utilities
 
-### Patterns & Conventions
+1. Check for existing utilities in @healthchain/fhir/
+2. If missing, ask: "Create utility function for [ResourceType]?"
+3. Follow pattern: MINIMUM VIABLE resource, all variable data as parameters
+4. Avoid overly specific utilities; prefer generic
+---
 
-1. **Type Safety**: Leverage Pydantic models for all data structures
-2. **Pipeline Pattern**: Use composable components with `Pipeline[T]` generic type
-3. **Gateway Pattern**: Extend base gateway classes for new integrations
-4. **Configuration**: Use YAML configs in `configs/` directory
-5. **Templates**: Liquid templates for FHIR/CDA conversion
+## 7. Common Pitfalls
 
-### Testing
-- Tests organized in `tests/` mirroring source structure
-- Use pytest fixtures for common test data
-- Async tests for gateway/API functionality
-- Recently consolidated test structure
+**Do:**
+- Use `uv run` to run commands instead of directly running files in the environment
 
-### Documentation
+**Don't:**
+- Commit secrets (use environment variables or `.env` file)
+- Make drive-by refactors
+- Write code before planning
+- Write tests during design phase
 
-**Style Guide:**
-- **Concise**: Get to the point quickly - developers want answers, not essays
-- **Friendly**: Conversational but professional tone; use emojis sparingly in headers
-- **Developer-Friendly**: Code examples first, explanations second; show don't tell
-- **Scannable**: Use bullets, tables, clear sections; respect developer's time
-- **Practical**: Focus on "how" over "why"; include working code examples
+---
 
-**Good Documentation Examples:**
-- `docs/index.md`: Clean feature overview, clear use case table, minimal prose
-- `docs/quickstart.md`: Code-first approach, progressive complexity, practical examples
-- `docs/cookbook/index.md`: Brief descriptions, clear outcomes, call-to-action
-
-**Anti-Patterns (avoid):**
-- Long paragraphs explaining concepts before showing code
-- Over-explaining obvious functionality
-- Academic or overly formal tone
-- Excessive background before getting to the practical content
-
-**Structure:**
-- Lead with executable code examples
-- Add brief context only where needed
-- Use tables for feature comparisons
-- Include links to full docs for deep dives
-- Keep cookbook examples focused on one task
-
-**Technical Details:**
-- MkDocs with Material theme
-- API reference auto-generated from docstrings using mkdocstrings
-- Cookbook examples for common use cases
-- Follow existing docs/ structure for consistency
-
-## Recent Changes & Context
-
-Based on recent commits:
-- **FHIR Helper Module**: Refactored for clearer separation of utilities
-- **I/O Module**: Refactored for better organization
-- **Test Consolidation**: Tests reorganized for clarity
-- **MIMIC Loader**: Added support for loading as dict for ML workflows
-- **Bundle Conversion**: Config-based conversion instead of params
-
-## Important Workflows
-
-### Adding a New Gateway
-1. Create class in `healthchain/gateway/` extending base gateway
-2. Implement required protocol methods
-3. Add configuration in `configs/`
-4. Create sandbox test in `healthchain/sandbox/`
-5. Add cookbook example in `cookbook/`
-
-### Adding FHIR Resource Support
-1. Use `fhir.resources` models
-2. Add helper methods in `healthchain/fhir/` if needed
-3. Update type hints and validation
-4. Add tests with synthetic FHIR data
-
-### Adding Data Conversion Templates
-1. Create Liquid template in `configs/`
-2. Add configuration YAML
-3. Implement in `healthchain/interop/`
-4. Test with real healthcare data examples
-
-## Common Gotchas
-
-1. **Pydantic v2**: Use v2 patterns, but stay <2.11.0 for compatibility
-2. **NumPy**: Locked to <2.0.0 for spaCy compatibility
-3. **FHIR Validation**: Always validate resources before serialization
-4. **Async/Sync**: Gateway operations are async, pipeline operations are sync
-5. **Healthcare Standards**: Follow HL7 FHIR R4 and CDS Hooks specifications
-
-## Testing with Real Data
-
-- **Synthea**: Synthetic patient generator for realistic test data
-- **MIMIC**: Medical Information Mart for Intensive Care dataset support
-- **Sandbox**: Use `SandboxClient` for end-to-end testing without real EHR
-
-## Security & Compliance
-
-- OAuth2 authentication support for FHIR endpoints
-- Audit trails and data provenance (roadmap item)
-- HIPAA compliance features (roadmap item)
-- No PHI in tests - use synthetic data only
-
-## Deployment
-
-- Docker/Kubernetes support (enhanced support on roadmap)
-- FastAPI apps with Uvicorn
-- OpenAPI/Swagger documentation auto-generated
-- Environment-based configuration
-
-## Resources
-
-- Documentation: https://dotimplement.github.io/HealthChain/
-- Repository: https://github.com/dotimplement/HealthChain
-- Discord: https://discord.gg/UQC6uAepUz
-- Standards: HL7 FHIR R4, CDS Hooks
+**Last updated**: 2025-12-17

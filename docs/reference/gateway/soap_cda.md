@@ -161,4 +161,4 @@ The response includes additional structured sections extracted from the clinical
 | Gateway Receives | `CdaRequest` | Processed by your service |
 | Gateway Returns | Your processed result | `CdaResponse` |
 
-You can use the [CdaAdapter](../pipeline/adapters/cdaadapter.md) to handle conversion between CDA documents and HealthChain pipeline data containers.
+You can use the [CdaAdapter](../io/adapters/cdaadapter.md) to handle conversion between CDA documents and HealthChain pipeline data containers.

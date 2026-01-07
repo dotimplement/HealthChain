@@ -110,7 +110,11 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], APIRouter):
         # Discovery endpoint
         discovery_path = self.config.discovery_path.lstrip("/")
 
-        @self.get(f"/{discovery_path}", response_model_exclude_none=True)
+        @self.get(
+            f"/{discovery_path}",
+            response_model=CDSServiceInformation,
+            response_model_exclude_none=True,
+        )
         async def discovery_handler(cds: "CDSHooksService" = Depends(get_self_service)):
             """CDS Hooks discovery endpoint."""
             return cds.handle_discovery()
@@ -132,6 +136,7 @@ class CDSHooksService(BaseProtocolHandler[CDSRequest, CDSResponse], APIRouter):
             path=endpoint,
             endpoint=service_handler,
             methods=["POST"],
+            response_model=CDSResponse,
             response_model_exclude_none=True,
             summary=f"CDS Hook: {hook_id}",
             description=f"Execute CDS Hook service: {hook_id}",

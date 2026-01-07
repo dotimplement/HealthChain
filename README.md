@@ -133,6 +133,18 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - **Built-in NLP support** - Extract structured data from clinical notes, output as FHIR
 - **Developer experience** - Modular and extensible architecture works across any EHR system
 
+## 🏆 Recognition & Community
+
+**Featured & Presented:**
+- [Featured by Medplum](https://www.medplum.com/blog/healthchain) for open source integration with Epic
+- Featured in [TLDR AI Newsletter](https://tldr.tech/ai/2025-08-21) (900K+ developers)
+- Presented at [NHS Python Open Source Conference](https://github.com/nhs-r-community/conference-2024/blob/main/Talks/2024-11-21_jiang-kells_building-healthchain.md) ([watch talk](https://www.youtube.com/watch?v=_ZqlPsDUdSY&t=1967s))
+- [Built from NHS AI deployment experience](https://open.substack.com/pub/jenniferjiangkells/p/healthchain-building-the-tool-i-wish) – read the origin story
+
+## 🤝 Partnerships & Production Use
+
+Exploring HealthChain for your product or organization? Drop in our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) or [get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations.
+
 ## Usage Examples
 
 ### Building a Pipeline [[Docs](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline)]
@@ -215,23 +227,34 @@ responses = client.send_requests()
 client.save_results("./output/")
 ```
 
-## Road Map
+## 🛣️ Road Map
 
-- [ ] 🔍 Data provenance and audit trails tracking
-- [ ] 🔒 HIPAA compliance and security
+- [ ] 🔍 Data provenance and observability
+- [ ] 🔒 Production security and compliance (Authentication, audit logging, HIPAA)
 - [ ] 🔄 HL7v2 parsing, FHIR profile conversion and OMOP mapping support
-- [ ] 🚀 Enhanced deployment support with observability and telemetry (Docker, Kubernetes, etc.)
+- [ ] 🚀 Enhanced deployment support (Docker, Kubernetes, telemetry)
 - [ ] 📊 Model performance monitoring with MLFlow integration
 - [ ] 🤖 MCP server integration
 
 
-## Contribute
-We are always eager to hear feedback and suggestions, especially if you are a developer or researcher working with healthcare systems!
-- 💡 Let's chat! [Discord](https://discord.gg/UQC6uAepUz)
-- 🛠️ [Contribution Guidelines](CONTRIBUTING.md)
+## 🤝 Contributing
+
+HealthChain is built for production healthcare systems. We prioritize contributors with:
+
+- **Healthcare product experience** – shipped clinical systems, EHR integrations, or health data products
+- **FHIR expertise** – designed or implemented FHIR APIs and interoperability solutions
+- **Healthcare security background** – auth, privacy, compliance in regulated environments
+
+If that's you, we'd love your input!
+
+**Get started:**
+- See the [project board](https://github.com/orgs/dotimplement/projects/1/views/1) for current roadmap and active work
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and RFC process
+- Discuss ideas in [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions)
+- Join our [Discord](https://discord.gg/UQC6uAepUz) community
 
 
-## Acknowledgements 🤗
+## 🤗 Acknowledgements
 This project builds on [fhir.resources](https://github.com/nazrulworld/fhir.resources) and [CDS Hooks](https://cds-hooks.org/) standards developed by [HL7](https://www.hl7.org/) and [Boston Children's Hospital](https://www.childrenshospital.org/).
 
 

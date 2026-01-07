@@ -46,11 +46,41 @@ openssl req -new -x509 -key privatekey.pem -out publickey509.pem -subj '/CN=myap
 
 Where `/CN=myapp` is the subject name (e.g., your app name). The subject name doesn't have functional impact but is required for creating an X.509 certificate.
 
-#### Upload Public Key
+#### Register Public Key via JWKS URL
 
-1. In your Epic app configuration, upload the `publickey509.pem` file
-2. Click **Save**
-3. Note down your **Non-Production Client ID**
+Epic now requires registering your public key via a **JWKS (JSON Web Key Set) URL** instead of direct file upload. For quick and dirty development/testing purposes, you can use ngrok to expose your JWKS server publicly.
+
+1. **Set up a JWKS server**:
+   ```bash
+   # Ensure your .env has the private key path
+   # EPIC_CLIENT_SECRET_PATH=path/to/privatekey.pem
+   # EPIC_KEY_ID=healthchain-demo-key
+
+   python scripts/serve_jwks.py
+   ```
+
+2. **Get a free static domain from ngrok**:
+      - Sign up at [ngrok.com](https://ngrok.com)
+      - Claim your free static domain from the dashboard
+      - Example: `your-app.ngrok-free.app`
+
+3. **Expose your JWKS server**:
+   ```bash
+   ngrok http 9999 --domain=your-app.ngrok-free.app
+   ```
+
+4. **Register in Epic App Orchard**:
+
+      - In your Epic app configuration, locate the **Non-Production JWK Set URL** field
+      - Enter: `https://your-app.ngrok-free.app/.well-known/jwks.json`
+      - Click **Save**
+      - Note down your **Non-Production Client ID**
+
+The JWKS must be:
+
+- Publicly accessible without authentication
+- Served over HTTPS
+- Stable (URL should not change)
 
 ![Epic Sandbox Client ID](../assets/images/epicsandbox3.png)
 
@@ -73,7 +103,10 @@ EPIC_CLIENT_ID=your_non_production_client_id
 EPIC_CLIENT_SECRET_PATH=path/to/privatekey.pem
 EPIC_TOKEN_URL=https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token
 EPIC_USE_JWT_ASSERTION=true
+EPIC_KEY_ID=healthchain-demo-key  # Must match the kid in your JWKS
 ```
+
+**Important**: The `EPIC_KEY_ID` must match the Key ID (`kid`) you used when creating your JWKS. This allows Epic to identify which key to use for JWT verification.
 
 ### Using Epic Sandbox in Code
 
@@ -91,6 +124,20 @@ gateway = FHIRGateway()
 gateway.add_source("epic", EPIC_URL)
 ```
 
+### Testing Your Connection
+
+After configuration:
+
+```bash
+python scripts/check_epic_connection.py
+```
+
+This script will:
+1. Load your Epic configuration
+2. Create a JWT assertion with the `kid` header
+3. Request an access token from Epic
+4. Test a FHIR endpoint query
+
 ### Available Test Patients
 
 Epic provides [sample test patients](https://fhir.epic.com/Documentation?docId=testpatients) including:
@@ -98,6 +145,18 @@ Epic provides [sample test patients](https://fhir.epic.com/Documentation?docId=t
 - **Derrick Lin** - Patient ID: `eq081-VQEgP8drUUqCWzHfw3`
 - **Linda Ross** - Patient ID: `eIXesllypH3M9tAA5WdJftQ3`
 - Many others with various clinical scenarios
+
+???+ note "Troubleshooting (click to expand)"
+    **Token request fails after JWKS registration:**
+    - Wait 15-30 minutes for Epic to propagate changes
+    - Verify your JWKS URL is publicly accessible (test in browser)
+    - Check that `EPIC_KEY_ID` matches the `kid` in your JWKS
+    - Ensure the ngrok tunnel is still running
+
+    **JWKS format errors:**
+    - Verify the JWKS structure at your URL matches Epic's requirements
+    - Check that `n` and `e` are properly base64url encoded (no padding)
+    - Algorithm should be RS384, RS256, or RS512
 
 ---
 ## Cerner Sandbox
