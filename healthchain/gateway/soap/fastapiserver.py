@@ -1,4 +1,4 @@
-# fastapi_server.py
+# fastapiserver.py
 from fastapi import APIRouter, Request, Response
 import lxml.etree as ET
 from typing import Callable, Optional, Any, Dict
@@ -180,10 +180,7 @@ def create_fastapi_soap_router(
 
                     # Replace the location in WSDL
                     wsdl_content = wsdl_content.replace(
-                        "http://localhost:8000/notereader", actual_location
-                    )
-                    wsdl_content = wsdl_content.replace(
-                        "http://127.0.0.1:8000/notereader/", actual_location
+                        "{{SERVICE_LOCATION}}", actual_location
                     )
 
                     return Response(

@@ -293,13 +293,13 @@ class HealthChainAPI(FastAPI):
             or f"/{service_name.lower().replace('service', '').replace('gateway', '')}"
         )
 
-        logger.info(f"🔧 Registering {service_name} at: {mount_path}")
-        logger.info(f"   Router type: {type(router_or_app)}")
+        logger.debug(f"🔧 Registering {service_name} at: {mount_path}")
+        logger.debug(f"   Router type: {type(router_or_app)}")
 
         # Use include_router for APIRouter instances
         if isinstance(router_or_app, APIRouter):
             if hasattr(router_or_app, "routes"):
-                logger.info(f"   Routes in router: {len(router_or_app.routes)}")
+                logger.debug(f"   Routes in router: {len(router_or_app.routes)}")
                 for route in router_or_app.routes:
                     if hasattr(route, "methods") and hasattr(route, "path"):
                         logger.info(f"     - {route.methods} {route.path}")

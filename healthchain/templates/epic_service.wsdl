@@ -51,7 +51,7 @@
 </wsdl:message>
 <wsdl:service name="CDSServices">
 <wsdl:port name="ICDSServices" binding="tns:ICDSServices">
-<wsdlsoap11:address location="http://127.0.0.1:8000/notereader/"/>
+<wsdlsoap11:address location="{{SERVICE_LOCATION}}"/>
 </wsdl:port>
 </wsdl:service>
 <wsdl:portType name="ICDSServices">
