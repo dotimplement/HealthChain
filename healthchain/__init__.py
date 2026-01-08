@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 add_handlers(logger)
 logger.setLevel(logging.INFO)
 
+# Version
+__version__ = "0.0.0"
+
 # Export them at the top level
-__all__ = ["ConfigManager", "ValidationLevel", "api", "ehr", "sandbox"]
+__all__ = ["ConfigManager", "ValidationLevel", "api", "ehr", "sandbox", "__version__"]
 
 
 # Legacy import with warning
