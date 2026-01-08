@@ -1,0 +1,36 @@
+features:
+  - name: age
+    fhir_path: Patient.birthDate
+    data_type: date
+    required: true
+    aggregation: null
+
+  - name: bmi
+    fhir_path: Observation.where(code.coding.code='39156-5').valueQuantity.value
+    data_type: float
+    required: true
+    aggregation: last
+
+  - name: glucose_fasting
+    fhir_path: Observation.where(code.coding.code='1558-6').valueQuantity.value
+    data_type: float
+    required: true
+    aggregation: last
+
+  - name: hba1c
+    fhir_path: Observation.where(code.coding.code='4548-4').valueQuantity.value
+    data_type: float
+    required: false
+    aggregation: last
+
+  - name: systolic_bp
+    fhir_path: Observation.where(code.coding.code='8480-6').valueQuantity.value
+    data_type: float
+    required: true
+    aggregation: mean
+
+  - name: diastolic_bp
+    fhir_path: Observation.where(code.coding.code='8462-4').valueQuantity.value
+    data_type: float
+    required: true
+    aggregation: mean

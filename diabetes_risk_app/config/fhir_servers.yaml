@@ -1,0 +1,24 @@
+# FHIR Server Configuration
+# For testing, you can use Medplum public server (no auth required)
+# For production, configure your EHR FHIR endpoints
+
+sources:
+  medplum:
+    base_url: "https://api.medplum.com/fhir/R4"
+    auth: null  # Public access
+
+  # Uncomment and configure for Epic
+  # epic:
+  #   base_url: "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
+  #   auth:
+  #     token_url: "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
+  #     client_id: "your_client_id"
+  #     client_secret: "your_client_secret"
+
+  # Uncomment and configure for Cerner
+  # cerner:
+  #   base_url: "https://fhir-myrecord.cerner.com/r4"
+  #   auth:
+  #     token_url: "https://authorization.cerner.com/tenants/tenant_id/protocols/oauth2/profiles/smart-v1/token"
+  #     client_id: "your_client_id"
+  #     client_secret: "your_client_secret"
