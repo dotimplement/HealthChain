@@ -15,12 +15,12 @@ from app import DiabetesRiskApp
 def test_client():
     """Create test client"""
     app = DiabetesRiskApp()
-    return TestClient(app.app.app)
+    return TestClient(app.app)
 
 
 def test_cds_discovery(test_client):
     """Test CDS Hooks discovery endpoint"""
-    response = test_client.get("/cds-services")
+    response = test_client.get("/cds/cds-discovery")
     assert response.status_code == 200
 
     services = response.json()["services"]
