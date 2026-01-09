@@ -15,7 +15,7 @@ from typing import Any, Optional
 from fhir.resources.bundle import Bundle
 from fhir.resources.resource import Resource
 
-from healthchain.interop import InteropEngine
+from healthchain.interop import InteropEngine, create_interop
 from healthchain.interop.config_manager import InteropConfigManager, ValidationLevel as HCValidationLevel
 from healthchain.interop.template_registry import TemplateRegistry
 
@@ -114,17 +114,23 @@ class HealthcareDataConverter:
 
     def _create_engine(self) -> InteropEngine:
         """Create and configure the InteropEngine instance."""
-        engine_kwargs = {}
+        # Convert ValidationLevel enum to string value
+        validation_level_str = self.validation_level.value  # e.g., "strict", "warn", "ignore"
 
+        # Use create_interop helper which handles None config_dir automatically
         if self.config_dir:
-            engine_kwargs["config_dir"] = str(self.config_dir)
-
-        if self.template_dir:
-            engine_kwargs["template_dir"] = str(self.template_dir)
-
-        engine_kwargs["validation"] = self.VALIDATION_MAP[self.validation_level]
-
-        return InteropEngine(**engine_kwargs)
+            return create_interop(
+                config_dir=self.config_dir,
+                validation_level=validation_level_str,
+                environment="development"
+            )
+        else:
+            # Use bundled configs (create_interop will auto-discover)
+            return create_interop(
+                config_dir=None,
+                validation_level=validation_level_str,
+                environment="development"
+            )
 
     def convert(self, request: ConversionRequest) -> ConversionResponse:
         """

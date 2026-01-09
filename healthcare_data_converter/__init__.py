@@ -11,7 +11,6 @@ __version__ = "1.0.0"
 __author__ = "HealthChain Team"
 
 from healthcare_data_converter.converter import HealthcareDataConverter
-from healthcare_data_converter.service import ConversionService
 from healthcare_data_converter.models import (
     ConversionRequest,
     ConversionResponse,
@@ -22,7 +21,6 @@ from healthcare_data_converter.models import (
 
 __all__ = [
     "HealthcareDataConverter",
-    "ConversionService",
     "ConversionRequest",
     "ConversionResponse",
     "ConversionFormat",

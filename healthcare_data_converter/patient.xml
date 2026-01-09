@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+    <templateId root="2.16.840.1.113883.10.20.22.1.1"/>
+    <id root="2.16.840.1.113883.19.5.99999.1" extension="12345"/>
+    <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summarization of Episode Note"/>
+    <title>Patient Health Summary</title>
+    <effectiveTime value="20240115120000"/>
+    <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+    <languageCode code="en-US"/>
+    
+    <!-- Patient Information -->
+    <recordTarget>
+        <patientRole>
+            <id root="2.16.840.1.113883.4.1" extension="123-45-6789"/>
+            <addr>
+                <streetAddressLine>123 Main Street</streetAddressLine>
+                <city>Boston</city>
+                <state>MA</state>
+                <postalCode>02115</postalCode>
+            </addr>
+            <telecom value="tel:+1-555-123-4567" use="HP"/>
+            <patient>
+                <name>
+                    <given>John</given>
+                    <family>Smith</family>
+                </name>
+                <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1"/>
+                <birthTime value="19800315"/>
+                <maritalStatusCode code="M" codeSystem="2.16.840.1.113883.5.2"/>
+            </patient>
+        </patientRole>
+    </recordTarget>
+    
+    <!-- Author Information -->
+    <author>
+        <time value="20240115120000"/>
+        <assignedAuthor>
+            <id root="2.16.840.1.113883.4.6" extension="123456789"/>
+            <assignedPerson>
+                <name>
+                    <given>Jane</given>
+                    <family>Doe</family>
+                </name>
+            </assignedPerson>
+        </assignedAuthor>
+    </author>
+    
+    <!-- Document Body -->
+    <component>
+        <structuredBody>
+            <!-- Problems Section -->
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.5"/>
+                    <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+                    <title>Problems</title>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+                            <entryRelationship typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <id root="2.16.840.1.113883.19.5" extension="problem-1"/>
+                                    <code code="55607006" codeSystem="2.16.840.1.113883.6.96" displayName="Problem"/>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime>
+                                        <low value="20230101"/>
+                                    </effectiveTime>
+                                    <value xsi:type="CD" code="44054006" codeSystem="2.16.840.1.113883.6.96" displayName="Type 2 Diabetes Mellitus"/>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                    <entry>
+                        <act classCode="ACT" moodCode="EVN">
+                            <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" displayName="Problem List"/>
+                            <entryRelationship typeCode="SUBJ">
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <id root="2.16.840.1.113883.19.5" extension="problem-2"/>
+                                    <code code="55607006" codeSystem="2.16.840.1.113883.6.96" displayName="Problem"/>
+                                    <statusCode code="completed"/>
+                                    <effectiveTime>
+                                        <low value="20220101"/>
+                                    </effectiveTime>
+                                    <value xsi:type="CD" code="38341003" codeSystem="2.16.840.1.113883.6.96" displayName="Hypertension"/>
+                                </observation>
+                            </entryRelationship>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+            
+            <!-- Medications Section -->
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.1"/>
+                    <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" displayName="History of Medication Use"/>
+                    <title>Medications</title>
+                    <entry>
+                        <substanceAdministration classCode="SBADM" moodCode="EVN">
+                            <id root="2.16.840.1.113883.19.5" extension="med-1"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime>
+                                <low value="20230101"/>
+                            </effectiveTime>
+                            <consumable>
+                                <manufacturedProduct>
+                                    <manufacturedMaterial>
+                                        <code code="860975" codeSystem="2.16.840.1.113883.6.88" displayName="Metformin 500 MG Oral Tablet"/>
+                                    </manufacturedMaterial>
+                                </manufacturedProduct>
+                            </consumable>
+                            <doseQuantity value="500" unit="mg"/>
+                            <rateQuantity value="2" unit="tablet"/>
+                        </substanceAdministration>
+                    </entry>
+                </section>
+            </component>
+            
+            <!-- Vital Signs Section -->
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.4.1"/>
+                    <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" displayName="Vital Signs"/>
+                    <title>Vital Signs</title>
+                    <entry>
+                        <organizer classCode="BATTERY" moodCode="EVN">
+                            <id root="2.16.840.1.113883.19.5" extension="vitals-1"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20240115"/>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <code code="8480-6" codeSystem="2.16.840.1.113883.6.1" displayName="Systolic Blood Pressure"/>
+                                    <value xsi:type="PQ" value="130" unit="mm[Hg]"/>
+                                </observation>
+                            </component>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <code code="8462-4" codeSystem="2.16.840.1.113883.6.1" displayName="Diastolic Blood Pressure"/>
+                                    <value xsi:type="PQ" value="85" unit="mm[Hg]"/>
+                                </observation>
+                            </component>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <code code="39156-5" codeSystem="2.16.840.1.113883.6.1" displayName="Body Mass Index"/>
+                                    <value xsi:type="PQ" value="28.5" unit="kg/m2"/>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+            
+            <!-- Laboratory Results Section -->
+            <component>
+                <section>
+                    <templateId root="2.16.840.1.113883.10.20.22.2.3.1"/>
+                    <code code="26449-9" codeSystem="2.16.840.1.113883.6.1" displayName="Laboratory Results"/>
+                    <title>Laboratory Results</title>
+                    <entry>
+                        <organizer classCode="BATTERY" moodCode="EVN">
+                            <id root="2.16.840.1.113883.19.5" extension="lab-1"/>
+                            <statusCode code="completed"/>
+                            <effectiveTime value="20240110"/>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <code code="1558-6" codeSystem="2.16.840.1.113883.6.1" displayName="Glucose [Mass/volume] in Blood"/>
+                                    <value xsi:type="PQ" value="126" unit="mg/dL"/>
+                                </observation>
+                            </component>
+                            <component>
+                                <observation classCode="OBS" moodCode="EVN">
+                                    <code code="4548-4" codeSystem="2.16.840.1.113883.6.1" displayName="Hemoglobin A1c/Hemoglobin.total in Blood"/>
+                                    <value xsi:type="PQ" value="7.2" unit="%"/>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+        </structuredBody>
+    </component>
+</ClinicalDocument>
+

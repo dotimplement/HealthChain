@@ -1,0 +1,53 @@
+[project]
+name = "healthcare-data-converter"
+version = "0.1.0"
+description = "Healthcare data converter for bidirectional conversion between FHIR and CDA formats"
+readme = "GUIDELINES.md"
+requires-python = ">=3.10,<3.12"
+authors = [
+    { name = "HealthChain Team" }
+]
+keywords = [
+    "healthcare",
+    "fhir",
+    "cda",
+    "converter",
+    "interop"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "fastapi>=0.115.3,<0.116",
+    "uvicorn>=0.24.0,<0.25",
+    "pydantic>=2.0.0,<2.11.0",
+    "pyyaml>=6.0.3,<7",
+    "lxml>=5.2.2,<6",
+    "xmltodict>=0.13.0,<0.14",
+    "fhir-resources>=8.0.0,<9",
+    "python-liquid>=1.13.0,<2",
+    "httpx>=0.27.0,<0.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[project.scripts]
+healthcare-converter = "healthcare_data_converter.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["healthcare_data_converter"]
+

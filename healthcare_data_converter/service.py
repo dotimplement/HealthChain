@@ -425,4 +425,12 @@ def create_app() -> FastAPI:
 
 
 # For direct execution: uvicorn healthcare_data_converter.service:app
-app = create_app()
+# Lazy initialization to avoid errors during import
+app = None
+
+def get_app() -> FastAPI:
+    """Get or create the FastAPI app instance."""
+    global app
+    if app is None:
+        app = create_app()
+    return app
