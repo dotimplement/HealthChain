@@ -51,6 +51,13 @@ from healthchain.fhir.utilities import (
     encode_gender,
 )
 
+from healthchain.fhir.version import (
+    get_fhir_version,
+    set_fhir_version,
+    version_context,
+    get_resource_class,
+)
+
 __all__ = [
     # Resource creation
     "create_condition",
@@ -95,4 +102,9 @@ __all__ = [
     "calculate_age_from_birthdate",
     "calculate_age_from_event_date",
     "encode_gender",
+    # Version management
+    "get_fhir_version",
+    "set_fhir_version",
+    "version_context",
+    "get_resource_class",
 ]

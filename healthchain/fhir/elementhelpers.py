@@ -8,11 +8,15 @@ import logging
 import base64
 import datetime
 
-from typing import Optional, List, Dict, Any
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.codeablereference import CodeableReference
-from fhir.resources.coding import Coding
-from fhir.resources.attachment import Attachment
+from typing import TYPE_CHECKING, Optional, List, Dict, Any
+
+# Import version manager for lazy resource loading
+from healthchain.fhir.version import get_resource_class
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.codeableconcept import CodeableConcept
+    from fhir.resources.attachment import Attachment
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,7 @@ def create_single_codeable_concept(
     code: str,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
-) -> CodeableConcept:
+) -> "CodeableConcept":
     """
     Create a minimal FHIR CodeableConcept with a single coding.
 
@@ -33,6 +37,10 @@ def create_single_codeable_concept(
     Returns:
         CodeableConcept: A FHIR CodeableConcept resource with a single coding
     """
+    # Lazy import version-aware resource classes
+    CodeableConcept = get_resource_class("CodeableConcept")
+    Coding = get_resource_class("Coding")
+
     return CodeableConcept(coding=[Coding(system=system, code=code, display=display)])
 
 
@@ -57,6 +65,11 @@ def create_single_reaction(
     Returns:
         A list containing a single FHIR Reaction dictionary with manifestation and severity fields
     """
+    # Lazy import version-aware resource classes
+    CodeableReference = get_resource_class("CodeableReference")
+    CodeableConcept = get_resource_class("CodeableConcept")
+    Coding = get_resource_class("Coding")
+
     return [
         {
             "manifestation": [
@@ -76,7 +89,7 @@ def create_single_attachment(
     data: Optional[str] = None,
     url: Optional[str] = None,
     title: Optional[str] = "Attachment created by HealthChain",
-) -> Attachment:
+) -> "Attachment":
     """Create a minimal FHIR Attachment.
 
     Creates a FHIR Attachment resource with basic fields. Either data or url should be provided.
@@ -91,6 +104,8 @@ def create_single_attachment(
     Returns:
         Attachment: A FHIR Attachment resource with basic metadata and content
     """
+    # Lazy import version-aware resource classes
+    Attachment = get_resource_class("Attachment")
 
     if not data and not url:
         logger.warning("No data or url provided for attachment")

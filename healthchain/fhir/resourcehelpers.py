@@ -13,27 +13,26 @@ Parameters marked REQUIRED are required by FHIR specification.
 import logging
 import datetime
 
-from typing import List, Optional, Dict, Any
-from fhir.resources.coding import Coding
-from fhir.resources.condition import Condition
-from fhir.resources.identifier import Identifier
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.observation import Observation
-from fhir.resources.resource import Resource
-from fhir.resources.riskassessment import RiskAssessment
-from fhir.resources.patient import Patient
-from fhir.resources.quantity import Quantity
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.reference import Reference
-from fhir.resources.meta import Meta
+from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
+# Import version manager for lazy resource loading
+from healthchain.fhir.version import get_resource_class
 from healthchain.fhir.elementhelpers import (
     create_single_codeable_concept,
     create_single_attachment,
 )
 from healthchain.fhir.utilities import _generate_id
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.condition import Condition
+    from fhir.resources.medicationstatement import MedicationStatement
+    from fhir.resources.allergyintolerance import AllergyIntolerance
+    from fhir.resources.documentreference import DocumentReference
+    from fhir.resources.observation import Observation
+    from fhir.resources.resource import Resource
+    from fhir.resources.riskassessment import RiskAssessment
+    from fhir.resources.patient import Patient
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ def create_condition(
     code: Optional[str] = None,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
-) -> Condition:
+) -> "Condition":
     """
     Create a minimal active FHIR Condition.
     If you need to create a more complex condition, use the FHIR Condition resource directly.
@@ -60,6 +59,10 @@ def create_condition(
     Returns:
         Condition: A FHIR Condition resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    Condition = get_resource_class("Condition")
+    Reference = get_resource_class("Reference")
+
     if code:
         condition_code = create_single_codeable_concept(code, display, system)
     else:
@@ -85,7 +88,7 @@ def create_medication_statement(
     code: Optional[str] = None,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
-) -> MedicationStatement:
+) -> "MedicationStatement":
     """
     Create a minimal recorded FHIR MedicationStatement.
     If you need to create a more complex medication statement, use the FHIR MedicationStatement resource directly.
@@ -101,6 +104,10 @@ def create_medication_statement(
     Returns:
         MedicationStatement: A FHIR MedicationStatement resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    MedicationStatement = get_resource_class("MedicationStatement")
+    Reference = get_resource_class("Reference")
+
     if code:
         medication_concept = create_single_codeable_concept(code, display, system)
     else:
@@ -121,7 +128,7 @@ def create_allergy_intolerance(
     code: Optional[str] = None,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
-) -> AllergyIntolerance:
+) -> "AllergyIntolerance":
     """
     Create a minimal active FHIR AllergyIntolerance.
     If you need to create a more complex allergy intolerance, use the FHIR AllergyIntolerance resource directly.
@@ -136,6 +143,10 @@ def create_allergy_intolerance(
     Returns:
         AllergyIntolerance: A FHIR AllergyIntolerance resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    AllergyIntolerance = get_resource_class("AllergyIntolerance")
+    Reference = get_resource_class("Reference")
+
     if code:
         allergy_code = create_single_codeable_concept(code, display, system)
     else:
@@ -159,7 +170,7 @@ def create_value_quantity_observation(
     system: str = "http://loinc.org",
     display: Optional[str] = None,
     effective_datetime: Optional[str] = None,
-) -> Observation:
+) -> "Observation":
     """
     Create a minimal FHIR Observation for vital signs or laboratory values.
     If you need to create a more complex observation, use the FHIR Observation resource directly.
@@ -178,6 +189,11 @@ def create_value_quantity_observation(
     Returns:
         Observation: A FHIR Observation resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    Observation = get_resource_class("Observation")
+    Reference = get_resource_class("Reference")
+    Quantity = get_resource_class("Quantity")
+
     if not effective_datetime:
         effective_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%S%z"
@@ -205,7 +221,7 @@ def create_patient(
     birth_date: Optional[str] = None,
     identifier: Optional[str] = None,
     identifier_system: Optional[str] = "http://hospital.example.org",
-) -> Patient:
+) -> "Patient":
     """
     Create a minimal FHIR Patient resource with basic gender and birthdate
     If you need to create a more complex patient, use the FHIR Patient resource directly
@@ -220,6 +236,10 @@ def create_patient(
     Returns:
         Patient: A FHIR Patient resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    Patient = get_resource_class("Patient")
+    Identifier = get_resource_class("Identifier")
+
     patient_id = _generate_id()
 
     patient_data = {"id": patient_id}
@@ -246,11 +266,11 @@ def create_risk_assessment_from_prediction(
     subject: str,
     prediction: Dict[str, Any],
     status: str = "final",
-    method: Optional[CodeableConcept] = None,
-    basis: Optional[List[Reference]] = None,
+    method: Optional[Any] = None,  # CodeableConcept
+    basis: Optional[List[Any]] = None,  # List[Reference]
     comment: Optional[str] = None,
     occurrence_datetime: Optional[str] = None,
-) -> RiskAssessment:
+) -> "RiskAssessment":
     """
     Create a FHIR RiskAssessment from ML model prediction output.
     If you need to create a more complex risk assessment, use the FHIR RiskAssessment resource directly.
@@ -280,6 +300,10 @@ def create_risk_assessment_from_prediction(
         ... }
         >>> risk = create_risk_assessment("Patient/123", prediction)
     """
+    # Lazy import version-aware resource classes
+    RiskAssessment = get_resource_class("RiskAssessment")
+    Reference = get_resource_class("Reference")
+
     if not occurrence_datetime:
         occurrence_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%S%z"
@@ -338,7 +362,7 @@ def create_document_reference(
     status: str = "current",
     description: Optional[str] = "DocumentReference created by HealthChain",
     attachment_title: Optional[str] = "Attachment created by HealthChain",
-) -> DocumentReference:
+) -> "DocumentReference":
     """
     Create a minimal FHIR DocumentReference.
     If you need to create a more complex document reference, use the FHIR DocumentReference resource directly.
@@ -355,6 +379,9 @@ def create_document_reference(
     Returns:
         DocumentReference: A FHIR DocumentReference resource with an auto-generated ID prefixed with 'hc-'
     """
+    # Lazy import version-aware resource classes
+    DocumentReference = get_resource_class("DocumentReference")
+
     document_reference = DocumentReference(
         id=_generate_id(),
         status=status,
@@ -451,7 +478,7 @@ def create_document_reference_content(
     return content
 
 
-def set_condition_category(condition: Condition, category: str) -> Condition:
+def set_condition_category(condition: "Condition", category: str) -> "Condition":
     """
     Set the category of a FHIR Condition to either 'problem-list-item' or 'encounter-diagnosis'.
 
@@ -492,11 +519,11 @@ def set_condition_category(condition: Condition, category: str) -> Condition:
 
 
 def add_provenance_metadata(
-    resource: Resource,
+    resource: "Resource",
     source: str,
     tag_code: Optional[str] = None,
     tag_display: Optional[str] = None,
-) -> Resource:
+) -> "Resource":
     """Add provenance metadata to a FHIR resource.
 
     Adds source system identifier, timestamp, and optional processing tags to track
@@ -515,6 +542,10 @@ def add_provenance_metadata(
         >>> condition = create_condition(subject="Patient/123", code="E11.9")
         >>> condition = add_provenance_metadata(condition, "epic", "aggregated", "Aggregated from source")
     """
+    # Lazy import version-aware resource classes
+    Meta = get_resource_class("Meta")
+    Coding = get_resource_class("Coding")
+
     if not resource.meta:
         resource.meta = Meta()
 
@@ -541,11 +572,11 @@ def add_provenance_metadata(
 
 
 def add_coding_to_codeable_concept(
-    codeable_concept: CodeableConcept,
+    codeable_concept: Any,  # CodeableConcept
     code: str,
     system: str,
     display: Optional[str] = None,
-) -> CodeableConcept:
+) -> Any:  # CodeableConcept
     """Add a coding to an existing CodeableConcept.
 
     Useful for adding standardized codes (e.g., SNOMED CT) to resources that already
@@ -570,6 +601,9 @@ def add_coding_to_codeable_concept(
         ...     display="Type 2 diabetes mellitus"
         ... )
     """
+    # Lazy import version-aware resource classes
+    Coding = get_resource_class("Coding")
+
     if not codeable_concept.coding:
         codeable_concept.coding = []
 

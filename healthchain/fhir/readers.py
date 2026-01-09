@@ -5,18 +5,23 @@ and reading data from FHIR resources.
 """
 
 import logging
-import importlib
 
-from typing import Optional, Dict, Any, List
-from fhir.resources.resource import Resource
-from fhir.resources.documentreference import DocumentReference
+from typing import TYPE_CHECKING, Optional, Dict, Any, List
+
+# Import version manager for lazy resource loading
+from healthchain.fhir.version import get_resource_class
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.resource import Resource
+    from fhir.resources.documentreference import DocumentReference
 
 logger = logging.getLogger(__name__)
 
 
 def create_resource_from_dict(
     resource_dict: Dict, resource_type: str
-) -> Optional[Resource]:
+) -> Optional["Resource"]:
     """Create a FHIR resource instance from a dictionary
 
     Args:
@@ -27,10 +32,9 @@ def create_resource_from_dict(
         Optional[Resource]: FHIR resource instance or None if creation failed
     """
     try:
-        resource_module = importlib.import_module(
-            f"fhir.resources.{resource_type.lower()}"
-        )
-        resource_class = getattr(resource_module, resource_type)
+        from healthchain.fhir.version import get_resource_class
+
+        resource_class = get_resource_class(resource_type)
         return resource_class(**resource_dict)
     except Exception as e:
         logger.error(f"Failed to create FHIR resource: {str(e)}")
@@ -67,7 +71,7 @@ def prefetch_to_bundle(prefetch: Dict[str, Any]) -> Dict[str, Any]:
 
 def convert_prefetch_to_fhir_objects(
     prefetch_dict: Dict[str, Any],
-) -> Dict[str, Resource]:
+) -> Dict[str, "Resource"]:
     """Convert a dictionary of FHIR resource dicts to FHIR Resource objects.
 
     Takes a prefetch dictionary where values may be either dict representations of FHIR
@@ -89,7 +93,6 @@ def convert_prefetch_to_fhir_objects(
         >>> isinstance(fhir_objects["patient"], Patient)  # True
         >>> isinstance(fhir_objects["condition"], Condition)  # True
     """
-    from fhir.resources import get_fhir_model_class
 
     result: Dict[str, Resource] = {}
 
@@ -99,7 +102,7 @@ def convert_prefetch_to_fhir_objects(
             resource_type = resource_data.get("resourceType")
             if resource_type:
                 try:
-                    resource_class = get_fhir_model_class(resource_type)
+                    resource_class = get_resource_class(resource_type)
                     result[key] = resource_class(**resource_data)
                 except Exception as e:
                     logger.warning(
@@ -122,7 +125,7 @@ def convert_prefetch_to_fhir_objects(
 
 
 def read_content_attachment(
-    document_reference: DocumentReference,
+    document_reference: "DocumentReference",
     include_data: bool = True,
 ) -> Optional[List[Dict[str, Any]]]:
     """Read the attachments in a human readable format from a FHIR DocumentReference content field.

@@ -8,15 +8,20 @@ Patterns:
 - extract_*(): extract resources from a bundle
 """
 
-from typing import List, Type, TypeVar, Optional, Union
-from fhir.resources.bundle import Bundle, BundleEntry
-from fhir.resources.resource import Resource
+from typing import TYPE_CHECKING, List, Type, TypeVar, Optional, Union
+
+# Import version manager for lazy resource loading
+from healthchain.fhir.version import get_resource_class
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.bundle import Bundle, BundleEntry
+    from fhir.resources.resource import Resource
+
+T = TypeVar("T", bound="Resource")
 
 
-T = TypeVar("T", bound=Resource)
-
-
-def create_bundle(bundle_type: str = "collection") -> Bundle:
+def create_bundle(bundle_type: str = "collection") -> "Bundle":
     """Create an empty FHIR Bundle.
     https://www.hl7.org/fhir/bundle.html
 
@@ -25,11 +30,13 @@ def create_bundle(bundle_type: str = "collection") -> Bundle:
             Valid types: document, message, transaction, transaction-response,
             batch, batch-response, history, searchset, collection
     """
+    # Lazy import version-aware resource classes
+    Bundle = get_resource_class("Bundle")
     return Bundle(type=bundle_type, entry=[])
 
 
 def add_resource(
-    bundle: Bundle, resource: Resource, full_url: Optional[str] = None
+    bundle: "Bundle", resource: "Resource", full_url: Optional[str] = None
 ) -> None:
     """Add a resource to a bundle.
 
@@ -38,13 +45,23 @@ def add_resource(
         resource: The resource to add, e.g. Condition, MedicationStatement, AllergyIntolerance
         full_url: Optional full URL for the resource
     """
+    # BundleEntry is a nested type within the Bundle class, not a separate resource
+    # We need to import it from the same module as Bundle
+    Bundle = get_resource_class("Bundle")
+    # Import the module to get BundleEntry
+    import importlib
+
+    module_name = Bundle.__module__
+    bundle_module = importlib.import_module(module_name)
+    BundleEntry = getattr(bundle_module, "BundleEntry")
+
     entry = BundleEntry(resource=resource)
     if full_url:
         entry.fullUrl = full_url
     bundle.entry = (bundle.entry or []) + [entry]
 
 
-def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resource]:
+def get_resource_type(resource_type: Union[str, Type["Resource"]]) -> Type["Resource"]:
     """Get the resource type class from string or type.
 
     Args:
@@ -65,12 +82,12 @@ def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resourc
         )
 
     try:
-        # Try to import the resource type dynamically from fhir.resources
-        module = __import__(
-            f"fhir.resources.{resource_type.lower()}", fromlist=[resource_type]
-        )
-        return getattr(module, resource_type)
-    except (ImportError, AttributeError) as e:
+        # Use version manager for dynamic import with version awareness
+        from healthchain.fhir.version import get_resource_class
+
+        return get_resource_class(resource_type)
+    except ValueError as e:
+        # Re-raise with more context
         raise ValueError(
             f"Could not import resource type: {resource_type}. "
             "Make sure it is a valid FHIR resource type."
@@ -78,8 +95,8 @@ def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resourc
 
 
 def get_resources(
-    bundle: Bundle, resource_type: Union[str, Type[Resource]]
-) -> List[Resource]:
+    bundle: "Bundle", resource_type: Union[str, Type["Resource"]]
+) -> List["Resource"]:
     """Get all resources of a specific type from a bundle.
 
     Args:
@@ -109,9 +126,9 @@ def get_resources(
 
 
 def set_resources(
-    bundle: Bundle,
-    resources: List[Resource],
-    resource_type: Union[str, Type[Resource]],
+    bundle: "Bundle",
+    resources: List["Resource"],
+    resource_type: Union[str, Type["Resource"]],
     replace: bool = True,
 ) -> None:
     """Set resources of a specific type in the bundle.
@@ -157,11 +174,11 @@ def set_resources(
 
 
 def merge_bundles(
-    bundles: List[Bundle],
+    bundles: List["Bundle"],
     bundle_type: str = "collection",
     deduplicate: bool = False,
     dedupe_key: str = "id",
-) -> Bundle:
+) -> "Bundle":
     """Merge multiple FHIR bundles into a single bundle.
 
     Combines entries from multiple bundles while preserving resource metadata.
@@ -225,8 +242,8 @@ def merge_bundles(
 
 
 def extract_resources(
-    bundle: Bundle, resource_type: Union[str, Type[Resource]]
-) -> List[Resource]:
+    bundle: "Bundle", resource_type: Union[str, Type["Resource"]]
+) -> List["Resource"]:
     """Remove resources of a given type from a bundle and return them.
 
     Useful for extracting and separating specific resource types (e.g., OperationOutcome)
@@ -258,7 +275,7 @@ def extract_resources(
     return extracted
 
 
-def count_resources(bundle: Bundle) -> dict[str, int]:
+def count_resources(bundle: "Bundle") -> dict[str, int]:
     """Count resources by type in a bundle.
 
     Args:

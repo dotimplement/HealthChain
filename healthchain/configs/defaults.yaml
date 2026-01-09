@@ -30,6 +30,10 @@ defaults:
               code: "UNK"
               display: "Unknown"
 
+# FHIR version configuration
+fhir:
+  version: "R4B"  # Default FHIR version (R4, R4B, or R5)
+
 # TODO: More control over settings
 # # Validation settings
 # validation:
