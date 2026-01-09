@@ -285,7 +285,7 @@ def create_app(settings: Optional[Settings] = None) -> HealthChainAPI:
     app.register_service(cds, path="/cds")
 
     # Register FHIR Gateway if configured
-    if ml_api.gateway.sources:
+    if ml_api.gateway.connection_manager and ml_api.gateway.connection_manager.sources:
         app.register_gateway(ml_api.gateway, path="/fhir")
 
     # Add custom ML prediction endpoints
@@ -300,7 +300,23 @@ def create_app(settings: Optional[Settings] = None) -> HealthChainAPI:
         Accepts a FHIR Bundle containing patient data and returns risk assessment.
         """
         from fhir.resources.bundle import Bundle
-        fhir_bundle = Bundle(**bundle)
+        
+        # Ensure bundle has required 'type' field
+        if "type" not in bundle or bundle["type"] is None:
+            bundle["type"] = "collection"
+        
+        # Ensure bundle has 'entry' field (can be empty list)
+        if "entry" not in bundle:
+            bundle["entry"] = []
+        
+        try:
+            fhir_bundle = Bundle(**bundle)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid FHIR Bundle: {str(e)}"
+            )
+        
         result = ml_api.predict_from_fhir(fhir_bundle)
 
         if user:
@@ -319,16 +335,16 @@ def create_app(settings: Optional[Settings] = None) -> HealthChainAPI:
 
         Queries patient data from the specified FHIR server and runs prediction.
         """
-        if not ml_api.gateway.sources:
+        if not (ml_api.gateway.connection_manager and ml_api.gateway.connection_manager.sources):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="No FHIR sources configured"
             )
 
-        if source not in ml_api.gateway.sources:
+        if not (ml_api.gateway.connection_manager and ml_api.gateway.connection_manager.sources) or source not in ml_api.gateway.connection_manager.sources:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Source '{source}' not configured. Available: {list(ml_api.gateway.sources.keys())}"
+                detail=f"Source '{source}' not configured. Available: {list(ml_api.gateway.connection_manager.sources.keys()) if ml_api.gateway.connection_manager else []}"
             )
 
         result = ml_api.screen_patient(patient_id, source)
@@ -353,8 +369,8 @@ def create_app(settings: Optional[Settings] = None) -> HealthChainAPI:
     async def list_sources():
         """List configured FHIR data sources."""
         return {
-            "sources": list(ml_api.gateway.sources.keys()) if ml_api.gateway else [],
-            "configured": bool(ml_api.gateway and ml_api.gateway.sources)
+            "sources": list(ml_api.gateway.connection_manager.sources.keys()) if (ml_api.gateway and ml_api.gateway.connection_manager) else [],
+            "configured": bool(ml_api.gateway and ml_api.gateway.connection_manager and ml_api.gateway.connection_manager.sources)
         }
 
     return app
