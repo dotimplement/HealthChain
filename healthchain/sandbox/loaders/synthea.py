@@ -8,11 +8,15 @@ import json
 import logging
 import random
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
-from fhir.resources.R4B.bundle import Bundle
-
+# Import version manager for version-aware resource loading
+from healthchain.fhir.version import get_resource_class
 from healthchain.sandbox.datasets import DatasetLoader
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.bundle import Bundle
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +79,7 @@ class SyntheaFHIRPatientLoader(DatasetLoader):
         sample_size: Optional[int] = None,
         random_seed: Optional[int] = None,
         **kwargs,
-    ) -> Dict[str, Bundle]:
+    ) -> Dict[str, "Bundle"]:
         """
         Load a single Synthea FHIR patient Bundle.
 
@@ -110,6 +114,9 @@ class SyntheaFHIRPatientLoader(DatasetLoader):
             ... )
             >>> # Returns: {"Condition": Bundle(...), "MedicationRequest": Bundle(...)}
         """
+        # Lazy import version-aware resource classes
+        Bundle = get_resource_class("Bundle")
+
         data_dir = Path(data_dir)
         if not data_dir.exists():
             raise FileNotFoundError(

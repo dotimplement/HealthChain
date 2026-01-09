@@ -3,6 +3,7 @@ import warnings
 
 from .utils.logger import add_handlers
 from .config.base import ConfigManager, ValidationLevel
+from .fhir.version import set_fhir_version, get_fhir_version
 
 
 # Enable deprecation warnings
@@ -14,7 +15,15 @@ add_handlers(logger)
 logger.setLevel(logging.INFO)
 
 # Export them at the top level
-__all__ = ["ConfigManager", "ValidationLevel", "api", "ehr", "sandbox"]
+__all__ = [
+    "ConfigManager",
+    "ValidationLevel",
+    "set_fhir_version",
+    "get_fhir_version",
+    "api",
+    "ehr",
+    "sandbox",
+]
 
 
 # Legacy import with warning

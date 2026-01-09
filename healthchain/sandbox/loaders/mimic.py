@@ -7,11 +7,15 @@ Loads patient data from the MIMIC-IV-on-FHIR dataset for testing and demos.
 import logging
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
-from fhir.resources.R4B.bundle import Bundle
-
+# Import version manager for version-aware resource loading
+from healthchain.fhir.version import get_resource_class
 from healthchain.sandbox.datasets import DatasetLoader
+
+# Type hints using string annotations (lazy evaluation)
+if TYPE_CHECKING:
+    from fhir.resources.bundle import Bundle
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +60,7 @@ class MimicOnFHIRLoader(DatasetLoader):
         random_seed: Optional[int] = None,
         as_dict: bool = False,
         **kwargs,
-    ) -> Union[Dict[str, Bundle], Dict[str, Any]]:
+    ) -> Union[Dict[str, "Bundle"], Dict[str, Any]]:
         """
         Load MIMIC-on-FHIR data as FHIR Bundle(s).
 
@@ -98,6 +102,8 @@ class MimicOnFHIRLoader(DatasetLoader):
             >>> from healthchain.io import Dataset
             >>> dataset = Dataset.from_fhir_bundle(bundle, schema="sepsis_vitals.yaml")
         """
+        # Lazy import version-aware resource classes
+        Bundle = get_resource_class("Bundle")
 
         data_dir = Path(data_dir)
         if not data_dir.exists():
