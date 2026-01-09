@@ -1,0 +1,30 @@
+{
+  "example": {
+    "patient_identifier": "example",
+    "identifier_system": "MRN",
+    "patient": null,
+    "observations": [],
+    "conditions": [],
+    "medications": [],
+    "procedures": [],
+    "sources": {
+      "HAPI_FHIR": {
+        "patient": null,
+        "observations": [],
+        "conditions": [],
+        "medications": [],
+        "procedures": []
+      }
+    },
+    "source_errors": {},
+    "aggregation_timestamp": "2025-12-17T10:15:45.525203",
+    "last_updated": "2025-12-17T10:15:45.525861",
+    "quality_metrics": {
+      "completeness_score": 0.0,
+      "consistency_score": 0.0,
+      "timeliness_score": 0.0,
+      "duplicates_removed": 0,
+      "conflicts_resolved": 0
+    }
+  }
+}

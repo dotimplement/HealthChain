@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+*.pkl
+*.log
+config/*_secrets.yaml

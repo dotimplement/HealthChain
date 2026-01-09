@@ -1,0 +1,23 @@
+# Multi-EHR Aggregation Dependencies
+# Install healthchain from parent directory or PyPI
+
+# Core dependencies (from healthchain)
+pydantic>=2.0.0,<2.11.0
+fhir-resources>=8.0.0,<9
+pandas>=1.0.0,<3.0.0
+numpy<2.0.0
+pyyaml>=6.0.3,<7
+httpx>=0.27.0,<0.28
+
+# Async support
+asyncio
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+
+# Optional: Parquet export
+pyarrow>=14.0.0
+
+# HealthChain (install from parent directory or PyPI)
+# pip install ../  OR  pip install healthchain

@@ -1,0 +1,136 @@
+name: ml_healthcare_features
+version: "1.0"
+description: |
+  Generic feature schema for healthcare ML model deployment.
+  Covers common vital signs, lab values, and patient demographics.
+  Customize this schema to match your trained model's features.
+
+model_info:
+  model_type: Generic Healthcare ML Model
+  training_data: Custom healthcare dataset
+  target: Risk Assessment
+  prediction_window: Point-in-time assessment
+
+metadata:
+  age_calculation: event_date
+  event_date_source: Observation
+  event_date_strategy: earliest
+
+features:
+  # Vital Signs (LOINC codes for standard interoperability)
+  heart_rate:
+    fhir_resource: Observation
+    code: "8867-4"
+    code_system: http://loinc.org
+    display: Heart Rate
+    unit: bpm
+    dtype: float64
+    required: true
+
+  systolic_bp:
+    fhir_resource: Observation
+    code: "8480-6"
+    code_system: http://loinc.org
+    display: Systolic Blood Pressure
+    unit: mmHg
+    dtype: float64
+    required: true
+
+  diastolic_bp:
+    fhir_resource: Observation
+    code: "8462-4"
+    code_system: http://loinc.org
+    display: Diastolic Blood Pressure
+    unit: mmHg
+    dtype: float64
+    required: false
+
+  respiratory_rate:
+    fhir_resource: Observation
+    code: "9279-1"
+    code_system: http://loinc.org
+    display: Respiratory Rate
+    unit: /min
+    dtype: float64
+    required: true
+
+  temperature:
+    fhir_resource: Observation
+    code: "8310-5"
+    code_system: http://loinc.org
+    display: Body Temperature
+    unit: Cel
+    dtype: float64
+    required: true
+
+  oxygen_saturation:
+    fhir_resource: Observation
+    code: "2708-6"
+    code_system: http://loinc.org
+    display: Oxygen Saturation
+    unit: "%"
+    dtype: float64
+    required: false
+
+  # Laboratory Values
+  white_blood_cells:
+    fhir_resource: Observation
+    code: "6690-2"
+    code_system: http://loinc.org
+    display: White Blood Cells
+    unit: 10*3/uL
+    dtype: float64
+    required: false
+
+  hemoglobin:
+    fhir_resource: Observation
+    code: "718-7"
+    code_system: http://loinc.org
+    display: Hemoglobin
+    unit: g/dL
+    dtype: float64
+    required: false
+
+  creatinine:
+    fhir_resource: Observation
+    code: "2160-0"
+    code_system: http://loinc.org
+    display: Creatinine
+    unit: mg/dL
+    dtype: float64
+    required: false
+
+  glucose:
+    fhir_resource: Observation
+    code: "2345-7"
+    code_system: http://loinc.org
+    display: Glucose
+    unit: mg/dL
+    dtype: float64
+    required: false
+
+  lactate:
+    fhir_resource: Observation
+    code: "2524-7"
+    code_system: http://loinc.org
+    display: Lactate
+    unit: mmol/L
+    dtype: float64
+    required: false
+
+  # Patient Demographics
+  age:
+    fhir_resource: Patient
+    field: birthDate
+    transform: calculate_age
+    dtype: int64
+    required: true
+    display: Patient age calculated from birth date
+
+  gender_encoded:
+    fhir_resource: Patient
+    field: gender
+    transform: encode_gender
+    dtype: int64
+    required: false
+    display: Administrative gender (male=1, female=0)
