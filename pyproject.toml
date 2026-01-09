@@ -6,7 +6,7 @@ authors = [
     { name = "Jennifer Jiang-Kells", email = "jenniferjiangkells@gmail.com" },
     { name = "Adam Kells", email = "adamjkells93@gmail.com" },
 ]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.14"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 keywords = [
@@ -32,7 +32,7 @@ dependencies = [
     "eval_type_backport>=0.1.0,<0.2",
     "pandas>=1.0.0,<3.0.0",
     "spacy>=3.0.0,<4.0.0",
-    "numpy<2.0.0",
+    "numpy>=2,<3",
     "colorama>=0.4.6,<0.5",
     "faker>=25.1.0,<26",
     "termcolor>=2.4.0,<3",
