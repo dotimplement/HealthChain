@@ -576,11 +576,17 @@ def _flatten_medications(
     features = {}
 
     for med in medications:
+        # Try R5 structure first: medication.concept
         medication = _get_field(med, "medication")
-        if not medication:
-            continue
+        if medication:
+            med_concept = _get_field(medication, "concept")
+        else:
+            med_concept = None
 
-        med_concept = _get_field(medication, "concept")
+        # Fall back to R4/R4B structure: medicationCodeableConcept
+        if not med_concept:
+            med_concept = _get_field(med, "medicationCodeableConcept")
+
         if not med_concept:
             continue
 

@@ -1,13 +1,6 @@
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.codeablereference import CodeableReference
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.attachment import Attachment
-from fhir.resources.coding import Coding
 from datetime import datetime
 
+import pytest
 
 from healthchain.fhir import (
     create_resource_from_dict,
@@ -25,8 +18,8 @@ from healthchain.fhir import (
     add_coding_to_codeable_concept,
     calculate_age_from_birthdate,
     calculate_age_from_event_date,
+    get_resource_class,
 )
-import pytest
 
 
 def test_create_single_codeable_concept():
@@ -36,6 +29,7 @@ def test_create_single_codeable_concept():
         display="Test Concept",
     )
 
+    CodeableConcept = get_resource_class("CodeableConcept")
     assert isinstance(concept, CodeableConcept)
     assert len(concept.coding) == 1
     assert concept.coding[0].code == "123"
@@ -52,6 +46,7 @@ def test_create_single_reaction():
         severity="severe",
     )
 
+    CodeableReference = get_resource_class("CodeableReference")
     assert isinstance(reaction, list)
     assert len(reaction) == 1
     assert reaction[0]["severity"] == "severe"
@@ -74,6 +69,7 @@ def test_create_condition():
         system="http://test.system",
     )
 
+    Condition = get_resource_class("Condition")
     assert isinstance(condition, Condition)
     assert condition.id.startswith("hc-")
     assert len(condition.id) > 3  # Ensure there's content after "hc-"
@@ -89,6 +85,8 @@ def test_create_condition():
 
 def test_create_medication_statement_minimal():
     """Test creating a medication statement with only required fields."""
+    from healthchain.fhir.version import get_fhir_version
+
     medication = create_medication_statement(
         subject="Patient/123",
         code="123",
@@ -96,14 +94,23 @@ def test_create_medication_statement_minimal():
         system="http://test.system",
     )
 
+    MedicationStatement = get_resource_class("MedicationStatement")
     assert isinstance(medication, MedicationStatement)
     assert medication.id.startswith("hc-")
     assert len(medication.id) > 3  # Ensure there's content after "hc-"
     assert medication.subject.reference == "Patient/123"
     assert medication.status == "recorded"
-    assert medication.medication.concept.coding[0].code == "123"
-    assert medication.medication.concept.coding[0].display == "Test Medication"
-    assert medication.medication.concept.coding[0].system == "http://test.system"
+
+    # Access medication code based on FHIR version
+    version = get_fhir_version()
+    if version == "R5":
+        med_code = medication.medication.concept.coding[0]
+    else:
+        med_code = medication.medicationCodeableConcept.coding[0]
+
+    assert med_code.code == "123"
+    assert med_code.display == "Test Medication"
+    assert med_code.system == "http://test.system"
 
 
 def test_create_allergy_intolerance_minimal():
@@ -115,6 +122,7 @@ def test_create_allergy_intolerance_minimal():
         system="http://test.system",
     )
 
+    AllergyIntolerance = get_resource_class("AllergyIntolerance")
     assert isinstance(allergy, AllergyIntolerance)
     assert allergy.id.startswith("hc-")
     assert len(allergy.id) > 3  # Ensure there's content after "hc-"
@@ -130,6 +138,7 @@ def test_create_single_attachment():
         content_type="text/plain", data="Test content", title="Test Attachment"
     )
 
+    Attachment = get_resource_class("Attachment")
     assert isinstance(attachment, Attachment)
     assert attachment.contentType == "text/plain"
     assert attachment.title == "Test Attachment"
@@ -149,6 +158,7 @@ def test_create_single_attachment_with_url():
         title="Test URL Attachment",
     )
 
+    Attachment = get_resource_class("Attachment")
     assert isinstance(attachment, Attachment)
     assert attachment.contentType == "application/pdf"
     assert attachment.url == "http://example.com/test.pdf"
@@ -165,6 +175,7 @@ def test_create_document_reference():
         attachment_title="Test Doc",
     )
 
+    DocumentReference = get_resource_class("DocumentReference")
     assert isinstance(doc_ref, DocumentReference)
     assert doc_ref.id.startswith("hc-")
     assert len(doc_ref.id) > 3  # Ensure there's content after "hc-"
@@ -188,6 +199,7 @@ def test_create_document_reference_with_url():
         status="superseded",
     )
 
+    DocumentReference = get_resource_class("DocumentReference")
     assert isinstance(doc_ref, DocumentReference)
     assert doc_ref.id.startswith("hc-")
     assert len(doc_ref.id) > 3  # Ensure there's content after "hc-"
@@ -292,6 +304,7 @@ def test_create_document_reference_content_custom_language():
 
 def test_create_document_reference_content_with_kwargs():
     """Test creating DocumentReferenceContent with additional fields."""
+    Coding = get_resource_class("Coding")
     content = create_document_reference_content(
         attachment_data="Test",
         format=Coding(

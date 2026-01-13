@@ -5,6 +5,7 @@ and reading data from FHIR resources.
 """
 
 import logging
+import re
 
 from typing import TYPE_CHECKING, Optional, Dict, Any, List
 
@@ -17,6 +18,42 @@ if TYPE_CHECKING:
     from fhir.resources.documentreference import DocumentReference
 
 logger = logging.getLogger(__name__)
+
+
+def _fix_timezone_naive_datetimes(data: Any) -> Any:
+    """
+    Recursively fix timezone-naive datetime strings by appending UTC timezone.
+
+    Pydantic v2 requires timezone-aware datetimes. This function walks through
+    nested dicts/lists and adds 'Z' (UTC) to datetime strings that match the
+    pattern YYYY-MM-DDTHH:MM:SS but lack timezone info.
+
+    Args:
+        data: Dict, list, or primitive value to process
+
+    Returns:
+        Processed data with timezone-aware datetime strings
+
+    Example:
+        >>> data = {"start": "2021-04-19T00:00:00", "name": "Test"}
+        >>> _fix_timezone_naive_datetimes(data)
+        {"start": "2021-04-19T00:00:00Z", "name": "Test"}
+    """
+    # Pattern: YYYY-MM-DDTHH:MM:SS optionally followed by microseconds
+    # Must NOT already have timezone (Z or +/-HH:MM)
+    datetime_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$")
+
+    if isinstance(data, dict):
+        return {
+            key: _fix_timezone_naive_datetimes(value) for key, value in data.items()
+        }
+    elif isinstance(data, list):
+        return [_fix_timezone_naive_datetimes(item) for item in data]
+    elif isinstance(data, str) and datetime_pattern.match(data):
+        # Add UTC timezone
+        return f"{data}Z"
+    else:
+        return data
 
 
 def create_resource_from_dict(
@@ -94,7 +131,10 @@ def convert_prefetch_to_fhir_objects(
         >>> isinstance(fhir_objects["condition"], Condition)  # True
     """
 
-    result: Dict[str, Resource] = {}
+    result: Dict[str, "Resource"] = {}
+
+    # Get Resource base class for isinstance check
+    Resource = get_resource_class("Resource")
 
     for key, resource_data in prefetch_dict.items():
         if isinstance(resource_data, dict):
@@ -102,8 +142,10 @@ def convert_prefetch_to_fhir_objects(
             resource_type = resource_data.get("resourceType")
             if resource_type:
                 try:
+                    # Fix timezone-naive datetimes before validation
+                    fixed_data = _fix_timezone_naive_datetimes(resource_data)
                     resource_class = get_resource_class(resource_type)
-                    result[key] = resource_class(**resource_data)
+                    result[key] = resource_class(**fixed_data)
                 except Exception as e:
                     logger.warning(
                         f"Failed to convert {resource_type} to FHIR object: {e}"

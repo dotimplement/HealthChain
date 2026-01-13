@@ -19,9 +19,8 @@ from healthchain.fhir import (
     create_document_reference,
     create_single_codeable_concept,
     create_single_reaction,
+    get_resource_class,
 )
-
-from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
 
 
 @pytest.fixture
@@ -217,6 +216,7 @@ def doc_ref_with_multiple_content():
     Returns:
         fhir.resources.documentreference.DocumentReference: A FHIR DocumentReference with two content attachments.
     """
+    DocumentReferenceContent = get_resource_class("DocumentReferenceContent")
     doc_ref = create_document_reference(
         data="First content",
         content_type="text/plain",
@@ -258,7 +258,9 @@ def doc_ref_without_content():
     Returns:
         fhir.resources.documentreference.DocumentReference: An incomplete DocumentReference resource.
     """
-    from fhir.resources.attachment import Attachment
+    DocumentReference = get_resource_class("DocumentReference")
+    DocumentReferenceContent = get_resource_class("DocumentReferenceContent")
+    Attachment = get_resource_class("Attachment")
 
     return DocumentReference(
         status="current",

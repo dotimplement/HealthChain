@@ -1,11 +1,6 @@
 """Tests for FHIR Bundle helper functions."""
 
 import pytest
-from fhir.resources.bundle import Bundle
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.documentreference import DocumentReference
 
 from healthchain.fhir.bundlehelpers import (
     create_bundle,
@@ -15,11 +10,12 @@ from healthchain.fhir.bundlehelpers import (
     get_resource_type,
     extract_resources,
 )
-from healthchain.fhir import merge_bundles, create_condition
+from healthchain.fhir import merge_bundles, create_condition, get_resource_class
 
 
 def test_create_bundle():
     """Test creating an empty bundle."""
+    Bundle = get_resource_class("Bundle")
     bundle = create_bundle()
     assert isinstance(bundle, Bundle)
     assert bundle.type == "collection"
@@ -32,6 +28,7 @@ def test_create_bundle():
 
 def test_add_resource(empty_bundle, test_condition):
     """Test adding a resource to a bundle."""
+    Condition = get_resource_class("Condition")
     add_resource(empty_bundle, test_condition)
     assert len(empty_bundle.entry) == 1
     assert isinstance(empty_bundle.entry[0].resource, Condition)
@@ -44,6 +41,11 @@ def test_add_resource(empty_bundle, test_condition):
 
 def test_get_resource_type():
     """Test getting resource type from string or class."""
+    Condition = get_resource_class("Condition")
+    MedicationStatement = get_resource_class("MedicationStatement")
+    AllergyIntolerance = get_resource_class("AllergyIntolerance")
+    DocumentReference = get_resource_class("DocumentReference")
+
     # Test with string
     assert get_resource_type("Condition") == Condition
     assert get_resource_type("MedicationStatement") == MedicationStatement
@@ -65,6 +67,9 @@ def test_get_resource_type():
 
 def test_get_resources(empty_bundle, test_condition, test_medication, test_allergy):
     """Test getting resources by type."""
+    Condition = get_resource_class("Condition")
+    MedicationStatement = get_resource_class("MedicationStatement")
+
     # Add mixed resources
     add_resource(empty_bundle, test_condition)
     add_resource(empty_bundle, test_medication)

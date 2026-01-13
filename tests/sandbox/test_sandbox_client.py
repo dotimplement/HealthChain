@@ -20,7 +20,7 @@ def test_load_from_path_single_xml_file(tmp_path):
     cda_file.write_text("<ClinicalDocument>Test CDA</ClinicalDocument>")
 
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -39,7 +39,7 @@ def test_load_from_path_directory_with_pattern(tmp_path):
     (tmp_path / "other.txt").write_text("Not XML")
 
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -56,7 +56,7 @@ def test_load_from_path_directory_all_files(tmp_path):
     (tmp_path / "note2.xml").write_text("<ClinicalDocument>Note 2</ClinicalDocument>")
 
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -69,7 +69,7 @@ def test_load_from_path_directory_all_files(tmp_path):
 def test_load_from_path_error_handling(tmp_path):
     """load_from_path raises FileNotFoundError for nonexistent path."""
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )

@@ -73,6 +73,11 @@ def get_resource_type(resource_type: Union[str, Type["Resource"]]) -> Type["Reso
     Raises:
         ValueError: If the resource type is not supported or cannot be imported
     """
+    from healthchain.fhir.version import get_resource_class
+
+    # Get the base Resource class for isinstance check
+    Resource = get_resource_class("Resource")
+
     if isinstance(resource_type, type) and issubclass(resource_type, Resource):
         return resource_type
 
@@ -83,8 +88,6 @@ def get_resource_type(resource_type: Union[str, Type["Resource"]]) -> Type["Reso
 
     try:
         # Use version manager for dynamic import with version awareness
-        from healthchain.fhir.version import get_resource_class
-
         return get_resource_class(resource_type)
     except ValueError as e:
         # Re-raise with more context
