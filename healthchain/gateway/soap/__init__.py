@@ -1,10 +1,6 @@
-from .notereader import NoteReaderService
-from .utils.epiccds import CDSServices
-from .utils.model import ClientFault, ServerFault
+from .notereader import NoteReaderService, NoteReaderConfig
 
 __all__ = [
     "NoteReaderService",
-    "CDSServices",
-    "ClientFault",
-    "ServerFault",
+    "NoteReaderConfig",
 ]
