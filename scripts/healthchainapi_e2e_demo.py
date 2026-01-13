@@ -414,7 +414,7 @@ def create_sandboxes():
 
     # NoteReader Sandbox
     notereader_client = SandboxClient(
-        url=base_url + "/notereader/fhir/",
+        url=base_url + "/notereader/?wsdl",
         workflow=CONFIG["workflows"]["notereader"],
         protocol="soap",
     )

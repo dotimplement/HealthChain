@@ -1,0 +1,84 @@
+<wsdl:definitions xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:plink="http://schemas.xmlsoap.org/ws/2003/05/partner-link/" xmlns:wsdlsoap11="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsdlsoap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap11enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap11env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap12env="http://www.w3.org/2003/05/soap-envelope" xmlns:soap12enc="http://www.w3.org/2003/05/soap-encoding" xmlns:wsa="http://schemas.xmlsoap.org/ws/2003/03/addressing" xmlns:xop="http://www.w3.org/2004/08/xop/include" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:tns="urn:epic-com:Common.2013.Services" targetNamespace="urn:epic-com:Common.2013.Services" name="ICDSServices">
+<wsdl:types>
+<xs:schema targetNamespace="urn:epic-com:Common.2013.Services" elementFormDefault="qualified">
+<xs:complexType name="ClientFault">
+<xs:sequence>
+<xs:element name="Type" type="xs:string" minOccurs="0" nillable="true"/>
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="Response">
+<xs:sequence>
+<xs:element name="Document" type="xs:base64Binary" minOccurs="0" nillable="true"/>
+<xs:element name="Error" type="xs:string" minOccurs="0" nillable="true"/>
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="ServerFault">
+<xs:sequence>
+<xs:element name="Type" type="xs:string" minOccurs="0" nillable="true"/>
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="ProcessDocument">
+<xs:sequence>
+<xs:element name="SessionID" type="xs:string" minOccurs="0" nillable="true"/>
+<xs:element name="WorkType" type="xs:string" minOccurs="0" nillable="true"/>
+<xs:element name="OrganizationID" type="xs:string" minOccurs="0" nillable="true"/>
+<xs:element name="Document" type="xs:base64Binary" minOccurs="0" nillable="true"/>
+</xs:sequence>
+</xs:complexType>
+<xs:complexType name="ProcessDocumentResponse">
+<xs:sequence>
+<xs:element name="ProcessDocumentResult" type="tns:Response" minOccurs="0" nillable="true"/>
+</xs:sequence>
+</xs:complexType>
+<xs:element name="ClientFault" type="tns:ClientFault"/>
+<xs:element name="Response" type="tns:Response"/>
+<xs:element name="ServerFault" type="tns:ServerFault"/>
+<xs:element name="ProcessDocument" type="tns:ProcessDocument"/>
+<xs:element name="ProcessDocumentResponse" type="tns:ProcessDocumentResponse"/>
+</xs:schema>
+</wsdl:types>
+<wsdl:message name="ProcessDocument">
+<wsdl:part name="parameters" element="tns:ProcessDocument"/>
+</wsdl:message>
+<wsdl:message name="ProcessDocumentResponse">
+<wsdl:part name="parameters" element="tns:ProcessDocumentResponse"/>
+</wsdl:message>
+<wsdl:message name="ClientFault">
+<wsdl:part name="ClientFault" element="tns:ClientFault"/>
+</wsdl:message>
+<wsdl:message name="ServerFault">
+<wsdl:part name="ServerFault" element="tns:ServerFault"/>
+</wsdl:message>
+<wsdl:service name="CDSServices">
+<wsdl:port name="ICDSServices" binding="tns:ICDSServices">
+<wsdlsoap11:address location="{{SERVICE_LOCATION}}"/>
+</wsdl:port>
+</wsdl:service>
+<wsdl:portType name="ICDSServices">
+<wsdl:operation name="ProcessDocument" parameterOrder="ProcessDocument">
+<wsdl:documentation> Processes a document using the specified session ID, work type, organization ID, and document. Args: ctx (object): The context object. sessionId (str): The session ID. workType (str): The work type. organizationId (str): The organization ID. document (bytes): The document to be processed. Returns: Response: The response object containing the processed document and any errors. Raises: ClientFault: If any of the required parameters are missing. ServerFault: If there is a server processing error. ServerFault: If an unexpected error occurs. </wsdl:documentation>
+<wsdl:input name="ProcessDocument" message="tns:ProcessDocument"/>
+<wsdl:output name="ProcessDocumentResponse" message="tns:ProcessDocumentResponse"/>
+<wsdl:fault name="ClientFault" message="tns:ClientFault"/>
+<wsdl:fault name="ServerFault" message="tns:ServerFault"/>
+</wsdl:operation>
+</wsdl:portType>
+<wsdl:binding name="ICDSServices" type="tns:ICDSServices">
+<wsdlsoap11:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+<wsdl:operation name="ProcessDocument">
+<wsdlsoap11:operation soapAction="ProcessDocument" style="document"/>
+<wsdl:input name="ProcessDocument">
+<wsdlsoap11:body use="literal"/>
+</wsdl:input>
+<wsdl:output name="ProcessDocumentResponse">
+<wsdlsoap11:body use="literal"/>
+</wsdl:output>
+<wsdl:fault name="ClientFault">
+<wsdlsoap11:fault name="ClientFault" use="literal"/>
+</wsdl:fault>
+<wsdl:fault name="ServerFault">
+<wsdlsoap11:fault name="ServerFault" use="literal"/>
+</wsdl:fault>
+</wsdl:operation>
+</wsdl:binding>
+</wsdl:definitions>

@@ -24,7 +24,7 @@ def test_notereader_sandbox_integration():
 
     # Create SandboxClient for SOAP/CDA
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )
@@ -73,7 +73,7 @@ def test_notereader_sandbox_workflow_execution():
     """Test executing a NoteReader workflow with SandboxClient"""
     # Create SandboxClient
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )

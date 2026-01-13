@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     # Create sandbox client for testing
     client = SandboxClient(
-        url="http://localhost:8000/notereader/fhir/",
+        url="http://localhost:8000/notereader/?wsdl",
         workflow="sign-note-inpatient",
         protocol="soap",
     )

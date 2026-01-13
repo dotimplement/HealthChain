@@ -46,7 +46,7 @@ class SandboxClient:
 
         Load CDA file from path:
         >>> client = SandboxClient(
-        ...     url="http://localhost:8000/notereader/fhir/",
+        ...     url="http://localhost:8000/notereader/?wsdl",
         ...     protocol="soap"
         ... )
         >>> client.load_from_path("./data/clinical_note.xml")
