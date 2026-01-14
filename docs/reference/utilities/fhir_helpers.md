@@ -2,6 +2,98 @@
 
 The `fhir` module provides a set of helper functions to make it easier for you to work with FHIR resources.
 
+## FHIR Version Support
+
+HealthChain supports multiple FHIR versions: **R5** (default), **R4B**, and **STU3**. All resource creation and helper functions accept an optional `version` parameter.
+
+### Supported Versions
+
+| Version | Description | Package Path |
+|---------|-------------|--------------|
+| **R5** | FHIR Release 5 (default) | `fhir.resources.*` |
+| **R4B** | FHIR R4B (Ballot) | `fhir.resources.R4B.*` |
+| **STU3** | FHIR STU3 | `fhir.resources.STU3.*` |
+
+### Basic Usage
+
+```python
+from healthchain.fhir import (
+    FHIRVersion,
+    get_fhir_resource,
+    set_default_version,
+    fhir_version_context,
+    convert_resource,
+    create_condition,
+)
+
+# Get a resource class for a specific version
+Patient_R4B = get_fhir_resource("Patient", "R4B")
+Patient_R5 = get_fhir_resource("Patient", FHIRVersion.R5)
+
+# Create resources with a specific version
+condition_r4b = create_condition(
+    subject="Patient/123",
+    code="38341003",
+    display="Hypertension",
+    version="R4B"  # Creates R4B Condition
+)
+
+# Set the default version for the session
+set_default_version("R4B")
+
+# Use context manager for temporary version changes
+with fhir_version_context("STU3"):
+    # All resources created here use STU3
+    condition = create_condition(subject="Patient/123", code="123")
+```
+
+### Version Conversion
+
+Convert resources between FHIR versions using `convert_resource()`:
+
+```python
+from healthchain.fhir import get_fhir_resource, convert_resource
+
+# Create an R5 Patient
+Patient_R5 = get_fhir_resource("Patient")
+patient_r5 = Patient_R5(id="test-123", gender="male")
+
+# Convert to R4B
+patient_r4b = convert_resource(patient_r5, "R4B")
+print(patient_r4b.__class__.__module__)  # fhir.resources.R4B.patient
+```
+
+!!! warning "Version Conversion Limitations"
+    The `convert_resource()` function uses a serialize/deserialize approach. Field mappings between FHIR versions may not be 1:1 - some fields may be added, removed, or renamed between versions. Complex resources with version-specific fields may require manual handling.
+
+### Version Detection
+
+Detect the FHIR version of an existing resource:
+
+```python
+from healthchain.fhir import get_resource_version, get_fhir_resource
+
+Patient_R4B = get_fhir_resource("Patient", "R4B")
+patient = Patient_R4B(id="123")
+
+version = get_resource_version(patient)
+print(version)  # FHIRVersion.R4B
+```
+
+### API Reference
+
+| Function | Description |
+|----------|-------------|
+| `get_fhir_resource(name, version)` | Get a resource class for a specific version |
+| `get_default_version()` | Get the current default FHIR version |
+| `set_default_version(version)` | Set the global default FHIR version |
+| `reset_default_version()` | Reset to library default (R5) |
+| `fhir_version_context(version)` | Context manager for temporary version changes |
+| `convert_resource(resource, version)` | Convert a resource to a different version |
+| `get_resource_version(resource)` | Detect the version of an existing resource |
+
+---
+
 ## Resource Creation
 
 FHIR is the modern de facto standard for storing and exchanging healthcare data, but working with [FHIR resources](https://www.hl7.org/fhir/resourcelist.html) can often involve complex and nested JSON structures with required and optional fields that vary between contexts.
@@ -78,6 +170,14 @@ condition = create_condition(
     code="38341003",
     display="Hypertension",
     system="http://snomed.info/sct",
+)
+
+# Create an R4B condition
+condition_r4b = create_condition(
+    subject="Patient/123",
+    code="38341003",
+    display="Hypertension",
+    version="R4B",  # Optional: specify FHIR version
 )
 
 # Output the created resource
