@@ -1,9 +1,11 @@
 ## [RFC] Da Vinci Prior Authorization Profile Implementation (CRD/DTR/PAS)
 
 ### Context
-CMS-0057-F mandates that payers implement Prior Authorization APIs using HL7 Da Vinci Implementation Guides (effective Jan 2027). HealthChain already provides the core intelligence layer (multi-source FHIR aggregation, AI/NLP enrichment, CDS Hooks orchestration), but lacks **Da Vinci-specific FHIR profile support** needed for EHR/payer interoperability.
+[CMS-0057-F](https://www.cms.gov/cms-interoperability-and-prior-authorization-final-rule-cms-0057-f) mandates that payers implement Prior Authorization APIs (effective Jan 2027). It also sets out functionality requirements for prior authorization and recommends implementation of the Da Vinci Implementation Guide by covered systems to provide such functionality, with the expectation that future versions of these IGs would become mandatory in future regulations. 
 
-This RFC proposes implementing typed FHIR profiles for Da Vinci CRD/DTR/PAS Implementation Guides, enabling HealthChain to serve as production middleware for prior authorization burden reduction use cases while leveraging existing AI/ML capabilities for clinical data extraction and medical necessity determination.
+HealthChain already provides the core intelligence layer (multi-source FHIR aggregation, AI/NLP enrichment, CDS Hooks orchestration), but lacks **Da Vinci-specific FHIR profile support** needed for EHR/payer interoperability.
+
+This RFC proposes implementing typed FHIR profiles for Da Vinci CRD/DTR/PAS, enabling HealthChain to serve as production middleware for prior authorization burden reduction use cases while leveraging existing AI/ML capabilities for clinical data extraction and medical necessity determination.
 
 ![CDS Hooks cards → DTR pre-population → PAS submission](./assets/pa-stack.png)
 
