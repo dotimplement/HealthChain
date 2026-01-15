@@ -9,14 +9,14 @@ This RFC proposes implementing typed FHIR profiles for Da Vinci CRD/DTR/PAS Impl
 
 ### Problem Statement
 
-**Problem**: Providers spend 13+ hours/week on prior authorization administrative burden. CMS-0057-F mandates payers expose Prior Authorization APIs using Da Vinci IGs, but HealthChain cannot currently produce conformant requests/responses.
+- **Problem**: Providers spend 13+ hours/week on prior authorization administrative burden. CMS-0057-F mandates payers expose Prior Authorization APIs using Da Vinci IGs, but HealthChain cannot currently produce conformant requests/responses.
 ​
-**Who is affected**:
+- **Who is affected**:
     - **API integrators**: EHR vendors and middleware developers needing Da Vinci conformance
     - **Operators**: Healthcare organizations deploying HealthChain for PA automation
     - **Providers**: Clinicians who benefit from reduced administrative burden via AI-powered PA workflows
 
-**Why now**: CMS-0057-F compliance deadline (Jan 2027) creates market demand. Existing HealthChain AI capabilities (NLP extraction, clinical coding) are strong fit for PA automation, but lack profile-level conformance.
+- **Why now**: CMS-0057-F compliance deadline (Jan 2027) creates market demand. Existing HealthChain AI capabilities (NLP extraction, clinical coding) are strong fit for PA automation, but lack profile-level conformance.
 
 
 ### Goals and non-goals
