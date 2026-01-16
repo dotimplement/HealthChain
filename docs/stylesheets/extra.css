@@ -259,6 +259,13 @@ code {
   display: inline-block;
 }
 
+/* H2 section styling - left accent border for visual anchoring */
+.md-typeset h2 {
+  border-left: 3px solid #e59875;
+  padding-left: 0.75rem;
+  margin-top: 2.5rem;
+}
+
 /* Colored left border for admonitions */
 .md-typeset .admonition {
   border-left: 4px solid #79a8a9;
@@ -338,6 +345,10 @@ code {
 [data-md-color-scheme="slate"] .md-typeset h1 {
   color: #ffffff;
   border-bottom-color: #e59875;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h2 {
+  border-left-color: #e59875;
 }
 
 [data-md-color-scheme="slate"] .md-typeset blockquote {
