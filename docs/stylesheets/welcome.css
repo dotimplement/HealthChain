@@ -13,6 +13,16 @@
   --text-secondary-color: #666666;
   --accent-color: #e59875;
   --accent-secondary: #79a8a9;
+  /* Persona accent colors */
+  --persona-healthtech: #e59875;
+  --persona-healthtech-bg: #fef7f4;
+  --persona-healthtech-border: #e59875;
+  --persona-genai: #5c9ead;
+  --persona-genai-bg: #f0f7f9;
+  --persona-genai-border: #5c9ead;
+  --persona-ml: #7c6fb0;
+  --persona-ml-bg: #f5f3fa;
+  --persona-ml-border: #7c6fb0;
 }
 
 [data-md-color-scheme="slate"] {
@@ -24,6 +34,10 @@
   --card-featured-bg-color: #3d2d28;
   --text-primary-color: #ffffff;
   --text-secondary-color: #b0b0b0;
+  /* Dark mode persona colors */
+  --persona-healthtech-bg: #3d2d28;
+  --persona-genai-bg: #263d42;
+  --persona-ml-bg: #2d2840;
 }
 
 /* Target welcome page container specifically */
@@ -50,60 +64,76 @@
 
 .welcome-title {
   margin-top: 80px !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 20px !important;
   font-weight: 700 !important;
-  font-size: 2.5rem !important;
+  font-size: 3.25rem !important;
   color: var(--text-primary-color);
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .welcome-subtitle {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   color: var(--text-secondary-color);
-  max-width: 600px;
-  margin: 0 auto 24px auto;
+  max-width: 640px;
+  margin: 0 auto 32px auto;
   line-height: 1.6;
 }
 
 /* Explore/CTA Link */
 .explore-link {
   text-align: center;
-  margin: 32px 0 64px 0;
+  margin: 40px 0 72px 0;
 }
 
 .explore-link a {
   display: inline-flex;
   align-items: center;
-  padding: 12px 24px;
+  padding: 16px 32px;
   background-color: var(--accent-color);
   color: #ffffff !important;
   text-decoration: none !important;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 1rem;
-  transition: background-color 0.2s, transform 0.2s;
+  font-size: 1.1rem;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px -4px rgba(229, 152, 117, 0.5);
 }
 
 .explore-link a:hover {
   background-color: #d4845f;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px -4px rgba(229, 152, 117, 0.6);
 }
 
 .explore-link .arrow {
-  margin-left: 8px;
-  font-size: 1.2rem;
+  margin-left: 12px;
+  font-size: 1.25rem;
+  transition: transform 0.2s;
+}
+
+.explore-link a:hover .arrow {
+  transform: translateX(3px);
 }
 
 /* Cards Section Wrapper */
 .cards-section-wrapper {
   background-color: var(--cards-section-bg-color);
   width: 100%;
-  padding: 48px 0 64px 0;
+  padding: 0 0 72px 0;
+}
+
+/* First section (Choose Your Path) has distinct background */
+.cards-section-wrapper section:first-child {
+  background-color: var(--welcome-page-bg-color);
+  padding-top: 56px;
+  padding-bottom: 56px;
+  margin-bottom: 0;
 }
 
 .cards-section-wrapper section {
-  margin-bottom: 48px;
-  padding: 0 16px;
+  margin-bottom: 64px;
+  padding: 56px 24px 0 24px;
 }
 
 .cards-section-wrapper section:last-child {
@@ -113,25 +143,26 @@
 /* Section Titles */
 .section-title {
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   text-align: center;
-  margin-bottom: 24px !important;
+  margin-bottom: 36px !important;
   margin-top: 0;
   color: var(--text-primary-color);
+  letter-spacing: -0.01em;
 }
 
 /* Card Grid */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 28px;
   margin: 0 auto;
-  max-width: 900px;
+  max-width: 1000px;
 }
 
 .card-grid.two-col {
   grid-template-columns: repeat(2, 1fr);
-  max-width: 600px;
+  max-width: 650px;
 }
 
 /* Card Styles */
@@ -139,16 +170,53 @@
   background-color: var(--card-bg-color);
   border: 2px solid var(--card-border-color);
   border-radius: 16px;
-  padding: 24px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  padding: 28px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   text-decoration: none !important;
   display: flex;
   flex-direction: column;
+  min-height: fit-content;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.15);
+}
+
+/* Persona cards get larger padding */
+.card.card-healthtech,
+.card.card-genai,
+.card.card-ml {
+  padding: 36px;
+}
+
+/* Persona Cards with accent colors */
+.card.card-healthtech {
+  border-color: var(--persona-healthtech-border);
+  background-color: var(--persona-healthtech-bg);
+  position: relative;
+}
+
+.card.card-healthtech .card-icon svg path {
+  fill: var(--persona-healthtech);
+}
+
+.card.card-genai {
+  border-color: var(--persona-genai-border);
+  background-color: var(--persona-genai-bg);
+}
+
+.card.card-genai .card-icon svg path {
+  fill: var(--persona-genai);
+}
+
+.card.card-ml {
+  border-color: var(--persona-ml-border);
+  background-color: var(--persona-ml-bg);
+}
+
+.card.card-ml .card-icon svg path {
+  fill: var(--persona-ml);
 }
 
 /* Featured Card (Primary Persona) */
@@ -161,31 +229,46 @@
 .card.card-featured::before {
   content: "Recommended";
   position: absolute;
-  top: -12px;
-  left: 16px;
+  top: -14px;
+  left: 24px;
   background-color: var(--accent-color);
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 6px 16px;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px -2px rgba(229, 152, 117, 0.5);
+  letter-spacing: 0.01em;
 }
 
 /* Card Icon */
 .card-icon {
-  margin-bottom: 16px;
-  width: 48px;
-  height: 48px;
+  margin-bottom: 18px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--cards-section-bg-color);
-  border-radius: 12px;
+  border-radius: 14px;
+}
+
+/* Persona cards have white icon backgrounds */
+.card.card-healthtech .card-icon,
+.card.card-genai .card-icon,
+.card.card-ml .card-icon {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+[data-md-color-scheme="slate"] .card.card-healthtech .card-icon,
+[data-md-color-scheme="slate"] .card.card-genai .card-icon,
+[data-md-color-scheme="slate"] .card.card-ml .card-icon {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .card-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 
 .card-icon svg path {
@@ -200,26 +283,56 @@
 }
 
 .card-title {
-  font-size: 1rem !important;
+  font-size: 1.15rem !important;
   font-weight: 600 !important;
   color: var(--text-primary-color);
-  margin-bottom: 8px !important;
+  margin-bottom: 12px !important;
   margin-top: 0 !important;
+  line-height: 1.3;
 }
 
 .card-description {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--text-secondary-color);
-  line-height: 1.5;
+  line-height: 1.6;
   margin: 0;
   flex: 1;
 }
 
+/* Ensure persona card descriptions are fully visible */
+.card.card-healthtech .card-description,
+.card.card-genai .card-description,
+.card.card-ml .card-description {
+  font-size: 0.975rem;
+  line-height: 1.55;
+}
+
 .card-cta {
-  margin-top: 16px;
-  font-size: 0.875rem;
+  margin-top: 24px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--accent-color);
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+/* Persona-specific CTA colors */
+.card.card-healthtech .card-cta { color: var(--persona-healthtech); }
+.card.card-genai .card-cta { color: var(--persona-genai); }
+.card.card-ml .card-cta { color: var(--persona-ml); }
+
+.card-cta .arrow {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.card:hover .card-cta .arrow {
+  transform: translateX(4px);
+}
+
+.card:hover .card-cta {
+  opacity: 0.85;
 }
 
 /* Welcome Page Footer */
@@ -245,45 +358,80 @@
   .card-grid,
   .card-grid.two-col {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
     max-width: 100%;
     padding: 0 8px;
   }
 
   .cards-section-wrapper {
-    padding: 32px 0 48px 0;
+    padding: 0 0 48px 0;
+  }
+
+  .cards-section-wrapper section:first-child {
+    padding-top: 40px;
+    padding-bottom: 40px;
   }
 
   .cards-section-wrapper section {
-    padding: 0 8px;
+    padding: 40px 16px 0 16px;
+    margin-bottom: 0;
   }
 
   .card {
-    padding: 20px;
+    padding: 24px;
+  }
+
+  .card.card-healthtech,
+  .card.card-genai,
+  .card.card-ml {
+    padding: 28px;
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .card-icon svg {
+    width: 28px;
+    height: 28px;
   }
 
   .welcome-title {
     margin-top: 48px !important;
-    font-size: 1.75rem !important;
+    font-size: 2rem !important;
   }
 
   .welcome-subtitle {
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
 
   .explore-link {
-    margin: 24px 0 48px 0;
+    margin: 28px 0 48px 0;
+  }
+
+  .explore-link a {
+    padding: 14px 28px;
+    font-size: 1rem;
   }
 
   .section-title {
-    margin-top: 24px;
-    margin-bottom: 20px !important;
+    margin-top: 0;
+    margin-bottom: 24px !important;
   }
 
   .card.card-featured::before {
-    top: -10px;
-    font-size: 0.7rem;
-    padding: 3px 10px;
+    top: -12px;
+    font-size: 0.75rem;
+    padding: 5px 12px;
+  }
+
+  .card-description {
+    font-size: 0.95rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem !important;
   }
 }
 
