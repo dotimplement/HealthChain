@@ -26,21 +26,21 @@
 }
 
 [data-md-color-scheme="slate"] {
-  --welcome-page-bg-color: #1e1e1e;
-  --cards-section-bg-color: #2d2d2d;
+  --welcome-page-bg-color: #1a1a1a;
+  --cards-section-bg-color: #1f2937;
   --card-bg-color: #2d2d2d;
   --card-border-color: #404040;
   --card-featured-border-color: #e59875;
-  --card-featured-bg-color: #3d2d28;
+  --card-featured-bg-color: #2d2d2d;
   --text-primary-color: #ffffff;
-  --text-secondary-color: #b0b0b0;
-  /* Dark mode persona colors */
-  --persona-healthtech-bg: #3d2d28;
-  --persona-genai-bg: #263d42;
-  --persona-ml-bg: #2d2840;
+  --text-secondary-color: #d1d5db;
+  /* Dark mode persona colors - neutral backgrounds with colored left borders */
+  --persona-healthtech-bg: #2d2d2d;
+  --persona-genai-bg: #2d2d2d;
+  --persona-ml-bg: #2d2d2d;
 }
 
-/* Target welcome page container specifically */
+/* Target welcome page container and parent elements */
 .md-content__inner:has(.welcome-page-container) {
   padding: 0 !important;
   margin: 0 !important;
@@ -48,12 +48,28 @@
   background-color: var(--welcome-page-bg-color);
 }
 
+/* Ensure full-width background on welcome page */
+.md-main:has(.welcome-page-container) {
+  background-color: var(--welcome-page-bg-color);
+}
+
+.md-main__inner:has(.welcome-page-container) {
+  max-width: none;
+}
+
+.md-content:has(.welcome-page-container) {
+  max-width: none;
+  background-color: var(--welcome-page-bg-color);
+}
+
 /* Main Container */
 .welcome-page-container {
   width: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-color: var(--welcome-page-bg-color);
 }
 
 /* Hero Section */
@@ -264,6 +280,60 @@
 [data-md-color-scheme="slate"] .card.card-genai .card-icon,
 [data-md-color-scheme="slate"] .card.card-ml .card-icon {
   background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Dark mode: Remove full colored borders, use subtle left accent borders */
+[data-md-color-scheme="slate"] .card.card-healthtech,
+[data-md-color-scheme="slate"] .card.card-genai,
+[data-md-color-scheme="slate"] .card.card-ml {
+  border: 1px solid #404040;
+  border-left: 3px solid;
+}
+
+[data-md-color-scheme="slate"] .card.card-healthtech {
+  border-left-color: #e59875;
+}
+
+[data-md-color-scheme="slate"] .card.card-genai {
+  border-left-color: #5c9ead;
+}
+
+[data-md-color-scheme="slate"] .card.card-ml {
+  border-left-color: #7c6fb0;
+}
+
+/* Dark mode featured card styling */
+[data-md-color-scheme="slate"] .card.card-featured {
+  border: 1px solid #404040;
+  border-left: 3px solid #e59875;
+}
+
+/* Dark mode text contrast - WCAG AAA compliance */
+[data-md-color-scheme="slate"] .card-title,
+[data-md-color-scheme="slate"] .card.card-healthtech .card-title,
+[data-md-color-scheme="slate"] .card.card-genai .card-title,
+[data-md-color-scheme="slate"] .card.card-ml .card-title {
+  color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .card-description,
+[data-md-color-scheme="slate"] .card.card-healthtech .card-description,
+[data-md-color-scheme="slate"] .card.card-genai .card-description,
+[data-md-color-scheme="slate"] .card.card-ml .card-description {
+  color: #d1d5db;
+}
+
+/* Dark mode hero text - ensure high contrast */
+[data-md-color-scheme="slate"] .welcome-title {
+  color: #ffffff;
+}
+
+[data-md-color-scheme="slate"] .welcome-subtitle {
+  color: #e5e7eb;
+}
+
+[data-md-color-scheme="slate"] .section-title {
+  color: #ffffff;
 }
 
 .card-icon svg {
