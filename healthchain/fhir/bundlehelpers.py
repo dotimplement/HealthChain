@@ -8,10 +8,12 @@ Patterns:
 - extract_*(): extract resources from a bundle
 """
 
-from typing import List, Type, TypeVar, Optional, Union
+from typing import List, Type, TypeVar, Optional, Union, TYPE_CHECKING
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.resource import Resource
 
+if TYPE_CHECKING:
+    from healthchain.fhir.version import FHIRVersion
 
 T = TypeVar("T", bound=Resource)
 
@@ -44,14 +46,19 @@ def add_resource(
     bundle.entry = (bundle.entry or []) + [entry]
 
 
-def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resource]:
+def get_resource_type(
+    resource_type: Union[str, Type[Resource]],
+    version: Optional[Union["FHIRVersion", str]] = None,
+) -> Type[Resource]:
     """Get the resource type class from string or type.
 
     Args:
         resource_type: String name of the resource type (e.g. "Condition") or the type itself
+        version: Optional FHIR version (e.g., "R4B", "STU3", or FHIRVersion enum).
+                 If None, uses the current default version.
 
     Returns:
-        The resource type class
+        The resource type class for the specified version
 
     Raises:
         ValueError: If the resource type is not supported or cannot be imported
@@ -64,17 +71,10 @@ def get_resource_type(resource_type: Union[str, Type[Resource]]) -> Type[Resourc
             f"Resource type must be a string or Resource class, got {type(resource_type)}"
         )
 
-    try:
-        # Try to import the resource type dynamically from fhir.resources
-        module = __import__(
-            f"fhir.resources.{resource_type.lower()}", fromlist=[resource_type]
-        )
-        return getattr(module, resource_type)
-    except (ImportError, AttributeError) as e:
-        raise ValueError(
-            f"Could not import resource type: {resource_type}. "
-            "Make sure it is a valid FHIR resource type."
-        ) from e
+    # Use version manager for dynamic import with version support
+    from healthchain.fhir.version import get_fhir_resource
+
+    return get_fhir_resource(resource_type, version)
 
 
 def get_resources(
