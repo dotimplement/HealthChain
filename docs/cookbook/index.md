@@ -147,13 +147,14 @@ Hands-on, production-ready examples for building healthcare AI applications with
     });
   });
 
-  clearBtn.addEventListener('click', clearAllFilters);
-
-  window.clearAllFilters = function() {
+  function clearAllFilters() {
     activeFilters.clear();
     filterTags.forEach(tag => tag.classList.remove('active'));
     updateCards();
-  };
+  }
+
+  clearBtn.addEventListener('click', clearAllFilters);
+  window.clearAllFilters = clearAllFilters;
 })();
 </script>
 
