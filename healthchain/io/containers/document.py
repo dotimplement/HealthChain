@@ -109,13 +109,16 @@ class ModelOutputs:
 
     This class stores outputs from different NLP/ML frameworks like Hugging Face
     and LangChain, organizing them by task type. It also maintains a list of
-    generated text outputs across frameworks.
+    generated text outputs across frameworks and tracking metadata for MLFlow
+    integration.
 
     Attributes:
         _huggingface_results (Dict[str, Any]): Dictionary storing Hugging Face model
             outputs, keyed by task name.
         _langchain_results (Dict[str, Any]): Dictionary storing LangChain outputs,
             keyed by task name.
+        _tracking_metadata (Dict[str, Any]): Dictionary storing model provenance
+            and tracking information for MLFlow integration.
 
     Methods:
         add_output(source: str, task: str, output: Any): Adds a model output for a
@@ -124,10 +127,14 @@ class ModelOutputs:
         get_output(source: str, task: str, default: Any = None) -> Any: Gets the model
             output for a specific source and task. Returns default if not found.
         get_generated_text() -> List[str]: Returns the list of generated text outputs
+        add_model_provenance(model_id: str, version: str, run_id: str = None): Adds
+            provenance information for a model.
+        get_tracking_metadata() -> Dict[str, Any]: Returns tracking metadata.
     """
 
     _huggingface_results: Dict[str, Any] = field(default_factory=dict)
     _langchain_results: Dict[str, Any] = field(default_factory=dict)
+    _tracking_metadata: Dict[str, Any] = field(default_factory=dict)
 
     def add_output(self, source: str, task: str, output: Any):
         if source == "huggingface":
@@ -208,6 +215,65 @@ class ModelOutputs:
                 )
 
         return generated_text
+
+    def add_model_provenance(
+        self,
+        model_id: str,
+        version: str,
+        run_id: Optional[str] = None,
+        source: Optional[str] = None,
+        task: Optional[str] = None,
+    ) -> None:
+        """
+        Add provenance information for a model execution.
+
+        This method records tracking metadata about model executions for
+        MLFlow integration and audit purposes.
+
+        Args:
+            model_id: Unique identifier for the model
+            version: Version string for the model
+            run_id: Optional MLFlow run ID
+            source: Optional source framework (e.g., "huggingface", "langchain")
+            task: Optional task type
+        """
+        import datetime
+
+        provenance_entry = {
+            "model_id": model_id,
+            "version": version,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        if run_id:
+            provenance_entry["mlflow_run_id"] = run_id
+        if source:
+            provenance_entry["source"] = source
+        if task:
+            provenance_entry["task"] = task
+
+        # Store in tracking metadata
+        if "model_provenance" not in self._tracking_metadata:
+            self._tracking_metadata["model_provenance"] = []
+        self._tracking_metadata["model_provenance"].append(provenance_entry)
+
+    def get_tracking_metadata(self) -> Dict[str, Any]:
+        """
+        Get the tracking metadata for this model outputs container.
+
+        Returns:
+            Dictionary containing tracking metadata including model provenance.
+        """
+        return self._tracking_metadata.copy()
+
+    def set_tracking_metadata(self, key: str, value: Any) -> None:
+        """
+        Set a tracking metadata value.
+
+        Args:
+            key: Metadata key
+            value: Metadata value
+        """
+        self._tracking_metadata[key] = value
 
 
 @dataclass
