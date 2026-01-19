@@ -32,7 +32,7 @@ dependencies = [
     "eval_type_backport>=0.1.0,<0.2",
     "pandas>=1.0.0,<3.0.0",
     "spacy>=3.0.0,<4.0.0",
-    "numpy>=2,<3",
+    "numpy>=1.26.0,<2.4.0",
     "colorama>=0.4.6,<0.5",
     "faker>=25.1.0,<26",
     "termcolor>=2.4.0,<3",
@@ -90,5 +90,5 @@ default-groups = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "numpy>=2.0.0"]
 build-backend = "hatchling.build"
