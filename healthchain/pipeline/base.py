@@ -41,7 +41,20 @@ class ModelSource(Enum):
 
 @dataclass
 class ModelConfig:
-    """Configuration for model initialization"""
+    """Configuration for model initialization.
+
+    Attributes:
+        source: The source of the model (e.g., huggingface, spacy, langchain)
+        model_id: Identifier for the model (e.g., model name or HuggingFace ID)
+        pipeline_object: Pre-built pipeline object (for direct loading)
+        task: Task type for the model (e.g., text-generation, ner)
+        path: Local path to model files
+        kwargs: Additional model configuration parameters
+        version: Optional version string for tracking
+        mlflow_run_id: Optional MLFlow run ID associated with this model
+        mlflow_model_uri: Optional MLFlow model URI for model registry
+        metadata: Additional metadata for the model configuration
+    """
 
     source: ModelSource
     model_id: Optional[str] = None
@@ -49,6 +62,10 @@ class ModelConfig:
     task: Optional[str] = None
     path: Optional[Path] = None
     kwargs: Dict[str, Any] = field(default_factory=dict)
+    version: Optional[str] = None
+    mlflow_run_id: Optional[str] = None
+    mlflow_model_uri: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

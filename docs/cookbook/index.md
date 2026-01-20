@@ -25,6 +25,9 @@ Dive into real-world, production-ready examples to learn how to build interopera
 - 📝 **[Summarize Discharge Notes with CDS Hooks](./discharge_summarizer.md)**
   *Deploy a CDS Hooks-compliant service that listens for discharge events, auto-generates concise plain-language summaries, and delivers actionable clinical cards directly into the EHR workflow.*
 
+- 📊 **[Track Clinical NLP Experiments with MLflow](./mlflow_experiment_tracking.md)**
+  *Monitor healthcare AI model performance, log patient cohort metadata and regulatory context, generate FHIR Provenance for audit trails, and compare model versions in the MLflow UI.*
+
 ---
 
 !!! info "What next?"
