@@ -136,6 +136,9 @@ print(provenance.model_dump_json(indent=2))
     {
       "resourceType": "Provenance",
       "recorded": "2025-01-19T10:30:00Z",
+      "target": [{
+        "display": "Output of ML Model: clinical-ner-scispacy v1.0.0"
+      }],
       "activity": {
         "coding": [{
           "system": "http://terminology.hl7.org/CodeSystem/v3-DataOperation",
@@ -156,12 +159,11 @@ print(provenance.model_dump_json(indent=2))
           "display": "ML Model: clinical-ner-scispacy v1.0.0"
         }
       }],
-      "reason": [{
-        "text": "Regulatory compliance: HIPAA, IRB-approved"
-      }],
       "policy": [
         "urn:healthchain:datasource:internal-ehr",
-        "urn:healthchain:datasource:mimic-iv-notes"
+        "urn:healthchain:datasource:mimic-iv-notes",
+        "urn:healthchain:regulatory:HIPAA",
+        "urn:healthchain:regulatory:IRB-approved"
       ]
     }
     ```

@@ -173,29 +173,34 @@ class HealthcareRunContext(BaseModel):
             text=self.purpose or "ML model inference",
         )
 
-        # Build reason if regulatory tags exist
-        reason = None
-        if self.regulatory_tags:
-            reason = [
-                CodeableConcept(
-                    text=f"Regulatory compliance: {', '.join(self.regulatory_tags)}"
-                )
-            ]
+        # Build target reference (required field) - references what the provenance is about
+        target = [
+            Reference(
+                display=f"Output of ML Model: {self.model_id} v{self.version}",
+            )
+        ]
 
-        # Create Provenance resource
+        # Create Provenance resource with required fields
         provenance = Provenance(
             id=_generate_id(),
+            target=target,
             recorded=recorded_time.isoformat(),
             activity=activity,
             agent=[agent],
-            reason=reason,
         )
 
-        # Add policy references for data sources
+        # Add policy references for data sources and regulatory tags
+        policies = []
         if self.data_sources:
-            provenance.policy = [
-                f"urn:healthchain:datasource:{ds}" for ds in self.data_sources
-            ]
+            policies.extend(
+                [f"urn:healthchain:datasource:{ds}" for ds in self.data_sources]
+            )
+        if self.regulatory_tags:
+            policies.extend(
+                [f"urn:healthchain:regulatory:{tag}" for tag in self.regulatory_tags]
+            )
+        if policies:
+            provenance.policy = policies
 
         return provenance
 

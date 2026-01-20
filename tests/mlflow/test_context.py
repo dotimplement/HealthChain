@@ -169,41 +169,70 @@ def test_healthcare_context_from_model_config():
     assert context.recorded is not None
 
 
-def test_healthcare_context_to_fhir_provenance_raises_validation_error():
-    """Test to_fhir_provenance raises error due to missing required fields.
-
-    Note: The current implementation has a bug - FHIR Provenance requires a
-    'target' field and doesn't allow reason=None. This test documents the
-    current behavior. When fixed, this test should be updated.
-    """
-    from pydantic import ValidationError
-
+def test_healthcare_context_to_fhir_provenance_minimal():
+    """Test to_fhir_provenance with minimal context."""
     context = HealthcareRunContext(
         model_id="test-model",
         version="1.0",
         purpose="Testing provenance generation",
     )
 
-    # Current implementation raises ValidationError due to missing 'target'
-    # and passing reason=None
-    with pytest.raises(ValidationError):
-        context.to_fhir_provenance()
+    provenance = context.to_fhir_provenance()
+
+    assert provenance is not None
+    assert provenance.__class__.__name__ == "Provenance"
+    assert len(provenance.target) == 1
+    assert "test-model" in provenance.target[0].display
+    assert len(provenance.agent) == 1
+    assert provenance.activity.text == "Testing provenance generation"
+    assert provenance.policy is None  # No data sources or regulatory tags
 
 
-def test_healthcare_context_to_fhir_provenance_with_regulatory_tags_raises():
-    """Test to_fhir_provenance with regulatory tags still raises due to missing target.
-
-    Note: Even with regulatory tags, the implementation is missing the required
-    'target' field for FHIR Provenance.
-    """
-    from pydantic import ValidationError
-
+def test_healthcare_context_to_fhir_provenance_with_regulatory_tags():
+    """Test to_fhir_provenance includes regulatory tags in policy field."""
     context = HealthcareRunContext(
         model_id="regulated-model",
         version="1.0",
         regulatory_tags=["HIPAA", "FDA-cleared"],
     )
 
-    # Still raises due to missing 'target' field
-    with pytest.raises(ValidationError):
-        context.to_fhir_provenance()
+    provenance = context.to_fhir_provenance()
+
+    assert provenance is not None
+    assert provenance.policy is not None
+    assert len(provenance.policy) == 2
+    assert "urn:healthchain:regulatory:HIPAA" in provenance.policy
+    assert "urn:healthchain:regulatory:FDA-cleared" in provenance.policy
+
+
+def test_healthcare_context_to_fhir_provenance_with_data_sources():
+    """Test to_fhir_provenance includes data sources in policy field."""
+    context = HealthcareRunContext(
+        model_id="test-model",
+        version="1.0",
+        data_sources=["mimic-iv", "internal-ehr"],
+    )
+
+    provenance = context.to_fhir_provenance()
+
+    assert provenance is not None
+    assert provenance.policy is not None
+    assert len(provenance.policy) == 2
+    assert "urn:healthchain:datasource:mimic-iv" in provenance.policy
+
+
+def test_healthcare_context_to_fhir_provenance_full():
+    """Test to_fhir_provenance with all fields."""
+    context = HealthcareRunContext(
+        model_id="full-model",
+        version="2.0",
+        data_sources=["source1"],
+        regulatory_tags=["HIPAA"],
+    )
+
+    provenance = context.to_fhir_provenance()
+
+    assert provenance is not None
+    assert len(provenance.policy) == 2
+    assert "urn:healthchain:datasource:source1" in provenance.policy
+    assert "urn:healthchain:regulatory:HIPAA" in provenance.policy
