@@ -1,5 +1,16 @@
 """FHIR utilities for HealthChain."""
 
+from healthchain.fhir.version import (
+    FHIRVersion,
+    get_fhir_resource,
+    get_default_version,
+    set_default_version,
+    reset_default_version,
+    fhir_version_context,
+    convert_resource,
+    get_resource_version,
+)
+
 from healthchain.fhir.resourcehelpers import (
     create_condition,
     create_medication_statement,
@@ -30,6 +41,7 @@ from healthchain.fhir.readers import (
 from healthchain.fhir.bundlehelpers import (
     create_bundle,
     add_resource,
+    get_resource_type,
     get_resources,
     set_resources,
     merge_bundles,
@@ -52,6 +64,15 @@ from healthchain.fhir.utilities import (
 )
 
 __all__ = [
+    # Version management
+    "FHIRVersion",
+    "get_fhir_resource",
+    "get_default_version",
+    "set_default_version",
+    "reset_default_version",
+    "fhir_version_context",
+    "convert_resource",
+    "get_resource_version",
     # Resource creation
     "create_condition",
     "create_medication_statement",
@@ -60,13 +81,10 @@ __all__ = [
     "create_patient",
     "create_risk_assessment_from_prediction",
     "create_document_reference",
+    "create_document_reference_content",
     # Element creation
     "create_single_codeable_concept",
     "create_single_reaction",
-    "set_condition_category",
-    "read_content_attachment",
-    "create_document_reference",
-    "create_document_reference_content",
     "create_single_attachment",
     # Resource modification
     "set_condition_category",
@@ -80,6 +98,7 @@ __all__ = [
     # Bundle operations
     "create_bundle",
     "add_resource",
+    "get_resource_type",
     "get_resources",
     "set_resources",
     "merge_bundles",

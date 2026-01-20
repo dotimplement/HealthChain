@@ -1,6 +1,10 @@
 # HealthChain Interoperability Engine Default Configuration
 # This file contains default values used throughout the engine
 
+# FHIR version configuration
+fhir:
+  version: "R5"  # Default FHIR version: R5, R4B, or STU3
+
 defaults:
   # Common defaults for all resources
   common:
