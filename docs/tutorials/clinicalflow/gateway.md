@@ -32,6 +32,8 @@ Create a file called `app.py`:
 ```python
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.io import Document
+from healthchain.models.requests.cdsrequest import CDSRequest
+from healthchain.models.responses.cdsresponse import CDSResponse, Card
 from pipeline import create_clinical_pipeline
 
 # Initialize the HealthChain API
@@ -40,24 +42,27 @@ app = HealthChainAPI(title="ClinicalFlow CDS Service")
 # Create your pipeline
 nlp = create_clinical_pipeline()
 
-# Define the CDS Hooks service
-@app.cds_hooks(
+# Create a CDS Hooks service
+cds_service = CDSHooksService()
+
+# Register a hook handler using the decorator
+@cds_service.hook(
+    "patient-view",  # Hook type: triggers when a clinician views a patient
     id="patient-alerts",
     title="Clinical Alert Service",
     description="Analyzes patient data and returns relevant clinical alerts",
-    hook="patient-view"  # Triggers when a clinician views a patient
 )
-def patient_alerts(context, prefetch):
+def patient_alerts(request: CDSRequest) -> CDSResponse:
     """
     Process patient context and return CDS cards.
 
     Args:
-        context: CDS Hooks context (patient ID, user, etc.)
-        prefetch: Pre-fetched FHIR resources
+        request: CDSRequest containing context and prefetch data
     """
     cards = []
 
     # Get patient conditions from prefetch (if available)
+    prefetch = request.prefetch or {}
     conditions = prefetch.get("conditions", [])
 
     # If we have clinical notes, process them
@@ -67,27 +72,27 @@ def patient_alerts(context, prefetch):
 
         # Create cards for each extracted condition
         for entity in result.entities:
-            cards.append({
-                "summary": f"Condition detected: {entity['display']}",
-                "detail": f"SNOMED code: {entity['code']}",
-                "indicator": "info",
-                "source": {
-                    "label": "ClinicalFlow",
-                    "url": "https://healthchain.dev"
-                }
-            })
+            cards.append(Card(
+                summary=f"Condition detected: {entity['display']}",
+                detail=f"SNOMED code: {entity['code']}",
+                indicator="info",
+                source={"label": "ClinicalFlow", "url": "https://healthchain.dev"}
+            ))
 
     # Check for drug interaction alerts
     if len(conditions) > 2:
-        cards.append({
-            "summary": "Multiple active conditions",
-            "detail": f"Patient has {len(conditions)} active conditions. Review for potential interactions.",
-            "indicator": "warning",
-            "source": {"label": "ClinicalFlow"}
-        })
+        cards.append(Card(
+            summary="Multiple active conditions",
+            detail=f"Patient has {len(conditions)} active conditions. Review for potential interactions.",
+            indicator="warning",
+            source={"label": "ClinicalFlow"}
+        ))
 
-    return cards
+    return CDSResponse(cards=cards)
 
+
+# Register the CDS service with the app
+app.include_router(cds_service)
 
 # Run the server
 if __name__ == "__main__":
@@ -97,13 +102,14 @@ if __name__ == "__main__":
 
 ## Understanding the Code
 
-### The `@app.cds_hooks` Decorator
+### The `@cds_service.hook` Decorator
 
-This decorator registers your function as a CDS Hooks endpoint:
+This decorator registers your function as a CDS Hooks handler:
 
-- **`id`**: Unique identifier for this service
+- **First argument**: The hook type (e.g., `patient-view`, `order-select`)
+- **`id`**: Unique identifier for this service endpoint
 - **`title`**: Human-readable name
-- **`hook`**: When to trigger (e.g., `patient-view`, `order-select`)
+- **`description`**: What the service does
 
 ### CDS Cards
 
@@ -133,7 +139,7 @@ Your service is now running at `http://localhost:8000`.
 CDS Hooks services must provide a discovery endpoint. Test it:
 
 ```bash
-curl http://localhost:8000/cds-services
+curl http://localhost:8000/cds/cds-discovery
 ```
 
 Response:
@@ -156,7 +162,7 @@ Response:
 Test calling your service:
 
 ```bash
-curl -X POST http://localhost:8000/cds-services/patient-alerts \
+curl -X POST http://localhost:8000/cds/cds-services/patient-alerts \
   -H "Content-Type: application/json" \
   -d '{
     "hookInstance": "test-123",

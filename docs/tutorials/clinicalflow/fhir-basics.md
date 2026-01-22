@@ -72,26 +72,26 @@ HealthChain provides utilities to work with FHIR resources easily:
 
 ```python
 from healthchain.fhir import create_condition, create_patient
-from fhir.resources.bundle import Bundle
+from fhir.resources.patient import Patient
 
-# Create a patient
+# Create a patient with basic demographics
+# Note: create_patient generates an auto-prefixed ID (e.g., "hc-abc123")
 patient = create_patient(
-    id="patient-001",
-    given_name="John",
-    family_name="Smith",
-    birth_date="1970-01-15"
+    gender="male",
+    birth_date="1970-01-15",
+    identifier="MRN-12345"  # Optional patient identifier (e.g., MRN)
 )
 
-# Create a condition
+# Create a condition linked to the patient
+# The 'subject' parameter is required and references the patient
 condition = create_condition(
-    id="condition-001",
+    subject=f"Patient/{patient.id}",  # Reference to the patient
     code="38341003",
     display="Hypertension",
-    system="http://snomed.info/sct",
-    patient_reference="Patient/patient-001"
+    system="http://snomed.info/sct"
 )
 
-print(f"Created patient: {patient.name[0].given[0]} {patient.name[0].family}")
+print(f"Created patient with ID: {patient.id}")
 print(f"With condition: {condition.code.coding[0].display}")
 ```
 
@@ -107,8 +107,8 @@ bundle_data = {
     "resourceType": "Bundle",
     "type": "collection",
     "entry": [
-        {"resource": patient.dict()},
-        {"resource": condition.dict()}
+        {"resource": patient.model_dump()},
+        {"resource": condition.model_dump()}
     ]
 }
 

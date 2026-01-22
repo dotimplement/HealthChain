@@ -1,7 +1,5 @@
-@font-face {
-  font-family: 'Source Code Pro Custom', monospace;
-  src: url(https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap);
-}
+/* Import Source Code Pro from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
 
 /* ============================================
    Light Mode (Default)
@@ -10,7 +8,7 @@
   --md-code-bg-color: #2E3440;
   --md-code-fg-color: #FFFFFF;
   --md-text-font-family: "Roboto";
-  --md-code-font: "Source Code Pro Custom";
+  --md-code-font: "Source Code Pro", monospace;
   --hc-heading-color: #1a1a1a;
   --hc-inline-code-bg: #ECEFF4;
   --hc-inline-code-color: #1a1a1a;
@@ -131,38 +129,14 @@ code {
    ============================================ */
 
 /* Ensure dark background applies to all main areas */
-[data-md-color-scheme="slate"] {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] body {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-main {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-main__inner {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-content {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-content__inner {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-sidebar {
-  background-color: #1a1a1a;
-}
-
-[data-md-color-scheme="slate"] .md-sidebar__scrollwrap {
-  background-color: #1a1a1a;
-}
-
+[data-md-color-scheme="slate"],
+[data-md-color-scheme="slate"] body,
+[data-md-color-scheme="slate"] .md-main,
+[data-md-color-scheme="slate"] .md-main__inner,
+[data-md-color-scheme="slate"] .md-content,
+[data-md-color-scheme="slate"] .md-content__inner,
+[data-md-color-scheme="slate"] .md-sidebar,
+[data-md-color-scheme="slate"] .md-sidebar__scrollwrap,
 [data-md-color-scheme="slate"] .md-container {
   background-color: #1a1a1a;
 }

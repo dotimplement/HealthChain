@@ -160,6 +160,9 @@ extra_css:
   - stylesheets/extra.css
   - stylesheets/welcome.css
 
+extra_javascript:
+  - javascripts/cookbook-filter.js
+
 plugins:
   - blog
   - mkdocstrings:
