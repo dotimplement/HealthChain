@@ -128,7 +128,7 @@ output = adapter.format(processed_doc)
 
 Prebuilt pipelines are the fastest way to jump into healthcare AI with minimal setup: just load and run. Each pipeline bundles best-practice components and models for common clinical tasks (like coding or summarization) and handles all FHIR/CDA conversion for you. Easily customize or extend pipelines by adding/removing components, or swap models as needed.
 
-[(Full Documentation on Pipelines)](./pipeline/pipeline.md#prebuilt-)
+[(Full Documentation on Pipelines)](./pipeline/pipeline.md#prebuilt)
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
@@ -187,7 +187,7 @@ Workflows determine the request structure, required FHIR resources, and validati
 
 #### Available Dataset Loaders
 
-[**Dataset Loaders**](./utilities/sandbox.md#dataset-loaders) are shortcuts for loading common clinical test datasets from file. Currently available:
+[**Dataset Loaders**](./utilities/sandbox.md#dataset-registry) are shortcuts for loading common clinical test datasets from file. Currently available:
 
 | Dataset Key        | Description                                 | FHIR Version | Source                                                                                  | Download Link                                                                                  |
 |--------------------|---------------------------------------------|--------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|

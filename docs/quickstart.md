@@ -86,7 +86,7 @@ print(doc.fhir.problem_list)  # FHIR Condition
 
 #### 2. Build With Components and Adapters
 
-[**Components**](./reference/) are reusable, stateful classes that encapsulate specific processing logic, model loading, or configuration for your pipeline. Use them to organize complex workflows, handle model state, or integrate third-party libraries with minimal setup.
+[**Components**](./reference/pipeline/components/components.md) are reusable, stateful classes that encapsulate specific processing logic, model loading, or configuration for your pipeline. Use them to organize complex workflows, handle model state, or integrate third-party libraries with minimal setup.
 
 HealthChain provides a set of ready-to-use [**NLP Integrations**](./reference/pipeline/integrations/integrations.md) for common clinical NLP and ML tasks, and you can easily implement your own.
 
@@ -131,7 +131,7 @@ output = adapter.format(processed_doc)
 
 Prebuilt pipelines are the fastest way to jump into healthcare AI with minimal setup: just load and run. Each pipeline bundles best-practice components and models for common clinical tasks (like coding or summarization) and handles all FHIR/CDA conversion for you. Easily customize or extend pipelines by adding/removing components, or swap models as needed.
 
-[(Full Documentation on Pipelines)](./reference/pipeline/pipeline.md#prebuilt-)
+[(Full Documentation on Pipelines)](./reference/pipeline/pipeline.md#prebuilt)
 
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
@@ -190,7 +190,7 @@ Workflows determine the request structure, required FHIR resources, and validati
 
 #### Available Dataset Loaders
 
-[**Dataset Loaders**](./reference/utilities/sandbox.md#dataset-loaders) are shortcuts for loading common clinical test datasets from file. Currently available:
+[**Dataset Loaders**](./reference/utilities/sandbox.md#dataset-registry) are shortcuts for loading common clinical test datasets from file. Currently available:
 
 | Dataset Key        | Description                                 | FHIR Version | Source                                                                                  | Download Link                                                                                  |
 |--------------------|---------------------------------------------|--------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|

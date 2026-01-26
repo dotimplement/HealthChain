@@ -76,4 +76,4 @@ We welcome contributions to improve experimental templates!
 2. 🔮 **Future sections** - Procedures, Vital Signs, Lab Results
 3. 🔧 **Template tooling** - Better validation and testing framework
 
-Want to help? Check our [contribution guidelines](../../community/contribution_guide.md) and pick up one of these challenges!
+Want to help? Check our [contribution guidelines](https://github.com/dotimplement/HealthChain/blob/main/CONTRIBUTING.md) and pick up one of these challenges!
