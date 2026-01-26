@@ -11,7 +11,6 @@ Learn HealthChain through hands-on, step-by-step tutorials. Each tutorial is des
 The ClinicalFlow tutorial teaches you how to build a CDS service that integrates with EHR systems. You'll learn HealthChain's core concepts by building a real application. Healthcare knowledge is helpful but not required - the tutorials explain all the concepts as you go.
 
 
-- **Time**: ~30 minutes
 - **Level**: Beginner to Intermediate
 - **Prerequisites**: Python basics, familiarity with REST APIs
 

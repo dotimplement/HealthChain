@@ -57,9 +57,6 @@ Throughout this tutorial, we'll use the same sample patient - **John Smith** wit
 - **REST API familiarity** (HTTP methods, JSON)
 - Healthcare knowledge is helpful but not required
 
-## Time Required
-
-This tutorial takes approximately **30 minutes** to complete.
 
 ## Ready?
 
