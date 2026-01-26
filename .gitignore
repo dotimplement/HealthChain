@@ -161,6 +161,8 @@ cython_debug/
 
 output/
 models/
+!healthchain/models/
+!healthchain/interop/models/
 scrap/
 .DS_Store
 .vscode/
