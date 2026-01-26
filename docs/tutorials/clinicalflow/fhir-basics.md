@@ -95,6 +95,14 @@ print(f"Created patient with ID: {patient.id}")
 print(f"With condition: {condition.code.coding[0].display}")
 ```
 
+??? info "FHIR Versions in HealthChain"
+
+    HealthChain uses **FHIR R5** as the default version. However, **STU3** and **R4B** are also supported for compatibility with different EHR systems.
+
+    You can specify the version when working with FHIR resources, and HealthChain provides utilities for converting between versions when needed.
+
+    For more details on version handling, see the [FHIR utilities reference](../../reference/utilities/fhir_helpers.md).
+
 ## FHIR Bundles
 
 When an EHR sends patient context, it often comes as a **Bundle** - a collection of related resources:

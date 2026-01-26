@@ -4,19 +4,37 @@ Get your development environment ready for building the ClinicalFlow service.
 
 ## Install HealthChain
 
-Create a new project directory and install HealthChain:
+Create a new project directory:
 
 ```bash
 mkdir clinicalflow
 cd clinicalflow
+```
+
+### Option 1: Using uv (Recommended)
+
+[uv](https://docs.astral.sh/uv/) is a fast Python package manager. If you don't have it installed, you can install it by following the instructions [here](https://docs.astral.sh/uv/getting-started/installation/).
+
+Then initialize a project and install HealthChain:
+
+```bash
+uv init
+uv add healthchain
+```
+
+
+### Option 2: Using pip with a virtual environment
+
+If you prefer using pip, create and activate a virtual environment first:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install healthchain
 ```
 
-For NLP capabilities, install with the optional spaCy integration:
+All the code running examples in this tutorial follow uv pattern of `uv run` followed by the command. If you are using pip then simply remove uv run from the beginning of each command.
 
-```bash
-pip install healthchain[nlp]
-```
 
 ## Verify Installation
 
@@ -26,8 +44,6 @@ Create a file called `check_install.py`:
 import healthchain
 from healthchain.io import Document
 
-print(f"HealthChain version: {healthchain.__version__}")
-
 # Test creating a simple document
 doc = Document("Patient has a history of hypertension.")
 print(f"Created document with {len(doc.text)} characters")
@@ -36,14 +52,13 @@ print(f"Created document with {len(doc.text)} characters")
 Run it:
 
 ```bash
-python check_install.py
+uv run python check_install.py
 ```
 
-You should see output like:
+You should see the following output:
 
 ```
-HealthChain version: 0.x.x
-Created document with 40 characters
+Created document with 38 characters
 ```
 
 ## Project Structure
@@ -55,16 +70,6 @@ clinicalflow/
 ├── app.py              # Main CDS Hooks service
 ├── pipeline.py         # NLP processing pipeline
 └── test_service.py     # Testing script
-```
-
-## Download Sample Data (Optional)
-
-For testing, you can use Synthea-generated patient data. HealthChain's sandbox can load this automatically, but if you want local data:
-
-```bash
-mkdir data
-# Download a sample Synthea bundle (optional)
-# We'll use HealthChain's built-in data loaders in the testing step
 ```
 
 ## What's Next
