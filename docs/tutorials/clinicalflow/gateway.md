@@ -138,27 +138,6 @@ Start your CDS service:
     python app.py
     ```
 
-??? failure "Troubleshooting: ModuleNotFoundError"
-
-    If you see `ModuleNotFoundError: No module named 'healthchain.models'` or similar import errors:
-
-    1. **Make sure you're using `uv run`** - This ensures the correct environment is used:
-       ```bash
-       uv run python app.py
-       ```
-
-    2. **Verify healthchain is installed** in your current environment:
-       ```bash
-       uv pip list | grep healthchain
-       ```
-
-    3. **Check you're in the right directory** - Run from your `clinicalflow/` project directory, not from inside the healthchain source code.
-
-    4. **Reinstall if needed**:
-       ```bash
-       uv pip install --force-reinstall healthchain
-       ```
-
 Your service is now running at `http://localhost:8000`.
 
 ## Test the Endpoints

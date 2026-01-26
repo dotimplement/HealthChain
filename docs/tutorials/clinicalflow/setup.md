@@ -33,7 +33,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install healthchain
 ```
 
-All the code running examples in this tutorial follow uv pattern of `uv run` followed by the command. If you are using pip then simply remove uv run from the beginning of each command.
+All the code running examples in this tutorial will show both the uv and pip versions of the commands. These are typically the same up to a factor of adding `uv run` at the beginning of the command.
 
 
 ## Verify Installation
@@ -51,25 +51,22 @@ print(f"Created document with {len(doc.text)} characters")
 
 Run it:
 
-```bash
-uv run python check_install.py
-```
+=== "uv"
+
+    ```bash
+    uv run python check_install.py
+    ```
+
+=== "pip"
+
+    ```bash
+    python check_install.py
+    ```
 
 You should see the following output:
 
 ```
 Created document with 38 characters
-```
-
-## Project Structure
-
-Create the following project structure:
-
-```
-clinicalflow/
-├── app.py              # Main CDS Hooks service
-├── pipeline.py         # NLP processing pipeline
-└── test_service.py     # Testing script
 ```
 
 ## What's Next

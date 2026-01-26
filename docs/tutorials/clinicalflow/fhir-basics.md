@@ -146,6 +146,76 @@ print(f"Document text: {doc.text[:50]}...")
 # - Problem lists, medications, etc.
 ```
 
+## How FHIR Flows into CDS Hooks
+
+When an EHR like Epic calls your CDS service, it sends a **CDS Hooks request** containing patient data. The FHIR resources you just learned about arrive in the `prefetch` field:
+
+```json
+{
+  "hookInstance": "abc-123-def-456",
+  "hook": "patient-view",
+  "context": {
+    "userId": "Practitioner/dr-smith",
+    "patientId": "patient-001"
+  },
+  "prefetch": {
+    "patient": {
+      "resourceType": "Patient",
+      "id": "patient-001",
+      "name": [{"given": ["John"], "family": "Smith"}],
+      "birthDate": "1970-01-15",
+      "gender": "male"
+    },
+    "conditions": {
+      "resourceType": "Bundle",
+      "type": "searchset",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "condition-hypertension",
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "38341003",
+                "display": "Hypertension"
+              }]
+            },
+            "subject": {"reference": "Patient/patient-001"},
+            "clinicalStatus": {"coding": [{"code": "active"}]}
+          }
+        },
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "condition-diabetes",
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "73211009",
+                "display": "Diabetes mellitus"
+              }]
+            },
+            "subject": {"reference": "Patient/patient-001"},
+            "clinicalStatus": {"coding": [{"code": "active"}]}
+          }
+        }
+      ]
+    },
+    "note": "Patient is a 65-year-old male presenting with chest pain and shortness of breath. History includes hypertension and diabetes, both well-controlled on current medications."
+  }
+}
+```
+
+This is the complete picture:
+
+1. **`context`** - Tells you who triggered the hook (the practitioner) and which patient
+2. **`prefetch.patient`** - The Patient resource with demographics
+3. **`prefetch.conditions`** - A Bundle of the patient's active conditions
+4. **`prefetch.note`** - Clinical text your NLP pipeline will process
+
+Your CDS service receives this request, processes the data, and returns clinical alert cards. We'll use this same sample data throughout the tutorial for testing.
+
 ## What's Next
 
-Now that you understand FHIR basics, let's [build a pipeline](pipeline.md) that processes clinical text and extracts structured data.
+Now that you understand FHIR basics and how data flows into CDS, let's [build a pipeline](pipeline.md) that processes clinical text and extracts structured data.

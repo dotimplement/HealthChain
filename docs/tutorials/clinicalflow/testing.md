@@ -4,84 +4,128 @@ Validate your CDS service with realistic patient data using HealthChain's sandbo
 
 ## What is the Sandbox?
 
-The **Sandbox** provides tools for testing CDS services without connecting to a real EHR. It can:
+The **Sandbox** simulates what an EHR like Epic does - it sends CDS Hooks requests to your service with patient data. Instead of connecting to a real EHR (which requires authentication, network access, and real patients), the sandbox lets you:
 
-- Load test data from files or registries
-- Send CDS Hooks requests to your service
-- Save results for analysis
+- Load test data from files or generate synthetic patients
+- Send CDS Hooks requests to your service (just like Epic would)
+- Collect and analyze the responses
 
-## Create a Test Script
-
-Create a file called `test_service.py`:
-
-```python
-from healthchain.sandbox import SandboxClient
-
-# Create a sandbox client pointing to your service
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/patient-alerts",
-    workflow="patient-view"
-)
-
-# Load test data from a directory of FHIR bundles
-client.load_from_path("./data/", pattern="*.json")
-
-# Send requests and collect responses
-responses = client.send_requests()
-
-# Analyze results
-print(f"Sent {len(responses)} requests")
-for i, response in enumerate(responses):
-    print(f"\nPatient {i + 1}:")
-    cards = response.get("cards", [])
-    print(f"  Cards returned: {len(cards)}")
-    for card in cards:
-        print(f"    - {card.get('indicator', 'info').upper()}: {card.get('summary')}")
-```
+Think of it as a "fake EHR" for development and testing.
 
 ## Prepare Test Data
 
-Before running the test, create some sample FHIR data. Create a `data` directory with a test file:
+First, create sample data that matches what an EHR would send. This is the same CDS Hooks request format we saw in [FHIR Basics](fhir-basics.md#how-fhir-flows-into-cds-hooks).
+
+Create a `data` directory:
 
 ```bash
-mkdir -p data
+mkdir data
 ```
 
-Create `data/test_patient.json`:
+Create `data/test_request.json` - this is a complete CDS Hooks request:
 
 ```json
 {
-  "resourceType": "Bundle",
-  "type": "collection",
-  "entry": [
-    {
-      "resource": {
-        "resourceType": "Patient",
-        "id": "test-patient-1",
-        "name": [{"given": ["John"], "family": "Smith"}],
-        "gender": "male",
-        "birthDate": "1970-01-15"
-      }
+  "hookInstance": "test-instance-001",
+  "hook": "patient-view",
+  "context": {
+    "userId": "Practitioner/dr-smith",
+    "patientId": "patient-001"
+  },
+  "prefetch": {
+    "patient": {
+      "resourceType": "Patient",
+      "id": "patient-001",
+      "name": [{"given": ["John"], "family": "Smith"}],
+      "birthDate": "1970-01-15",
+      "gender": "male"
     },
-    {
-      "resource": {
-        "resourceType": "Condition",
-        "id": "condition-1",
-        "subject": {"reference": "Patient/test-patient-1"},
-        "code": {
-          "coding": [{
-            "system": "http://snomed.info/sct",
-            "code": "38341003",
-            "display": "Hypertension"
-          }]
+    "conditions": {
+      "resourceType": "Bundle",
+      "type": "searchset",
+      "entry": [
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "condition-hypertension",
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "38341003",
+                "display": "Hypertension"
+              }]
+            },
+            "subject": {"reference": "Patient/patient-001"},
+            "clinicalStatus": {"coding": [{"code": "active"}]}
+          }
         },
-        "clinicalStatus": {
-          "coding": [{"code": "active"}]
+        {
+          "resource": {
+            "resourceType": "Condition",
+            "id": "condition-diabetes",
+            "code": {
+              "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "73211009",
+                "display": "Diabetes mellitus"
+              }]
+            },
+            "subject": {"reference": "Patient/patient-001"},
+            "clinicalStatus": {"coding": [{"code": "active"}]}
+          }
         }
-      }
-    }
-  ]
+      ]
+    },
+    "note": "Patient is a 65-year-old male presenting with chest pain and shortness of breath. History includes hypertension and diabetes, both well-controlled on current medications."
+  }
 }
+```
+
+This sample includes:
+
+- **Patient demographics** - John Smith, born 1970
+- **Two conditions** - Hypertension and Diabetes (matching what our pipeline recognizes)
+- **Clinical note** - Free text that our NLP pipeline will process
+
+## Quick Test with curl
+
+The fastest way to test is with the sample data directly. With your service running, send the request:
+
+```bash
+curl -X POST http://localhost:8000/cds/cds-services/patient-alerts \
+  -H "Content-Type: application/json" \
+  -d @data/test_request.json
+```
+
+You should see a response with cards for the detected conditions.
+
+## Create a Test Script
+
+For more control, create `test_service.py`:
+
+```python
+import json
+import requests
+
+# Load the test request
+with open("./data/test_request.json") as f:
+    request_data = json.load(f)
+
+# Send to your CDS service
+response = requests.post(
+    "http://localhost:8000/cds/cds-services/patient-alerts",
+    json=request_data
+)
+
+# Analyze the response
+result = response.json()
+cards = result.get("cards", [])
+
+print(f"Cards returned: {len(cards)}")
+for card in cards:
+    indicator = card.get("indicator", "info").upper()
+    summary = card.get("summary")
+    print(f"  [{indicator}] {summary}")
 ```
 
 ## Run the Test
@@ -114,53 +158,47 @@ Then in another terminal, run the test:
     python test_service.py
     ```
 
-## Using Clinical Notes
+Expected output:
 
-If your pipeline processes clinical text (like the one we built), you can load free-text notes from a CSV file:
+```
+Cards returned: 4
+  [INFO] Condition detected: Hypertension
+  [INFO] Condition detected: Diabetes mellitus
+  [INFO] Condition detected: Chest pain
+  [INFO] Condition detected: Dyspnea
+  [WARNING] Multiple active conditions
+```
+
+The pipeline extracted four conditions from the clinical note text - exactly what we built it to do.
+
+## Advanced Usage
+### Batch Testing with SandboxClient
+
+For testing with multiple patients or larger datasets, use the `SandboxClient`:
 
 ```python
 from healthchain.sandbox import SandboxClient
 
+# Create a client pointing to your service
 client = SandboxClient(
     url="http://localhost:8000/cds/cds-services/patient-alerts",
     workflow="patient-view"
 )
 
-# Load clinical notes from CSV
-# The CSV should have a column containing the clinical text
-client.load_free_text(
-    csv_path="./data/clinical_notes.csv",
-    column_name="note_text",
-    generate_synthetic=True  # Generates synthetic FHIR resources
-)
+# Load FHIR bundles - SandboxClient converts them to CDS requests
+client.load_from_path("./data/bundles/", pattern="*.json")
 
+# Send all requests and collect responses
 responses = client.send_requests()
+
+# Analyze results
+print(f"Tested {len(responses)} patients")
+for i, response in enumerate(responses):
+    cards = response.get("cards", [])
+    print(f"  Patient {i + 1}: {len(cards)} cards")
 ```
 
-## Using Dataset Registries
-
-Load data from supported dataset registries like MIMIC-on-FHIR:
-
-```python
-from healthchain.sandbox import SandboxClient
-
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/patient-alerts",
-    workflow="patient-view"
-)
-
-# Load from a dataset registry
-client.load_from_registry(
-    "mimic-on-fhir",
-    data_dir="./data/mimic-fhir",
-    resource_types=["Patient", "Condition", "MedicationStatement"],
-    sample_size=5
-)
-
-responses = client.send_requests()
-```
-
-## Save Test Results
+### Save Test Results
 
 Save results for reporting or debugging:
 
@@ -173,7 +211,7 @@ client.save_results(
 )
 ```
 
-## Preview Requests Before Sending
+### Preview Requests Before Sending
 
 Inspect what will be sent without actually calling the service:
 
@@ -185,60 +223,6 @@ for preview in previews:
 
 # Get full request data
 request_data = client.get_request_data(format="dict")
-```
-
-## Testing Different Hooks
-
-Test different CDS Hooks workflows:
-
-```python
-# Test order-select hook
-order_client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/drug-interactions",
-    workflow="order-select"
-)
-
-# Test encounter-discharge hook
-discharge_client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/discharge-summary",
-    workflow="encounter-discharge"
-)
-```
-
-## Debugging Tips
-
-### Enable Verbose Logging
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/patient-alerts",
-    workflow="patient-view"
-)
-```
-
-### Check Client Status
-
-```python
-status = client.get_status()
-print(f"Requests queued: {status['requests_queued']}")
-print(f"Responses received: {status['responses_received']}")
-```
-
-### Use Context Manager
-
-The sandbox client supports context manager usage for automatic cleanup:
-
-```python
-with SandboxClient(
-    url="http://localhost:8000/cds/cds-services/patient-alerts",
-    workflow="patient-view"
-) as client:
-    client.load_from_path("./data/")
-    responses = client.send_requests()
-    # Results are auto-saved on exit if responses exist
 ```
 
 ## What's Next

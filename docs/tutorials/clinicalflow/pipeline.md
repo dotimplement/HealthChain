@@ -94,9 +94,17 @@ for entity in result.nlp.get_entities():
 
 Run it:
 
-```bash
-python test_pipeline.py
-```
+=== "uv"
+
+    ```bash
+    uv run python test_pipeline.py
+    ```
+
+=== "pip"
+
+    ```bash
+    python test_pipeline.py
+    ```
 
 Expected output:
 
@@ -106,90 +114,6 @@ Extracted conditions:
   - Diabetes mellitus (SNOMED: 73211009)
   - Chest pain (SNOMED: 29857009)
   - Dyspnea (SNOMED: 267036007)
-```
-
-## Adding SpaCy Integration (Optional)
-
-For more sophisticated NLP, you can integrate spaCy. For **medical text**, you'll need [scispaCy](https://allenai.github.io/scispacy/) - a spaCy package with biomedical models that can recognize clinical entities.
-
-!!! warning "Model choice matters"
-
-    General spaCy models like `en_core_web_sm` only recognize common entities (people, organizations, locations). They won't extract medical terms like "hypertension" or "diabetes". Use scispaCy models for clinical text.
-
-!!! warning "Python version compatibility"
-
-    scispaCy requires **Python 3.12 or earlier**. If you're using Python 3.13+, you'll encounter build errors. Check your version with `python --version`.
-
-!!! warning "Slow installation"
-
-    Installing scispaCy and the associated model can be slow (5-10 minutes). This is not essential to move forward with the tutorial.
-
-Install scispaCy and a biomedical model:
-
-=== "uv"
-
-    ```bash
-    uv pip install scispacy
-    uv pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
-    ```
-
-    !!! note
-        We use `uv pip install` instead of `uv add` here because scispaCy has strict dependency requirements that can cause conflicts. Using `uv pip install` installs the package without adding it to your `pyproject.toml`.
-
-=== "pip"
-
-    ```bash
-    pip install scispacy
-    pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
-    ```
-
-??? failure "Troubleshooting: Build errors with blis"
-
-    If you see compilation errors mentioning `blis` or `'/usr/bin/cc' failed`, try installing pre-built binaries first:
-
-    ```bash
-    uv pip install blis --only-binary :all:
-    uv pip install scispacy
-    uv pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
-    ```
-
-    If this still fails, you may need to install build tools (`build-essential` on Ubuntu/Debian, Xcode Command Line Tools on macOS) or use a different Python version. The keyword-based pipeline shown earlier in this tutorial works without these dependencies.
-
-Then create a pipeline with the biomedical model:
-
-```python
-from healthchain.pipeline import Pipeline
-from healthchain.pipeline.components.integrations import SpacyNLP
-from healthchain.io import Document
-
-# Create pipeline with scispaCy biomedical model
-pipeline = Pipeline[Document]()
-pipeline.add_node(SpacyNLP.from_model_id("en_core_sci_sm"))
-nlp = pipeline.build()
-
-# Process a document
-doc = Document("Patient presents with hypertension and diabetes.")
-result = nlp(doc)
-
-# Access the spaCy doc for full NLP features
-spacy_doc = result.nlp.get_spacy_doc()
-print(f"Entities: {[(ent.text, ent.label_) for ent in spacy_doc.ents]}")
-
-# Access tokens
-tokens = result.nlp.get_tokens()
-print(f"Tokens: {tokens[:5]}...")  # First 5 tokens
-
-# Access entities as dictionaries
-entities = result.nlp.get_entities()
-print(f"Extracted: {entities}")
-```
-
-Expected output:
-
-```
-Entities: [('hypertension', 'DISEASE'), ('diabetes', 'DISEASE')]
-Tokens: ['Patient', 'presents', 'with', 'hypertension', 'and']...
-Extracted: [{'text': 'hypertension', 'label': 'DISEASE', ...}, {'text': 'diabetes', 'label': 'DISEASE', ...}]
 ```
 
 ## Pipeline Architecture
