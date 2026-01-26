@@ -29,6 +29,7 @@ nav:
       - Automated Clinical Coding: cookbook/clinical_coding.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
       - ML Model Deployment: cookbook/ml_model_deployment.md
+      - Format Conversion: cookbook/format_conversion.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:
