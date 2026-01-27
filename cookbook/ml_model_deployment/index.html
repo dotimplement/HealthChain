@@ -1,0 +1,4457 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Simplify prototyping and testing NLP applications in a healthcare context.">
+      
+      
+        <meta name="author" content="Jennifer Jiang-Kells">
+      
+      
+      
+        <link rel="prev" href="../discharge_summarizer/">
+      
+      
+        <link rel="next" href="../format_conversion/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/healthchain_logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>ML Model Deployment - HealthChain 💫 🏥</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/welcome.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-JZW5MPV5Y4"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-JZW5MPV5Y4",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-JZW5MPV5Y4",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#deploy-ml-models-real-time-alerts-batch-screening" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="HealthChain 💫 🏥" class="md-header__button md-logo" aria-label="HealthChain 💫 🏥" data-md-component="logo">
+      
+  <img src="../../assets/images/healthchain_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HealthChain 💫 🏥
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ML Model Deployment
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m3.55 19.09 1.41 1.41 1.8-1.79-1.42-1.42M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6c0-3.32-2.69-6-6-6m8 7h3v-2h-3m-2.76 7.71 1.8 1.79 1.41-1.41-1.79-1.8M20.45 5l-1.41-1.4-1.8 1.79 1.42 1.42M13 1h-2v3h2M6.76 5.39 4.96 3.6 3.55 5l1.79 1.81zM1 13h3v-2H1m12 9h-2v3h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/dotimplement/healthchain" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    dotimplement/healthchain
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Cookbook
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/" class="md-tabs__link">
+          
+  
+  
+  Docs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../community/" class="md-tabs__link">
+          
+  
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="HealthChain 💫 🏥" class="md-nav__button md-logo" aria-label="HealthChain 💫 🏥" data-md-component="logo">
+      
+  <img src="../../assets/images/healthchain_logo.png" alt="logo">
+
+    </a>
+    HealthChain 💫 🏥
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/dotimplement/healthchain" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    dotimplement/healthchain
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../distribution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinicalFlow Tutorial
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ClinicalFlow Tutorial
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/fhir-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIR Basics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/gateway/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Create Gateway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test with Sandbox
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/clinicalflow/next-steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Next Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cookbook
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup_fhir_sandboxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup FHIR Sandbox
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multi_ehr_aggregation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multi-Source Data Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clinical_coding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automated Clinical Coding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discharge_summarizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discharge Summarizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Model Deployment
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Model Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-each-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Each Pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#train-the-model-or-bring-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Train the Model (or Bring Your Own)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prepare-demo-patient-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prepare Demo Patient Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-shared-model-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Shared Model Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-1-real-time-cds-hooks-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: Real-Time CDS Hooks Alerts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern 1: Real-Time CDS Hooks Alerts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-the-cds-hook-handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set Up the CDS Hook Handler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-with-sandbox-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test with Sandbox Client
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-2-batch-fhir-gateway-screening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: Batch FHIR Gateway Screening
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern 2: Batch FHIR Gateway Screening">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-fhir-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set Up FHIR Gateway
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#screen-individual-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screen Individual Patients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-screen-multiple-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Screen Multiple Patients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-service_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-output_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-youve-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Built
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../format_conversion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Format Conversion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Docs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gateway
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/gateway/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HealthChainAPI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/fhir_gateway/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIR Gateway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/events/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2_5" id="__nav_5_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protocols
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Protocols
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/cdshooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDS Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gateway/soap_cda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SOAP/CDA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I/O
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    I/O
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3_1" id="__nav_5_3_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Containers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Containers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/containers/containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/containers/document/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/containers/dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3_2" id="__nav_5_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adapters
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/adapters/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/adapters/cdaadapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDA Adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/adapters/cdsfhiradapter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDS FHIR Adapter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3_3" id="__nav_5_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Mappers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/mappers/mappers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io/mappers/fhir_feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIR Feature Mapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Pipeline
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4_2" id="__nav_5_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Components
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Components
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/components/components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/components/cdscardcreator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CdsCardCreator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/components/fhirproblemextractor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIRProblemListExtractor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4_3" id="__nav_5_4_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prebuilt Pipelines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Prebuilt Pipelines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/prebuilt_pipelines/medicalcoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Medical Coding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/prebuilt_pipelines/summarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Summarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/pipeline/integrations/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interoperability
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Interoperability
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/mappings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/parsers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parsers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/generators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/xmltodict/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working with xmltodict
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/interop/experimental/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/utilities/fhir_helpers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIR Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/utilities/sandbox/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sandbox
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/utilities/data_generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Generator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/component/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Component
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Containers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cds_hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDS Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/sandbox/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sandbox Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interoperability Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/fhir_helpers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FHIR Helpers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Community
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../community/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-each-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Each Pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#train-the-model-or-bring-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Train the Model (or Bring Your Own)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prepare-demo-patient-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prepare Demo Patient Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-shared-model-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Shared Model Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-1-real-time-cds-hooks-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: Real-Time CDS Hooks Alerts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern 1: Real-Time CDS Hooks Alerts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-the-cds-hook-handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set Up the CDS Hook Handler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-with-sandbox-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test with Sandbox Client
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-2-batch-fhir-gateway-screening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: Batch FHIR Gateway Screening
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern 2: Batch FHIR Gateway Screening">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-up-fhir-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set Up FHIR Gateway
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#screen-individual-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screen Individual Patients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-screen-multiple-patients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Screen Multiple Patients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-the-service_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build the Service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-output_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-youve-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Built
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="deploy-ml-models-real-time-alerts-batch-screening">Deploy ML Models: Real-Time Alerts &amp; Batch Screening</h1>
+<p>You trained a model on CSVs. Now you need to deploy it against FHIR data from EHRs. This tutorial shows how to bridge that gap with two production patterns: <strong>real-time CDS Hooks alerts</strong> and <strong>batch FHIR Gateway screening</strong>—both using the same model and a simple YAML schema that maps FHIR resources to your training features.</p>
+<p>Check out the full working examples:</p>
+<ul>
+<li><a href="https://github.com/dotimplement/HealthChain/tree/main/cookbook/sepsis_cds_hooks.py">Real-time CDS Hooks</a></li>
+<li><a href="https://github.com/dotimplement/HealthChain/tree/main/cookbook/sepsis_fhir_batch.py">Batch FHIR Gateway</a></li>
+</ul>
+<p><img alt="" src="../../assets/images/hc-use-cases-ml-deployment.png" /></p>
+<h2 id="when-to-use-each-pattern">When to Use Each Pattern</h2>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Trigger</th>
+<th>Output</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CDS Hooks</strong></td>
+<td>Clinician opens chart</td>
+<td>Alert cards in EHR UI</td>
+<td>Point-of-care decision support</td>
+</tr>
+<tr>
+<td><strong>FHIR Gateway</strong></td>
+<td>Scheduled job / API call</td>
+<td><a href="https://www.hl7.org/fhir/riskassessment.html">RiskAssessment</a> resources</td>
+<td>Population screening, quality measures</td>
+</tr>
+</tbody>
+</table>
+<p>Both patterns share the same trained model and feature extraction—only the integration layer differs.</p>
+<h2 id="setup">Setup</h2>
+<h3 id="install-dependencies">Install Dependencies</h3>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span style="color: #EFF"> </span>install<span style="color: #EFF"> </span>healthchain<span style="color: #EFF"> </span>joblib<span style="color: #EFF"> </span>xgboost<span style="color: #EFF"> </span>scikit-learn<span style="color: #EFF"> </span>python-dotenv
+</span></code></pre></div>
+<h3 id="train-the-model-or-bring-your-own">Train the Model (or Bring Your Own)</h3>
+<p>The cookbook includes a training script that builds an XGBoost classifier from MIMIC-IV data. From the project root:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span style="color: #82AAFF">cd</span><span style="color: #EFF"> </span>scripts
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span style="color: #EFF"> </span>sepsis_prediction_training.py
+</span></code></pre></div>
+<p>This script:</p>
+<ul>
+<li>Loads MIMIC-IV CSV tables (chartevents, labevents, patients, diagnoses)</li>
+<li>Extracts vitals features (heart rate, temperature, respiratory rate, WBC, lactate, creatinine, age, gender)</li>
+<li>Labels ICU stays with sepsis diagnoses (ICD-9/ICD-10)</li>
+<li>Trains Random Forest, XGBoost, and Logistic Regression models</li>
+<li>Saves the best model (by F1 score) to <code>scripts/models/sepsis_model.pkl</code></li>
+</ul>
+<p>After training, copy the model to the cookbook directory:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cp<span style="color: #EFF"> </span>scripts/models/sepsis_model.pkl<span style="color: #EFF"> </span>cookbook/models/
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">MIMIC-IV Demo Dataset</p>
+<p>The training script uses the <a href="https://physionet.org/content/mimic-iv-demo/2.2/">MIMIC-IV Clinical Database Demo</a> (~50MB, freely downloadable). Set the path:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span style="color: #82AAFF">export</span><span style="color: #EFF"> </span><span style="color: #89DDFF">MIMIC_CSV_PATH=</span>/path/to/mimic-iv-clinical-database-demo-2.2
+</span></code></pre></div>
+<p>*This is a quick-start workflow for demo purposes. Full MIMIC requires credentialed access. Most researchers use BigQuery or a PostgreSQL database.</p>
+</div>
+<p><strong>Using your own model?</strong> The pipeline is flexible—just save any scikit-learn-compatible model as a pickle with this structure:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span style="color: #89DDFF; font-style: italic">import</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">joblib</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span style="color: #EFF">model_data</span> <span style="color: #89DDFF">=</span> <span style="color: #89DDFF">{</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span style="color: #C3E88D">&quot;model&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">your_trained_model</span><span style="color: #89DDFF">,</span>  <span style="color: #546E7A; font-style: italic"># Must have .predict_proba()</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span style="color: #C3E88D">&quot;metadata&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #89DDFF">{</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span style="color: #C3E88D">&quot;feature_names&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #89DDFF">[</span><span style="color: #C3E88D">&quot;heart_rate&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #C3E88D">&quot;temperature&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #89DDFF">...],</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span style="color: #C3E88D">&quot;metrics&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #89DDFF">{</span><span style="color: #C3E88D">&quot;optimal_threshold&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #F78C6C">0.5</span><span style="color: #89DDFF">}</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span style="color: #89DDFF">}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span style="color: #89DDFF">}</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span style="color: #EFF">joblib</span><span style="color: #89DDFF">.</span><span style="color: #EFF">dump</span><span style="color: #89DDFF">(</span><span style="color: #EFF">model_data</span><span style="color: #89DDFF">,</span> <span style="color: #C3E88D">&quot;cookbook/models/sepsis_model.pkl&quot;</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<p>The pipeline will work with any model that implements <code>predict_proba()</code> - XGBoost, Random Forest, LightGBM, or even PyTorch/TensorFlow models wrapped with a sklearn-compatible interface.</p>
+<h3 id="prepare-demo-patient-data">Prepare Demo Patient Data</h3>
+<p>The two patterns have different data requirements:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Data Source</th>
+<th>What You Need</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CDS Hooks</strong></td>
+<td>Local JSON files</td>
+<td>Download pre-extracted patients (quick start)</td>
+</tr>
+<tr>
+<td><strong>FHIR Gateway</strong></td>
+<td>FHIR server</td>
+<td>Upload patients to Medplum and get server-assigned IDs</td>
+</tr>
+</tbody>
+</table>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">CDS Hooks Only (Quick Start)</label><label for="__tabbed_1_2">FHIR Gateway (Full Setup)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Download pre-extracted patient bundles—these are already in the repo if you cloned it:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>mkdir<span style="color: #EFF"> </span>-p<span style="color: #EFF"> </span>cookbook/data/mimic_demo_patients
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span style="color: #82AAFF">cd</span><span style="color: #EFF"> </span>cookbook/data/mimic_demo_patients
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>wget<span style="color: #EFF"> </span>https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/mimic_demo_patients/high_risk_patient.json
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>wget<span style="color: #EFF"> </span>https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/mimic_demo_patients/moderate_risk_patient.json
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>wget<span style="color: #EFF"> </span>https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/mimic_demo_patients/low_risk_patient.json
+</span></code></pre></div>
+<p>That's it! Skip to <a href="#pattern-1-real-time-cds-hooks-alerts">Pattern 1: CDS Hooks</a>.</p>
+</div>
+<div class="tabbed-block">
+<p>The batch screening pattern queries patients from a FHIR server. This tutorial uses <a href="https://www.medplum.com/">Medplum</a> (a free, hosted FHIR server), but any FHIR R4-compliant API works - just swap the credentials.</p>
+<p><strong>1. Configure FHIR Credentials</strong></p>
+<p>Add Medplum credentials to your <code>.env</code> file. See <a href="../setup_fhir_sandboxes/#medplum">FHIR Sandbox Setup</a> for details:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span style="color: #89DDFF">MEDPLUM_BASE_URL=</span>https://api.medplum.com/fhir/R4
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span style="color: #89DDFF">MEDPLUM_CLIENT_ID=</span>your_client_id
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span style="color: #89DDFF">MEDPLUM_CLIENT_SECRET=</span>your_client_secret
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span style="color: #89DDFF">MEDPLUM_TOKEN_URL=</span>https://api.medplum.com/oauth2/token
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span style="color: #89DDFF">MEDPLUM_SCOPE=</span>openid
+</span></code></pre></div>
+<p><strong>2. Extract and Upload Demo Patients</strong></p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span style="color: #546E7A; font-style: italic"># Set MIMIC-on-FHIR path (or use --mimic flag)</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span style="color: #82AAFF">export</span><span style="color: #EFF"> </span><span style="color: #89DDFF">MIMIC_FHIR_PATH=</span>/path/to/mimic-iv-on-fhir
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span style="color: #546E7A; font-style: italic"># Extract and upload to Medplum</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span style="color: #82AAFF">cd</span><span style="color: #EFF"> </span>scripts
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>python<span style="color: #EFF"> </span>extract_mimic_demo_patients.py<span style="color: #EFF"> </span>--minimal<span style="color: #EFF"> </span>--upload
+</span></code></pre></div>
+<p>This script:</p>
+<ul>
+<li>Loads patient data from <a href="https://physionet.org/content/mimic-iv-demo/2.2/">MIMIC-IV on FHIR</a></li>
+<li>Runs the sepsis model to find high/moderate/low risk patients</li>
+<li>Creates minimal FHIR bundles with only the observations needed</li>
+<li>Uploads them to your Medplum instance as transaction bundles</li>
+</ul>
+<p><strong>3. Copy Patient IDs</strong></p>
+<p>After upload, the script prints server-assigned patient IDs:</p>
+<div class="language-text highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>✓ Uploaded to Medplum!
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Copy this into sepsis_fhir_batch.py:
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>DEMO_PATIENT_IDS = [
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    &quot;702e11e8-6d21-41dd-9b48-31715fdc0fb1&quot;,  # high risk
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    &quot;3b0da7e9-0379-455a-8d35-bedd3a6ee459&quot;,  # moderate risk
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    &quot;f490ceb4-6262-4f1e-8b72-5515e6c46741&quot;,  # low risk
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>]
+</span></code></pre></div>
+<p>Copy these IDs into the <code>DEMO_PATIENT_IDS</code> list in <code>sepsis_fhir_batch.py</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Generate More Patients</p>
+<p>The script has options for generating larger test sets:</p>
+<div class="language-bash highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span style="color: #EFF"> </span>extract_mimic_demo_patients.py<span style="color: #EFF"> </span>--help
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span style="color: #546E7A; font-style: italic"># Examples:</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>--num-patients-per-risk<span style="color: #EFF"> </span><span style="color: #F78C6C">5</span><span style="color: #EFF">   </span><span style="color: #546E7A; font-style: italic"># 5 patients per risk level (15 total)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>--seed<span style="color: #EFF"> </span><span style="color: #F78C6C">123</span><span style="color: #EFF">                   </span><span style="color: #546E7A; font-style: italic"># Different random sample</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>--minimal<span style="color: #EFF">                    </span><span style="color: #546E7A; font-style: italic"># Keep only latest observation per feature (~12KB each)</span>
+</span></code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Alternative: Manual Upload</p>
+<p>If you prefer, run without <code>--upload</code> to generate bundle JSON files, then upload them manually via the <a href="https://app.medplum.com/batch">Medplum → Batch</a> page.</p>
+</div>
+</div>
+</div>
+</div>
+<hr />
+<p><strong>Setup complete!</strong> You should now have:</p>
+<ul>
+<li>✅ A trained model at <code>cookbook/models/sepsis_model.pkl</code></li>
+<li>✅ Demo patient data (local JSON or uploaded to Medplum)</li>
+</ul>
+<p>If using the <strong>FHIR Gateway pattern</strong>, also confirm:</p>
+<ul>
+<li>✅ FHIR credentials in <code>.env</code></li>
+<li>✅ Patient IDs copied into <code>DEMO_PATIENT_IDS</code> in <code>sepsis_fhir_batch.py</code></li>
+</ul>
+<h2 id="the-shared-model-pipeline">The Shared Model Pipeline</h2>
+<p>Both patterns reuse the same pipeline. Here's what you'll write:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span style="color: #BB80B3">def</span><span style="color: #EFF"> </span><span style="color: #82AAFF">create_pipeline</span><span style="color: #89DDFF">()</span> <span style="color: #89DDFF">-&gt;</span> <span style="color: #EFF">Pipeline</span><span style="color: #89DDFF">[</span><span style="color: #EFF">Dataset</span><span style="color: #89DDFF">]:</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span style="color: #EFF">pipeline</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">Pipeline</span><span style="color: #89DDFF">[</span><span style="color: #EFF">Dataset</span><span style="color: #89DDFF">]()</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span style="color: #82AAFF">@pipeline</span><span style="color: #89DDFF">.</span><span style="color: #EFF">add_node</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span style="color: #BB80B3">def</span><span style="color: #EFF"> </span><span style="color: #82AAFF">impute_missing</span><span style="color: #89DDFF">(</span><span style="color: #EFF">dataset</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">)</span> <span style="color: #89DDFF">-&gt;</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>        <span style="color: #EFF">dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">data</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">data</span><span style="color: #89DDFF">.</span><span style="color: #EFF">fillna</span><span style="color: #89DDFF">(</span><span style="color: #EFF">dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">data</span><span style="color: #89DDFF">.</span><span style="color: #EFF">median</span><span style="color: #89DDFF">(</span><span style="color: #EFF">numeric_only</span><span style="color: #89DDFF">=True))</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>        <span style="color: #BB80B3">return</span> <span style="color: #EFF">dataset</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span style="color: #82AAFF">@pipeline</span><span style="color: #89DDFF">.</span><span style="color: #EFF">add_node</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    <span style="color: #BB80B3">def</span><span style="color: #EFF"> </span><span style="color: #82AAFF">run_inference</span><span style="color: #89DDFF">(</span><span style="color: #EFF">dataset</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">)</span> <span style="color: #89DDFF">-&gt;</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>        <span style="color: #EFF">features</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">data</span><span style="color: #89DDFF">[</span><span style="color: #EFF">feature_names</span><span style="color: #89DDFF">]</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>        <span style="color: #EFF">probabilities</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">model</span><span style="color: #89DDFF">.</span><span style="color: #EFF">predict_proba</span><span style="color: #89DDFF">(</span><span style="color: #EFF">features</span><span style="color: #89DDFF">)[:,</span> <span style="color: #F78C6C">1</span><span style="color: #89DDFF">]</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>        <span style="color: #EFF">dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">metadata</span><span style="color: #89DDFF">[</span><span style="color: #C3E88D">&quot;probabilities&quot;</span><span style="color: #89DDFF">]</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">probabilities</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>        <span style="color: #BB80B3">return</span> <span style="color: #EFF">dataset</span>
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>    <span style="color: #BB80B3">return</span> <span style="color: #EFF">pipeline</span>
+</span></code></pre></div>
+<p>The pipeline operates on a <code>Dataset</code>, which you create from a FHIR bundle:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span style="color: #EFF">dataset</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">from_fhir_bundle</span><span style="color: #89DDFF">(</span><span style="color: #EFF">bundle</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">schema</span><span style="color: #89DDFF">=</span><span style="color: #EFF">SCHEMA_PATH</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<p><strong>How does FHIR become a DataFrame?</strong> The schema maps FHIR resources to your training features:</p>
+<div class="language-yaml highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span style="color: #546E7A; font-style: italic"># sepsis_vitals.yaml (excerpt)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span style="color: #FF5370">features</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span style="color: #EFF">  </span><span style="color: #FF5370">heart_rate</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span style="color: #EFF">    </span><span style="color: #FF5370">fhir_resource</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">Observation</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span style="color: #EFF">    </span><span style="color: #FF5370">code</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;220045&quot;</span><span style="color: #EFF">  </span><span style="color: #546E7A; font-style: italic"># MIMIC chartevents code</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span style="color: #EFF">  </span><span style="color: #FF5370">wbc</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span style="color: #EFF">    </span><span style="color: #FF5370">fhir_resource</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">Observation</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span style="color: #EFF">    </span><span style="color: #FF5370">code</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;51301&quot;</span><span style="color: #EFF">   </span><span style="color: #546E7A; font-style: italic"># MIMIC labevents code</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span style="color: #EFF">  </span><span style="color: #FF5370">age</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span style="color: #EFF">    </span><span style="color: #FF5370">fhir_resource</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">Patient</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span style="color: #EFF">    </span><span style="color: #FF5370">field</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">birthDate</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span style="color: #EFF">    </span><span style="color: #FF5370">transform</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">calculate_age</span>
+</span></code></pre></div>
+<p>No FHIR parsing code needed—define the mapping once, use it everywhere.</p>
+<div class="admonition tip">
+<p class="admonition-title">Explore Interactively</p>
+<p>Step through the full flow in <a href="https://github.com/dotimplement/HealthChain/blob/main/notebooks/fhir_ml_workflow.ipynb">notebooks/fhir_ml_workflow.ipynb</a>: FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.</p>
+</div>
+<p>Now let's see how this pipeline plugs into each deployment pattern.</p>
+<hr />
+<h2 id="pattern-1-real-time-cds-hooks-alerts">Pattern 1: Real-Time CDS Hooks Alerts</h2>
+<p>Use CDS Hooks when you need <strong>instant alerts</strong> during clinical workflows. The EHR triggers your service and pushes patient data via prefetch—no server queries needed.</p>
+<h3 id="how-it-works">How It Works</h3>
+<div class="language-text highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Clinician opens chart → EHR fires patient-view hook → Your service runs prediction → CDS card appears in EHR
+</span></code></pre></div>
+<h3 id="set-up-the-cds-hook-handler">Set Up the CDS Hook Handler</h3>
+<p>Create a <a href="../../reference/gateway/cdshooks/">CDSHooksService</a> that listens for <code>patient-view</code> events:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.gateway</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">CDSHooksService</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.fhir</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">prefetch_to_bundle</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.models</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">CDSRequest</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">CDSResponse</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.models.responses.cdsresponse</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">Card</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span style="color: #EFF">cds</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">CDSHooksService</span><span style="color: #89DDFF">()</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span style="color: #82AAFF">@cds</span><span style="color: #89DDFF">.</span><span style="color: #EFF">hook</span><span style="color: #89DDFF">(</span><span style="color: #C3E88D">&quot;patient-view&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #82AAFF">id</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;sepsis-risk&quot;</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span style="color: #BB80B3">def</span><span style="color: #EFF"> </span><span style="color: #82AAFF">sepsis_alert</span><span style="color: #89DDFF">(</span><span style="color: #EFF">request</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">CDSRequest</span><span style="color: #89DDFF">)</span> <span style="color: #89DDFF">-&gt;</span> <span style="color: #EFF">CDSResponse</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>    <span style="color: #BB80B3">if</span> <span style="color: #89DDFF; font-style: italic">not</span> <span style="color: #EFF">request</span><span style="color: #89DDFF">.</span><span style="color: #EFF">prefetch</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>        <span style="color: #BB80B3">return</span> <span style="color: #EFF">CDSResponse</span><span style="color: #89DDFF">(</span><span style="color: #EFF">cards</span><span style="color: #89DDFF">=[])</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>    <span style="color: #546E7A; font-style: italic"># FHIR prefetch → Dataset → Prediction</span>
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>    <span style="color: #EFF">bundle</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">prefetch_to_bundle</span><span style="color: #89DDFF">(</span><span style="color: #EFF">request</span><span style="color: #89DDFF">.</span><span style="color: #EFF">prefetch</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>    <span style="color: #EFF">dataset</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">from_fhir_bundle</span><span style="color: #89DDFF">(</span><span style="color: #EFF">bundle</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">schema</span><span style="color: #89DDFF">=</span><span style="color: #EFF">SCHEMA_PATH</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>    <span style="color: #EFF">result</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">pipeline</span><span style="color: #89DDFF">(</span><span style="color: #EFF">dataset</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-14-17"><a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>
+</span><span id="__span-14-18"><a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>    <span style="color: #546E7A; font-style: italic"># Generate alert card if risk is elevated</span>
+</span><span id="__span-14-19"><a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>    <span style="color: #EFF">prob</span> <span style="color: #89DDFF">=</span> <span style="color: #82AAFF">float</span><span style="color: #89DDFF">(</span><span style="color: #EFF">result</span><span style="color: #89DDFF">.</span><span style="color: #EFF">metadata</span><span style="color: #89DDFF">[</span><span style="color: #C3E88D">&quot;probabilities&quot;</span><span style="color: #89DDFF">][</span><span style="color: #F78C6C">0</span><span style="color: #89DDFF">])</span>
+</span><span id="__span-14-20"><a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>    <span style="color: #EFF">risk</span> <span style="color: #89DDFF">=</span> <span style="color: #C3E88D">&quot;high&quot;</span> <span style="color: #BB80B3">if</span> <span style="color: #EFF">prob</span> <span style="color: #89DDFF">&gt;</span> <span style="color: #F78C6C">0.7</span> <span style="color: #BB80B3">else</span> <span style="color: #C3E88D">&quot;moderate&quot;</span> <span style="color: #BB80B3">if</span> <span style="color: #EFF">prob</span> <span style="color: #89DDFF">&gt;</span> <span style="color: #F78C6C">0.4</span> <span style="color: #BB80B3">else</span> <span style="color: #C3E88D">&quot;low&quot;</span>
+</span><span id="__span-14-21"><a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>
+</span><span id="__span-14-22"><a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>    <span style="color: #BB80B3">if</span> <span style="color: #EFF">risk</span> <span style="color: #89DDFF; font-style: italic">in</span> <span style="color: #89DDFF">[</span><span style="color: #C3E88D">&quot;high&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #C3E88D">&quot;moderate&quot;</span><span style="color: #89DDFF">]:</span>
+</span><span id="__span-14-23"><a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>        <span style="color: #BB80B3">return</span> <span style="color: #EFF">CDSResponse</span><span style="color: #89DDFF">(</span><span style="color: #EFF">cards</span><span style="color: #89DDFF">=[</span>
+</span><span id="__span-14-24"><a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>            <span style="color: #EFF">Card</span><span style="color: #89DDFF">(</span>
+</span><span id="__span-14-25"><a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>                <span style="color: #EFF">summary</span><span style="color: #89DDFF">=</span><span style="color: #BB80B3">f</span><span style="color: #C3E88D">&quot;Sepsis Risk: </span><span style="color: #89DDFF">{</span><span style="color: #EFF">risk</span><span style="color: #89DDFF">.</span><span style="color: #EFF">upper</span><span style="color: #89DDFF">()}</span><span style="color: #C3E88D"> (</span><span style="color: #89DDFF">{</span><span style="color: #EFF">prob</span><span style="color: #89DDFF">:</span><span style="color: #C3E88D">.0%</span><span style="color: #89DDFF">}</span><span style="color: #C3E88D">)&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-14-26"><a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>                <span style="color: #EFF">indicator</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;critical&quot;</span> <span style="color: #BB80B3">if</span> <span style="color: #EFF">risk</span> <span style="color: #89DDFF">==</span> <span style="color: #C3E88D">&quot;high&quot;</span> <span style="color: #BB80B3">else</span> <span style="color: #C3E88D">&quot;warning&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-14-27"><a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>                <span style="color: #EFF">detail</span><span style="color: #89DDFF">=</span><span style="color: #BB80B3">f</span><span style="color: #C3E88D">&quot;Predicted sepsis risk: </span><span style="color: #89DDFF">{</span><span style="color: #EFF">risk</span><span style="color: #89DDFF">.</span><span style="color: #EFF">upper</span><span style="color: #89DDFF">()}</span><span style="color: #C3E88D">. Recommend workup.&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-14-28"><a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a>                <span style="color: #EFF">source</span><span style="color: #89DDFF">={</span><span style="color: #C3E88D">&quot;label&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #C3E88D">&quot;HealthChain Sepsis Predictor&quot;</span><span style="color: #89DDFF">},</span>
+</span><span id="__span-14-29"><a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>            <span style="color: #89DDFF">)</span>
+</span><span id="__span-14-30"><a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>        <span style="color: #89DDFF">])</span>
+</span><span id="__span-14-31"><a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>
+</span><span id="__span-14-32"><a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>    <span style="color: #BB80B3">return</span> <span style="color: #EFF">CDSResponse</span><span style="color: #89DDFF">(</span><span style="color: #EFF">cards</span><span style="color: #89DDFF">=[])</span>
+</span></code></pre></div>
+<h3 id="build-the-service">Build the Service</h3>
+<p>Register with <a href="../../reference/gateway/api/">HealthChainAPI</a>:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span style="color: #EFF">app</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">HealthChainAPI</span><span style="color: #89DDFF">(</span><span style="color: #EFF">title</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;Sepsis CDS Hooks&quot;</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span style="color: #EFF">app</span><span style="color: #89DDFF">.</span><span style="color: #EFF">register_service</span><span style="color: #89DDFF">(</span><span style="color: #EFF">cds</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">path</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;/cds&quot;</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<h3 id="test-with-sandbox-client">Test with Sandbox Client</h3>
+<p>The <a href="../../reference/utilities/sandbox/">SandboxClient</a> simulates EHR requests using your demo patient files:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.sandbox</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">SandboxClient</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span style="color: #EFF">client</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">SandboxClient</span><span style="color: #89DDFF">(</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span style="color: #EFF">url</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;http://localhost:8000/cds/cds-services/sepsis-risk&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span style="color: #EFF">workflow</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;patient-view&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span style="color: #89DDFF">)</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span style="color: #EFF">client</span><span style="color: #89DDFF">.</span><span style="color: #EFF">load_from_path</span><span style="color: #89DDFF">(</span><span style="color: #C3E88D">&quot;data/mimic_demo_patients&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">pattern</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;*_patient.json&quot;</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span style="color: #EFF">responses</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">client</span><span style="color: #89DDFF">.</span><span style="color: #EFF">send_requests</span><span style="color: #89DDFF">()</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span style="color: #EFF">client</span><span style="color: #89DDFF">.</span><span style="color: #EFF">save_results</span><span style="color: #89DDFF">(</span><span style="color: #EFF">save_request</span><span style="color: #89DDFF">=True,</span> <span style="color: #EFF">save_response</span><span style="color: #89DDFF">=True,</span> <span style="color: #EFF">directory</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;./output/&quot;</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<h3 id="expected-output">Expected Output</h3>
+<div class="language-text highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Processed 3 requests
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>  Patient 1: Sepsis Risk: HIGH (85%)
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>  Patient 2: Sepsis Risk: MODERATE (52%)
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>  Patient 3: Low risk (no alert)
+</span></code></pre></div>
+<details class="example">
+<summary>Example CDS Response</summary>
+<div class="language-json highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span style="color: #89DDFF">{</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;cards&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">[</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span style="color: #EFF">    </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;summary&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;Sepsis Risk: HIGH (85%)&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;indicator&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;critical&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;source&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;label&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;HealthChain Sepsis Predictor&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;url&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;https://www.sccm.org/SurvivingSepsisCampaign/Guidelines/Adult-Patients&quot;</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span style="color: #EFF">      </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;detail&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;**AI Guidance:**\n- Predicted risk: **HIGH** (85%)\n- Recommend sepsis workup and early intervention.&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;title&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;Sepsis Alert (AI Prediction)&quot;</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span style="color: #EFF">    </span><span style="color: #89DDFF">}</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span style="color: #EFF">  </span><span style="color: #89DDFF">]</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span style="color: #89DDFF">}</span>
+</span></code></pre></div>
+</details>
+<hr />
+<h2 id="pattern-2-batch-fhir-gateway-screening">Pattern 2: Batch FHIR Gateway Screening</h2>
+<p>Use the FHIR Gateway when you need to <strong>screen multiple patients</strong> from a FHIR server. Unlike CDS Hooks (ephemeral alerts), this pattern <strong>persists predictions back to the FHIR server</strong> as RiskAssessment resources, making them available for dashboards, reports, and downstream workflows.</p>
+<h3 id="how-it-works_1">How It Works</h3>
+<div class="language-text highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Query patients from FHIR server → Run predictions → Write RiskAssessment back to FHIR server
+</span></code></pre></div>
+<h3 id="set-up-fhir-gateway">Set Up FHIR Gateway</h3>
+<p>Configure the <a href="../../reference/gateway/fhir_gateway/">FHIRGateway</a> with your FHIR source:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">fhir.resources.patient</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">Patient</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">fhir.resources.observation</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">Observation</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.gateway</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">FHIRGateway</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.gateway.clients.fhir.base</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">FHIRAuthConfig</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span style="color: #89DDFF; font-style: italic">from</span><span style="color: #EFF"> </span><span style="color: #FFCB6B">healthchain.fhir</span><span style="color: #EFF"> </span><span style="color: #89DDFF; font-style: italic">import</span> <span style="color: #EFF">merge_bundles</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span style="color: #EFF">gateway</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">FHIRGateway</span><span style="color: #89DDFF">()</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span style="color: #EFF">config</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">FHIRAuthConfig</span><span style="color: #89DDFF">.</span><span style="color: #EFF">from_env</span><span style="color: #89DDFF">(</span><span style="color: #C3E88D">&quot;MEDPLUM&quot;</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span style="color: #EFF">gateway</span><span style="color: #89DDFF">.</span><span style="color: #EFF">add_source</span><span style="color: #89DDFF">(</span><span style="color: #C3E88D">&quot;medplum&quot;</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">config</span><span style="color: #89DDFF">.</span><span style="color: #EFF">to_connection_string</span><span style="color: #89DDFF">())</span>
+</span></code></pre></div>
+<h3 id="screen-individual-patients">Screen Individual Patients</h3>
+<p>Query patient data, run prediction, and write back a <a href="https://www.hl7.org/fhir/riskassessment.html">RiskAssessment</a> resource:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span style="color: #BB80B3">def</span><span style="color: #EFF"> </span><span style="color: #82AAFF">screen_patient</span><span style="color: #89DDFF">(</span><span style="color: #EFF">gateway</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">FHIRGateway</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">patient_id</span><span style="color: #89DDFF">:</span> <span style="color: #82AAFF">str</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">source</span><span style="color: #89DDFF">:</span> <span style="color: #82AAFF">str</span><span style="color: #89DDFF">):</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    <span style="color: #546E7A; font-style: italic"># Query patient + observations from FHIR server</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span style="color: #EFF">patient_bundle</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">gateway</span><span style="color: #89DDFF">.</span><span style="color: #EFF">search</span><span style="color: #89DDFF">(</span><span style="color: #EFF">Patient</span><span style="color: #89DDFF">,</span> <span style="color: #89DDFF">{</span><span style="color: #C3E88D">&quot;_id&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">patient_id</span><span style="color: #89DDFF">},</span> <span style="color: #EFF">source</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    <span style="color: #EFF">obs_bundle</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">gateway</span><span style="color: #89DDFF">.</span><span style="color: #EFF">search</span><span style="color: #89DDFF">(</span><span style="color: #EFF">Observation</span><span style="color: #89DDFF">,</span> <span style="color: #89DDFF">{</span><span style="color: #C3E88D">&quot;patient&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #EFF">patient_id</span><span style="color: #89DDFF">},</span> <span style="color: #EFF">source</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>    <span style="color: #EFF">bundle</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">merge_bundles</span><span style="color: #89DDFF">([</span><span style="color: #EFF">patient_bundle</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">obs_bundle</span><span style="color: #89DDFF">])</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>    <span style="color: #546E7A; font-style: italic"># FHIR → Dataset → Prediction</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>    <span style="color: #EFF">dataset</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">Dataset</span><span style="color: #89DDFF">.</span><span style="color: #EFF">from_fhir_bundle</span><span style="color: #89DDFF">(</span><span style="color: #EFF">bundle</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">schema</span><span style="color: #89DDFF">=</span><span style="color: #EFF">SCHEMA_PATH</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>    <span style="color: #EFF">result</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">pipeline</span><span style="color: #89DDFF">(</span><span style="color: #EFF">dataset</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>    <span style="color: #546E7A; font-style: italic"># Convert to RiskAssessment and write back</span>
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>    <span style="color: #BB80B3">for</span> <span style="color: #EFF">ra</span> <span style="color: #89DDFF; font-style: italic">in</span> <span style="color: #EFF">result</span><span style="color: #89DDFF">.</span><span style="color: #EFF">to_risk_assessment</span><span style="color: #89DDFF">(</span>
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>        <span style="color: #EFF">outcome_code</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;A41.9&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>        <span style="color: #EFF">outcome_display</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;Sepsis&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>        <span style="color: #EFF">model_name</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;sepsis_xgboost_v1&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>    <span style="color: #89DDFF">):</span>
+</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>        <span style="color: #EFF">gateway</span><span style="color: #89DDFF">.</span><span style="color: #EFF">create</span><span style="color: #89DDFF">(</span><span style="color: #EFF">ra</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">source</span><span style="color: #89DDFF">=</span><span style="color: #EFF">source</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<h3 id="batch-screen-multiple-patients">Batch Screen Multiple Patients</h3>
+<p>Loop over patient IDs and screen each one:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span style="color: #BB80B3">for</span> <span style="color: #EFF">patient_id</span> <span style="color: #89DDFF; font-style: italic">in</span> <span style="color: #EFF">patient_ids</span><span style="color: #89DDFF">:</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    <span style="color: #EFF">screen_patient</span><span style="color: #89DDFF">(</span><span style="color: #EFF">gateway</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">patient_id</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">source</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;medplum&quot;</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Demo vs Production</p>
+<p>This demo uses a fixed list of patient IDs. In production, you'd query for patients dynamically—for example, ICU admissions in the last hour:</p>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span style="color: #546E7A; font-style: italic"># Find patients with recent ICU encounters</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span style="color: #EFF">encounters</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">gateway</span><span style="color: #89DDFF">.</span><span style="color: #EFF">search</span><span style="color: #89DDFF">(</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    <span style="color: #EFF">Encounter</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>    <span style="color: #89DDFF">{</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>        <span style="color: #C3E88D">&quot;class&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #C3E88D">&quot;IMP&quot;</span><span style="color: #89DDFF">,</span>  <span style="color: #546E7A; font-style: italic"># inpatient</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>        <span style="color: #C3E88D">&quot;location&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #C3E88D">&quot;icu&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>        <span style="color: #C3E88D">&quot;date&quot;</span><span style="color: #89DDFF">:</span> <span style="color: #C3E88D">&quot;ge2024-01-01&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>    <span style="color: #89DDFF">},</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>    <span style="color: #EFF">source</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;ehr&quot;</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span style="color: #89DDFF">)</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span style="color: #EFF">patient_ids</span> <span style="color: #89DDFF">=</span> <span style="color: #89DDFF">[</span><span style="color: #EFF">e</span><span style="color: #89DDFF">.</span><span style="color: #EFF">subject</span><span style="color: #89DDFF">.</span><span style="color: #EFF">reference</span><span style="color: #89DDFF">.</span><span style="color: #EFF">split</span><span style="color: #89DDFF">(</span><span style="color: #C3E88D">&quot;/&quot;</span><span style="color: #89DDFF">)[</span><span style="color: #F78C6C">1</span><span style="color: #89DDFF">]</span> <span style="color: #BB80B3">for</span> <span style="color: #EFF">e</span> <span style="color: #89DDFF; font-style: italic">in</span> <span style="color: #EFF">encounters</span><span style="color: #89DDFF">]</span>
+</span></code></pre></div>
+</div>
+<h3 id="build-the-service_1">Build the Service</h3>
+<div class="language-python highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span style="color: #EFF">app</span> <span style="color: #89DDFF">=</span> <span style="color: #EFF">HealthChainAPI</span><span style="color: #89DDFF">(</span><span style="color: #EFF">title</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;Sepsis Batch Screening&quot;</span><span style="color: #89DDFF">)</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span style="color: #EFF">app</span><span style="color: #89DDFF">.</span><span style="color: #EFF">register_gateway</span><span style="color: #89DDFF">(</span><span style="color: #EFF">gateway</span><span style="color: #89DDFF">,</span> <span style="color: #EFF">path</span><span style="color: #89DDFF">=</span><span style="color: #C3E88D">&quot;/fhir&quot;</span><span style="color: #89DDFF">)</span>
+</span></code></pre></div>
+<h3 id="expected-output_1">Expected Output</h3>
+<p>After uploading demo patients to Medplum and running batch screening:</p>
+<p><div class="language-text highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>=== Screening patients from Medplum ===
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>  702e11e8-6d21-41dd-9b48-31715fdc0fb1: HIGH (85%) → RiskAssessment/abc123
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>  3b0da7e9-0379-455a-8d35-bedd3a6ee459: MODERATE (52%) → RiskAssessment/def456
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>  f490ceb4-6262-4f1e-8b72-5515e6c46741: LOW (15%) → RiskAssessment/ghi789
+</span></code></pre></div>
+You should be able to see the RiskAssessment resources in the <a href="https://app.medplum.com">Medplum console</a> (search for "RiskAssessment" in "Resource Type" search bar in top left corner)</p>
+<details class="example">
+<summary>Example RiskAssessment Resource</summary>
+<div class="language-json highlight" style="background: #263238"><pre style="line-height: 125%;"><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span style="color: #89DDFF">{</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;resourceType&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;RiskAssessment&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;id&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;abc123&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;status&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;final&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;subject&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span style="color: #EFF">    </span><span style="color: #FF5370">&quot;reference&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;Patient/702e11e8-6d21-41dd-9b48-31715fdc0fb1&quot;</span>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span style="color: #EFF">  </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;method&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span style="color: #EFF">    </span><span style="color: #FF5370">&quot;coding&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">[{</span>
+</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;system&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;https://healthchain.io/models&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;code&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;sepsis_xgboost_v1&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-12"><a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;display&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;Sepsis XGBoost Model v1&quot;</span>
+</span><span id="__span-26-13"><a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span style="color: #EFF">    </span><span style="color: #89DDFF">}]</span>
+</span><span id="__span-26-14"><a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a><span style="color: #EFF">  </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-26-15"><a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span style="color: #EFF">  </span><span style="color: #FF5370">&quot;prediction&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">[{</span>
+</span><span id="__span-26-16"><a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a><span style="color: #EFF">    </span><span style="color: #FF5370">&quot;outcome&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-26-17"><a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;coding&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">[{</span>
+</span><span id="__span-26-18"><a id="__codelineno-26-18" name="__codelineno-26-18" href="#__codelineno-26-18"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;system&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;http://hl7.org/fhir/sid/icd-10&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-19"><a id="__codelineno-26-19" name="__codelineno-26-19" href="#__codelineno-26-19"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;code&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;A41.9&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-20"><a id="__codelineno-26-20" name="__codelineno-26-20" href="#__codelineno-26-20"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;display&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;Sepsis&quot;</span>
+</span><span id="__span-26-21"><a id="__codelineno-26-21" name="__codelineno-26-21" href="#__codelineno-26-21"></a><span style="color: #EFF">      </span><span style="color: #89DDFF">}]</span>
+</span><span id="__span-26-22"><a id="__codelineno-26-22" name="__codelineno-26-22" href="#__codelineno-26-22"></a><span style="color: #EFF">    </span><span style="color: #89DDFF">},</span>
+</span><span id="__span-26-23"><a id="__codelineno-26-23" name="__codelineno-26-23" href="#__codelineno-26-23"></a><span style="color: #EFF">    </span><span style="color: #FF5370">&quot;probabilityDecimal&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #F78C6C">0.85</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-24"><a id="__codelineno-26-24" name="__codelineno-26-24" href="#__codelineno-26-24"></a><span style="color: #EFF">    </span><span style="color: #FF5370">&quot;qualitativeRisk&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">{</span>
+</span><span id="__span-26-25"><a id="__codelineno-26-25" name="__codelineno-26-25" href="#__codelineno-26-25"></a><span style="color: #EFF">      </span><span style="color: #FF5370">&quot;coding&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #89DDFF">[{</span>
+</span><span id="__span-26-26"><a id="__codelineno-26-26" name="__codelineno-26-26" href="#__codelineno-26-26"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;system&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;http://terminology.hl7.org/CodeSystem/risk-probability&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-27"><a id="__codelineno-26-27" name="__codelineno-26-27" href="#__codelineno-26-27"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;code&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;high&quot;</span><span style="color: #89DDFF">,</span>
+</span><span id="__span-26-28"><a id="__codelineno-26-28" name="__codelineno-26-28" href="#__codelineno-26-28"></a><span style="color: #EFF">        </span><span style="color: #FF5370">&quot;display&quot;</span><span style="color: #89DDFF">:</span><span style="color: #EFF"> </span><span style="color: #C3E88D">&quot;High likelihood&quot;</span>
+</span><span id="__span-26-29"><a id="__codelineno-26-29" name="__codelineno-26-29" href="#__codelineno-26-29"></a><span style="color: #EFF">      </span><span style="color: #89DDFF">}]</span>
+</span><span id="__span-26-30"><a id="__codelineno-26-30" name="__codelineno-26-30" href="#__codelineno-26-30"></a><span style="color: #EFF">    </span><span style="color: #89DDFF">}</span>
+</span><span id="__span-26-31"><a id="__codelineno-26-31" name="__codelineno-26-31" href="#__codelineno-26-31"></a><span style="color: #EFF">  </span><span style="color: #89DDFF">}]</span>
+</span><span id="__span-26-32"><a id="__codelineno-26-32" name="__codelineno-26-32" href="#__codelineno-26-32"></a><span style="color: #89DDFF">}</span>
+</span></code></pre></div>
+</details>
+<hr />
+<h2 id="what-youve-built">What You've Built</h2>
+<p>Two deployment patterns for the same ML model:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>CDS Hooks</th>
+<th>FHIR Gateway</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Integration</strong></td>
+<td>Event-driven (EHR pushes data)</td>
+<td>Pull-based (service queries server)</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Real-time (&lt;1s)</td>
+<td>Batch (seconds to minutes)</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>CDS Cards (ephemeral alerts)</td>
+<td>RiskAssessment (persisted resources)</td>
+</tr>
+<tr>
+<td><strong>Scaling</strong></td>
+<td>Per-patient on demand</td>
+<td>Parallel/scheduled batch jobs</td>
+</tr>
+</tbody>
+</table>
+<p>Both patterns:</p>
+<ul>
+<li><strong>Share the same model</strong> - Train once, deploy multiple ways</li>
+<li><strong>Use YAML feature schemas</strong> - Declarative FHIR → features mapping</li>
+<li><strong>Handle FHIR natively</strong> - No custom data wrangling per integration</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Use Cases</p>
+<p><strong>CDS Hooks (Real-time)</strong></p>
+<ul>
+<li>Sepsis early warning alerts when opening ICU patient charts</li>
+<li>Drug interaction warnings during medication ordering</li>
+<li>Clinical guideline reminders triggered by diagnosis codes</li>
+</ul>
+<p><strong>FHIR Gateway (Batch)</strong></p>
+<ul>
+<li>Nightly population health screening</li>
+<li>Quality measure calculation for reporting</li>
+<li>Research cohort identification</li>
+<li>Pre-visit risk stratification</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Next Steps</p>
+<ul>
+<li><strong>Train your own model</strong>: Replace <code>sepsis_model.pkl</code> with your model; update the feature schema to match</li>
+<li><strong>Add more features</strong>: Extend <code>sepsis_vitals.yaml</code> with lab values, medications, or other Observations</li>
+<li><strong>Add more FHIR sources</strong>: The gateway supports multiple sources—see the cookbook script for Epic sandbox configuration, or the <a href="../setup_fhir_sandboxes/">FHIR Sandbox Setup guide</a></li>
+<li><strong>Automate batch runs</strong>: Schedule screening jobs with cron, Airflow, or cloud schedulers; or use <a href="https://www.hl7.org/fhir/subscription.html">FHIR Subscriptions</a> to trigger on new ICU admissions (<a href="https://github.com/dotimplement/HealthChain/pulls">PRs welcome!</a>)</li>
+<li><strong>Combine patterns</strong>: Use batch screening to identify high-risk patients, then enable CDS
+alerts for those patients</li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+<footer class="md-footer">
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+            <div class="md-copyright">
+                Made with care by the HealthChain team
+            </div>
+        </div>
+    </div>
+</footer>
+
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.expand", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.footer", "navigation.instant", "header.autohide", "announce.dismiss", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/cookbook-filter.js"></script>
+      
+    
+  </body>
+</html>
