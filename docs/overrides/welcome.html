@@ -1,0 +1,173 @@
+<!-- Custom HTML homepage for HealthChain -->
+
+{% extends "main.html" %}
+{% block tabs %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="container welcome-page-container" data-md-component="welcome">
+    <header>
+        <h1 class="welcome-title">Production-Ready Healthcare AI</h1>
+        <p class="welcome-subtitle">
+            Built-in FHIR support, real-time EHR connectivity, and deployment tooling for healthcare AI/ML systems. Skip months of custom integration work.
+        </p>
+
+        <div class="explore-link">
+            <a href="quickstart/">Get Started <span class="arrow">&rarr;</span></a>
+        </div>
+    </header>
+
+    <div class="cards-section-wrapper">
+        <!-- Section 1: Persona Cards -->
+        <section>
+            <h3 class="section-title">Choose Your Path</h3>
+
+            <div class="card-grid">
+                <!-- HealthTech Engineers Card (PRIMARY - Featured) -->
+                <a href="tutorials/clinicalflow/" class="card card-healthtech card-featured">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19ZM11 17H13V13H17V11H13V7H11V11H7V13H11V17Z" fill="#989898"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">HealthTech Engineers</h3>
+                        <p class="card-description">Build clinical workflow integrations with Epic, Cerner, and other EHRs using CDS Hooks and FHIR APIs.</p>
+                        <span class="card-cta">Start Tutorial <span class="arrow">&rarr;</span></span>
+                    </div>
+                </a>
+
+                <!-- LLM/GenAI Developers Card -->
+                <a href="cookbook/multi_ehr_aggregation/" class="card card-genai">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7117 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0034 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92176 4.44061 8.37485 5.27072 7.03255C6.10083 5.69025 7.28825 4.60557 8.7 3.9C9.87812 3.30493 11.1801 2.99656 12.5 3H13C15.0843 3.11499 17.053 3.99476 18.5291 5.47086C20.0052 6.94696 20.885 8.91565 21 11V11.5Z" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">LLM / GenAI Developers</h3>
+                        <p class="card-description">Aggregate multi-EHR data for RAG pipelines and build unified patient records with automatic deduplication.</p>
+                        <span class="card-cta">View Guide <span class="arrow">&rarr;</span></span>
+                    </div>
+                </a>
+
+                <!-- ML Researchers Card -->
+                <a href="cookbook/ml_model_deployment/" class="card card-ml">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">ML Researchers</h3>
+                        <p class="card-description">Deploy trained healthcare models as FHIR-compliant APIs with OAuth2 authentication and type-safe data handling.</p>
+                        <span class="card-cta">View Guide <span class="arrow">&rarr;</span></span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 2: Get Started Cards -->
+        <section>
+            <h3 class="section-title">Get Started</h3>
+
+            <div class="card-grid">
+                <a href="reference/concepts/" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 6.25278V19.2528M12 6.25278C10.8321 5.47686 9.24649 5 7.5 5C5.75351 5 4.16789 5.47686 3 6.25278V19.2528C4.16789 18.4769 5.75351 18 7.5 18C9.24649 18 10.8321 18.4769 12 19.2528M12 6.25278C13.1679 5.47686 14.7535 5 16.5 5C18.2465 5 19.8321 5.47686 21 6.25278V19.2528C19.8321 18.4769 18.2465 18 16.5 18C14.7535 18 13.1679 18.4769 12 19.2528" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Core Concepts</h3>
+                        <p class="card-description">Understand FHIR resources, Pipelines, Gateways, and Adapters.</p>
+                    </div>
+                </a>
+
+                <a href="installation/" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 15L12 3M12 15L8 11M12 15L16 11" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 17V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V17" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Installation</h3>
+                        <p class="card-description">Get HealthChain up and running in minutes.</p>
+                    </div>
+                </a>
+
+                <a href="quickstart/" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="#989898" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Quickstart</h3>
+                        <p class="card-description">Build your first healthcare AI pipeline in under 10 minutes.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Section 3: Community Cards -->
+        <section>
+            <h3 class="section-title">Join the Community</h3>
+
+            <div class="card-grid">
+                <a href="https://discord.gg/UQC6uAepUz" target="_blank" rel="noopener" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M20.317 4.492C18.787 3.802 17.147 3.292 15.432 3.002C15.232 3.352 14.992 3.822 14.832 4.192C13.012 3.922 11.212 3.922 9.43199 4.192C9.27199 3.822 9.02199 3.352 8.82199 3.002C7.09699 3.292 5.45699 3.812 3.92699 4.502C0.827989 9.092 -0.0120109 13.562 0.417989 17.972C2.45799 19.472 4.43299 20.372 6.37699 20.992C6.82699 20.382 7.22699 19.732 7.56699 19.042C6.90699 18.792 6.27699 18.482 5.67699 18.122C5.83699 18.002 5.99199 17.882 6.14199 17.752C10.007 19.542 14.147 19.542 17.967 17.752C18.117 17.882 18.277 18.002 18.437 18.122C17.837 18.482 17.197 18.792 16.547 19.042C16.887 19.732 17.287 20.382 17.737 20.992C19.681 20.372 21.666 19.472 23.696 17.972C24.196 12.872 22.856 8.442 20.317 4.492ZM8.01199 15.112C6.83199 15.112 5.86199 14.032 5.86199 12.712C5.86199 11.392 6.80199 10.302 8.01199 10.302C9.22199 10.302 10.192 11.382 10.162 12.712C10.162 14.032 9.21199 15.112 8.01199 15.112ZM16.102 15.112C14.922 15.112 13.952 14.032 13.952 12.712C13.952 11.392 14.892 10.302 16.102 10.302C17.312 10.302 18.282 11.382 18.252 12.712C18.252 14.032 17.312 15.112 16.102 15.112Z" fill="#989898"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Discord</h3>
+                        <p class="card-description">Get help and share ideas with the community.</p>
+                    </div>
+                </a>
+
+                <a href="https://github.com/dotimplement/healthchain" target="_blank" rel="noopener" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.477 2 2 6.477 2 12C2 16.418 4.865 20.166 8.839 21.489C9.339 21.579 9.521 21.269 9.521 21.001C9.521 20.761 9.513 20.127 9.508 19.288C6.726 19.891 6.139 17.905 6.139 17.905C5.685 16.756 5.029 16.446 5.029 16.446C4.121 15.826 5.098 15.838 5.098 15.838C6.101 15.909 6.629 16.871 6.629 16.871C7.521 18.391 8.97 17.939 9.539 17.68C9.631 17.035 9.889 16.594 10.175 16.344C7.955 16.091 5.62 15.227 5.62 11.422C5.62 10.338 6.01 9.454 6.649 8.765C6.546 8.512 6.203 7.5 6.747 6.126C6.747 6.126 7.587 5.858 9.497 7.146C10.295 6.924 11.15 6.813 12 6.809C12.85 6.813 13.705 6.924 14.505 7.146C16.413 5.858 17.251 6.126 17.251 6.126C17.797 7.5 17.454 8.512 17.351 8.765C17.991 9.454 18.378 10.338 18.378 11.422C18.378 15.237 16.039 16.088 13.813 16.336C14.172 16.645 14.491 17.255 14.491 18.189C14.491 19.518 14.479 20.591 14.479 21.001C14.479 21.271 14.659 21.584 15.167 21.488C19.138 20.163 22 16.417 22 12C22 6.477 17.523 2 12 2Z" fill="#989898"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">GitHub</h3>
+                        <p class="card-description">Browse source code, report issues, and contribute.</p>
+                    </div>
+                </a>
+
+                <a href="https://jenniferjiangkells.substack.com/" target="_blank" rel="noopener" class="card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M22.539 8.242H1.46V5.406H22.539V8.242ZM1.46 10.812V24L12 18.11L22.54 24V10.812H1.46ZM22.54 0H1.46V2.836H22.54V0Z" fill="#989898"/>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Substack</h3>
+                        <p class="card-description">Cool Things in HealthTech newsletter.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="md-footer">
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+            <div class="md-copyright">
+                Made with care by the HealthChain team
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}

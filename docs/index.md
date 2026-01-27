@@ -1,4 +1,11 @@
-# Welcome to HealthChain 💫 🏥
+---
+template: welcome.html
+hide:
+  - navigation
+  - toc
+---
+
+# Welcome to HealthChain
 
 HealthChain is an open-source Python toolkit that streamlines productionizing healthcare AI. Built for AI/ML practitioners, it simplifies the complexity of real-time EHR integrations by providing seamless FHIR integration, unified data pipelines, and production-ready deployment.
 

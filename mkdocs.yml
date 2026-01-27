@@ -12,6 +12,16 @@ nav:
       - Installation: installation.md
       - Quickstart: quickstart.md
       - Licence: distribution.md
+  - Tutorials:
+      - tutorials/index.md
+      - ClinicalFlow Tutorial:
+          - Introduction: tutorials/clinicalflow/index.md
+          - Setup: tutorials/clinicalflow/setup.md
+          - FHIR Basics: tutorials/clinicalflow/fhir-basics.md
+          - Build Pipeline: tutorials/clinicalflow/pipeline.md
+          - Create Gateway: tutorials/clinicalflow/gateway.md
+          - Test with Sandbox: tutorials/clinicalflow/testing.md
+          - Next Steps: tutorials/clinicalflow/next-steps.md
   - Cookbook:
       - cookbook/index.md
       - Setup FHIR Sandbox: cookbook/setup_fhir_sandboxes.md
@@ -19,6 +29,7 @@ nav:
       - Automated Clinical Coding: cookbook/clinical_coding.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
       - ML Model Deployment: cookbook/ml_model_deployment.md
+      - Format Conversion: cookbook/format_conversion.md
   - Docs:
       - Welcome: reference/index.md
       - Gateway:
@@ -82,6 +93,7 @@ nav:
 copyright: dotimplement
 theme:
   name: material
+  custom_dir: docs/overrides/
   favicon: assets/images/healthchain_logo.png
   logo: assets/images/healthchain_logo.png
   icon:
@@ -90,12 +102,27 @@ theme:
     - content.code.copy
     - navigation.expand
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
+    - navigation.footer
+    - navigation.instant
     - header.autohide
     - announce.dismiss
+    - search.suggest
+    - search.highlight
   palette:
-    primary: white
-    accent: blue
+    - scheme: default
+      primary: white
+      accent: blue
+      toggle:
+        icon: material/white-balance-sunny
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
 # font:
 #     text: Roboto
 
@@ -132,6 +159,10 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/welcome.css
+
+extra_javascript:
+  - javascripts/cookbook-filter.js
 
 plugins:
   - blog
