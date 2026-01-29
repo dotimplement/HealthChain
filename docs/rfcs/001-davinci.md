@@ -62,7 +62,9 @@ CMS-0057-F mandates payers implement Prior Authorization APIs using these IGs by
 
 The goal is to keep the implementation *lean*: build a lightweight layer around the existing Pydantic-based FHIR data validators, utilities, and service layers that achieves Da Vinci CRD/DTR/PAS Profile conformance.
 
-Innovators should be able to build minimum viable CRD/DTR/PAS workflows leveraging HealthChain's AI/ML capabilities. Further requirements should arise from feedback and iteration from pilot users and design partners.
+Developers should be able to build minimum viable CRD/DTR/PAS workflows with AI/ML enrichment. Further requirements should arise from feedback and iteration from pilot users and design partners.
+
+**Example workflow**: Provider orders MRI → CRD hook fires → HealthChain NLP extracts clinical notes → Payer returns coverage requirements → DTR pre-populates questionnaire → PAS submits claim with supporting docs → Authorization decision in minutes vs. days
 
 #### High-level architecture
 ```
@@ -116,26 +118,20 @@ Innovators should be able to build minimum viable CRD/DTR/PAS workflows leveragi
   - Using `FHIRGateway` to create a PAS client (route EHR FHIR API and payer `/Claim/$submit` endpoints) to pull documents from multiple sources, focusing on demontrating the `InteropEngine` and `DocumentReference` handling
 
 
-**Ideas for future**:
+**Potential Future Extensions (feedback welcome)**:
 - **Event-driven orchestration (FHIR subscription)**: 
-  - **CRD - intermediary / ePA coordinator**: for EHRs without native CDS Hooks support - [there's capability for event listening and dispatching in HealthChain](https://dotimplement.github.io/HealthChain/reference/gateway/events/) , which could be integrated with FHIR subscription / EHR-related events (EHR events -> FHIRGateway -> CRD calls -> EHR notifications) (design partner needed?)
+  - **CRD - intermediary / ePA coordinator**: for EHRs without native CDS Hooks support - [there's capability for event listening and dispatching in HealthChain](https://dotimplement.github.io/HealthChain/reference/gateway/events/) , which could be integrated with FHIR subscription / EHR-related events (EHR events -> FHIRGateway -> CRD calls -> EHR notifications)
   - **PAS - response handling**: FHIR subscription or polling for status tracking (`$inquire`)
 
 
-
-### Open Questions
-1. **Timeline** - what can we work around?
-2. **Priority order** - what profiles/features should be prioritized?
-
-
 ### Request for Feedback
-Please review attached plan and discuss in next weekly sync. Focus areas:
+Looking for input from anyone who's implemented these IGs:
 
-- Architecture approach
-- Milestone priorities and timeline
-- Conformance testing strategy
-- Input from industry partners?
-- Any critical components missing?
+- Does this architecture approach make sense for PA automation use cases?
+- What compliance considerations am I missing?
+- Priority order - should DTR move higher given CQL/questionnaire complexity?
+- Any critical components or edge cases I haven't accounted for?
+- Provider-side pain points this design doesn't address?
 
 ---
 ### References
