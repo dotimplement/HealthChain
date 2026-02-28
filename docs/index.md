@@ -53,7 +53,7 @@ HealthChain is an open-source Python toolkit that streamlines productionizing he
 
 ## Getting Started with Healthcare AI
 
-HealthChain provides the missing middleware layer between healthcare systems and modern AI/ML development. Whether you're building clinical decision support tools, processing medical documents, or creating multi-system integrations, these docs will guide you through:
+HealthChain is production-ready healthcare AI infrastructure: built-in FHIR support, real-time EHR connectivity, and deployment tooling for healthcare AI/ML systems. Skip months of custom integration work. Whether you're building clinical decision support tools, processing medical documents, or creating multi-system integrations, these docs will guide you through:
 
 - **🔧 Core concepts** - Understand FHIR resources, pipelines, and gateway patterns
 - **📚 Real examples** - Step-by-step tutorials for common healthcare AI use cases

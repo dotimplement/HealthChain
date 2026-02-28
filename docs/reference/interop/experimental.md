@@ -28,7 +28,7 @@ This page tracks templates that are under development or have known issues. Use 
 
 1. Copy experimental files to your custom config:
    ```bash
-   # After running: healthchain init-configs my_configs
+   # After running: healthchain eject-templates my_configs
    cp dev-templates/allergies/allergies.yaml my_configs/interop/cda/sections/
    cp dev-templates/allergies/allergy_*.liquid my_configs/templates/cda_fhir/
    cp dev-templates/allergies/allergy_*.liquid my_configs/templates/fhir_cda/

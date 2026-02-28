@@ -26,7 +26,7 @@
 
 <div align="center">
 
-HealthChain is an open-source developer framework to build healthcare AI applications with native protocol understanding. Skip months of custom integration with **built-in FHIR support**, **real-time EHR connectivity**, and **production-ready deployment** - all in Python.
+HealthChain is an open-source SDK for production-ready healthcare AI. Skip months of custom integration work with **built-in FHIR support**, **real-time EHR connectivity**, and **deployment tooling for healthcare AI/ML systems** — all in Python.
 
 </div>
 
@@ -34,7 +34,16 @@ HealthChain is an open-source developer framework to build healthcare AI applica
 
 ```bash
 pip install healthchain
+
+# Scaffold a new project
+healthchain new my-app
+cd my-app
+
+# Run locally
+healthchain serve
 ```
+
+See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
 
 ## Core Features
 
@@ -232,7 +241,7 @@ client.save_results("./output/")
 - [ ] 🔍 Data provenance and observability
 - [ ] 🔒 Production security and compliance (Authentication, audit logging, HIPAA)
 - [ ] 🔄 HL7v2 parsing, FHIR profile conversion and OMOP mapping support
-- [ ] 🚀 Enhanced deployment support (Docker, Kubernetes, telemetry)
+- [ ] 🚀 Kubernetes and telemetry support
 - [ ] 📊 Model performance monitoring with MLFlow integration
 - [ ] 🤖 MCP server integration
 
