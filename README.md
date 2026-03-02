@@ -146,10 +146,7 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 
 Exploring HealthChain for your product or organization? [Get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations, or join our [Discord](https://discord.gg/UQC6uAepUz) to connect with the community.
 
-
-## Usage Examples
-
-### Create a New HealthChain App
+## Create a New HealthChain App
 
 ```bash
 # Scaffold a new project
@@ -161,6 +158,8 @@ healthchain serve
 ```
 
 See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
+
+## Usage Examples
 
 ### Building a Pipeline [[Docs](https://dotimplement.github.io/HealthChain/reference/pipeline/pipeline)]
 
