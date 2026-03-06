@@ -26,7 +26,7 @@
 
 <div align="center">
 
-HealthChain is an open-source developer framework to build healthcare AI applications with native protocol understanding. Skip months of custom integration with **built-in FHIR support**, **real-time EHR connectivity**, and **production-ready deployment** - all in Python.
+HealthChain is an open-source SDK for production-ready healthcare AI. Skip months of custom integration work with **built-in FHIR support**, **real-time EHR connectivity**, and **deployment tooling for healthcare AI/ML systems** — all in Python.
 
 </div>
 
@@ -132,6 +132,7 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - **Automatic validation** - Type-safe FHIR models prevent broken healthcare data
 - **Built-in NLP support** - Extract structured data from clinical notes, output as FHIR
 - **Developer experience** - Modular and extensible architecture works across any EHR system
+- **Production-ready** - OAuth2-based authentication, Dockerized deployment, and structured audit hooks for real-world healthcare environments
 
 ## 🏆 Recognition & Community
 
@@ -143,7 +144,20 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 
 ## 🤝 Partnerships & Production Use
 
-Exploring HealthChain for your product or organization? Drop in our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) or [get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations.
+Exploring HealthChain for your product or organization? [Get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations, or join our [Discord](https://discord.gg/UQC6uAepUz) to connect with the community.
+
+## Create a New HealthChain App
+
+```bash
+# Scaffold a new project
+healthchain new my-app
+cd my-app
+
+# Run locally
+healthchain serve
+```
+
+See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
 
 ## Usage Examples
 
@@ -230,9 +244,10 @@ client.save_results("./output/")
 ## 🛣️ Road Map
 
 - [ ] 🔍 Data provenance and observability
-- [ ] 🔒 Production security and compliance (Authentication, audit logging, HIPAA)
-- [ ] 🔄 HL7v2 parsing, FHIR profile conversion and OMOP mapping support
-- [ ] 🚀 Enhanced deployment support (Docker, Kubernetes, telemetry)
+- [ ] 🔒 Production security and compliance – enhanced authentication, audit logging, and HIPAA-aligned controls (encryption, access logging, configuration patterns)
+- [ ] 🔄 HL7v2 parsing, FHIR profile conversion, and OMOP mapping
+- [ ] 🧾 Da Vinci CRD/DTR/PAS prior authorization workflows
+- [ ] 🚀 Kubernetes deployment and telemetry integration
 - [ ] 📊 Model performance monitoring with MLFlow integration
 - [ ] 🤖 MCP server integration
 

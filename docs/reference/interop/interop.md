@@ -65,11 +65,11 @@ cda_document = engine.from_fhir(fhir_resources, dest_format="cda")
 ```
 ### Custom Configs
 
-The default templates that come with the package are limited to problems, medications, and notes and are meant for basic testing and prototyping. Use the `healthchain init-configs` command to create editable configuration templates:
+The default templates that come with the package are limited to problems, medications, and notes and are meant for basic testing and prototyping. Use the `healthchain eject-templates` command to create editable configuration templates:
 
 ```bash
-# Create editable configuration templates
-healthchain init-configs ./my_configs
+# Eject built-in templates for customization
+healthchain eject-templates ./my_configs
 ```
 
 Then use the `config_dir` parameter to specify the path to your custom configs:
