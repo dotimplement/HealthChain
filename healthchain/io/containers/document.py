@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
@@ -32,7 +32,7 @@ from healthchain.fhir import (
     set_condition_category,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass

@@ -4,7 +4,7 @@ CDA Generator for HealthChain Interoperability Engine
 This module provides functionality for generating CDA documents.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import re
 import xmltodict
 import uuid
@@ -15,7 +15,7 @@ from fhir.resources.resource import Resource
 from healthchain.interop.models.cda import ClinicalDocument
 from healthchain.interop.generators.base import BaseGenerator
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def _find_section_key_for_resource_type(

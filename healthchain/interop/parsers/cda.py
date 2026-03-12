@@ -5,7 +5,7 @@ This module provides functionality for parsing CDA XML documents.
 """
 
 import xmltodict
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Dict, List
 
 from healthchain.interop.models.cda import ClinicalDocument
@@ -13,7 +13,7 @@ from healthchain.interop.models.sections import Section
 from healthchain.interop.config_manager import InteropConfigManager
 from healthchain.interop.parsers.base import BaseParser
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class CDAParser(BaseParser):

@@ -1,6 +1,6 @@
 import base64
 import xmltodict
-import logging
+from healthchain.utils.logger import get_logger
 
 from pydantic import BaseModel
 from typing import Optional, Dict
@@ -8,7 +8,7 @@ from typing import Optional, Dict
 from healthchain.utils.utils import search_key
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class CdaResponse(BaseModel):

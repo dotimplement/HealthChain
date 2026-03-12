@@ -1,6 +1,6 @@
 import random
 import csv
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Callable, Dict, Optional, List
 from pathlib import Path
@@ -12,7 +12,7 @@ from healthchain.fhir import create_document_reference
 from healthchain.sandbox.workflows import Workflow
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # TODO: generate test context - move from hook models

@@ -1,10 +1,10 @@
-import logging
+from healthchain.utils.logger import get_logger
 from pathlib import Path
 from typing import Dict, Callable
 
 from liquid import Environment, FileSystemLoader, Template
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class TemplateRegistry:

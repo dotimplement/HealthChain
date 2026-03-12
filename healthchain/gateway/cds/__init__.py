@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
@@ -14,7 +14,7 @@ from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.sandbox.workflows import UseCaseMapping
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Type variable for self-referencing return types
 T = TypeVar("T", bound="CDSHooksService")

@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional, Type
@@ -15,7 +15,7 @@ from healthchain.gateway.events.fhir import create_fhir_event
 from healthchain.fhir import add_provenance_metadata
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AsyncFHIRGateway(BaseFHIRGateway):

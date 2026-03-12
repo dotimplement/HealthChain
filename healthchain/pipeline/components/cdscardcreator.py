@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 import json
 from typing import Optional, Dict, Any, Union
 from jinja2 import Template
@@ -9,7 +9,7 @@ from healthchain.io.containers import Document
 from healthchain.models.responses.cdsresponse import Card, Source, IndicatorEnum
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CdsCardCreator(BaseComponent[str]):

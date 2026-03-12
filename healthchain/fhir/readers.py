@@ -4,7 +4,7 @@ This module provides functions for converting between different FHIR representat
 and reading data from FHIR resources.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import importlib
 import re
 
@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 from fhir.resources.resource import Resource
 from fhir.resources.documentreference import DocumentReference
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _fix_timezone_naive_datetimes(data: Any) -> Any:

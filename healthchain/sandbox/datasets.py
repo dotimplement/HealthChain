@@ -4,14 +4,14 @@ Dataset registry and loader infrastructure for SandboxClient.
 Provides a centralized registry for loading test datasets like MIMIC-on-FHIR and Synthea.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Any, Dict, List
 
 from healthchain.sandbox.base import DatasetLoader
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class DatasetRegistry:

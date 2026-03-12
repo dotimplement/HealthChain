@@ -4,7 +4,7 @@ Base Generator for HealthChain Interoperability Engine
 This module provides the abstract base class for all generators.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import json
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
@@ -15,7 +15,7 @@ from healthchain.config.base import ConfigManager
 from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.filters import clean_empty
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class BaseGenerator(ABC):

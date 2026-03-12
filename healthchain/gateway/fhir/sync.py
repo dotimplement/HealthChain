@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Any, Dict, Type, Optional
 
@@ -13,7 +13,7 @@ from healthchain.gateway.fhir.errors import FHIRErrorHandler
 from healthchain.fhir import add_provenance_metadata
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRGateway(BaseFHIRGateway):

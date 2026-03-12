@@ -5,7 +5,7 @@ Replaces the decorator-based sandbox pattern with direct instantiation.
 """
 
 import json
-import logging
+from healthchain.utils.logger import get_logger
 import uuid
 import httpx
 
@@ -23,7 +23,7 @@ from healthchain.sandbox.requestconstructors import (
 )
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class SandboxClient:

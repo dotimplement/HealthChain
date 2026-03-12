@@ -10,7 +10,7 @@ Patterns:
 Parameters marked REQUIRED are required by FHIR specification.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import datetime
 
 from typing import List, Optional, Dict, Any, Union, TYPE_CHECKING
@@ -29,7 +29,7 @@ from healthchain.fhir.utilities import _generate_id
 if TYPE_CHECKING:
     from healthchain.fhir.version import FHIRVersion
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_condition(

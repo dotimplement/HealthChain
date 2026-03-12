@@ -1,5 +1,5 @@
 import json
-import logging
+from healthchain.utils.logger import get_logger
 import httpx
 
 from abc import ABC, abstractmethod
@@ -15,7 +15,7 @@ from healthchain.gateway.clients.auth import OAuth2Config
 from pydantic import BaseModel
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRClientError(Exception):

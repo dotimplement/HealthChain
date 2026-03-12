@@ -5,7 +5,7 @@ This module provides SOAP integration with healthcare systems, particularly
 Epic's CDA document processing services.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
@@ -19,7 +19,7 @@ from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.gateway.soap.fastapiserver import create_fastapi_soap_router
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Type variable for self-referencing return types

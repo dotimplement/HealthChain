@@ -7,7 +7,7 @@ In instances where there are multiple codes present for a single resource, the f
 """
 
 import pandas as pd
-import logging
+from healthchain.utils.logger import get_logger
 
 from typing import Any, Dict, List, Union, Optional, Literal
 from collections import defaultdict
@@ -20,7 +20,7 @@ from healthchain.fhir.utilities import (
     encode_gender,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Resource handler registry

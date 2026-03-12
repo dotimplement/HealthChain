@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Any, Callable, TypeVar
 from spacy.language import Language
 from functools import wraps
@@ -10,7 +10,7 @@ from healthchain.pipeline.components.base import BaseComponent
 T = TypeVar("T")
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def requires_package(package_name: str, import_path: str) -> Callable:

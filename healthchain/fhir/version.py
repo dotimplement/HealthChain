@@ -23,12 +23,12 @@ Usage:
 """
 
 import importlib
-import logging
+from healthchain.utils.logger import get_logger
 from contextlib import contextmanager
 from enum import Enum
 from typing import Any, Generator, Optional, Type, Union
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRVersion(str, Enum):

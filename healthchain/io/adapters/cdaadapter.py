@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Optional
 
 from healthchain.io.containers import Document
@@ -17,7 +17,7 @@ from fhir.resources.medicationstatement import MedicationStatement
 from fhir.resources.allergyintolerance import AllergyIntolerance
 from fhir.resources.documentreference import DocumentReference
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):

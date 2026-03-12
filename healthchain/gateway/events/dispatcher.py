@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 import asyncio
 from enum import Enum
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ from fastapi_events.handlers.local import local_handler
 from fastapi_events.middleware import EventHandlerASGIMiddleware
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class EHREventType(Enum):

@@ -5,10 +5,10 @@ from typing import Callable, Optional, Any, Dict
 from healthchain.models.requests.cdarequest import CdaRequest
 from healthchain.models.responses.cdaresponse import CdaResponse
 import base64
-import logging
+from healthchain.utils.logger import get_logger
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # SOAP namespace for envelope
 SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/"
