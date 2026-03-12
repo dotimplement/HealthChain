@@ -1,11 +1,11 @@
 import json
-import logging
+from healthchain.utils.logger import get_logger
 
 from pathlib import Path
 from datetime import datetime
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def find_attributes_of_type(instance, target_type):

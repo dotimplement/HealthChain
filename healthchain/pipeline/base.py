@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 from abc import ABC, abstractmethod
 from inspect import signature
 from pathlib import Path
@@ -22,7 +22,7 @@ from enum import Enum
 from healthchain.io.containers import DataContainer
 from healthchain.pipeline.components.base import BaseComponent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 T = TypeVar("T")
 

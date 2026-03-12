@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 from functools import cached_property
 from typing import List, Union, Optional, Any
@@ -20,7 +20,7 @@ from healthchain.interop.generators.cda import CDAGenerator
 from healthchain.interop.generators.fhir import FHIRGenerator
 from healthchain.interop.filters import create_default_filters
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def normalize_resource_list(

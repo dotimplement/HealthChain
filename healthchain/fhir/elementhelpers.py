@@ -4,7 +4,7 @@ This module provides convenience functions for creating FHIR elements that are u
 as building blocks within FHIR resources (e.g., CodeableConcept, Attachment, Coding).
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import base64
 import datetime
 
@@ -13,7 +13,7 @@ from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
     from healthchain.fhir.version import FHIRVersion
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_single_codeable_concept(

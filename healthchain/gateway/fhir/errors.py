@@ -5,10 +5,10 @@ This module provides standardized error handling for FHIR operations,
 including status code mapping, error formatting, and exception types.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRConnectionError(Exception):

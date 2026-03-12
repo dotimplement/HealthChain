@@ -4,7 +4,7 @@ InteropConfigManager for HealthChain Interoperability Engine
 This module provides specialized configuration management for interoperability.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 from pathlib import Path
 from typing import Dict, Optional, List, Type
 
@@ -18,7 +18,7 @@ from healthchain.config.validators import (
     validate_cda_section_config_model,
 )
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class InteropConfigManager(ConfigManager):

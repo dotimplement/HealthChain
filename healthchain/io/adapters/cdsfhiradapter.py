@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Optional, Any
 
 from fhir.resources.documentreference import DocumentReference
@@ -9,7 +9,7 @@ from healthchain.models.requests.cdsrequest import CDSRequest
 from healthchain.models.responses.cdsresponse import CDSResponse
 from healthchain.fhir import read_content_attachment, convert_prefetch_to_fhir_objects
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class CdsFhirAdapter(BaseAdapter[CDSRequest, CDSResponse]):

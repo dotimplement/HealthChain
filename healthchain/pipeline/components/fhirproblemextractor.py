@@ -1,11 +1,11 @@
 """Component for extracting FHIR problem lists from NLP annotations."""
 
-import logging
+from healthchain.utils.logger import get_logger
 
 from healthchain.pipeline.components.base import BaseComponent
 from healthchain.io.containers import Document
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRProblemListExtractor(BaseComponent[Document]):

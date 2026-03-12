@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 import urllib.parse
 
 from typing import Dict
@@ -7,7 +7,7 @@ from healthchain.gateway.clients.fhir.base import FHIRServerInterface
 from healthchain.gateway.fhir.errors import FHIRConnectionError
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRConnectionManager:

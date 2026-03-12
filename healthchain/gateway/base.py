@@ -5,7 +5,7 @@ This module provides the core abstract base classes that define the
 architecture of the gateway system.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import asyncio
 
 from abc import ABC
@@ -16,7 +16,7 @@ from fastapi import APIRouter
 from healthchain.gateway.api.protocols import EventDispatcherProtocol
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Type variables for self-referencing return types and generic gateways

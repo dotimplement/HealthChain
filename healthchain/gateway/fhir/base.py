@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 import inspect
 import warnings
 
@@ -14,7 +14,7 @@ from healthchain.gateway.clients.fhir.base import FHIRServerInterface
 from healthchain.gateway.base import BaseGateway
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Type variable for FHIR Resource

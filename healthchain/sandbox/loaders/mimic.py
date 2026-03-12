@@ -4,7 +4,7 @@ MIMIC-on-FHIR dataset loader.
 Loads patient data from the MIMIC-IV-on-FHIR dataset for testing and demos.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -13,7 +13,7 @@ from fhir.resources.R4B.bundle import Bundle
 
 from healthchain.sandbox.datasets import DatasetLoader
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class MimicOnFHIRLoader(DatasetLoader):

@@ -5,7 +5,7 @@ Request constructors for different clinical integration protocols.
 - ClinDocRequestConstructor: Builds NoteReader requests (SOAP/XML)
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import base64
 import pkgutil
 import xmltodict
@@ -29,7 +29,7 @@ from healthchain.models.hooks import (
 )
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class CdsRequestConstructor(BaseRequestConstructor):

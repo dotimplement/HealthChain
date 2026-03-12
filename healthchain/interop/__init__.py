@@ -13,7 +13,7 @@ from .parsers.cda import CDAParser
 from .generators.cda import CDAGenerator
 from .generators.fhir import FHIRGenerator
 
-import logging
+from healthchain.utils.logger import get_logger
 from pathlib import Path
 from typing import Optional, Union
 
@@ -106,7 +106,7 @@ def create_interop(
     Raises:
         ValueError: If config_dir doesn't exist or if validation_level/environment has invalid values
     """
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
 
     if config_dir is None:
         # Use bundled configs as default

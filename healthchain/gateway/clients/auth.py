@@ -5,7 +5,7 @@ This module provides OAuth2 client credentials flow for automatic token
 management and refresh.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 import os
 import uuid
 import asyncio
@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OAuth2Config(BaseModel):

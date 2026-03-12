@@ -1,4 +1,4 @@
-import logging
+from healthchain.utils.logger import get_logger
 import httpx
 
 from typing import Any, Dict, Type, Union
@@ -11,7 +11,7 @@ from healthchain.gateway.clients.auth import OAuth2TokenManager
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig, FHIRServerInterface
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FHIRClient(FHIRServerInterface):

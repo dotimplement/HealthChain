@@ -1,17 +1,13 @@
-import logging
 import warnings
 
-from .utils.logger import add_handlers
+from .utils.logger import get_logger
 from .config.base import ConfigManager, ValidationLevel
 
 
 # Enable deprecation warnings
 warnings.filterwarnings("always", category=DeprecationWarning, module="healthchain")
 
-logger = logging.getLogger(__name__)
-
-add_handlers(logger)
-logger.setLevel(logging.INFO)
+logger = get_logger(__name__)
 
 # Export them at the top level
 __all__ = ["ConfigManager", "ValidationLevel", "api", "ehr", "sandbox"]

@@ -5,7 +5,7 @@ This module provides the main HealthChainAPI class that wraps FastAPI and manage
 healthcare-specific gateways, routes, middleware, and capabilities.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -21,7 +21,7 @@ from healthchain.gateway.base import BaseGateway, BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.api.dependencies import get_app
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HealthChainAPI(FastAPI):

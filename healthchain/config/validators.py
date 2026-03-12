@@ -4,11 +4,11 @@ Configuration validators for HealthChain
 This module provides validation models and utilities for configuration files.
 """
 
-import logging
+from healthchain.utils.logger import get_logger
 from pydantic import BaseModel, ValidationError, field_validator, ConfigDict
 from typing import Dict, List, Any, Optional, Type, Union
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 #
 # Base Models

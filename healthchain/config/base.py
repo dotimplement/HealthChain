@@ -1,10 +1,10 @@
 import yaml
-import logging
+from healthchain.utils.logger import get_logger
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def _deep_merge(target: Dict, source: Dict) -> None:

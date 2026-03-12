@@ -1,10 +1,10 @@
-import logging
+from healthchain.utils.logger import get_logger
 
 
 from healthchain.pipeline.base import ModelConfig
 from healthchain.pipeline.modelrouter import ModelRouter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ModelRoutingMixin:

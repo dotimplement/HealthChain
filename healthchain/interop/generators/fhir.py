@@ -5,7 +5,7 @@ This module provides functionality for generating FHIR resources from templates.
 """
 
 import uuid
-import logging
+from healthchain.utils.logger import get_logger
 from typing import Dict, List, Optional, Type, Any
 
 from fhir.resources.resource import Resource
@@ -16,7 +16,7 @@ from healthchain.fhir import create_resource_from_dict
 from healthchain.interop.types import FormatType
 
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class FHIRGenerator(BaseGenerator):
