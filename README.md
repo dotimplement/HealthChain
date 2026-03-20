@@ -51,7 +51,7 @@ healthchain serve
   <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/demo.gif" alt="HealthChain CLI demo" width="700">
 </div>
 
-Open `http://localhost:8000/docs` to explore the API. Edit `app.py` to add your model, and `healthchain.yaml` to configure compliance, security, and deployment settings.
+Edit `app.py` to add your model, and `healthchain.yaml` to configure compliance, security, and deployment settings.
 
 See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
 
