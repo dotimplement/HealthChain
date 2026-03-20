@@ -151,7 +151,7 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 - **Automatic validation** - Type-safe FHIR models prevent broken healthcare data
 - **Built-in NLP support** - Extract structured data from clinical notes, output as FHIR
 - **Developer experience** - Modular and extensible architecture works across any EHR system
-- **Production-ready** - OAuth2-based authentication, Dockerized deployment, and structured audit hooks for real-world healthcare environments
+- **Production-ready foundations** - Dockerized deployment, configurable security and compliance settings, and an architecture designed for real-world healthcare environments
 
 ## 🏆 Recognition & Community
 
