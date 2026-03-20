@@ -1,6 +1,6 @@
 # CLI Reference
 
-HealthChain ships with a CLI to help you scaffold, run, and customize projects.
+HealthChain ships with a CLI to scaffold, configure, run, and test projects.
 
 ```bash
 healthchain --help
@@ -10,19 +10,31 @@ healthchain --help
 
 ## `healthchain new`
 
-Scaffold a new project directory with everything you need to get started.
+Scaffold a new project directory.
 
 ```bash
-healthchain new my-app
+healthchain new my-app                        # empty stub
+healthchain new my-app --type cds-hooks       # working CDS Hooks service
+healthchain new my-app --type fhir-gateway    # working FHIR Gateway service
+healthchain new my-app -t cds-hooks           # shorthand
 ```
+
+**`--type` / `-t`** options:
+
+| Type | Description |
+|------|-------------|
+| *(default)* | Empty `app.py` stub — choose your own starting point |
+| `cds-hooks` | Working CDS Hooks service with a `patient-view` hook |
+| `fhir-gateway` | Working FHIR Gateway that aggregates conditions from multiple EHR sources |
 
 Creates:
 
 ```
 my-app/
-├── app.py            # your application entry point
-├── .env.example      # FHIR credential template — copy to .env and fill in
-├── requirements.txt  # add extra dependencies here
+├── app.py              # application entry point (populated for cds-hooks / fhir-gateway)
+├── healthchain.yaml    # project configuration
+├── .env.example        # credential template — copy to .env and fill in
+├── requirements.txt
 ├── Dockerfile
 └── .dockerignore
 ```
@@ -31,16 +43,20 @@ my-app/
 
 ## `healthchain serve`
 
-Start your app locally with uvicorn.
+Start your app locally with uvicorn. Reads `healthchain.yaml` automatically if present.
 
 ```bash
-healthchain serve              # defaults to app:app on port 8000
+healthchain serve                        # uses port from healthchain.yaml (default 8000)
 healthchain serve app:app
-healthchain serve app:app --port 8080
-healthchain serve app:app --host 127.0.0.1 --port 8080
+healthchain serve app:app --port 8080    # CLI flag overrides healthchain.yaml
+healthchain serve app:app --host 127.0.0.1
 ```
 
-The `app_module` argument is the Python import path to your FastAPI app instance — `<module>:<variable>`. If your app is defined as `app = HealthChainAPI()` in `app.py`, the default `app:app` works as-is.
+On startup, HealthChain prints a status banner showing your service name, type, environment, security configuration, and docs URL.
+
+If `security.tls.enabled: true` in `healthchain.yaml`, cert and key paths are passed to uvicorn automatically.
+
+**Port resolution order:** `--port` flag → `service.port` in `healthchain.yaml` → `8000`
 
 To run in Docker instead:
 
@@ -51,15 +67,113 @@ docker run -p 8000:8000 --env-file .env my-app
 
 ---
 
+## `healthchain status`
+
+Show the current project's configuration state, read from `healthchain.yaml`.
+
+```bash
+healthchain status
+```
+
+Example output:
+
+```
+HealthChain — my-sepsis-app v1.0.0
+-----------------------------------
+
+Service
+  type         cds-hooks
+  port         8000
+
+Site
+  environment  production
+  name         General Hospital NHS Trust
+
+Security
+  auth         smart-on-fhir
+  TLS          enabled
+  origins      https://fhir.epic.com
+
+Compliance
+  HIPAA        enabled
+  audit log    ./logs/audit.jsonl
+
+Eval
+  provider     mlflow
+  tracking     ./mlruns
+  events       model_inference, cds_card_returned, card_feedback
+```
+
+---
+
+## `healthchain sandbox run`
+
+Fire test requests at a running HealthChain service. Useful for testing and live demos.
+
+```bash
+# Generate synthetic requests (no data files needed)
+healthchain sandbox run \
+  --url http://localhost:8000/cds/cds-services/my-service
+
+# Specify workflow and number of requests
+healthchain sandbox run \
+  --url http://localhost:8000/cds/cds-services/my-service \
+  --workflow encounter-discharge \
+  --size 5
+
+# Load requests from patient files instead of generating
+healthchain sandbox run \
+  --url http://localhost:8000/cds/cds-services/my-service \
+  --from-path ./data/patients/
+
+# Quick test — don't save results to disk
+healthchain sandbox run \
+  --url http://localhost:8000/cds/cds-services/my-service \
+  --no-save
+```
+
+**Options:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--url` | *(required)* | Full service URL |
+| `--workflow` | `patient-view` | CDS workflow to simulate (`patient-view`, `order-select`, `order-sign`, `encounter-discharge`) |
+| `--size` | `3` | Number of synthetic requests to generate |
+| `--from-path` | — | Load requests from a file or directory (`.json` FHIR prefetch or `.xml` CDA) instead of generating synthetic data |
+| `--output` | from `healthchain.yaml` or `./output` | Directory to save results |
+| `--no-save` | — | Don't save results to disk |
+
+Example output:
+
+```
+Sandbox — http://localhost:8000/cds/cds-services/my-service
+workflow: patient-view
+Generating 3 synthetic request(s)...
+Sending 3 request(s) to service...
+
+Results: 3/3 successful
+
+  [1] 1 card(s)
+      INFO: Sepsis risk: LOW — no immediate action required
+  [2] 1 card(s)
+      WARNING: Sepsis risk: HIGH — review vitals and consider intervention
+  [3] 1 card(s)
+      INFO: Sepsis risk: MODERATE — monitor closely
+
+Saved to ./output/
+```
+
+---
+
 ## `healthchain eject-templates`
 
-Copy the built-in interop templates into your project so you can customize them.
+Copy the built-in interop templates into your project for customization.
 
 ```bash
 healthchain eject-templates ./my_configs
 ```
 
-Only needed if you're using the [InteropEngine](reference/interop/interop.md) and want to customize FHIR↔CDA conversion beyond the defaults. After ejecting:
+Only needed if you're using the [InteropEngine](reference/interop/interop.md) and want to customize FHIR↔CDA conversion beyond the defaults.
 
 ```python
 from healthchain.interop import create_interop
@@ -67,28 +181,34 @@ from healthchain.interop import create_interop
 engine = create_interop(config_dir="./my_configs")
 ```
 
-See [Interoperability](reference/interop/interop.md) for details.
+---
+
+## `healthchain.yaml`
+
+Generated by `healthchain new` and read automatically by `healthchain serve` and `healthchain status`. See the [Configuration Reference](reference/config.md) for the full schema.
 
 ---
 
 ## Typical workflow
 
 ```bash
-# 1. Scaffold a new project
-healthchain new my-cds-service
+# 1. Scaffold a new CDS Hooks service
+healthchain new my-cds-service -t cds-hooks
 cd my-cds-service
 
-# 2. Build your app in app.py
-#    See https://dotimplement.github.io/HealthChain/cookbook/ for examples
+# 2. Build your clinical logic in app.py
 
-# 3. Set credentials
-cp .env.example .env
-# edit .env with your FHIR_BASE_URL, CLIENT_ID, CLIENT_SECRET
-
-# 4. Run locally
+# 3. Run locally
 healthchain serve
 
-# 5. Ship it
+# 4. In another terminal — test with synthetic patients
+healthchain sandbox run \
+  --url http://localhost:8000/cds/cds-services/my-service
+
+# 5. Check config and compliance state
+healthchain status
+
+# 6. Ship it
 docker build -t my-cds-service .
 docker run -p 8000:8000 --env-file .env my-cds-service
 ```

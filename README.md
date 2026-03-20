@@ -36,6 +36,25 @@ HealthChain is an open-source SDK for production-ready healthcare AI. Skip month
 pip install healthchain
 ```
 
+## Quick Start
+
+```bash
+# Scaffold a FHIR Gateway project
+healthchain new my-app -t fhir-gateway
+cd my-app
+
+# Run locally
+healthchain serve
+```
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/dotimplement/HealthChain/main/docs/assets/images/demo.gif" alt="HealthChain CLI demo" width="700">
+</div>
+
+Open `http://localhost:8000/docs` to explore the API. Edit `app.py` to add your model, and `healthchain.yaml` to configure compliance, security, and deployment settings.
+
+See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
+
 ## Core Features
 
 HealthChain is the **quickest way for AI/ML engineers to integrate their models with real healthcare systems**.
@@ -145,19 +164,6 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 ## 🤝 Partnerships & Production Use
 
 Exploring HealthChain for your product or organization? [Get in touch](mailto:jenniferjiangkells@gmail.com) to discuss integrations, pilots, or collaborations, or join our [Discord](https://discord.gg/UQC6uAepUz) to connect with the community.
-
-## Create a New HealthChain App
-
-```bash
-# Scaffold a new project
-healthchain new my-app
-cd my-app
-
-# Run locally
-healthchain serve
-```
-
-See the [CLI reference](https://dotimplement.github.io/HealthChain/cli/) for all commands.
 
 ## Usage Examples
 
