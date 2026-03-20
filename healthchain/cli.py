@@ -245,7 +245,7 @@ data:
 
 # Security controls
 security:
-  auth: none              # none | api-key | smart-on-fhir (planned)
+  auth: none              # none | api-key (planned) | smart-on-fhir (planned)
   tls:
     enabled: false
     cert_path: ./certs/server.crt

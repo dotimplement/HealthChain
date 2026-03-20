@@ -285,9 +285,13 @@ class HealthChainAPI(FastAPI):
 
         # Setup middleware
         if enable_cors:
+            from healthchain.config.appconfig import AppConfig
+
+            _config = AppConfig.load()
+            origins = _config.security.allowed_origins if _config else ["*"]
             self.add_middleware(
                 CORSMiddleware,
-                allow_origins=["*"],  # Can be configured from settings
+                allow_origins=origins,
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],
