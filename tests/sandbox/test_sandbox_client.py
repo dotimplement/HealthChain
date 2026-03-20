@@ -458,6 +458,46 @@ def test_send_requests_soap_success(mock_client_class):
     assert mock_client.post.called
 
 
+def test_load_synthetic_generates_correct_number_of_requests():
+    """load_synthetic generates the requested number of CDS requests."""
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
+
+    result = client.load_synthetic(n=3)
+
+    assert len(client.requests) == 3
+    assert result is client  # method chaining
+
+
+def test_load_synthetic_default_generates_one_request():
+    """load_synthetic defaults to n=1."""
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
+
+    client.load_synthetic()
+
+    assert len(client.requests) == 1
+
+
+def test_load_synthetic_accepts_random_seed():
+    """load_synthetic accepts a random_seed without raising."""
+    client = SandboxClient(url="http://localhost:8000/test", workflow="patient-view")
+
+    client.load_synthetic(n=2, random_seed=42)
+
+    assert len(client.requests) == 2
+
+
+def test_load_synthetic_supports_encounter_discharge_workflow():
+    """load_synthetic works with encounter-discharge workflow."""
+    client = SandboxClient(
+        url="http://localhost:8000/test", workflow="encounter-discharge"
+    )
+
+    client.load_synthetic(n=2)
+
+    assert len(client.requests) == 2
+    assert all(r.hook == "encounter-discharge" for r in client.requests)
+
+
 @patch("httpx.Client")
 def test_send_requests_handles_multiple_requests(mock_client_class):
     """send_requests processes multiple queued requests sequentially."""

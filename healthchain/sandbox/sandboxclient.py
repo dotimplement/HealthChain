@@ -327,6 +327,46 @@ class SandboxClient:
 
         self.requests.append(request)
 
+    def load_synthetic(
+        self,
+        n: int = 1,
+        random_seed: Optional[int] = None,
+    ) -> "SandboxClient":
+        """
+        Generate n synthetic CDS requests for the configured workflow.
+
+        Useful for quickly testing a service without real patient data.
+        Supports patient-view and encounter-discharge workflows.
+
+        Args:
+            n: Number of synthetic requests to generate (default: 1)
+            random_seed: Seed for reproducible results. Each request gets
+                        seed + i so they produce different data.
+
+        Returns:
+            Self for method chaining
+
+        Raises:
+            ValueError: If the workflow is not supported for synthetic generation
+        """
+        from .generators import CdsDataGenerator
+
+        generator = CdsDataGenerator()
+        generator.set_workflow(self.workflow)
+
+        for i in range(n):
+            seed = random_seed + i if random_seed is not None else None
+            prefetch_data = generator.generate_prefetch(
+                random_seed=seed,
+                generate_resources=True,
+            )
+            self._construct_request(prefetch_data)
+
+        log.info(
+            f"Generated {n} synthetic request(s) for workflow {self.workflow.value}"
+        )
+        return self
+
     def clear_requests(self) -> "SandboxClient":
         """
         Clear all queued requests.

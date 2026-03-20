@@ -6,6 +6,7 @@ functionality for loading, validating, and accessing configuration settings
 from various sources.
 """
 
+from healthchain.config.appconfig import AppConfig
 from healthchain.config.base import (
     ConfigManager,
     ValidationLevel,
@@ -18,6 +19,7 @@ from healthchain.config.validators import (
 )
 
 __all__ = [
+    "AppConfig",
     "ConfigManager",
     "ValidationLevel",
     "validate_cda_section_config_model",

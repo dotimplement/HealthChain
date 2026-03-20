@@ -33,6 +33,7 @@ nav:
       - Format Conversion: cookbook/format_conversion.md
   - Docs:
       - Welcome: reference/index.md
+      - Configuration: reference/config.md
       - Gateway:
         - Overview: reference/gateway/gateway.md
         - HealthChainAPI: reference/gateway/api.md
