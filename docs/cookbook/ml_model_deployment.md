@@ -355,8 +355,7 @@ Query patients from FHIR server → Run predictions → Write RiskAssessment bac
 Configure the [FHIRGateway](../reference/gateway/fhir_gateway.md) with your FHIR source:
 
 ```python
-from fhir.resources.patient import Patient
-from fhir.resources.observation import Observation
+from healthchain.fhir.r4b import Patient, Observation
 from healthchain.gateway import FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 from healthchain.fhir import merge_bundles

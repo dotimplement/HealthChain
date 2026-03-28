@@ -191,7 +191,7 @@ print(f"FHIR conditions: {result.fhir.problem_list}")  # Auto-converted to FHIR 
 
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Create healthcare application
 app = HealthChainAPI(title="Multi-EHR Patient Data")

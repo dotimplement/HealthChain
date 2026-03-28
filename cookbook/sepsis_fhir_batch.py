@@ -21,9 +21,7 @@ from typing import List
 import joblib
 import logging
 from dotenv import load_dotenv
-from fhir.resources.patient import Patient
-from fhir.resources.observation import Observation
-from fhir.resources.riskassessment import RiskAssessment
+from healthchain.fhir.r4b import Patient, Observation, RiskAssessment
 
 from healthchain.gateway import HealthChainAPI, FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig

@@ -33,7 +33,7 @@ The Gateway handles the complex parts of healthcare integration:
 === "Sync"
     ```python
     from healthchain.gateway import HealthChainAPI, FHIRGateway
-    from fhir.resources.patient import Patient
+    from healthchain.fhir.r4b import Patient
 
     # Create the application
     app = HealthChainAPI()
@@ -59,7 +59,7 @@ The Gateway handles the complex parts of healthcare integration:
 === "Async"
     ```python
     from healthchain.gateway import HealthChainAPI, AsyncFHIRGateway
-    from fhir.resources.patient import Patient
+    from healthchain.fhir.r4b import Patient
 
     # Create the application
     app = HealthChainAPI()

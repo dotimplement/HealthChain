@@ -20,9 +20,7 @@ from typing import List
 
 from dotenv import load_dotenv
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.condition import Condition
-from fhir.resources.annotation import Annotation
+from healthchain.fhir.r4b import Bundle, Condition, Annotation
 
 from healthchain.gateway import FHIRGateway, HealthChainAPI
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
