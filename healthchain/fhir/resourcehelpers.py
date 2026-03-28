@@ -174,6 +174,7 @@ def create_value_quantity_observation(
     unit: str,
     status: str = "final",
     subject: Optional[str] = None,
+    category: Optional[str] = None,
     system: str = "http://loinc.org",
     display: Optional[str] = None,
     effective_datetime: Optional[str] = None,
@@ -189,6 +190,7 @@ def create_value_quantity_observation(
         code: REQUIRED. The observation code (e.g., LOINC code for the measurement)
         value: The numeric value of the observation
         unit: The unit of measure (e.g., "beats/min", "mg/dL")
+        category: Optional category code (e.g., "vital-signs", "laboratory")
         system: The code system for the observation code (default: LOINC)
         display: The display name for the observation code
         effective_datetime: When the observation was made (ISO format). Uses current time if not provided.
@@ -205,25 +207,37 @@ def create_value_quantity_observation(
     Quantity = get_fhir_resource("Quantity", version)
 
     if not effective_datetime:
-        effective_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        )
+        effective_datetime = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
     subject_ref = None
     if subject is not None:
         subject_ref = ReferenceClass(reference=subject)
 
-    observation = Observation(
-        id=_generate_id(),
-        status=status,
-        code=create_single_codeable_concept(code, display, system, version),
-        subject=subject_ref,
-        effectiveDateTime=effective_datetime,
-        valueQuantity=Quantity(
+    observation_data = {
+        "id": _generate_id(),
+        "status": status,
+        "code": create_single_codeable_concept(code, display, system, version),
+        "subject": subject_ref,
+        "effectiveDateTime": effective_datetime,
+        "valueQuantity": Quantity(
             value=value, unit=unit, system="http://unitsofmeasure.org", code=unit
         ),
-    )
+    }
+
+    if category:
+        observation_data["category"] = [
+            create_single_codeable_concept(
+                code=category,
+                display=category.replace("-", " ").capitalize(),
+                system="http://terminology.hl7.org/CodeSystem/observation-category",
+                version=version,
+            )
+        ]
+
+    observation = Observation(**observation_data)
 
     return observation
+
 
 
 def create_patient(
@@ -660,3 +674,90 @@ def add_coding_to_codeable_concept(
     codeable_concept.coding.append(Coding(system=system, code=code, display=display))
 
     return codeable_concept
+
+
+def create_clinical_impression(
+    subject: str,
+    status: str = "completed",
+    description: Optional[str] = None,
+    date: Optional[str] = None,
+    version: Optional[Union["FHIRVersion", str]] = None,
+) -> Any:
+    """
+    Create a minimal FHIR ClinicalImpression resource.
+    Useful for recording an AI agent's assessment or diagnostic conclusion.
+    https://hl7.org/fhir/clinicalimpression.html
+
+    Args:
+        subject: REQUIRED. Reference to the patient (e.g. "Patient/123")
+        status: REQUIRED. Status of the impression (default: "completed")
+        description: Optional text describing the assessment
+        date: When the assessment was made. Uses current time if not provided.
+        version: FHIR version to use (e.g., "R4B", "STU3"). Defaults to current default.
+
+    Returns:
+        ClinicalImpression: A FHIR ClinicalImpression resource with an auto-generated ID.
+    """
+    from healthchain.fhir.version import get_fhir_resource
+
+    ClinicalImpression = get_fhir_resource("ClinicalImpression", version)
+    ReferenceClass = get_fhir_resource("Reference", version)
+
+    if not date:
+        date = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+    impression_data = {
+        "id": _generate_id(),
+        "status": status,
+        "subject": ReferenceClass(reference=subject),
+        "date": date,
+    }
+
+    if description:
+        impression_data["description"] = description
+
+    return ClinicalImpression(**impression_data)
+
+
+def add_finding_to_clinical_impression(
+    impression: Any,
+    item_code: str,
+    item_display: Optional[str] = None,
+    item_system: str = "http://snomed.info/sct",
+    basis: Optional[str] = None,
+    version: Optional[Union["FHIRVersion", str]] = None,
+) -> Any:
+    """Add a finding to an existing ClinicalImpression.
+
+    Args:
+        impression: The ClinicalImpression resource to modify
+        item_code: Code for the finding
+        item_display: Display name for the finding
+        item_system: Code system (default: SNOMED CT)
+        basis: Optional text describing the basis for the finding
+        version: FHIR version to use.
+
+    Returns:
+        ClinicalImpression: The modified resource
+    """
+    from healthchain.fhir.version import get_resource_version
+
+    if version is None:
+        version = get_resource_version(impression)
+
+    finding = {
+        "itemCodeableConcept": create_single_codeable_concept(
+            item_code, item_display, item_system, version
+        )
+    }
+    if basis:
+        finding["basis"] = basis
+
+    if not impression.finding:
+        impression.finding = []
+
+    impression.finding.append(finding)
+    return impression
+
+
