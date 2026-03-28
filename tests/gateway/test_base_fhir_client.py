@@ -9,7 +9,7 @@ import pytest
 import json
 import httpx
 from unittest.mock import Mock, patch
-from fhir.resources.patient import Patient
+from fhir.resources.R4B.patient import Patient
 
 from healthchain.gateway.clients.fhir.sync import FHIRClient
 from healthchain.gateway.clients.fhir.aio import AsyncFHIRClient
@@ -128,7 +128,7 @@ def test_fhir_client_resource_type_resolution(fhir_client):
         assert type_name == "Patient"
         assert resource_class == Patient
         mock_import.assert_called_once_with(
-            "fhir.resources.patient", fromlist=["Patient"]
+            "fhir.resources.R4B.patient", fromlist=["Patient"]
         )
 
     # Test invalid resource type

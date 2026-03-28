@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Union, Optional
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.riskassessment import RiskAssessment
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.riskassessment import RiskAssessment
 
 from healthchain.io.containers.base import DataContainer
 from healthchain.io.containers.featureschema import FeatureSchema

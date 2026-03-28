@@ -8,7 +8,7 @@ from typing import Any, Dict, Union
 import pandas as pd
 import numpy as np
 
-from fhir.resources.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle
 
 from healthchain.io.containers.featureschema import FeatureSchema
 from healthchain.io.mappers.base import BaseMapper

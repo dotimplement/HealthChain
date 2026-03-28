@@ -5,7 +5,7 @@ from typing import List, Union, Optional, Any
 from pathlib import Path
 
 from fhir.resources.resource import Resource
-from fhir.resources.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle
 from pydantic import BaseModel
 
 from healthchain.config.base import ValidationLevel
@@ -27,7 +27,11 @@ def normalize_resource_list(
     resources: Union[Resource, List[Resource], Bundle],
 ) -> List[Resource]:
     """Convert input resources to a normalized list format"""
-    if isinstance(resources, Bundle):
+    # Check for Bundle using duck typing to support both R4B and R5 bundles
+    if isinstance(resources, Bundle) or (
+        hasattr(resources, "__resource_type__")
+        and resources.__resource_type__ == "Bundle"
+    ):
         return [entry.resource for entry in resources.entry if entry.resource]
     elif isinstance(resources, list):
         return resources

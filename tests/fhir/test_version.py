@@ -32,7 +32,7 @@ def test_fhir_version_enum_from_string():
 def test_resolve_version_with_none():
     """Test _resolve_version returns default when None."""
     reset_default_version()
-    assert _resolve_version(None) == FHIRVersion.R5
+    assert _resolve_version(None) == FHIRVersion.R4B
 
 
 def test_resolve_version_with_enum():
@@ -53,9 +53,9 @@ def test_resolve_version_invalid_string():
 
 
 def test_get_default_version_initial():
-    """Test initial default version is R5."""
+    """Test initial default version is R4B."""
     reset_default_version()
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
 
 def test_set_default_version_with_enum():
@@ -75,17 +75,17 @@ def test_set_default_version_with_string():
 
 
 def test_reset_default_version():
-    """Test resetting default version to R5."""
-    set_default_version(FHIRVersion.R4B)
+    """Test resetting default version to R4B."""
+    set_default_version(FHIRVersion.R5)
     reset_default_version()
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
 
-def test_get_fhir_resource_r5_default():
-    """Test loading resource with default R5 version."""
+def test_get_fhir_resource_r4b_default():
+    """Test loading resource with default R4B version."""
     reset_default_version()
     Patient = get_fhir_resource("Patient")
-    assert Patient.__module__ == "fhir.resources.patient"
+    assert Patient.__module__ == "fhir.resources.R4B.patient"
 
 
 def test_get_fhir_resource_r4b():
@@ -137,43 +137,43 @@ def test_get_fhir_resource_respects_default_version():
 def test_fhir_version_context_basic():
     """Test fhir_version_context changes version temporarily."""
     reset_default_version()
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
-    with fhir_version_context("R4B") as v:
-        assert v == FHIRVersion.R4B
-        assert get_default_version() == FHIRVersion.R4B
+    with fhir_version_context("R5") as v:
+        assert v == FHIRVersion.R5
+        assert get_default_version() == FHIRVersion.R5
         Patient = get_fhir_resource("Patient")
-        assert Patient.__module__ == "fhir.resources.R4B.patient"
+        assert Patient.__module__ == "fhir.resources.patient"
 
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
 
 def test_fhir_version_context_restores_on_exception():
     """Test fhir_version_context restores version even on exception."""
     reset_default_version()
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
     with pytest.raises(RuntimeError):
-        with fhir_version_context("R4B"):
-            assert get_default_version() == FHIRVersion.R4B
+        with fhir_version_context("R5"):
+            assert get_default_version() == FHIRVersion.R5
             raise RuntimeError("Test exception")
 
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
 
 def test_fhir_version_context_nested():
     """Test nested fhir_version_context restores correctly."""
     reset_default_version()
 
-    with fhir_version_context("R4B"):
-        assert get_default_version() == FHIRVersion.R4B
+    with fhir_version_context("R5"):
+        assert get_default_version() == FHIRVersion.R5
 
         with fhir_version_context("STU3"):
             assert get_default_version() == FHIRVersion.STU3
 
-        assert get_default_version() == FHIRVersion.R4B
+        assert get_default_version() == FHIRVersion.R5
 
-    assert get_default_version() == FHIRVersion.R5
+    assert get_default_version() == FHIRVersion.R4B
 
 
 def test_convert_resource_r5_to_r4b():
@@ -254,54 +254,66 @@ def test_create_condition_with_version():
     """Test create_condition with version parameter."""
     from healthchain.fhir import create_condition
 
-    cond_r5 = create_condition("Patient/1", code="123", display="Test")
+    cond_default = create_condition("Patient/1", code="123", display="Test")
     cond_r4b = create_condition("Patient/1", code="123", display="Test", version="R4B")
+    cond_r5 = create_condition("Patient/1", code="123", display="Test", version="R5")
 
-    assert cond_r5.__class__.__module__ == "fhir.resources.condition"
+    assert cond_default.__class__.__module__ == "fhir.resources.R4B.condition"
     assert cond_r4b.__class__.__module__ == "fhir.resources.R4B.condition"
+    assert cond_r5.__class__.__module__ == "fhir.resources.condition"
 
 
 def test_create_patient_with_version():
     """Test create_patient with version parameter."""
     from healthchain.fhir import create_patient
 
-    patient_r5 = create_patient(gender="male")
+    patient_default = create_patient(gender="male")
     patient_r4b = create_patient(gender="female", version="R4B")
+    patient_r5 = create_patient(gender="other", version="R5")
 
-    assert patient_r5.__class__.__module__ == "fhir.resources.patient"
+    assert patient_default.__class__.__module__ == "fhir.resources.R4B.patient"
     assert patient_r4b.__class__.__module__ == "fhir.resources.R4B.patient"
+    assert patient_r5.__class__.__module__ == "fhir.resources.patient"
 
 
 def test_create_observation_with_version():
     """Test create_value_quantity_observation with version parameter."""
     from healthchain.fhir import create_value_quantity_observation
 
-    obs_r5 = create_value_quantity_observation(code="12345", value=98.6, unit="F")
+    obs_default = create_value_quantity_observation(code="12345", value=98.6, unit="F")
     obs_r4b = create_value_quantity_observation(
         code="12345", value=98.6, unit="F", version="R4B"
     )
+    obs_r5 = create_value_quantity_observation(
+        code="12345", value=98.6, unit="F", version="R5"
+    )
 
-    assert obs_r5.__class__.__module__ == "fhir.resources.observation"
+    assert obs_default.__class__.__module__ == "fhir.resources.R4B.observation"
     assert obs_r4b.__class__.__module__ == "fhir.resources.R4B.observation"
+    assert obs_r5.__class__.__module__ == "fhir.resources.observation"
 
 
 def test_get_resource_type_with_version():
     """Test get_resource_type with version parameter."""
     from healthchain.fhir import get_resource_type
 
-    Condition_R5 = get_resource_type("Condition")
+    Condition_default = get_resource_type("Condition")
     Condition_R4B = get_resource_type("Condition", version="R4B")
+    Condition_R5 = get_resource_type("Condition", version="R5")
 
-    assert Condition_R5.__module__ == "fhir.resources.condition"
+    assert Condition_default.__module__ == "fhir.resources.R4B.condition"
     assert Condition_R4B.__module__ == "fhir.resources.R4B.condition"
+    assert Condition_R5.__module__ == "fhir.resources.condition"
 
 
 def test_create_single_codeable_concept_with_version():
     """Test create_single_codeable_concept with version parameter."""
     from healthchain.fhir.elementhelpers import create_single_codeable_concept
 
-    cc_r5 = create_single_codeable_concept("123", "Test")
+    cc_default = create_single_codeable_concept("123", "Test")
     cc_r4b = create_single_codeable_concept("123", "Test", version="R4B")
+    cc_r5 = create_single_codeable_concept("123", "Test", version="R5")
 
-    assert cc_r5.__class__.__module__ == "fhir.resources.codeableconcept"
+    assert cc_default.__class__.__module__ == "fhir.resources.R4B.codeableconcept"
     assert cc_r4b.__class__.__module__ == "fhir.resources.R4B.codeableconcept"
+    assert cc_r5.__class__.__module__ == "fhir.resources.codeableconcept"

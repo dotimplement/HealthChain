@@ -5,7 +5,7 @@ from healthchain.models.responses.cdaresponse import CdaResponse
 from healthchain.io.containers import Document
 from healthchain.io.adapters import CdaAdapter
 from healthchain.interop import FormatType
-from fhir.resources.documentreference import DocumentReference
+from fhir.resources.R4B.documentreference import DocumentReference
 
 
 @pytest.fixture

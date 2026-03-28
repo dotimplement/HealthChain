@@ -21,5 +21,5 @@ def test_MedicationRequestGenerator():
     value_set = [x.code for x in MedicationRequestMedication().value_set]
     assert medication_request is not None
     assert medication_request.id is not None
-    assert medication_request.medication.concept.coding[0].code in value_set
+    assert medication_request.medicationCodeableConcept.coding[0].code in value_set
     assert medication_request.intent is not None

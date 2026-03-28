@@ -9,7 +9,7 @@ Patterns:
 """
 
 from typing import List, Type, TypeVar, Optional, Union, TYPE_CHECKING
-from fhir.resources.bundle import Bundle, BundleEntry
+from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from fhir.resources.resource import Resource
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ def get_resource_type(
     Raises:
         ValueError: If the resource type is not supported or cannot be imported
     """
-    if isinstance(resource_type, type) and issubclass(resource_type, Resource):
+    if isinstance(resource_type, type):
         return resource_type
 
     if not isinstance(resource_type, str):
@@ -100,11 +100,19 @@ def get_resources(
         >>> from fhir.resources.condition import Condition
         >>> conditions = get_resources(bundle, Condition)
     """
+    if isinstance(resource_type, str):
+        type_name = resource_type
+        return [
+            entry.resource
+            for entry in (bundle.entry or [])
+            if entry.resource is not None and type(entry.resource).__name__ == type_name
+        ]
     type_class = get_resource_type(resource_type)
+    type_name = type_class.__name__
     return [
         entry.resource
         for entry in (bundle.entry or [])
-        if isinstance(entry.resource, type_class)
+        if entry.resource is not None and entry.resource.__class__.__name__ == type_name
     ]
 
 
@@ -136,24 +144,44 @@ def set_resources(
         >>> from fhir.resources.condition import Condition
         >>> set_resources(bundle, [condition1, condition2], Condition)
     """
-    type_class = get_resource_type(resource_type)
-
     # Remove existing resources of this type if replace=True
     if replace:
-        bundle.entry = [
-            entry
-            for entry in (bundle.entry or [])
-            if not isinstance(entry.resource, type_class)
-        ]
+        if isinstance(resource_type, str):
+            type_name = resource_type
+            bundle.entry = [
+                entry
+                for entry in (bundle.entry or [])
+                if entry.resource is None or type(entry.resource).__name__ != type_name
+            ]
+        else:
+            type_class = get_resource_type(resource_type)
+            type_name_cls = type_class.__name__
+            bundle.entry = [
+                entry
+                for entry in (bundle.entry or [])
+                if entry.resource is None
+                or entry.resource.__class__.__name__ != type_name_cls
+            ]
 
-    # Add new resources
-    for resource in resources:
-        if not isinstance(resource, type_class):
-            raise ValueError(
-                f"Resource must be of type {type_class.__name__}, "
-                f"got {type(resource).__name__}"
-            )
-        add_resource(bundle, resource)
+    # Add new resources, validating type
+    if isinstance(resource_type, str):
+        type_name = resource_type
+        for resource in resources:
+            if type(resource).__name__ != type_name:
+                raise ValueError(
+                    f"Resource must be of type {type_name}, "
+                    f"got {type(resource).__name__}"
+                )
+            add_resource(bundle, resource)
+    else:
+        type_class = get_resource_type(resource_type)
+        for resource in resources:
+            if resource.__class__.__name__ != type_class.__name__:
+                raise ValueError(
+                    f"Resource must be of type {type_class.__name__}, "
+                    f"got {type(resource).__name__}"
+                )
+            add_resource(bundle, resource)
 
 
 def merge_bundles(
@@ -242,17 +270,26 @@ def extract_resources(
     if not bundle or not bundle.entry:
         return []
 
-    type_class = get_resource_type(resource_type)
-
     extracted: List[Resource] = []
     remaining_entries: List[BundleEntry] = []
 
-    for entry in bundle.entry:
-        resource = entry.resource
-        if isinstance(resource, type_class):
-            extracted.append(resource)
-            continue
-        remaining_entries.append(entry)
+    if isinstance(resource_type, str):
+        type_name = resource_type
+        for entry in bundle.entry:
+            resource = entry.resource
+            if resource is not None and type(resource).__name__ == type_name:
+                extracted.append(resource)
+                continue
+            remaining_entries.append(entry)
+    else:
+        type_class = get_resource_type(resource_type)
+        type_name_cls = type_class.__name__
+        for entry in bundle.entry:
+            resource = entry.resource
+            if resource is not None and resource.__class__.__name__ == type_name_cls:
+                extracted.append(resource)
+                continue
+            remaining_entries.append(entry)
 
     bundle.entry = remaining_entries
     return extracted

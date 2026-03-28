@@ -12,9 +12,9 @@ from healthchain.gateway import HealthChainAPI
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 from healthchain.pipeline.summarizationpipeline import SummarizationPipeline
 from healthchain.fhir import create_document_reference
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.patient import Patient
-from fhir.resources.meta import Meta
+from fhir.resources.R4B.documentreference import DocumentReference
+from fhir.resources.R4B.patient import Patient
+from fhir.resources.R4B.meta import Meta
 
 
 @pytest.fixture

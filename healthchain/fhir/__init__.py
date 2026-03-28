@@ -1,5 +1,7 @@
 """FHIR utilities for HealthChain."""
 
+from healthchain.fhir import r4b
+
 from healthchain.fhir.version import (
     FHIRVersion,
     get_fhir_resource,
@@ -64,6 +66,8 @@ from healthchain.fhir.utilities import (
 )
 
 __all__ = [
+    # R4B re-export module
+    "r4b",
     # Version management
     "FHIRVersion",
     "get_fhir_resource",

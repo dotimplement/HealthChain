@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Any
 
-from fhir.resources.documentreference import DocumentReference
+from fhir.resources.R4B.documentreference import DocumentReference
 
 from healthchain.io.containers import Document
 from healthchain.io.adapters.base import BaseAdapter

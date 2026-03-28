@@ -11,7 +11,7 @@ import logging
 
 from typing import Any, Dict, List, Union, Optional, Literal
 from collections import defaultdict
-from fhir.resources.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle
 from pydantic import BaseModel, field_validator, ConfigDict
 
 from healthchain.fhir.utilities import (
@@ -576,13 +576,15 @@ def _flatten_medications(
     features = {}
 
     for med in medications:
-        medication = _get_field(med, "medication")
-        if not medication:
-            continue
-
-        med_concept = _get_field(medication, "concept")
+        # R4B: medicationCodeableConcept; R5: medication.concept
+        med_concept = _get_field(med, "medicationCodeableConcept")
         if not med_concept:
-            continue
+            medication = _get_field(med, "medication")
+            if not medication:
+                continue
+            med_concept = _get_field(medication, "concept")
+            if not med_concept:
+                continue
 
         coding_array = _get_field(med_concept, "coding")
         if not coding_array or len(coding_array) == 0:

@@ -7,8 +7,8 @@ from functools import lru_cache
 from typing import Any, Dict, Optional, Type, Union
 from urllib.parse import urlencode, urljoin
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.capabilitystatement import CapabilityStatement
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.capabilitystatement import CapabilityStatement
 from fhir.resources.resource import Resource
 
 from healthchain.gateway.clients.auth import OAuth2Config
@@ -302,7 +302,7 @@ class FHIRServerInterface(ABC):
         else:
             # It's a string, need to dynamically import
             type_name = str(resource_type)
-            module_name = f"fhir.resources.{type_name.lower()}"
+            module_name = f"fhir.resources.R4B.{type_name.lower()}"
             module = __import__(module_name, fromlist=[type_name])
             resource_class = getattr(module, type_name)
 

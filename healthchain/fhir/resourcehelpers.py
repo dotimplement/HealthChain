@@ -105,8 +105,13 @@ def create_medication_statement(
     Returns:
         MedicationStatement: A FHIR MedicationStatement resource with an auto-generated ID prefixed with 'hc-'
     """
-    from healthchain.fhir.version import get_fhir_resource
+    from healthchain.fhir.version import (
+        get_fhir_resource,
+        FHIRVersion,
+        _resolve_version,
+    )
 
+    resolved = _resolve_version(version)
     MedicationStatement = get_fhir_resource("MedicationStatement", version)
     ReferenceClass = get_fhir_resource("Reference", version)
 
@@ -117,11 +122,16 @@ def create_medication_statement(
     else:
         medication_concept = None
 
+    if resolved == FHIRVersion.R5:
+        med_kwargs = {"medication": {"concept": medication_concept}}
+    else:
+        med_kwargs = {"medicationCodeableConcept": medication_concept}
+
     medication = MedicationStatement(
         id=_generate_id(),
         subject=ReferenceClass(reference=subject),
         status=status,
-        medication={"concept": medication_concept},
+        **med_kwargs,
     )
 
     return medication

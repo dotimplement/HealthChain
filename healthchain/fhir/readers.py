@@ -10,7 +10,7 @@ import re
 
 from typing import Optional, Dict, Any, List
 from fhir.resources.resource import Resource
-from fhir.resources.documentreference import DocumentReference
+from fhir.resources.R4B.documentreference import DocumentReference
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def create_resource_from_dict(
     """
     try:
         resource_module = importlib.import_module(
-            f"fhir.resources.{resource_type.lower()}"
+            f"fhir.resources.R4B.{resource_type.lower()}"
         )
         resource_class = getattr(resource_module, resource_type)
         return resource_class(**resource_dict)
@@ -126,8 +126,6 @@ def convert_prefetch_to_fhir_objects(
         >>> isinstance(fhir_objects["patient"], Patient)  # True
         >>> isinstance(fhir_objects["condition"], Condition)  # True
     """
-    from fhir.resources import get_fhir_model_class
-
     result: Dict[str, Resource] = {}
 
     for key, resource_data in prefetch_dict.items():
@@ -138,7 +136,10 @@ def convert_prefetch_to_fhir_objects(
                 try:
                     # Fix timezone-naive datetimes before validation
                     fixed_data = _fix_timezone_naive_datetimes(resource_data)
-                    resource_class = get_fhir_model_class(resource_type)
+                    resource_module = importlib.import_module(
+                        f"fhir.resources.R4B.{resource_type.lower()}"
+                    )
+                    resource_class = getattr(resource_module, resource_type)
                     result[key] = resource_class(**fixed_data)
                 except Exception as e:
                     logger.warning(

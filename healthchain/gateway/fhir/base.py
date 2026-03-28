@@ -4,10 +4,13 @@ import warnings
 
 from fastapi import Depends, HTTPException, Path, Query
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Type, TypeVar, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Optional
 from fastapi.responses import JSONResponse
 
-from fhir.resources.capabilitystatement import CapabilityStatement
+if TYPE_CHECKING:
+    from healthchain.config.appconfig import AppConfig
+
+from fhir.resources.R4B.capabilitystatement import CapabilityStatement
 from fhir.resources.resource import Resource
 
 from healthchain.gateway.clients.fhir.base import FHIRServerInterface
@@ -439,6 +442,38 @@ class BaseFHIRGateway(BaseGateway):
             raise ValueError(f"Unsupported operation: {operation}")
 
         return handler
+
+    @classmethod
+    def from_config(cls, config: "AppConfig") -> "BaseFHIRGateway":
+        """
+        Create a gateway with sources pre-registered from healthchain.yaml.
+
+        Credentials stay in environment variables (via env_prefix); only
+        source names and prefixes are declared in config.
+
+        Args:
+            config: AppConfig loaded from healthchain.yaml
+
+        Returns:
+            A gateway instance with all configured sources added
+
+        Example:
+            # healthchain.yaml:
+            #   sources:
+            #     medplum:
+            #       env_prefix: MEDPLUM
+            gateway = FHIRGateway.from_config(AppConfig.load())
+        """
+        from healthchain.fhir.version import set_default_version
+
+        gateway = cls()
+        for name, source in config.sources.items():
+            set_default_version(source.fhir_version)
+            auth_config = source.to_fhir_auth_config()
+            gateway.add_source(name, auth_config.to_connection_string())
+        # Note: if sources declare different fhir_version values, the last one wins.
+        # Per-source version isolation requires a gateway refactor — see docs/rfcs/001-per-source-fhir-version.md
+        return gateway
 
     def add_source(self, name: str, connection_string: str) -> None:
         """

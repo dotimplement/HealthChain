@@ -28,15 +28,13 @@ def mock_medication_resources():
             "resourceType": "MedicationStatement",
             "id": "med-1",
             "status": "recorded",
-            "medication": {
-                "concept": {
-                    "coding": [
-                        {
-                            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                            "code": "313782",
-                        }
-                    ]
-                }
+            "medicationCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                        "code": "313782",
+                    }
+                ]
             },
             "subject": {"reference": "Patient/123"},
         },
@@ -44,15 +42,13 @@ def mock_medication_resources():
             "resourceType": "MedicationStatement",
             "id": "med-2",
             "status": "recorded",
-            "medication": {
-                "concept": {
-                    "coding": [
-                        {
-                            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                            "code": "197361",
-                        }
-                    ]
-                }
+            "medicationCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                        "code": "197361",
+                    }
+                ]
             },
             "subject": {"reference": "Patient/456"},
         },
@@ -229,15 +225,13 @@ def test_mimic_loader_handles_malformed_json(temp_mimic_data_dir):
                     "resourceType": "MedicationStatement",
                     "id": "med-1",
                     "status": "recorded",
-                    "medication": {
-                        "concept": {
-                            "coding": [
-                                {
-                                    "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                                    "code": "313782",
-                                }
-                            ]
-                        }
+                    "medicationCodeableConcept": {
+                        "coding": [
+                            {
+                                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                "code": "313782",
+                            }
+                        ]
                     },
                     "subject": {"reference": "Patient/123"},
                 }
@@ -292,15 +286,13 @@ def test_mimic_loader_skips_resources_without_resource_type(temp_mimic_data_dir)
             "resourceType": "MedicationStatement",
             "id": "med-2",
             "status": "recorded",
-            "medication": {
-                "concept": {
-                    "coding": [
-                        {
-                            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                            "code": "313782",
-                        }
-                    ]
-                }
+            "medicationCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                        "code": "313782",
+                    }
+                ]
             },
             "subject": {"reference": "Patient/123"},
         },

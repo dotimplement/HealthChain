@@ -65,21 +65,29 @@ def create_single_reaction(
     Returns:
         A list containing a single FHIR Reaction dictionary with manifestation and severity fields
     """
-    from healthchain.fhir.version import get_fhir_resource
+    from healthchain.fhir.version import (
+        get_fhir_resource,
+        FHIRVersion,
+        _resolve_version,
+    )
 
+    resolved = _resolve_version(version)
     CodeableConcept = get_fhir_resource("CodeableConcept", version)
-    CodeableReference = get_fhir_resource("CodeableReference", version)
     Coding = get_fhir_resource("Coding", version)
+
+    concept = CodeableConcept(
+        coding=[Coding(system=system, code=code, display=display)]
+    )
+
+    if resolved == FHIRVersion.R5:
+        CodeableReference = get_fhir_resource("CodeableReference", version)
+        manifestation = [CodeableReference(concept=concept)]
+    else:
+        manifestation = [concept]
 
     return [
         {
-            "manifestation": [
-                CodeableReference(
-                    concept=CodeableConcept(
-                        coding=[Coding(system=system, code=code, display=display)]
-                    )
-                )
-            ],
+            "manifestation": manifestation,
             "severity": severity,
         }
     ]

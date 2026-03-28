@@ -123,9 +123,9 @@ def get_default_version() -> FHIRVersion:
     """Get the current default FHIR version.
 
     Returns:
-        The current default FHIRVersion (R5 if not explicitly set)
+        The current default FHIRVersion (R4B if not explicitly set)
     """
-    return _default_version or FHIRVersion.R5
+    return _default_version or FHIRVersion.R4B
 
 
 def set_default_version(version: Union[FHIRVersion, str]) -> None:

@@ -1,11 +1,10 @@
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.codeablereference import CodeableReference
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.attachment import Attachment
-from fhir.resources.coding import Coding
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.medicationstatement import MedicationStatement
+from fhir.resources.R4B.allergyintolerance import AllergyIntolerance
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.documentreference import DocumentReference
+from fhir.resources.R4B.attachment import Attachment
+from fhir.resources.R4B.coding import Coding
 from datetime import datetime
 
 
@@ -56,12 +55,10 @@ def test_create_single_reaction():
     assert len(reaction) == 1
     assert reaction[0]["severity"] == "severe"
     assert len(reaction[0]["manifestation"]) == 1
-    assert isinstance(reaction[0]["manifestation"][0], CodeableReference)
-    assert reaction[0]["manifestation"][0].concept.coding[0].code == "123"
-    assert reaction[0]["manifestation"][0].concept.coding[0].display == "Test Reaction"
-    assert (
-        reaction[0]["manifestation"][0].concept.coding[0].system == "http://test.system"
-    )
+    assert isinstance(reaction[0]["manifestation"][0], CodeableConcept)
+    assert reaction[0]["manifestation"][0].coding[0].code == "123"
+    assert reaction[0]["manifestation"][0].coding[0].display == "Test Reaction"
+    assert reaction[0]["manifestation"][0].coding[0].system == "http://test.system"
 
 
 def test_create_condition():
@@ -101,9 +98,9 @@ def test_create_medication_statement_minimal():
     assert len(medication.id) > 3  # Ensure there's content after "hc-"
     assert medication.subject.reference == "Patient/123"
     assert medication.status == "recorded"
-    assert medication.medication.concept.coding[0].code == "123"
-    assert medication.medication.concept.coding[0].display == "Test Medication"
-    assert medication.medication.concept.coding[0].system == "http://test.system"
+    assert medication.medicationCodeableConcept.coding[0].code == "123"
+    assert medication.medicationCodeableConcept.coding[0].display == "Test Medication"
+    assert medication.medicationCodeableConcept.coding[0].system == "http://test.system"
 
 
 def test_create_allergy_intolerance_minimal():

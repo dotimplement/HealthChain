@@ -1,8 +1,8 @@
 from typing import Optional
 from faker import Faker
 
-from fhir.resources.reference import Reference
-from fhir.resources.condition import ConditionStage, ConditionParticipant
+from fhir.resources.R4B.reference import Reference
+from fhir.resources.R4B.condition import ConditionStage
 
 from healthchain.fhir import create_single_codeable_concept, create_condition
 from healthchain.sandbox.generators.basegenerators import (
@@ -29,6 +29,7 @@ class ClinicalStatusGenerator(BaseGenerator):
                 elements=("active", "recurrence", "inactive", "resolved")
             ),
             system="http://terminology.hl7.org/CodeSystem/condition-clinical",
+            version="R4B",
         )
 
 
@@ -39,6 +40,7 @@ class VerificationStatusGenerator(BaseGenerator):
         return create_single_codeable_concept(
             code=faker.random_element(elements=("provisional", "confirmed")),
             system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
+            version="R4B",
         )
 
 
@@ -51,6 +53,7 @@ class CategoryGenerator(BaseGenerator):
                 elements=("55607006", "404684003")
             ),  # Snomed Codes -> probably want to overwrite with template
             system="http://snomed.info/sct",
+            version="R4B",
         )
 
 
@@ -72,6 +75,7 @@ class SeverityGenerator(BaseGenerator):
         return create_single_codeable_concept(
             code=faker.random_element(elements=("24484000", "6736007", "255604002")),
             system="http://snomed.info/sct",
+            version="R4B",
         )
 
 
@@ -98,16 +102,7 @@ class BodySiteGenerator(BaseGenerator):
             code=faker.random_element(elements=("38266002",)),
             display=faker.random_element(elements=("Entire body as a whole",)),
             system="http://snomed.info/sct",
-        )
-
-
-@register_generator
-class ConditionParticipantGenerator(BaseGenerator):
-    @staticmethod
-    def generate():
-        return ConditionParticipant(
-            type=generator_registry.get("CodeableConceptGenerator").generate(),
-            individual=generator_registry.get("ReferenceGenerator").generate(),
+            version="R4B",
         )
 
 
@@ -126,7 +121,7 @@ class ConditionGenerator(BaseGenerator):
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints
         )
-        condition = create_condition(subject=subject_reference)
+        condition = create_condition(subject=subject_reference, version="R4B")
         condition.clinicalStatus = generator_registry.get(
             "ClinicalStatusGenerator"
         ).generate()
