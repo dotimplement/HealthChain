@@ -11,7 +11,12 @@ from healthchain.fhir.version import get_fhir_resource as _get
 
 
 def __getattr__(name: str):
-    return _get(name, "R4B")
+    if name.startswith("__"):
+        raise AttributeError(name)
+    try:
+        return _get(name, "R4B")
+    except ValueError:
+        raise AttributeError(f"module 'healthchain.fhir.r4b' has no attribute {name!r}")
 
 
 __all__ = [  # noqa: F822
