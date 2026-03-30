@@ -55,11 +55,9 @@ First we'll need to convert the incoming CDA XML to FHIR. The [CdaAdapter](../re
 
 ```python
 from healthchain.io import CdaAdapter
-from healthchain.engine import create_interop
 
-# Create an interop engine with default configuration
-interop_engine = create_interop()
-cda_adapter = CdaAdapter(engine=interop_engine)
+# Create CDA adapter
+cda_adapter = CdaAdapter()
 
 # Parse the CDA document to a Document object
 doc = cda_adapter.parse(request)
@@ -150,7 +148,7 @@ Use `.add_source` to register a FHIR endpoint you want to connect to with its co
 
 ```python
 from healthchain.gateway import FHIRGateway
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -193,7 +191,7 @@ def ai_coding_workflow(request: CdaRequest):
             condition, source="epic-notereader", tag_code="cdi"
         )
         # Send to external FHIR server via gateway
-        fhir_gateway.create(condition, source="billing")
+        fhir_gateway.create(condition, source="medplum")
 
     # Return processed CDA response to the legacy system
     cda_response = cda_adapter.format(doc)
@@ -224,7 +222,7 @@ from healthchain.sandbox import SandboxClient
 
 # Create sandbox client for SOAP/CDA testing
 client = SandboxClient(
-    url="http://localhost:8000/notereader/ProcessDocument",
+    url="http://localhost:8000/notereader/?wsdl",
     workflow="sign-note-inpatient",
     protocol="soap"
 )
@@ -242,14 +240,9 @@ client.load_from_path("./data/notereader_cda.xml")
 Now for the moment of truth! Start your service and run the sandbox to see the complete workflow in action.
 
 ```python
-import uvicorn
 import threading
 
-# Start the API server in a separate thread
-def start_api():
-    uvicorn.run(app, port=8000)
-
-api_thread = threading.Thread(target=start_api, daemon=True)
+api_thread = threading.Thread(target=app.run, daemon=True)
 api_thread.start()
 
 # Send requests and save responses with sandbox client
@@ -472,3 +465,4 @@ A clinical coding service that bridges legacy CDA systems with modern FHIR infra
     - **Add validation**: Implement FHIR resource validation before sending to external servers.
     - **Expand to other workflows**: Adapt the pattern for lab results, medications, or radiology reports.
     - **Build on it**: Use the extracted conditions in the [Data Aggregation example](./multi_ehr_aggregation.md) to combine with other FHIR sources.
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).
