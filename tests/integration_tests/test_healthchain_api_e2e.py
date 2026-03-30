@@ -34,8 +34,8 @@ def test_cds_service_processes_through_pipeline(
 
 def test_fhir_gateway_supports_multiple_resource_operations(fhir_gateway):
     """FHIR Gateway handles both transform and aggregate operations on different resource types."""
-    from fhir.resources.documentreference import DocumentReference
-    from fhir.resources.patient import Patient
+    from fhir.resources.R4B.documentreference import DocumentReference
+    from fhir.resources.R4B.patient import Patient
 
     # Transform operation
     doc = fhir_gateway._resource_handlers[DocumentReference]["transform"](

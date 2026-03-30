@@ -161,17 +161,17 @@ cython_debug/
 
 output/
 models/
+local/
 !healthchain/models/
 !healthchain/interop/models/
-scrap/
 .DS_Store
 .vscode/
 .ruff_cache/
 .python-version
 .cursor/
-.local/
 .keys/
 .idea/
+.claude/
 
 # Personal AI context (keep local)
 CLAUDE.LOCAL.MD

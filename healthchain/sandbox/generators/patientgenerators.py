@@ -9,13 +9,13 @@ from healthchain.sandbox.generators.basegenerators import (
 
 from datetime import datetime
 
-from fhir.resources.humanname import HumanName
-from fhir.resources.contactpoint import ContactPoint
-from fhir.resources.address import Address
-from fhir.resources.period import Period
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.coding import Coding
-from fhir.resources.patient import Patient
+from fhir.resources.R4B.humanname import HumanName
+from fhir.resources.R4B.contactpoint import ContactPoint
+from fhir.resources.R4B.address import Address
+from fhir.resources.R4B.period import Period
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
+from fhir.resources.R4B.patient import Patient
 
 
 faker = Faker()

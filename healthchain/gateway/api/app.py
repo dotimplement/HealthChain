@@ -6,6 +6,8 @@ healthcare-specific gateways, routes, middleware, and capabilities.
 """
 
 import logging
+import os
+import re
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -13,7 +15,6 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from termcolor import colored
 
 from typing import Dict, Optional, Type, Union
 
@@ -22,6 +23,190 @@ from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.api.dependencies import get_app
 
 logger = logging.getLogger(__name__)
+
+# ── Half-block pixel font (4 wide × 3 tall, encodes 2 logical rows per char) ──
+_HB = {
+    "H": ["█  █", "█▀▀█", "▀  ▀"],
+    "E": ["█▀▀▀", "█▀▀ ", "▀▀▀▀"],
+    "A": ["▄▀▀▄", "█▀▀█", "▀  ▀"],
+    "L": ["█   ", "█   ", "▀▀▀▀"],
+    "T": ["▀██▀", " ██ ", " ▀▀ "],
+    "C": ["▄▀▀▀", "█   ", " ▀▀▀"],
+    "I": ["▀██▀", " ██ ", "▀▀▀▀"],
+    "N": ["█▄ █", "█ ▀█", "▀  ▀"],
+}
+
+
+def _render_word(word: str) -> list[str]:
+    rows = [""] * 3
+    for j, ch in enumerate(word):
+        for r in range(3):
+            rows[r] += _HB[ch][r] + (" " if j < len(word) - 1 else "")
+    return rows
+
+
+def _gradient(text: str, t0: float, t1: float) -> str:
+    r0, g0, b0 = 0, 215, 255
+    r1, g1, b1 = 192, 132, 252
+    visible = [(i, c) for i, c in enumerate(text) if c != " "]
+    total = max(len(visible) - 1, 1)
+    chars = list(text)
+    for idx, (i, c) in enumerate(visible):
+        t = t0 + (t1 - t0) * (idx / total)
+        r = int(r0 + (r1 - r0) * t)
+        g = int(g0 + (g1 - g0) * t)
+        b = int(b0 + (b1 - b0) * t)
+        chars[i] = f"\033[38;2;{r};{g};{b}m{c}\033[0m"
+    return "".join(chars)
+
+
+def _vlen(s: str) -> int:
+    return len(re.sub(r"\033\[[^m]*m", "", s))
+
+
+def _pad(s: str, width: int) -> str:
+    return s + " " * max(0, width - _vlen(s))
+
+
+def _val_bool(enabled: bool) -> str:
+    return (
+        "\033[38;2;0;255;135m✓ enabled\033[0m"
+        if enabled
+        else "\033[38;2;255;85;85m✗ disabled\033[0m"
+    )
+
+
+def _val_env(env: str) -> str:
+    c = {"production": "\033[38;2;0;255;135m", "staging": "\033[38;2;0;215;255m"}.get(
+        env, "\033[38;2;255;200;50m"
+    )
+    return f"{c}{env}\033[0m"
+
+
+def _val_auth(auth: str) -> str:
+    if auth == "none":
+        return "\033[38;2;255;200;50mnone\033[0m"
+    return f"\033[38;2;0;255;135m{auth}\033[0m"
+
+
+def _val_eval(enabled: bool, provider: str) -> str:
+    if enabled:
+        return f"\033[38;2;0;255;135m✓ {provider}\033[0m"
+    return "\033[2m✗ disabled\033[0m"
+
+
+def _status_row(key: str, value: str) -> str:
+    return f"\033[1m\033[38;2;0;255;135m{key}\033[0m  {value}"
+
+
+def _print_startup_banner(
+    title: str,
+    version: str,
+    gateways: dict,
+    services: dict,
+    docs_url: str,
+    port: int = 8000,
+    service_type: Optional[str] = None,
+    config=None,
+    config_path: Optional[str] = None,
+) -> None:
+    """Print pixel-wordmark banner with live status panel."""
+    health_rows = _render_word("HEALTH")
+    chain_rows = _render_word("CHAIN")
+    health_w = len(health_rows[0])
+    chain_w = len(chain_rows[0])
+    center_pad = (health_w - chain_w) // 2
+    LOGO_COL = 38
+
+    # ── resolve status values from config or sensible defaults ──
+    svc_type = (
+        service_type
+        or (config.service.type if config else None)
+        or (
+            list({**gateways, **services}.keys())[0]
+            if {**gateways, **services}
+            else "unknown"
+        )
+    )
+    env = config.site.environment if config else "development"
+    port = str(port)
+    site = config.site.name if config else None
+    auth = config.security.auth if config else "none"
+    tls = config.security.tls.enabled if config else False
+    hipaa = config.compliance.hipaa if config else False
+    eval_enabled = config.eval.enabled if config else False
+    eval_provider = config.eval.provider if config else "mlflow"
+    # Check registered gateways first, then fall back to env var presence
+    fhir_configured = any(
+        hasattr(gw, "connection_manager")
+        and gw.connection_manager
+        and getattr(gw.connection_manager, "sources", None)
+        for gw in gateways.values()
+    ) or any(k.endswith("_CLIENT_ID") for k in os.environ)
+
+    status: list[str] = [
+        f"\033[1m\033[38;2;255;121;198m{title}\033[0m  \033[2mv{version}\033[0m",
+        "",
+        _status_row("type:       ", svc_type),
+        _status_row("environment:", _val_env(env)),
+        _status_row("port:       ", f"\033[1m{port}\033[0m"),
+    ]
+    if site:
+        status.append(_status_row("site:       ", site))
+    status += [
+        "",
+        _status_row("auth:       ", _val_auth(auth)),
+        _status_row(
+            "fhir creds: ",
+            "\033[38;2;0;255;135m✓ configured\033[0m"
+            if fhir_configured
+            else "\033[38;2;255;200;50m✗ not set\033[0m",
+        ),
+        _status_row("tls:        ", _val_bool(tls)),
+        _status_row("hipaa:      ", _val_bool(hipaa)),
+        _status_row("eval:       ", _val_eval(eval_enabled, eval_provider)),
+        "",
+        _status_row("config:     ", f"\033[1m{config_path or '(none)'}\033[0m"),
+        _status_row("docs:       ", f"\033[1mhttp://localhost:{port}{docs_url}\033[0m"),
+    ]
+
+    # ── build logo lines, vertically centred against status height ──
+    n = 3
+    inner: list[str] = []
+    for i in range(n):
+        inner.append(
+            _pad(
+                "  " + _gradient(health_rows[i], i / (n * 2), 0.5 + i / (n * 2)),
+                LOGO_COL,
+            )
+        )
+    inner.append(" " * LOGO_COL)
+    for i in range(n):
+        inner.append(
+            _pad(
+                "  "
+                + " " * center_pad
+                + _gradient(chain_rows[i], 0.1 + i / (n * 2), 0.6 + i / (n * 2)),
+                LOGO_COL,
+            )
+        )
+
+    top = (len(status) - len(inner)) // 2
+    bot = len(status) - len(inner) - top
+    logo_lines = [" " * LOGO_COL] * top + inner + [" " * LOGO_COL] * bot
+
+    max_status_w = max(_vlen(s) for s in status)
+    inner_w = LOGO_COL + 3 + max_status_w
+    border = "\033[38;2;99;102;241m"  # indigo
+    rst = "\033[0m"
+
+    print()
+    print(f"{border}╭{'─' * (inner_w + 2)}╮{rst}")
+    for logo_line, s in zip(logo_lines, status):
+        padding = " " * (max_status_w - _vlen(s))
+        print(f"{border}│{rst} {logo_line}   {s}{padding} {border}│{rst}")
+    print(f"{border}╰{'─' * (inner_w + 2)}╯{rst}")
+    print()
 
 
 class HealthChainAPI(FastAPI):
@@ -62,6 +247,8 @@ class HealthChainAPI(FastAPI):
         title: str = "HealthChain API",
         description: str = "Healthcare Integration API",
         version: str = "1.0.0",
+        port: Optional[int] = None,
+        service_type: Optional[str] = None,
         enable_cors: bool = True,
         enable_events: bool = True,
         event_dispatcher: Optional[EventDispatcher] = None,
@@ -87,6 +274,10 @@ class HealthChainAPI(FastAPI):
             **kwargs,
         )
 
+        # Display metadata for banner (when running outside healthchain serve)
+        self._port = port
+        self._service_type = service_type
+
         # Gateway and service registries
         self.gateways = {}
         self.services = {}
@@ -110,9 +301,13 @@ class HealthChainAPI(FastAPI):
 
         # Setup middleware
         if enable_cors:
+            from healthchain.config.appconfig import AppConfig
+
+            _config = AppConfig.load()
+            origins = _config.security.allowed_origins if _config else ["*"]
             self.add_middleware(
                 CORSMiddleware,
-                allow_origins=["*"],  # Can be configured from settings
+                allow_origins=origins,
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],
@@ -415,22 +610,21 @@ class HealthChainAPI(FastAPI):
 
     async def _startup(self) -> None:
         """Display startup information and initialize components."""
-        # Display banner
-        banner = r"""
-    __  __           ____  __    ________          _
-   / / / /__  ____ _/ / /_/ /_  / ____/ /_  ____ _(_)___
-  / /_/ / _ \/ __ `/ / __/ __ \/ /   / __ \/ __ `/ / __ \
- / __  /  __/ /_/ / / /_/ / / / /___/ / / / /_/ / / / / /
-/_/ /_/\___/\__,_/_/\__/_/ /_/\____/_/ /_/\__,_/_/_/ /_/
-"""
-        colors = ["red", "yellow", "green", "cyan", "blue", "magenta"]
-        for i, line in enumerate(banner.split("\n")):
-            print(colored(line, colors[i % len(colors)]))
+        from healthchain.config.appconfig import AppConfig
 
-        # Log startup info
-        logger.info(f"🚀 Starting {self.title} v{self.version}")
-        logger.info(f"Gateways: {list(self.gateways.keys())}")
-        logger.info(f"Services: {list(self.services.keys())}")
+        config = AppConfig.load()
+        port = self._port or (config.service.port if config else 8000)
+        _print_startup_banner(
+            title=config.name if config else self.title,
+            version=config.version if config else self.version,
+            gateways=self.gateways,
+            services=self.services,
+            docs_url=self.docs_url or "/docs",
+            port=port,
+            service_type=self._service_type,
+            config=config,
+            config_path="./healthchain.yaml" if config else None,
+        )
 
         # Initialize components
         for name, component in {**self.gateways, **self.services}.items():
@@ -441,13 +635,27 @@ class HealthChainAPI(FastAPI):
                 except Exception as e:
                     logger.warning(f"Failed to initialize {name}: {e}")
 
-        logger.info(f"📖 Docs: {self.docs_url}")
+    def run(self, host: str = "0.0.0.0", **kwargs) -> None:
+        """Run the application with uvicorn.
+
+        Convenience wrapper for local development and cookbooks. For production,
+        use `healthchain serve` which reads healthchain.yaml for TLS, port, etc.
+
+        Args:
+            host: Host to bind to (default: 0.0.0.0)
+            **kwargs: Passed through to uvicorn.run (e.g. reload=True, workers=4)
+
+        Example:
+            app = HealthChainAPI(title="My App", port=8888)
+            app.run()
+            app.run(reload=True)  # with hot reload
+        """
+        import uvicorn
+
+        uvicorn.run(self, host=host, port=self._port or 8000, **kwargs)
 
     async def _shutdown(self) -> None:
         """Handle graceful shutdown."""
-        logger.info("🛑 Shutting down...")
-
-        # Shutdown all components
         for name, component in {**self.services, **self.gateways}.items():
             if hasattr(component, "shutdown") and callable(component.shutdown):
                 try:
@@ -455,5 +663,3 @@ class HealthChainAPI(FastAPI):
                     logger.debug(f"Shutdown: {name}")
                 except Exception as e:
                     logger.warning(f"Failed to shutdown {name}: {e}")
-
-        logger.info("✅ Shutdown completed")

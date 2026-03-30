@@ -17,5 +17,5 @@ def test_MedicationAdministrationGenerator():
     result = MedicationAdministrationGenerator.generate("Patient/123", "Encounter/123")
     assert result.id is not None
     assert result.status is not None
-    assert result.medication is not None
-    assert result.medication.concept.coding[0].code in value_set
+    assert result.medicationCodeableConcept is not None
+    assert result.medicationCodeableConcept.coding[0].code in value_set

@@ -2,14 +2,12 @@
   "resourceType": "MedicationStatement",
   {% assign substance_admin = entry.substanceAdministration %}
   "status": "{{ substance_admin.statusCode['@code'] | map_status: 'cda_to_fhir' }}",
-  "medication": {
-    "concept": {
-      "coding": [{
-        "system": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
-        "code": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@code'] }}",
-        "display": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@displayName'] }}"
-      }]
-    }
+  "medicationCodeableConcept": {
+    "coding": [{
+      "system": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@codeSystem'] | map_system: 'cda_to_fhir' }}",
+      "code": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@code'] }}",
+      "display": "{{ substance_admin.consumable.manufacturedProduct.manufacturedMaterial.code['@displayName'] }}"
+    }]
   }
 
   {% comment %}Process effectiveTime and extract period/timing information if exists{% endcomment %}

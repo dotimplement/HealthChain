@@ -28,11 +28,10 @@ def test_practitioner_data_generator():
     assert qualification_data.code is not None
     assert qualification_data.period is not None
 
-    # Assert that the communication data has the expected pydantic fields
+    # Assert that the communication data has the expected pydantic fields (R4B: List[CodeableConcept])
     communication_data = practitioner_data.communication[0]
-    assert communication_data.id is not None
-    assert communication_data.language is not None
-    assert communication_data.preferred is not None
+    assert communication_data is not None
+    assert communication_data.coding is not None
 
 
 def test_practitioner_qualification_generator():
@@ -61,7 +60,6 @@ def test_practitioner_communication_generator():
     # Assert that the communication is not empty
     assert communication is not None
 
-    # Assert that the communication has the expected pydantic fields
-    assert communication.id is not None
-    assert communication.language is not None
-    assert communication.preferred is not None
+    # Assert that the communication has the expected pydantic fields (R4B: CodeableConcept)
+    assert communication is not None
+    assert communication.coding is not None

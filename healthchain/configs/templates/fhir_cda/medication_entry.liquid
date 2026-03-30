@@ -71,9 +71,9 @@
         ],
         "manufacturedMaterial": {
           "code": {
-            "@code": "{{ resource.medication.concept.coding[0].code }}",
-            "@codeSystem": "{{ resource.medication.concept.coding[0].system | map_system: 'fhir_to_cda' }}",
-            "@displayName": "{{ resource.medication.concept.coding[0].display }}",
+            "@code": "{{ resource.medicationCodeableConcept.coding[0].code }}",
+            "@codeSystem": "{{ resource.medicationCodeableConcept.coding[0].system | map_system: 'fhir_to_cda' }}",
+            "@displayName": "{{ resource.medicationCodeableConcept.coding[0].display }}",
             "originalText": {
               "reference": {"@value": "{{ text_reference_name }}"}
             }

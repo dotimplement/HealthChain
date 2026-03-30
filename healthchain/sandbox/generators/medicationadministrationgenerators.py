@@ -1,10 +1,9 @@
 from typing import Optional
 from faker import Faker
 
-from fhir.resources.medicationadministration import MedicationAdministration
-from fhir.resources.medicationadministration import MedicationAdministrationDosage
-from fhir.resources.reference import Reference
-from fhir.resources.codeablereference import CodeableReference
+from fhir.resources.R4B.medicationadministration import MedicationAdministration
+from fhir.resources.R4B.medicationadministration import MedicationAdministrationDosage
+from fhir.resources.R4B.reference import Reference
 from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
@@ -40,14 +39,12 @@ class MedicationAdministrationGenerator(BaseGenerator):
         return MedicationAdministration(
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
-            occurenceDateTime=generator_registry.get("DateGenerator").generate(),
-            medication=CodeableReference(
-                concept=generator_registry.get(
-                    "MedicationRequestContainedGenerator"
-                ).generate()
-            ),
+            effectiveDateTime=generator_registry.get("DateGenerator").generate(),
+            medicationCodeableConcept=generator_registry.get(
+                "MedicationRequestContainedGenerator"
+            ).generate(),
             subject=Reference(reference=subject_reference),
-            encounter=Reference(reference=encounter_reference),
+            context=Reference(reference=encounter_reference),
             dosage=generator_registry.get(
                 "MedicationAdministrationDosageGenerator"
             ).generate(),

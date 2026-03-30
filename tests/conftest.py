@@ -21,7 +21,10 @@ from healthchain.fhir import (
     create_single_reaction,
 )
 
-from fhir.resources.documentreference import DocumentReference, DocumentReferenceContent
+from fhir.resources.R4B.documentreference import (
+    DocumentReference,
+    DocumentReferenceContent,
+)
 
 
 @pytest.fixture
@@ -258,7 +261,7 @@ def doc_ref_without_content():
     Returns:
         fhir.resources.documentreference.DocumentReference: An incomplete DocumentReference resource.
     """
-    from fhir.resources.attachment import Attachment
+    from fhir.resources.R4B.attachment import Attachment
 
     return DocumentReference(
         status="current",

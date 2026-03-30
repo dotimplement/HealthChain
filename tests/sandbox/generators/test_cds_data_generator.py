@@ -1,9 +1,9 @@
 import pytest
 
-from fhir.resources.encounter import Encounter
-from fhir.resources.condition import Condition
-from fhir.resources.procedure import Procedure
-from fhir.resources.patient import Patient
+from fhir.resources.R4B.encounter import Encounter
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.procedure import Procedure
+from fhir.resources.R4B.patient import Patient
 
 from healthchain.sandbox.generators import CdsDataGenerator
 from healthchain.sandbox.workflows import Workflow

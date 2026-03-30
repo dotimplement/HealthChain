@@ -6,17 +6,17 @@ from uuid import uuid4
 
 from spacy.tokens import Doc as SpacyDoc
 from spacy.tokens import Span
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.bundle import Bundle
-from fhir.resources.documentreference import DocumentReference
-from fhir.resources.resource import Resource
-from fhir.resources.reference import Reference
-from fhir.resources.documentreference import DocumentReferenceRelatesTo
-from fhir.resources.operationoutcome import OperationOutcome
-from fhir.resources.provenance import Provenance
-from fhir.resources.patient import Patient
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.medicationstatement import MedicationStatement
+from fhir.resources.R4B.allergyintolerance import AllergyIntolerance
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.documentreference import DocumentReference
+from fhir_core.fhirabstractmodel import FHIRAbstractModel as Resource
+from fhir.resources.R4B.reference import Reference
+from fhir.resources.R4B.documentreference import DocumentReferenceRelatesTo
+from fhir.resources.R4B.operationoutcome import OperationOutcome
+from fhir.resources.R4B.provenance import Provenance
+from fhir.resources.R4B.patient import Patient
 
 from healthchain.io.containers.base import BaseDocument
 from healthchain.models.responses import Action, Card
@@ -26,7 +26,6 @@ from healthchain.fhir import (
     get_resources,
     set_resources,
     extract_resources,
-    create_single_codeable_concept,
     read_content_attachment,
     create_condition,
     set_condition_category,
@@ -421,14 +420,17 @@ class FhirData:
             return []
         return self._prefetch_resources.get(key, [])
 
-    def get_resources(self, resource_type: str) -> List[Any]:
+    def get_resources(self, resource_type: Union[str, type]) -> List[Any]:
         """Get resources of a specific type from the working bundle."""
         if not self._bundle:
             return []
         return get_resources(self._bundle, resource_type)
 
     def add_resources(
-        self, resources: List[Any], resource_type: str, replace: bool = False
+        self,
+        resources: List[Any],
+        resource_type: Union[str, type],
+        replace: bool = False,
     ):
         """Add resources to the working bundle."""
         if not self._bundle:
@@ -470,11 +472,7 @@ class FhirData:
             document.relatesTo.append(
                 DocumentReferenceRelatesTo(
                     target=Reference(reference=f"DocumentReference/{parent_id}"),
-                    code=create_single_codeable_concept(
-                        code=relationship_type,
-                        display=relationship_type.capitalize(),
-                        system="http://hl7.org/fhir/ValueSet/document-relationship-type",
-                    ),
+                    code=relationship_type,
                 )
             )
 
@@ -756,17 +754,20 @@ class Document(BaseDocument):
         """
         super().__post_init__()
 
-        # Handle FHIR Bundle data
-        if isinstance(self.data, Bundle):
+        # Handle FHIR Bundle data (check both R4B and R5 via resource type)
+        if isinstance(self.data, Bundle) or (
+            hasattr(self.data, "__resource_type__")
+            and self.data.__resource_type__ == "Bundle"
+        ):
             self._fhir._bundle = self.data
 
             # Extract OperationOutcome resources (operation results/errors)
-            outcomes = extract_resources(self._fhir._bundle, "OperationOutcome")
+            outcomes = extract_resources(self._fhir._bundle, OperationOutcome)
             if outcomes:
                 self._fhir._operation_outcomes = outcomes
 
             # Extract Provenance resources (data lineage/origin)
-            provenances = extract_resources(self._fhir._bundle, "Provenance")
+            provenances = extract_resources(self._fhir._bundle, Provenance)
             if provenances:
                 self._fhir._provenances = provenances
 

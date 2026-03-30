@@ -3,8 +3,8 @@ import pytest
 from healthchain.io.containers import Document
 from healthchain.io.containers.document import CdsAnnotations
 from healthchain.models.responses.cdsresponse import Action, CDSResponse, Card
-from fhir.resources.resource import Resource
-from fhir.resources.documentreference import DocumentReference
+from fhir.resources.R4B.resource import Resource
+from fhir.resources.R4B.documentreference import DocumentReference
 
 
 def test_parse_with_no_document_reference(cds_fhir_adapter, test_cds_request):
