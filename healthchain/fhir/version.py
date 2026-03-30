@@ -144,10 +144,10 @@ def set_default_version(version: Union[FHIRVersion, str]) -> None:
 
 
 def reset_default_version() -> None:
-    """Reset the default FHIR version to library default (R5)."""
+    """Reset the default FHIR version to R4B."""
     global _default_version
     _default_version = None
-    logger.debug("Default FHIR version reset to R5")
+    logger.debug("Default FHIR version reset to R4B")
 
 
 @contextmanager

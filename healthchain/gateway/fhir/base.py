@@ -464,15 +464,10 @@ class BaseFHIRGateway(BaseGateway):
             #       env_prefix: MEDPLUM
             gateway = FHIRGateway.from_config(AppConfig.load())
         """
-        from healthchain.fhir.version import set_default_version
-
         gateway = cls()
         for name, source in config.sources.items():
-            set_default_version(source.fhir_version)
             auth_config = source.to_fhir_auth_config()
             gateway.add_source(name, auth_config.to_connection_string())
-        # Note: if sources declare different fhir_version values, the last one wins.
-        # Per-source version isolation requires a gateway refactor — see docs/rfcs/001-per-source-fhir-version.md
         return gateway
 
     def add_source(self, name: str, connection_string: str) -> None:

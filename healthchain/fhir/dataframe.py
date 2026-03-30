@@ -33,7 +33,7 @@ SUPPORTED_RESOURCES = {
     "Observation": {
         "handler": "_flatten_observations",
         "description": "Clinical observations (vitals, labs)",
-        "output_columns": "Dynamic based on observation codes",
+        "output_columns": "Dynamic: obs_{code}_{display}",
         "options": ["aggregation"],
     },
     "Condition": {
@@ -408,7 +408,7 @@ def bundle_to_dataframe(
 
             # Get handler function by name
             handler_name = handler_info["handler"]
-            handler = globals()[handler_name]
+            handler = _HANDLERS[handler_name]
 
             # Call handler with standardized signature
             features = handler(resources, config)
@@ -504,8 +504,8 @@ def _flatten_observations(
         values = [item["value"] for item in obs_list]
         display = obs_list[0]["display"]
 
-        # Create column name: code_display
-        col_name = f"{code}_{display.replace(' ', '_')}"
+        # Create column name: obs_code_display
+        col_name = f"obs_{code}_{display.replace(' ', '_')}"
 
         # Aggregate values
         if aggregation == "mean":
@@ -594,3 +594,12 @@ def _flatten_medications(
         features[col_name] = 1
 
     return features
+
+
+# Populated after all handler functions are defined.
+_HANDLERS = {
+    "_flatten_patient": _flatten_patient,
+    "_flatten_observations": _flatten_observations,
+    "_flatten_conditions": _flatten_conditions,
+    "_flatten_medications": _flatten_medications,
+}

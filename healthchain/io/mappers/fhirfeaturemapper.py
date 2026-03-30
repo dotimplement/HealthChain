@@ -124,10 +124,10 @@ class FHIRFeatureMapper(BaseMapper[Bundle, pd.DataFrame]):
         # Map observation columns
         obs_features = self.schema.get_features_by_resource("Observation")
         for feature_name, mapping in obs_features.items():
-            # Generic converter creates columns like: "8867-4_Heart_rate"
+            # Generic converter creates columns like: "obs_8867-4_Heart_rate"
             # Find matching column in df
             for col in df.columns:
-                if col.startswith(mapping.code):
+                if col.startswith(f"obs_{mapping.code}"):
                     rename_map[col] = feature_name
                     break
 
