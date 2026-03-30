@@ -2,7 +2,7 @@
 
 import pytest
 
-from healthchain.config.appconfig import AppConfig
+from healthchain.config.appconfig import AppConfig, LLMConfig
 
 
 def test_appconfig_loads_valid_yaml(tmp_path):
@@ -109,6 +109,79 @@ security:
     assert config.security.tls.enabled is True
     assert config.security.tls.cert_path == "./certs/cert.pem"
     assert config.security.tls.key_path == "./certs/key.pem"
+
+
+def test_llmconfig_valid_providers():
+    """LLMConfig accepts all supported providers."""
+    for provider in ("anthropic", "openai", "google", "huggingface"):
+        config = LLMConfig(provider=provider)
+        assert config.provider == provider
+
+
+def test_llmconfig_invalid_provider_raises():
+    """LLMConfig raises ValidationError for unsupported providers."""
+    with pytest.raises(Exception):
+        LLMConfig(provider="cohere")
+
+
+def test_llmconfig_defaults():
+    """LLMConfig has sensible defaults."""
+    config = LLMConfig()
+    assert config.provider == "anthropic"
+    assert config.model == "claude-opus-4-6"
+    assert config.max_tokens == 512
+
+
+def test_appconfig_llm_parsed(tmp_path):
+    """AppConfig parses llm section into LLMConfig correctly."""
+    (tmp_path / "healthchain.yaml").write_text(
+        """
+llm:
+  provider: openai
+  model: gpt-4o
+  max_tokens: 1024
+"""
+    )
+    config = AppConfig.from_yaml(tmp_path / "healthchain.yaml")
+
+    assert config.llm.provider == "openai"
+    assert config.llm.model == "gpt-4o"
+    assert config.llm.max_tokens == 1024
+
+
+def test_appconfig_llm_defaults_to_none(tmp_path):
+    """AppConfig.llm is None when not specified in healthchain.yaml."""
+    (tmp_path / "healthchain.yaml").write_text("name: minimal-app\n")
+    config = AppConfig.from_yaml(tmp_path / "healthchain.yaml")
+
+    assert config.llm is None
+
+
+def test_appconfig_sources_parsed(tmp_path):
+    """AppConfig parses sources section into SourceConfig correctly."""
+    (tmp_path / "healthchain.yaml").write_text(
+        """
+sources:
+  medplum:
+    env_prefix: MEDPLUM
+  epic:
+    env_prefix: EPIC
+"""
+    )
+    config = AppConfig.from_yaml(tmp_path / "healthchain.yaml")
+
+    assert "medplum" in config.sources
+    assert config.sources["medplum"].env_prefix == "MEDPLUM"
+    assert "epic" in config.sources
+    assert config.sources["epic"].env_prefix == "EPIC"
+
+
+def test_appconfig_sources_defaults_to_empty(tmp_path):
+    """AppConfig.sources is empty dict when not specified."""
+    (tmp_path / "healthchain.yaml").write_text("name: minimal-app\n")
+    config = AppConfig.from_yaml(tmp_path / "healthchain.yaml")
+
+    assert config.sources == {}
 
 
 def test_appconfig_eval_track_events_parsed(tmp_path):
