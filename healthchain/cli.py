@@ -168,8 +168,8 @@ _APP_PY_FHIR_GATEWAY = """\
 import os
 from typing import List
 
-from fhir.resources.R4B.bundle import Bundle
-from fhir.resources.R4B.condition import Condition
+from healthchain.fhir.r4b import Bundle
+from healthchain.fhir.r4b import Condition
 
 from healthchain.gateway import FHIRGateway, HealthChainAPI
 from healthchain.fhir import merge_bundles
