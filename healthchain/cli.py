@@ -168,8 +168,8 @@ _APP_PY_FHIR_GATEWAY = """\
 import os
 from typing import List
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.condition import Condition
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.condition import Condition
 
 from healthchain.gateway import FHIRGateway, HealthChainAPI
 from healthchain.fhir import merge_bundles
@@ -272,6 +272,19 @@ eval:
 site:
   name: ""
   environment: development  # development | staging | production
+
+# FHIR data sources — declare sources here, credentials stay in .env
+# sources:
+#   medplum:
+#     env_prefix: MEDPLUM   # reads MEDPLUM_CLIENT_ID, MEDPLUM_BASE_URL etc.
+#   epic:
+#     env_prefix: EPIC      # reads EPIC_CLIENT_ID, EPIC_BASE_URL etc.
+
+# LLM provider (used by app.py or cookbooks via config.llm.to_langchain())
+# llm:
+#   provider: anthropic     # anthropic | openai | google
+#   model: claude-opus-4-6
+#   max_tokens: 512
 """
 
 
@@ -413,6 +426,7 @@ def sandbox_run(
 
     config = AppConfig.load()
     resolved_output = output or (config.data.output_dir if config else "./output")
+    resolved_from_path = from_path or (config.data.patients_dir if config else None)
 
     print(f"\n{_BOLD}{_CYAN}◆ Sandbox{_RST}  {_DIM}{url}{_RST}")
     print(f"  {_CYAN}workflow  {_RST}{workflow}")
@@ -423,10 +437,10 @@ def sandbox_run(
         print(f"\n{_RED}Error:{_RST} {e}")
         return
 
-    if from_path:
-        print(f"\n{_DIM}Loading from {from_path}...{_RST}")
+    if resolved_from_path:
+        print(f"\n{_DIM}Loading from {resolved_from_path}...{_RST}")
         try:
-            client.load_from_path(from_path)
+            client.load_from_path(resolved_from_path)
         except (FileNotFoundError, ValueError) as e:
             print(f"{_RED}Error loading data:{_RST} {e}")
             return
@@ -526,14 +540,16 @@ def status():
     auth_col = _GREEN if config.security.auth != "none" else _AMBER
     print(f"{_key('auth        ')}{auth_col}{config.security.auth}{_RST}")
     tls_val = (
-        _val_on("enabled") if config.security.tls.enabled else _val_off("disabled")
+        _val_on("enabled") if config.security.tls.enabled else f"{_DIM}disabled{_RST}"
     )
     print(f"{_key('TLS         ')}{tls_val}")
     origins = ", ".join(config.security.allowed_origins)
     print(f"{_key('origins     ')}{_DIM}{origins}{_RST}")
 
     print(_section("Compliance"))
-    hipaa_val = _val_on("enabled") if config.compliance.hipaa else _val_off("disabled")
+    hipaa_val = (
+        _val_on("enabled") if config.compliance.hipaa else f"{_DIM}disabled{_RST}"
+    )
     print(f"{_key('HIPAA       ')}{hipaa_val}")
     if config.compliance.hipaa:
         print(f"{_key('audit log   ')}{_BOLD}{config.compliance.audit_log}{_RST}")
@@ -545,6 +561,18 @@ def status():
         print(f"{_key('events      ')}{_DIM}{', '.join(config.eval.track)}{_RST}")
     else:
         print(f"  {_DIM}disabled{_RST}")
+
+    if config.sources:
+        print(_section("Sources"))
+        for source_name, source in config.sources.items():
+            print(
+                f"{_key(f'{source_name:<12}')}{_DIM}env_prefix={source.env_prefix}{_RST}"
+            )
+
+    if config.llm:
+        print(_section("LLM"))
+        print(f"{_key('provider    ')}{config.llm.provider}")
+        print(f"{_key('model       ')}{_BOLD}{config.llm.model}{_RST}")
 
     print()
 

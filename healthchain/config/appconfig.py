@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import yaml
 from pydantic import BaseModel, field_validator
@@ -16,6 +16,51 @@ from pydantic import BaseModel, field_validator
 logger = logging.getLogger(__name__)
 
 _CONFIG_FILENAME = "healthchain.yaml"
+
+
+class SourceConfig(BaseModel):
+    """A FHIR data source. Credentials are loaded from environment variables."""
+
+    env_prefix: str  # e.g. "MEDPLUM" reads MEDPLUM_CLIENT_ID, MEDPLUM_BASE_URL etc.
+
+    def to_fhir_auth_config(self):
+        """Instantiate FHIRAuthConfig by reading env vars for this source's prefix."""
+        from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+
+        return FHIRAuthConfig.from_env(self.env_prefix)
+
+
+class LLMConfig(BaseModel):
+    """LLM provider settings. API key is read from the standard env var for each provider."""
+
+    provider: str = "anthropic"  # anthropic | openai | google
+    model: str = "claude-opus-4-6"
+    max_tokens: int = 512
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        allowed = {"anthropic", "openai", "google"}
+        if v not in allowed:
+            raise ValueError(f"provider must be one of: {', '.join(sorted(allowed))}")
+        return v
+
+    def to_langchain(self):
+        """Instantiate the configured LangChain chat model."""
+        if self.provider == "anthropic":
+            from langchain_anthropic import ChatAnthropic
+
+            return ChatAnthropic(model=self.model, max_tokens=self.max_tokens)
+        elif self.provider == "openai":
+            from langchain_openai import ChatOpenAI
+
+            return ChatOpenAI(model=self.model, max_tokens=self.max_tokens)
+        elif self.provider == "google":
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            return ChatGoogleGenerativeAI(
+                model=self.model, max_output_tokens=self.max_tokens
+            )
 
 
 class ServiceConfig(BaseModel):
@@ -84,6 +129,8 @@ class AppConfig(BaseModel):
     compliance: ComplianceConfig = ComplianceConfig()
     eval: EvalConfig = EvalConfig()
     site: SiteConfig = SiteConfig()
+    sources: Dict[str, SourceConfig] = {}
+    llm: Optional[LLMConfig] = None
 
     @classmethod
     def from_yaml(cls, path: Path) -> "AppConfig":
