@@ -8,12 +8,9 @@ Patterns:
 - extract_*(): extract resources from a bundle
 """
 
-from typing import List, Type, TypeVar, Optional, Union, TYPE_CHECKING
+from typing import List, Type, TypeVar, Optional, Union
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from fhir.resources.resource import Resource
-
-if TYPE_CHECKING:
-    from healthchain.fhir.version import FHIRVersion
 
 T = TypeVar("T", bound=Resource)
 
@@ -48,17 +45,14 @@ def add_resource(
 
 def get_resource_type(
     resource_type: Union[str, Type[Resource]],
-    version: Optional[Union["FHIRVersion", str]] = None,
 ) -> Type[Resource]:
     """Get the resource type class from string or type.
 
     Args:
         resource_type: String name of the resource type (e.g. "Condition") or the type itself
-        version: Optional FHIR version (e.g., "R4B", "STU3", or FHIRVersion enum).
-                 If None, uses the current default version.
 
     Returns:
-        The resource type class for the specified version
+        The R4B resource type class
 
     Raises:
         ValueError: If the resource type is not supported or cannot be imported
@@ -71,10 +65,9 @@ def get_resource_type(
             f"Resource type must be a string or Resource class, got {type(resource_type)}"
         )
 
-    # Use version manager for dynamic import with version support
     from healthchain.fhir.version import get_fhir_resource
 
-    return get_fhir_resource(resource_type, version)
+    return get_fhir_resource(resource_type)
 
 
 def get_resources(

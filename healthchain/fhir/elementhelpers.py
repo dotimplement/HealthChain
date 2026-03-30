@@ -8,10 +8,11 @@ import logging
 import base64
 import datetime
 
-from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Optional, List, Dict, Any
 
-if TYPE_CHECKING:
-    from healthchain.fhir.version import FHIRVersion
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
+from fhir.resources.R4B.attachment import Attachment
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ def create_single_codeable_concept(
     code: str,
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
-    version: Optional[Union["FHIRVersion", str]] = None,
 ) -> Any:
     """
     Create a minimal FHIR CodeableConcept with a single coding.
@@ -29,16 +29,10 @@ def create_single_codeable_concept(
         code: REQUIRED. The code value from the code system
         display: The display name for the code
         system: The code system (default: SNOMED CT)
-        version: FHIR version to use (e.g., "R4B", "STU3"). Defaults to current default.
 
     Returns:
         CodeableConcept: A FHIR CodeableConcept resource with a single coding
     """
-    from healthchain.fhir.version import get_fhir_resource
-
-    CodeableConcept = get_fhir_resource("CodeableConcept", version)
-    Coding = get_fhir_resource("Coding", version)
-
     return CodeableConcept(coding=[Coding(system=system, code=code, display=display)])
 
 
@@ -47,7 +41,6 @@ def create_single_reaction(
     display: Optional[str] = None,
     system: Optional[str] = "http://snomed.info/sct",
     severity: Optional[str] = None,
-    version: Optional[Union["FHIRVersion", str]] = None,
 ) -> List[Dict[str, Any]]:
     """Create a minimal FHIR Reaction with a single coding.
 
@@ -60,34 +53,17 @@ def create_single_reaction(
         display: The display name for the manifestation code
         system: The code system for the manifestation code (default: SNOMED CT)
         severity: The severity of the reaction (mild, moderate, severe)
-        version: FHIR version to use (e.g., "R4B", "STU3"). Defaults to current default.
 
     Returns:
         A list containing a single FHIR Reaction dictionary with manifestation and severity fields
     """
-    from healthchain.fhir.version import (
-        get_fhir_resource,
-        FHIRVersion,
-        _resolve_version,
-    )
-
-    resolved = _resolve_version(version)
-    CodeableConcept = get_fhir_resource("CodeableConcept", version)
-    Coding = get_fhir_resource("Coding", version)
-
     concept = CodeableConcept(
         coding=[Coding(system=system, code=code, display=display)]
     )
 
-    if resolved == FHIRVersion.R5:
-        CodeableReference = get_fhir_resource("CodeableReference", version)
-        manifestation = [CodeableReference(concept=concept)]
-    else:
-        manifestation = [concept]
-
     return [
         {
-            "manifestation": manifestation,
+            "manifestation": [concept],
             "severity": severity,
         }
     ]
@@ -98,7 +74,6 @@ def create_single_attachment(
     data: Optional[str] = None,
     url: Optional[str] = None,
     title: Optional[str] = "Attachment created by HealthChain",
-    version: Optional[Union["FHIRVersion", str]] = None,
 ) -> Any:
     """Create a minimal FHIR Attachment.
 
@@ -110,15 +85,10 @@ def create_single_attachment(
         data: The actual data content to be base64 encoded
         url: The URL where the data can be found
         title: A title for the attachment (default: "Attachment created by HealthChain")
-        version: FHIR version to use (e.g., "R4B", "STU3"). Defaults to current default.
 
     Returns:
         Attachment: A FHIR Attachment resource with basic metadata and content
     """
-    from healthchain.fhir.version import get_fhir_resource
-
-    Attachment = get_fhir_resource("Attachment", version)
-
     if not data and not url:
         logger.warning("No data or url provided for attachment")
 

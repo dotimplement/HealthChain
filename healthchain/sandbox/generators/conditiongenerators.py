@@ -29,7 +29,6 @@ class ClinicalStatusGenerator(BaseGenerator):
                 elements=("active", "recurrence", "inactive", "resolved")
             ),
             system="http://terminology.hl7.org/CodeSystem/condition-clinical",
-            version="R4B",
         )
 
 
@@ -40,7 +39,6 @@ class VerificationStatusGenerator(BaseGenerator):
         return create_single_codeable_concept(
             code=faker.random_element(elements=("provisional", "confirmed")),
             system="http://terminology.hl7.org/CodeSystem/condition-ver-status",
-            version="R4B",
         )
 
 
@@ -53,7 +51,6 @@ class CategoryGenerator(BaseGenerator):
                 elements=("55607006", "404684003")
             ),  # Snomed Codes -> probably want to overwrite with template
             system="http://snomed.info/sct",
-            version="R4B",
         )
 
 
@@ -75,7 +72,6 @@ class SeverityGenerator(BaseGenerator):
         return create_single_codeable_concept(
             code=faker.random_element(elements=("24484000", "6736007", "255604002")),
             system="http://snomed.info/sct",
-            version="R4B",
         )
 
 
@@ -102,7 +98,6 @@ class BodySiteGenerator(BaseGenerator):
             code=faker.random_element(elements=("38266002",)),
             display=faker.random_element(elements=("Entire body as a whole",)),
             system="http://snomed.info/sct",
-            version="R4B",
         )
 
 
@@ -121,7 +116,7 @@ class ConditionGenerator(BaseGenerator):
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints
         )
-        condition = create_condition(subject=subject_reference, version="R4B")
+        condition = create_condition(subject=subject_reference)
         condition.clinicalStatus = generator_registry.get(
             "ClinicalStatusGenerator"
         ).generate()

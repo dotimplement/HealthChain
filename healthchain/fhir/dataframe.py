@@ -576,15 +576,9 @@ def _flatten_medications(
     features = {}
 
     for med in medications:
-        # R4B: medicationCodeableConcept; R5: medication.concept
         med_concept = _get_field(med, "medicationCodeableConcept")
         if not med_concept:
-            medication = _get_field(med, "medication")
-            if not medication:
-                continue
-            med_concept = _get_field(medication, "concept")
-            if not med_concept:
-                continue
+            continue
 
         coding_array = _get_field(med_concept, "coding")
         if not coding_array or len(coding_array) == 0:
