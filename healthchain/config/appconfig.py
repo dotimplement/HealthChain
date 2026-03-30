@@ -33,14 +33,14 @@ class SourceConfig(BaseModel):
 class LLMConfig(BaseModel):
     """LLM provider settings. API key is read from the standard env var for each provider."""
 
-    provider: str = "anthropic"  # anthropic | openai | google
+    provider: str = "anthropic"  # anthropic | openai | google | huggingface
     model: str = "claude-opus-4-6"
     max_tokens: int = 512
 
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
-        allowed = {"anthropic", "openai", "google"}
+        allowed = {"anthropic", "openai", "google", "huggingface"}
         if v not in allowed:
             raise ValueError(f"provider must be one of: {', '.join(sorted(allowed))}")
         return v
@@ -61,6 +61,11 @@ class LLMConfig(BaseModel):
             return ChatGoogleGenerativeAI(
                 model=self.model, max_output_tokens=self.max_tokens
             )
+        elif self.provider == "huggingface":
+            from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+
+            llm = HuggingFaceEndpoint(repo_id=self.model, max_new_tokens=self.max_tokens)
+            return ChatHuggingFace(llm=llm)
 
 
 class ServiceConfig(BaseModel):

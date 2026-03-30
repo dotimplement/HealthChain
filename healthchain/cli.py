@@ -282,7 +282,7 @@ site:
 
 # LLM provider (used by app.py or cookbooks via config.llm.to_langchain())
 # llm:
-#   provider: anthropic     # anthropic | openai | google
+#   provider: anthropic     # anthropic | openai | google | huggingface
 #   model: claude-opus-4-6
 #   max_tokens: 512
 """
