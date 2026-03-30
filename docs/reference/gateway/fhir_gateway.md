@@ -22,7 +22,7 @@ Both handle the complexity of managing multiple FHIR clients and provide a consi
 
 ```python
 from healthchain.gateway import FHIRGateway
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 gateway = FHIRGateway()
 
@@ -44,7 +44,7 @@ with gateway:
 import asyncio
 
 from healthchain.gateway import AsyncFHIRGateway
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 gateway = AsyncFHIRGateway()
 
@@ -148,8 +148,7 @@ fhir://hostname:port/path?param1=value1&param2=value2
 ### Create Resources
 
 ```python
-from fhir.resources.patient import Patient
-from fhir.resources.humanname import HumanName
+from healthchain.fhir.r4b import Patient, HumanName
 
 # Create a new patient
 patient = Patient(
@@ -165,7 +164,7 @@ print(f"Created patient with ID: {created_patient.id}")
 ### Read Resources
 
 ```python
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Read a specific patient (Derrick Lin, Epic Sandbox)
 patient = gateway.read(
@@ -179,7 +178,7 @@ patient = gateway.read(
 
 === "Sync"
     ```python
-    from fhir.resources.patient import Patient
+    from healthchain.fhir.r4b import Patient
 
     # Read, modify, and update (sync)
     patient = gateway.read(Patient, "123", "medplum")
@@ -189,7 +188,7 @@ patient = gateway.read(
 
 === "Async"
     ```python
-    from fhir.resources.patient import Patient
+    from healthchain.fhir.r4b import Patient
 
     # Read, modify, and update (async)
     patient = await gateway.read(Patient, "123", "medplum")
@@ -206,7 +205,7 @@ patient = gateway.read(
 ### Delete Resources
 
 ```python
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Delete a patient
 success = gateway.delete(Patient, "123", "medplum")
@@ -219,8 +218,7 @@ if success:
 ### Basic Search
 
 ```python
-from fhir.resources.patient import Patient
-from fhir.resources.bundle import Bundle
+from healthchain.fhir.r4b import Patient, Bundle
 
 # Search by name
 search_params = {"family": "Smith", "given": "John"}
@@ -234,7 +232,7 @@ for entry in results.entry:
 ### Advanced Search
 
 ```python
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Complex search with multiple parameters
 search_params = {
@@ -255,8 +253,7 @@ Transform handlers allow you to create custom API endpoints that process and enh
 
 === "Sync"
     ```python
-    from fhir.resources.patient import Patient
-    from fhir.resources.observation import Observation
+    from healthchain.fhir.r4b import Patient, Observation
 
     @fhir_gateway.transform(Patient)
     def get_enhanced_patient_summary(id: str, source: str = None) -> Patient:
@@ -291,8 +288,7 @@ Transform handlers allow you to create custom API endpoints that process and enh
 
 === "Async"
     ```python
-    from fhir.resources.patient import Patient
-    from fhir.resources.observation import Observation
+    from healthchain.fhir.r4b import Patient, Observation
 
     @fhir_gateway.transform(Patient)
     async def get_enhanced_patient_summary(id: str, source: str = None) -> Patient:
@@ -328,8 +324,7 @@ Aggregate handlers allow you to combine data from multiple FHIR sources into a s
 
 === "Sync"
     ```python
-    from fhir.resources.observation import Observation
-    from fhir.resources.bundle import Bundle
+    from healthchain.fhir.r4b import Observation, Bundle
 
     @gateway.aggregate(Observation)
     def aggregate_vitals(patient_id: str, sources: list = None) -> Bundle:
@@ -357,8 +352,7 @@ Aggregate handlers allow you to combine data from multiple FHIR sources into a s
 
 === "Async"
     ```python
-    from fhir.resources.observation import Observation
-    from fhir.resources.bundle import Bundle
+    from healthchain.fhir.r4b import Observation, Bundle
 
     @gateway.aggregate(Observation)
     async def aggregate_vitals(patient_id: str, sources: list = None) -> Bundle:

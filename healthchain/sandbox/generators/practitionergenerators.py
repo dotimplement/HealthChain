@@ -7,13 +7,12 @@ from healthchain.sandbox.generators.basegenerators import (
     register_generator,
 )
 
-from fhir.resources.practitioner import (
+from fhir.resources.R4B.practitioner import (
     Practitioner,
-    PractitionerCommunication,
     PractitionerQualification,
 )
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.coding import Coding
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
 
 
 faker = Faker()
@@ -93,11 +92,8 @@ class LanguageGenerator:
 class Practitioner_CommunicationGenerator(BaseGenerator):
     @staticmethod
     def generate():
-        return PractitionerCommunication(
-            id=faker.uuid4(),
-            language=generator_registry.get("LanguageGenerator").generate(),
-            preferred=True,
-        )
+        # R4B Practitioner.communication is List[CodeableConcept] directly
+        return generator_registry.get("LanguageGenerator").generate()
 
 
 @register_generator
@@ -116,7 +112,5 @@ class PractitionerGenerator(BaseGenerator):
             qualification=[
                 generator_registry.get("Practitioner_QualificationGenerator").generate()
             ],
-            communication=[
-                generator_registry.get("Practitioner_CommunicationGenerator").generate()
-            ],
+            communication=[generator_registry.get("LanguageGenerator").generate()],
         )

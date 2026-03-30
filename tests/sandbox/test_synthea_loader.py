@@ -81,15 +81,13 @@ def mock_patient_bundle():
                     "resourceType": "MedicationStatement",
                     "id": "med-1",
                     "status": "recorded",
-                    "medication": {
-                        "concept": {
-                            "coding": [
-                                {
-                                    "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                                    "code": "313782",
-                                }
-                            ]
-                        }
+                    "medicationCodeableConcept": {
+                        "coding": [
+                            {
+                                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                                "code": "313782",
+                            }
+                        ]
                     },
                     "subject": {
                         "reference": "Patient/a969c177-a995-7b89-7b6d-885214dfa253"

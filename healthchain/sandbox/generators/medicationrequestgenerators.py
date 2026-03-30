@@ -10,10 +10,9 @@ from healthchain.sandbox.generators.basegenerators import (
 from healthchain.sandbox.generators.value_sets.medicationcodes import (
     MedicationRequestMedication,
 )
-from fhir.resources.medicationrequest import MedicationRequest
-from fhir.resources.dosage import Dosage
-from fhir.resources.reference import Reference
-from fhir.resources.codeablereference import CodeableReference
+from fhir.resources.R4B.medicationrequest import MedicationRequest
+from fhir.resources.R4B.dosage import Dosage
+from fhir.resources.R4B.reference import Reference
 
 
 faker = Faker()
@@ -51,11 +50,9 @@ class MedicationRequestGenerator(BaseGenerator):
             id=generator_registry.get("IdGenerator").generate(),
             status=generator_registry.get("EventStatusGenerator").generate(),
             intent=generator_registry.get("IntentGenerator").generate(),
-            medication=CodeableReference(
-                concept=generator_registry.get(
-                    "MedicationRequestContainedGenerator"
-                ).generate()
-            ),
+            medicationCodeableConcept=generator_registry.get(
+                "MedicationRequestContainedGenerator"
+            ).generate(),
             subject=Reference(reference=subject_reference),
             encounter=Reference(reference=encounter_reference),
             authoredOn=generator_registry.get("DateTimeGenerator").generate(),

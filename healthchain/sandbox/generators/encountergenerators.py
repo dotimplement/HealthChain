@@ -1,12 +1,12 @@
 from typing import Optional
 from faker import Faker
 
-from fhir.resources.encounter import Encounter, EncounterLocation
+from fhir.resources.R4B.encounter import Encounter, EncounterLocation
 
-from fhir.resources.coding import Coding
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.period import Period
-from fhir.resources.reference import Reference
+from fhir.resources.R4B.coding import Coding
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.period import Period
+from fhir.resources.R4B.reference import Reference
 from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
@@ -157,10 +157,10 @@ class EncounterGenerator(BaseGenerator):
                     "cancelled",
                 )
             ),
-            class_fhir=[generator_registry.get("ClassGenerator").generate()],
+            class_fhir=generator_registry.get("ClassGenerator").generate().coding[0],
             priority=generator_registry.get("EncounterPriorityGenerator").generate(),
             type=[generator_registry.get("EncounterTypeGenerator").generate()],
             subject={"reference": patient_reference, "display": patient_reference},
-            actualPeriod=generator_registry.get("PeriodGenerator").generate(),
+            period=generator_registry.get("PeriodGenerator").generate(),
             location=[generator_registry.get("EncounterLocationGenerator").generate()],
         )

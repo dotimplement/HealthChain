@@ -105,5 +105,65 @@ Hands-on, production-ready examples for building healthcare AI applications with
 
 ---
 
-!!! tip "What next?"
-    See the source code for each recipe, experiment with the sandboxes, and adapt the patterns for your projects!
+## From cookbook to service
+
+Cookbooks are standalone scripts — run them directly to explore and experiment. When you're ready to build a proper service, scaffold a project and move your logic in:
+
+```bash
+# 1. Run a cookbook locally
+python cookbook/sepsis_cds_hooks.py
+
+# 2. Scaffold a project
+healthchain new my-sepsis-service -t cds-hooks
+cd my-sepsis-service
+
+# 3. Move your hook logic into app.py, then run with config
+healthchain serve
+```
+
+`app.run()` (used in cookbooks) is a convenience wrapper — equivalent to running uvicorn directly. `healthchain serve` reads `healthchain.yaml` for port, TLS, and deployment settings, and prints a startup banner so you can see what's active at a glance.
+
+**What moves from your script into `healthchain.yaml`:**
+
+```python
+# cookbook — everything hardcoded in Python
+gateway = FHIRGateway()
+gateway.add_source("medplum", FHIRAuthConfig.from_env("MEDPLUM").to_connection_string())
+
+llm = ChatAnthropic(model="claude-opus-4-6", max_tokens=512)
+
+app = HealthChainAPI(title="My App", port=8000, service_type="fhir-gateway")
+```
+
+```yaml
+# healthchain.yaml — port, sources, and LLM provider declared here
+service:
+  type: fhir-gateway
+  port: 8000
+
+sources:
+  medplum:
+    env_prefix: MEDPLUM   # credentials stay in .env
+
+llm:
+  provider: anthropic
+  model: claude-opus-4-6
+  max_tokens: 512
+```
+
+```python
+# app.py — load from config instead
+from healthchain.config.appconfig import AppConfig
+from healthchain.gateway import FHIRGateway, HealthChainAPI
+
+config = AppConfig.load()
+gateway = FHIRGateway.from_config(config)
+llm = config.llm.to_langchain()
+
+app = HealthChainAPI(title="My App")
+```
+
+Credentials (API keys, client secrets) always stay in `.env` — never in `healthchain.yaml`.
+
+!!! tip "Configuration reference"
+    See the [configuration reference](../reference/config.md) for all available settings — security, compliance, eval, and more.

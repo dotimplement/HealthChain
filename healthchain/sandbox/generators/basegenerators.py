@@ -7,8 +7,8 @@ import string
 from faker import Faker
 
 
-from fhir.resources.codeableconcept import CodeableConcept
-from fhir.resources.coding import Coding
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
 
 
 faker = Faker()

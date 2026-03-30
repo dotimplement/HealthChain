@@ -18,7 +18,7 @@ The [**HealthChainAPI**](./reference/gateway/api.md) provides a unified interfac
 
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Create your healthcare application
 app = HealthChainAPI(title="My Healthcare AI App")

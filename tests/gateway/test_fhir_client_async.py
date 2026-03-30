@@ -7,9 +7,9 @@ Focuses on HTTP operations, authentication, error handling, and response process
 import pytest
 import httpx
 from unittest.mock import Mock, AsyncMock, patch
-from fhir.resources.patient import Patient
-from fhir.resources.bundle import Bundle
-from fhir.resources.capabilitystatement import CapabilityStatement
+from fhir.resources.R4B.patient import Patient
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.capabilitystatement import CapabilityStatement
 
 from healthchain.gateway.clients.fhir.aio import AsyncFHIRClient
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig

@@ -1,11 +1,11 @@
 """Tests for FHIR Bundle helper functions."""
 
 import pytest
-from fhir.resources.bundle import Bundle
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.documentreference import DocumentReference
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.medicationstatement import MedicationStatement
+from fhir.resources.R4B.allergyintolerance import AllergyIntolerance
+from fhir.resources.R4B.documentreference import DocumentReference
 
 from healthchain.fhir.bundlehelpers import (
     create_bundle,

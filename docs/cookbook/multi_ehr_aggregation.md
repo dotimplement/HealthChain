@@ -123,13 +123,17 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
 Register the gateway with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints.
 
 ```python
-import uvicorn
 from healthchain.gateway import HealthChainAPI
 
-app = HealthChainAPI()
+app = HealthChainAPI(
+    title="Multi-EHR Data Aggregation",
+    description="Aggregate patient data from multiple FHIR sources",
+    port=8888,
+    service_type="fhir-gateway",
+)
 app.register_gateway(gateway, path="/fhir")
 
-uvicorn.run(app)
+app.run()
 ```
 
 !!! tip "FHIR Endpoints Provided by the Service"
@@ -405,3 +409,4 @@ A production-ready data aggregation service with:
     - **Expand resource types**: Change `Condition` to `MedicationStatement`, `Observation`, or `Procedure` to aggregate different data.
     - **Add processing**: Extend the pipeline with terminology mapping, entity extraction, or quality checks.
     - **Build on it**: Use aggregated data in the [Clinical Coding tutorial](./clinical_coding.md) or feed it to your LLM application.
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).
