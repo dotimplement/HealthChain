@@ -13,7 +13,7 @@ FHIR Sources:
 - Cerner Open Sandbox: No auth needed
 
 Run:
-- python data_aggregation.py
+    python cookbook/multi_ehr_data_aggregation.py
 """
 
 from typing import List
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from healthchain.fhir.r4b import Bundle, Condition, Annotation
 
 from healthchain.gateway import FHIRGateway, HealthChainAPI
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 from healthchain.pipeline import Pipeline
 from healthchain.io.containers import Document
 from healthchain.fhir import merge_bundles
@@ -100,15 +100,16 @@ def create_app():
 
         return doc.fhir.bundle
 
-    app = HealthChainAPI()
-    app.register_gateway(gateway)
+    app = HealthChainAPI(
+        title="Multi-EHR Data Aggregation",
+        description="Aggregate patient data from multiple FHIR sources",
+        port=8888,
+        service_type="fhir-gateway",
+    )
+    app.register_gateway(gateway, path="/fhir")
 
     return app
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    app = create_app()
-    uvicorn.run(app, port=8888)
-    # Runs at: http://127.0.0.1:8888/
+    create_app().run()

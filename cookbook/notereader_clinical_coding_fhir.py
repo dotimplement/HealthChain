@@ -4,13 +4,11 @@ A complete CDI service that processes clinical notes and extracts FHIR condition
 Demonstrates FHIR-native pipelines, legacy system integration, and multi-source data handling.
 
 Requirements:
-- pip install healthchain
-- pip install scispacy
-- pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
-- pip install python-dotenv
+    pip install healthchain scispacy python-dotenv
+    pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
 
 Run:
-- python notereader_clinical_coding_fhir.py  # Demo and start server
+    python cookbook/notereader_clinical_coding_fhir.py
 """
 
 import logging
@@ -21,7 +19,7 @@ from dotenv import load_dotenv
 from healthchain.fhir import add_provenance_metadata
 from healthchain.gateway.api import HealthChainAPI
 from healthchain.gateway.fhir import FHIRGateway
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 from healthchain.gateway.soap import NoteReaderService
 from healthchain.io import CdaAdapter, Document
 from healthchain.models import CdaRequest
@@ -104,7 +102,12 @@ def create_app():
         return cda_response
 
     # Register services
-    app = HealthChainAPI(title="Epic CDI Service with FHIR integration")
+    app = HealthChainAPI(
+        title="Epic CDI Service",
+        description="Clinical document intelligence with FHIR and NoteReader integration",
+        port=8000,
+        service_type="fhir-gateway",
+    )
     app.register_gateway(fhir_gateway, path="/fhir")
     app.register_service(note_service, path="/notereader")
 
@@ -117,18 +120,12 @@ app = create_app()
 
 if __name__ == "__main__":
     import threading
-    import uvicorn
-
     from time import sleep
     from healthchain.sandbox import SandboxClient
 
-    # Start server
-    def run_server():
-        uvicorn.run(app, port=8000, log_level="warning")
-
-    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread = threading.Thread(target=app.run, daemon=True)
     server_thread.start()
-    sleep(2)  # Wait for startup
+    sleep(2)
 
     # Create sandbox client for testing
     client = SandboxClient(
