@@ -1,6 +1,7 @@
 """Tests for MLflow module imports and availability checking."""
 
 import pytest
+import tempfile
 
 
 def test_is_mlflow_available_returns_bool():
@@ -60,6 +61,48 @@ def test_log_healthcare_context_requires_active_run():
 
     with pytest.raises(RuntimeError, match="No active MLflow run"):
         log_healthcare_context(context)
+
+
+def test_log_healthcare_context_success():
+    """Test log_healthcare_context logs params and tags to an active MLflow run."""
+    mlflow = pytest.importorskip("mlflow")
+
+    from healthchain.mlflow import (
+        HealthcareRunContext,
+        PatientContext,
+        log_healthcare_context,
+    )
+
+    context = HealthcareRunContext(
+        model_id="test-model",
+        version="1.0.0",
+        organization="Test Org",
+        purpose="Unit testing",
+        data_sources=["mimic-iv"],
+        regulatory_tags=["HIPAA"],
+        patient_context=PatientContext(cohort="ICU patients", sample_size=500),
+        custom_metadata={"threshold": 0.7, "validated": True},
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        mlflow.set_tracking_uri(f"file://{tmp_dir}")
+        mlflow.set_experiment("test-experiment")
+        with mlflow.start_run():
+            logged = log_healthcare_context(context, log_provenance=False)
+
+            run = mlflow.active_run()
+            run_data = mlflow.get_run(run.info.run_id).data
+
+    assert logged["healthcare.model_id"] == "test-model"
+    assert logged["healthcare.model_version"] == "1.0.0"
+    assert logged["healthcare.organization"] == "Test Org"
+    assert logged["healthcare.regulatory_tags"] == "HIPAA"
+    assert logged["healthcare.data_sources"] == "mimic-iv"
+    assert logged["healthcare.patient_cohort"] == "ICU patients"
+    assert run_data.params["healthcare.model_id"] == "test-model"
+    assert run_data.tags["healthchain.model_id"] == "test-model"
+    assert run_data.tags["healthcare.custom.threshold"] == "0.7"
+    assert run_data.tags["healthcare.custom.validated"] == "True"
 
 
 def test_context_models_independent_of_mlflow():

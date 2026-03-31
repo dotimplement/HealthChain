@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import uuid
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -111,6 +112,10 @@ class HealthcareRunContext(BaseModel):
         default_factory=dict,
         description="Additional custom metadata",
     )
+    tracking_uri: Optional[str] = Field(
+        default=None,
+        description="MLflow tracking URI. Set automatically by from_app_config().",
+    )
     recorded: Optional[datetime.datetime] = Field(
         default=None,
         description="Timestamp when the context was recorded",
@@ -134,8 +139,6 @@ class HealthcareRunContext(BaseModel):
             from fhir.resources.coding import Coding
             from fhir.resources.provenance import Provenance, ProvenanceAgent
             from fhir.resources.reference import Reference
-
-            from healthchain.fhir.utilities import _generate_id
         except ImportError:
             logger.warning(
                 "fhir.resources not available, cannot generate FHIR Provenance"
@@ -182,7 +185,7 @@ class HealthcareRunContext(BaseModel):
 
         # Create Provenance resource with required fields
         provenance = Provenance(
-            id=_generate_id(),
+            id=str(uuid.uuid4()),
             target=target,
             recorded=recorded_time.isoformat(),
             activity=activity,
@@ -252,4 +255,61 @@ class HealthcareRunContext(BaseModel):
             version=version,
             recorded=datetime.datetime.now(datetime.timezone.utc),
             **kwargs,
+        )
+
+    @classmethod
+    def from_app_config(
+        cls,
+        config: Any,
+        model_id: str,
+        **kwargs: Any,
+    ) -> "HealthcareRunContext":
+        """Create a HealthcareRunContext populated from a HealthChain AppConfig.
+
+        Derives version, organization, data_sources, and regulatory_tags from
+        the AppConfig, reducing duplication between healthchain.yaml and
+        experiment tracking setup. Any field can be overridden via kwargs.
+
+        Args:
+            config: AppConfig instance loaded from healthchain.yaml
+            model_id: Unique identifier for the model (required, model-specific)
+            **kwargs: Override any HealthcareRunContext field
+
+        Returns:
+            HealthcareRunContext instance
+
+        Example:
+            >>> from healthchain.config.appconfig import AppConfig
+            >>> config = AppConfig.load()
+            >>> context = HealthcareRunContext.from_app_config(
+            ...     config,
+            ...     model_id="sepsis-predictor",
+            ...     purpose="Early sepsis detection",
+            ... )
+        """
+        derived: Dict[str, Any] = {
+            "version": config.version,
+            "tracking_uri": config.eval.tracking_uri,
+        }
+
+        if config.site.name:
+            derived["organization"] = config.site.name
+        elif config.name:
+            derived["organization"] = config.name
+
+        if config.sources:
+            derived["data_sources"] = list(config.sources.keys())
+
+        regulatory_tags: List[str] = []
+        if config.compliance.hipaa:
+            regulatory_tags.append("HIPAA")
+        if regulatory_tags:
+            derived["regulatory_tags"] = regulatory_tags
+
+        derived.update(kwargs)
+
+        return cls(
+            model_id=model_id,
+            recorded=datetime.datetime.now(datetime.timezone.utc),
+            **derived,
         )

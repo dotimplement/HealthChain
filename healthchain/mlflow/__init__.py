@@ -64,6 +64,10 @@ def log_healthcare_context(
     model information, patient cohort context, and optionally a FHIR
     Provenance resource for audit trails.
 
+    If context.tracking_uri is set (populated automatically by
+    HealthcareRunContext.from_app_config()), the MLflow tracking URI is
+    configured before logging.
+
     Args:
         context: HealthcareRunContext with healthcare metadata
         log_provenance: Whether to log FHIR Provenance as an artifact.
@@ -78,14 +82,14 @@ def log_healthcare_context(
 
     Example:
         >>> import mlflow
+        >>> from healthchain.config.appconfig import AppConfig
         >>> from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
         >>>
-        >>> context = HealthcareRunContext(
+        >>> config = AppConfig.load()
+        >>> context = HealthcareRunContext.from_app_config(
+        ...     config,
         ...     model_id="clinical-ner",
-        ...     version="1.0.0",
-        ...     organization="Hospital AI Lab",
         ...     purpose="Entity extraction from clinical notes",
-        ...     regulatory_tags=["HIPAA", "IRB-approved"],
         ... )
         >>>
         >>> with mlflow.start_run():
@@ -95,6 +99,9 @@ def log_healthcare_context(
         raise ImportError(
             "MLflow is not installed. Install with: pip install healthchain[mlflow]"
         )
+
+    if context.tracking_uri is not None:
+        _mlflow.set_tracking_uri(context.tracking_uri)
 
     # Check for active run
     if _mlflow.active_run() is None:
@@ -135,6 +142,10 @@ def log_healthcare_context(
     # Set healthcare-specific tags
     _mlflow.set_tag("healthchain.model_id", context.model_id)
     _mlflow.set_tag("healthchain.version", context.version)
+
+    # Log custom metadata as tags (avoids MLflow param value length limits)
+    for key, value in context.custom_metadata.items():
+        _mlflow.set_tag(f"healthcare.custom.{key}", str(value))
 
     # Log FHIR Provenance as artifact if requested
     if log_provenance:
