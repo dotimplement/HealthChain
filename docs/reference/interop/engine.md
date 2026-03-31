@@ -43,10 +43,10 @@ engine = create_interop(validation_level="warn", environment="production")
 
 
 > **💡 Tip:**
-> To create editable configuration templates, run:
+> To eject the built-in templates for customization, run:
 >
 > ```bash
-> healthchain init-configs ./my_configs
+> healthchain eject-templates ./my_configs
 > ```
 > This will create a `my_configs` directory with editable default configuration templates.
 

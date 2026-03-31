@@ -170,8 +170,8 @@ def test_bundle_to_dataframe_basic_conversion():
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 1
     assert "age" in df.columns and "gender" in df.columns
-    assert "8867-4_Heart_rate" in df.columns
-    assert df["8867-4_Heart_rate"].iloc[0] == 85.0
+    assert "obs_8867-4_Heart_rate" in df.columns
+    assert df["obs_8867-4_Heart_rate"].iloc[0] == 85.0
 
     # Test with dict Bundle
     dict_bundle = {
@@ -201,7 +201,7 @@ def test_bundle_to_dataframe_basic_conversion():
 
     df = bundle_to_dataframe(dict_bundle)
     assert len(df) == 1
-    assert "8310-5_Body_temperature" in df.columns
+    assert "obs_8310-5_Body_temperature" in df.columns
 
 
 @pytest.mark.parametrize(
@@ -302,7 +302,7 @@ def test_bundle_to_dataframe_observation_aggregation_strategies(
     )
     df = bundle_to_dataframe(bundle, config=config)
 
-    assert df["8867-4_Heart_rate"].iloc[0] == expected
+    assert df["obs_8867-4_Heart_rate"].iloc[0] == expected
 
 
 def test_bundle_to_dataframe_age_calculation_modes():
@@ -447,8 +447,12 @@ def test_bundle_to_dataframe_handles_multiple_patients():
 
     assert len(df) == 2
     assert set(df["patient_ref"]) == {"Patient/123", "Patient/456"}
-    assert df[df["patient_ref"] == "Patient/123"]["8867-4_Heart_rate"].iloc[0] == 85.0
-    assert df[df["patient_ref"] == "Patient/456"]["8867-4_Heart_rate"].iloc[0] == 72.0
+    assert (
+        df[df["patient_ref"] == "Patient/123"]["obs_8867-4_Heart_rate"].iloc[0] == 85.0
+    )
+    assert (
+        df[df["patient_ref"] == "Patient/456"]["obs_8867-4_Heart_rate"].iloc[0] == 72.0
+    )
 
 
 def test_bundle_converter_config_defaults():

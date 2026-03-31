@@ -35,8 +35,7 @@ If you are exploring HealthChain for use in your product or organization, or wan
 
 **For substantial partnerships or integrations:**
 - Shoot me an [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain)
-- Join our [weekly office hours](https://meet.google.com/zwh-douu-pky) (Thursdays 4.30pm - 5.30pm GMT) for direct Q&A
-- Join the [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel
+- Join the [Discord](https://discord.gg/UQC6uAepUz) `#production-users` channel for deployment and production-use questions
 
 **For feature collaborations:**
 Once we've aligned on a collaboration, we'll track it using GitHub issues with stage labels:

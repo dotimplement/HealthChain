@@ -1,71 +1,79 @@
+#!/usr/bin/env python3
+"""
+Discharge Note Summarizer (Transformer)
+
+CDS Hooks service that summarises discharge notes using a fine-tuned
+HuggingFace transformer model (PEGASUS).
+
+Requirements:
+    pip install healthchain transformers torch python-dotenv
+    # HUGGINGFACEHUB_API_TOKEN env var required
+
+Run:
+    python cookbook/cds_discharge_summarizer_hf_trf.py
+    # POST /cds/cds-services/discharge-summarizer
+    # Docs at: http://localhost:8000/docs
+"""
+
 import os
 import getpass
+
+from dotenv import load_dotenv
 
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.pipeline import SummarizationPipeline
 from healthchain.models import CDSRequest, CDSResponse
 
-from dotenv import load_dotenv
-
 load_dotenv()
 
 
-if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
-    os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass("Enter your token: ")
+def create_pipeline() -> SummarizationPipeline:
+    if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
+        os.environ["HUGGINGFACEHUB_API_TOKEN"] = getpass.getpass(
+            "Enter your HuggingFace token: "
+        )
+    return SummarizationPipeline.from_model_id(
+        "google/pegasus-xsum", source="huggingface", task="summarization"
+    )
 
 
-# Create the healthcare application
-app = HealthChainAPI(
-    title="Discharge Note Summarizer",
-    description="AI-powered discharge note summarization service",
-)
+def create_app() -> HealthChainAPI:
+    pipeline = create_pipeline()
+    cds = CDSHooksService()
 
-# Initialize pipeline
-pipeline = SummarizationPipeline.from_model_id(
-    "google/pegasus-xsum", source="huggingface", task="summarization"
-)
+    @cds.hook("encounter-discharge", id="discharge-summarizer")
+    def discharge_summarizer(request: CDSRequest) -> CDSResponse:
+        return pipeline.process_request(request)
 
-# Create CDS Hooks service
-cds = CDSHooksService()
-
-
-@cds.hook("encounter-discharge", id="discharge-summarizer")
-def discharge_summarizer(request: CDSRequest) -> CDSResponse:
-    result = pipeline.process_request(request)
-    return result
+    app = HealthChainAPI(
+        title="Discharge Note Summarizer",
+        description="AI-powered discharge note summarization service",
+        port=8000,
+        service_type="cds-hooks",
+    )
+    app.register_service(cds, path="/cds")
+    return app
 
 
-# Register the CDS service
-app.register_service(cds, path="/cds")
+app = create_app()
 
 
 if __name__ == "__main__":
-    import uvicorn
     import threading
-
     from healthchain.sandbox import SandboxClient
 
-    # Start the API server in a separate thread
-    def start_api():
-        uvicorn.run(app, port=8000)
-
-    api_thread = threading.Thread(target=start_api, daemon=True)
+    api_thread = threading.Thread(target=app.run, daemon=True)
     api_thread.start()
 
-    # Create sandbox client and load test data
     client = SandboxClient(
         url="http://localhost:8000/cds/cds-services/discharge-summarizer",
         workflow="encounter-discharge",
     )
-    # Load discharge notes from CSV
     client.load_free_text(
         csv_path="data/discharge_notes.csv",
         column_name="text",
     )
-    # Send requests and get responses
     responses = client.send_requests()
-
-    # Save results
     client.save_results("./output/")
 
     try:

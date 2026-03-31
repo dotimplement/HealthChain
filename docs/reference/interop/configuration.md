@@ -27,8 +27,8 @@ engine = create_interop(config_dir="/path/to/custom/configs")
 To create editable configuration templates:
 
 ```bash
-# Create customizable config templates
-healthchain init-configs ./my_configs
+# Eject built-in templates for customization
+healthchain eject-templates ./my_configs
 
 # Then use them in your code
 engine = create_interop(config_dir="./my_configs")

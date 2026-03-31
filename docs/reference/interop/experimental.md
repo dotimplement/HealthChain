@@ -28,7 +28,7 @@ This page tracks templates that are under development or have known issues. Use 
 
 1. Copy experimental files to your custom config:
    ```bash
-   # After running: healthchain init-configs my_configs
+   # After running: healthchain eject-templates my_configs
    cp dev-templates/allergies/allergies.yaml my_configs/interop/cda/sections/
    cp dev-templates/allergies/allergy_*.liquid my_configs/templates/cda_fhir/
    cp dev-templates/allergies/allergy_*.liquid my_configs/templates/fhir_cda/
@@ -76,4 +76,4 @@ We welcome contributions to improve experimental templates!
 2. 🔮 **Future sections** - Procedures, Vital Signs, Lab Results
 3. 🔧 **Template tooling** - Better validation and testing framework
 
-Want to help? Check our [contribution guidelines](../../community/contribution_guide.md) and pick up one of these challenges!
+Want to help? Check our [contribution guidelines](https://github.com/dotimplement/HealthChain/blob/main/CONTRIBUTING.md) and pick up one of these challenges!

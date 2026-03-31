@@ -158,15 +158,10 @@ def test_relationship_metadata(fhir_data, sample_document_reference):
 
     fhir_data.add_document_reference(child_doc, parent_id=doc_id)
 
-    # Verify relationship structure
+    # Verify relationship structure (R4B: code is a string, not CodeableConcept)
     child = fhir_data.get_resources("DocumentReference")[1]
     assert hasattr(child, "relatesTo")
-    assert child.relatesTo[0].code.coding[0].code == "transforms"
-    assert child.relatesTo[0].code.coding[0].display == "Transforms"
-    assert (
-        child.relatesTo[0].code.coding[0].system
-        == "http://hl7.org/fhir/ValueSet/document-relationship-type"
-    )
+    assert child.relatesTo[0].code == "transforms"
     assert child.relatesTo[0].target.reference == f"DocumentReference/{doc_id}"
 
 

@@ -2,7 +2,7 @@ import pytest
 
 from healthchain.io.containers.document import Document
 from unittest.mock import patch, MagicMock
-from fhir.resources.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle
 from healthchain.fhir import create_bundle, add_resource, create_condition
 
 
@@ -108,7 +108,10 @@ def test_document_bundle_accessible_via_problem_list():
 def test_document_operation_outcome_extraction(
     num_outcomes, expected_outcome_count, expected_remaining_entries
 ):
-    from fhir.resources.operationoutcome import OperationOutcome, OperationOutcomeIssue
+    from fhir.resources.R4B.operationoutcome import (
+        OperationOutcome,
+        OperationOutcomeIssue,
+    )
 
     bundle = create_bundle("collection")
     add_resource(bundle, create_condition(subject="Patient/123", code="E11.9"))
@@ -149,8 +152,8 @@ def test_document_provenance_extraction(
     num_provenances, expected_provenance_count, expected_remaining_entries
 ):
     """Document automatically extracts Provenance resources during initialization."""
-    from fhir.resources.provenance import Provenance, ProvenanceAgent
-    from fhir.resources.reference import Reference
+    from fhir.resources.R4B.provenance import Provenance, ProvenanceAgent
+    from fhir.resources.R4B.reference import Reference
 
     bundle = create_bundle("collection")
     add_resource(bundle, create_condition(subject="Patient/123", code="E11.9"))
@@ -177,8 +180,8 @@ def test_document_provenance_extraction(
 @pytest.mark.parametrize("num_patients", [0, 1, 2])
 def test_document_patient_convenience_properties_param(num_patients):
     """Patient convenience accessors behave for 0, 1, 2 patients without extraction."""
-    from fhir.resources.patient import Patient
-    from fhir.resources.humanname import HumanName
+    from fhir.resources.R4B.patient import Patient
+    from fhir.resources.R4B.humanname import HumanName
 
     bundle = create_bundle("collection")
 

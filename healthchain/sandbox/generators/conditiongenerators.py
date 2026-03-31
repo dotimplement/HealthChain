@@ -1,8 +1,8 @@
 from typing import Optional
 from faker import Faker
 
-from fhir.resources.reference import Reference
-from fhir.resources.condition import ConditionStage, ConditionParticipant
+from fhir.resources.R4B.reference import Reference
+from fhir.resources.R4B.condition import ConditionStage
 
 from healthchain.fhir import create_single_codeable_concept, create_condition
 from healthchain.sandbox.generators.basegenerators import (
@@ -98,16 +98,6 @@ class BodySiteGenerator(BaseGenerator):
             code=faker.random_element(elements=("38266002",)),
             display=faker.random_element(elements=("Entire body as a whole",)),
             system="http://snomed.info/sct",
-        )
-
-
-@register_generator
-class ConditionParticipantGenerator(BaseGenerator):
-    @staticmethod
-    def generate():
-        return ConditionParticipant(
-            type=generator_registry.get("CodeableConceptGenerator").generate(),
-            individual=generator_registry.get("ReferenceGenerator").generate(),
         )
 
 

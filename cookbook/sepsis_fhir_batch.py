@@ -5,6 +5,9 @@ Sepsis Batch Screening with FHIR Gateway
 Query patients from a FHIR server, batch run sepsis predictions, and write
 RiskAssessment resources back. Demonstrates real FHIR server integration.
 
+Requirements:
+    pip install healthchain joblib xgboost python-dotenv
+
 Setup:
     1. Extract and upload demo patients:
        python scripts/extract_mimic_demo_patients.py --minimal --upload
@@ -21,12 +24,10 @@ from typing import List
 import joblib
 import logging
 from dotenv import load_dotenv
-from fhir.resources.patient import Patient
-from fhir.resources.observation import Observation
-from fhir.resources.riskassessment import RiskAssessment
+from healthchain.fhir.r4b import Patient, Observation, RiskAssessment
 
 from healthchain.gateway import HealthChainAPI, FHIRGateway
-from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+from healthchain.gateway.clients import FHIRAuthConfig
 from healthchain.fhir import merge_bundles
 from healthchain.io import Dataset
 from healthchain.pipeline import Pipeline
@@ -161,7 +162,11 @@ def create_app():
         gateway.add_source("epic", EPIC_URL)
         logger.info("✓ Epic configured")
 
-    app = HealthChainAPI(title="Sepsis Batch Screening")
+    app = HealthChainAPI(
+        title="Sepsis Batch Screening",
+        description="Batch sepsis risk screening against a live FHIR server",
+        service_type="fhir-gateway",
+    )
     app.register_gateway(gateway, path="/fhir")
 
     return app, gateway

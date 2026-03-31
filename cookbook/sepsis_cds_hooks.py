@@ -115,7 +115,12 @@ def create_app():
 
         return CDSResponse(cards=[])
 
-    app = HealthChainAPI(title="Sepsis CDS Hooks")
+    app = HealthChainAPI(
+        title="Sepsis CDS Hooks",
+        description="Real-time sepsis risk alerts via CDS Hooks",
+        port=8000,
+        service_type="cds-hooks",
+    )
     app.register_service(cds, path="/cds")
 
     return app
@@ -126,15 +131,10 @@ app = create_app()
 
 if __name__ == "__main__":
     import threading
-    import uvicorn
     from time import sleep
     from healthchain.sandbox import SandboxClient
 
-    # Start server
-    def run_server():
-        uvicorn.run(app, port=8000, log_level="warning")
-
-    server = threading.Thread(target=run_server, daemon=True)
+    server = threading.Thread(target=app.run, daemon=True)
     server.start()
     sleep(2)
 
