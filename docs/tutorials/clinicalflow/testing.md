@@ -103,6 +103,7 @@ You should see a response with cards for the detected conditions.
 
 For more control, create `test_service.py`:
 
+<!-- pytest-codeblocks:skip -->
 ```python
 import json
 import requests
@@ -176,6 +177,7 @@ The pipeline extracted four conditions from the clinical note text - exactly wha
 
 For testing with multiple patients or larger datasets, use the `SandboxClient`:
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -202,6 +204,7 @@ for i, response in enumerate(responses):
 
 Save results for reporting or debugging:
 
+<!-- pytest-codeblocks:skip -->
 ```python
 # Save responses to files
 client.save_results(
@@ -215,6 +218,7 @@ client.save_results(
 
 Inspect what will be sent without actually calling the service:
 
+<!-- pytest-codeblocks:skip -->
 ```python
 # Preview queued requests
 previews = client.preview_requests(limit=5)

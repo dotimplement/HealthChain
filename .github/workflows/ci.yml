@@ -41,3 +41,7 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+      - name: Test documentation code snippets
+        run: uv run pytest --codeblocks docs/
+        continue-on-error: true  # Don't block CI while snippets are being updated

@@ -16,6 +16,7 @@ The [**HealthChainAPI**](./reference/gateway/api.md) provides a unified interfac
 
 [(Full Documentation on Gateway)](./reference/gateway/gateway.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
 from healthchain.fhir.r4b import Patient
@@ -57,6 +58,7 @@ Containers make your pipeline FHIR-native by loading and transforming your data 
 
 [(Full Documentation on Containers)](./reference/io/containers/containers.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io import Document
@@ -92,6 +94,7 @@ HealthChain provides a set of ready-to-use [**NLP Integrations**](./reference/pi
 
 [(Full Documentation on Components)](./reference/pipeline/components/components.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
@@ -113,6 +116,7 @@ You can process legacy healthcare data formats too. [**Adapters**](./reference/i
 
 [(Full Documentation on Adapters)](./reference/io/adapters/adapters.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.io import CdaAdapter
 from healthchain.models import CdaRequest
@@ -133,6 +137,7 @@ Prebuilt pipelines are the fastest way to jump into healthcare AI with minimal s
 
 [(Full Documentation on Pipelines)](./reference/pipeline/pipeline.md#prebuilt)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
@@ -150,6 +155,7 @@ The HealthChain Interoperability module provides tools for converting between di
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.interop import create_interop, FormatType
 
@@ -198,6 +204,7 @@ Workflows determine the request structure, required FHIR resources, and validati
 | `synthea-patient`  | **Synthea FHIR Patient Records**    | R4           | [Synthea Downloads](https://synthea.mitre.org/downloads)                                  | [Download ZIP](https://arc.net/l/quote/hoquexhy) (100 Sample, 36 MB)                           |
 
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.sandbox import list_available_datasets
 
@@ -208,6 +215,7 @@ print(datasets)
 
 #### Basic Usage
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -235,6 +243,7 @@ responses = client.send_requests()
 
 For clinical documentation workflows using SOAP/CDA:
 
+<!-- pytest-codeblocks:skip -->
 ```python
 # Use context manager for automatic result saving
 with SandboxClient(
@@ -253,6 +262,7 @@ Use `healthchain.fhir` helpers to quickly create and manipulate FHIR resources (
 
 [(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
 
+<!-- pytest-codeblocks:skip -->
 ```python
 from healthchain.fhir import create_condition
 
