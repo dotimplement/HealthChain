@@ -24,7 +24,7 @@ The NLP was hard coded in our example but HealthChain has simple pipeline integr
 
 Convert extracted entities to FHIR resources:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline.components import FHIRProblemListExtractor
 

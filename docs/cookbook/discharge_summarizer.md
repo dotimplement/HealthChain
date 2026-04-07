@@ -43,7 +43,7 @@ First, we'll create a [summarization pipeline](../reference/pipeline/pipeline.md
 For LLM approaches, we'll use [LangChain](https://python.langchain.com/docs/integrations/chat/huggingface/) for better prompting.
 
 === "Non-chat model"
-    <!-- pytest-codeblocks:skip -->
+    <!--pytest.mark.skip-->
     ```python
     from healthchain.pipeline import SummarizationPipeline
 
@@ -54,7 +54,7 @@ For LLM approaches, we'll use [LangChain](https://python.langchain.com/docs/inte
 
 
 === "Chat model"
-    <!-- pytest-codeblocks:skip -->
+    <!--pytest.mark.skip-->
     ```python
     from healthchain.pipeline import SummarizationPipeline
 
@@ -96,7 +96,7 @@ The `SummarizationPipeline` automatically:
 
 The [CdsFhirAdapter](../reference/io/adapters/cdsfhiradapter.md) converts between CDS Hooks requests and HealthChain's [Document](../reference/io/containers/document.md) format. This makes it easy to work with FHIR data in CDS workflows.
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.io import CdsFhirAdapter
 
@@ -119,7 +119,7 @@ cds_adapter.format(doc)
 
 Create the [CDS Hooks handler](../reference/gateway/cdshooks.md) to receive discharge note requests, run the AI summarization pipeline, and return results as CDS cards.
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import CDSHooksService
 from healthchain.models import CDSRequest, CDSResponse
@@ -146,7 +146,7 @@ def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
 
 Register the CDS service with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI
 
@@ -159,7 +159,7 @@ app.register_service(cds_service)
 HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the CDS hooks workflow end-to-end. It loads your sample free text data and formats it into CDS requests, sends it to your service, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally and inspect the inputs and outputs before connecting to a real EHR instance.
 
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -188,7 +188,7 @@ client.load_free_text(
 
 Put it all together and run both the service and sandbox client:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 import threading
 

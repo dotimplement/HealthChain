@@ -40,7 +40,7 @@ All the code running examples in this tutorial will show both the uv and pip ver
 
 Create a file called `check_install.py`:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 import healthchain
 from healthchain.io import Document

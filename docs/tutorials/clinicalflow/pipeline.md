@@ -15,7 +15,7 @@ A **Pipeline** in HealthChain is a sequence of processing steps that transform i
 
 Create a file called `pipeline.py`:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io import Document
@@ -70,7 +70,7 @@ def create_clinical_pipeline():
 
 Create a file called `test_pipeline.py` to test your pipeline:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from pipeline import create_clinical_pipeline
 from healthchain.io import Document

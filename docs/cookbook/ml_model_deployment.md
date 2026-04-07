@@ -61,7 +61,7 @@ cp scripts/models/sepsis_model.pkl cookbook/models/
 
 **Using your own model?** The pipeline is flexible—just save any scikit-learn-compatible model as a pickle with this structure:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 import joblib
 
@@ -185,7 +185,7 @@ If using the **FHIR Gateway pattern**, also confirm:
 
 Both patterns reuse the same pipeline. Here's what you'll write:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 def create_pipeline() -> Pipeline[Dataset]:
     pipeline = Pipeline[Dataset]()
@@ -207,7 +207,7 @@ def create_pipeline() -> Pipeline[Dataset]:
 
 The pipeline operates on a `Dataset`, which you create from a FHIR bundle:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 ```
@@ -253,7 +253,7 @@ Clinician opens chart → EHR fires patient-view hook → Your service runs pred
 
 Create a [CDSHooksService](../reference/gateway/cdshooks.md) that listens for `patient-view` events:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import CDSHooksService
 from healthchain.fhir import prefetch_to_bundle
@@ -293,7 +293,7 @@ def sepsis_alert(request: CDSRequest) -> CDSResponse:
 
 Register with [HealthChainAPI](../reference/gateway/api.md):
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 app = HealthChainAPI(title="Sepsis CDS Hooks")
 app.register_service(cds, path="/cds")
@@ -303,7 +303,7 @@ app.register_service(cds, path="/cds")
 
 The [SandboxClient](../reference/utilities/sandbox.md) simulates EHR requests using your demo patient files:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -360,7 +360,7 @@ Query patients from FHIR server → Run predictions → Write RiskAssessment bac
 
 Configure the [FHIRGateway](../reference/gateway/fhir_gateway.md) with your FHIR source:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir.r4b import Patient, Observation
 from healthchain.gateway import FHIRGateway
@@ -376,7 +376,7 @@ gateway.add_source("medplum", config.to_connection_string())
 
 Query patient data, run prediction, and write back a [RiskAssessment](https://www.hl7.org/fhir/riskassessment.html) resource:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 def screen_patient(gateway: FHIRGateway, patient_id: str, source: str):
     # Query patient + observations from FHIR server
@@ -401,7 +401,7 @@ def screen_patient(gateway: FHIRGateway, patient_id: str, source: str):
 
 Loop over patient IDs and screen each one:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 for patient_id in patient_ids:
     screen_patient(gateway, patient_id, source="medplum")
@@ -411,7 +411,7 @@ for patient_id in patient_ids:
 
     This demo uses a fixed list of patient IDs. In production, you'd query for patients dynamically—for example, ICU admissions in the last hour:
 
-    <!-- pytest-codeblocks:skip -->
+    <!--pytest.mark.skip-->
     ```python
     # Find patients with recent ICU encounters
     encounters = gateway.search(
@@ -428,7 +428,7 @@ for patient_id in patient_ids:
 
 ### Build the Service
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 app = HealthChainAPI(title="Sepsis Batch Screening")
 app.register_gateway(gateway, path="/fhir")

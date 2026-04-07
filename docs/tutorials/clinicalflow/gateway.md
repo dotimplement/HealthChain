@@ -29,7 +29,7 @@ The flow:
 
 Create a file called `app.py`. This imports the pipeline you created in the [previous step](pipeline.md):
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.io import Document

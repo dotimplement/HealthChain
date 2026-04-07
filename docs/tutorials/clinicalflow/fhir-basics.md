@@ -70,7 +70,7 @@ Tracks what medications a patient is taking:
 
 HealthChain provides utilities to work with FHIR resources easily:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir import create_condition, create_patient
 from healthchain.fhir.r4b import Patient
@@ -108,7 +108,7 @@ print(f"With condition: {condition.code.coding[0].display}")
 
 When an EHR sends patient context, it often comes as a **Bundle** - a collection of related resources:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir.r4b import Bundle
 
@@ -130,7 +130,7 @@ print(f"Bundle contains {len(bundle.entry)} resources")
 
 HealthChain's `Document` container bridges clinical text and FHIR data:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.io import Document
 

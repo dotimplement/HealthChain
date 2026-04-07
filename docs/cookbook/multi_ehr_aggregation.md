@@ -27,7 +27,7 @@ EPIC_USE_JWT_ASSERTION=true
 
 Load your Epic credentials from the `.env` file and create a connection string compatible with the FHIR gateway:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway.clients import FHIRAuthConfig
 
@@ -39,7 +39,7 @@ EPIC_URL = config.to_connection_string()
 
 [FHIR Gateways](../reference/gateway/fhir_gateway.md) connect to external FHIR servers and handles authentication, connection pooling, and token refresh automatically. Add the Epic sandbox as a source:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import FHIRGateway
 
@@ -65,7 +65,7 @@ gateway.add_source("cerner", CERNER_URL)
 
 Define an aggregation handler that queries multiple FHIR sources for [Condition](https://www.hl7.org/fhir/condition.html) resources.
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir import merge_bundles
 
@@ -125,7 +125,7 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
 
 Register the gateway with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints.
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI
 
@@ -152,7 +152,7 @@ For additional processing like terminology mapping or quality checks, create a D
 
 Document pipelines are optimized for text and structured data processing, such as FHIR resources. When you initialize a [Document](../reference/io/containers/document.md) with FHIR [Bundle](https://www.hl7.org/fhir/condition.html) data, it automatically extracts and separates metadata resources from the clinical resources for easier inspection and error handling:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 # Initialize Document with a Bundle
 doc = Document(data=merged_bundle)
@@ -168,7 +168,7 @@ doc.fhir.medication_list     # List of MedicationStatement resources
 
 Add processing nodes using decorators:
 
-<!-- pytest-codeblocks:skip -->
+<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io.containers import Document
@@ -211,7 +211,7 @@ Example uses Epic patient `eIXesllypH3M9tAA5WdJftQ3`; see [Epic sandbox](https:/
     ```
 
 === "Python"
-    <!-- pytest-codeblocks:skip -->
+    <!--pytest.mark.skip-->
     ```python
       import requests
 
@@ -345,7 +345,7 @@ Sample conditions:
 
     You'll see this if you haven't authorized access to the correct FHIR resources when you set up your FHIR sandbox.
 
-    <!-- pytest-codeblocks:skip -->
+    <!--pytest.mark.skip-->
     ```python
     print([outcome.model_dump() for outcome in doc.fhir.operation_outcomes])
     ```
