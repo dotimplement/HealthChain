@@ -8,6 +8,7 @@ Check out the full working example [here](https://github.com/dotimplement/Health
 
 ## Setup
 
+<!--pytest.mark.skip-->
 ```bash
 pip install healthchain python-dotenv
 ```
@@ -16,6 +17,7 @@ We'll use Epic's public FHIR sandbox. If you haven't set up Epic sandbox access 
 
 Once you have your Epic credentials, configure them in a `.env` file:
 
+<!--pytest.mark.skip-->
 ```bash
 # .env file
 EPIC_BASE_URL=https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
@@ -204,7 +206,8 @@ Example uses Epic patient `eIXesllypH3M9tAA5WdJftQ3`; see [Epic sandbox](https:/
 
 
 === "cURL"
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     curl -X 'GET' \
       'http://127.0.0.1:8888/fhir/aggregate/Condition?id=eIXesllypH3M9tAA5WdJftQ3&sources=epic&sources=cerner' \
       -H 'accept: application/fhir+json'

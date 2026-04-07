@@ -22,6 +22,7 @@ Both patterns share the same trained model and feature extraction—only the int
 
 ### Install Dependencies
 
+<!--pytest.mark.skip-->
 ```bash
 pip install healthchain joblib xgboost scikit-learn python-dotenv
 ```
@@ -30,6 +31,7 @@ pip install healthchain joblib xgboost scikit-learn python-dotenv
 
 The cookbook includes a training script that builds an XGBoost classifier from MIMIC-IV data. From the project root:
 
+<!--pytest.mark.skip-->
 ```bash
 cd scripts
 python sepsis_prediction_training.py
@@ -45,6 +47,7 @@ This script:
 
 After training, copy the model to the cookbook directory:
 
+<!--pytest.mark.skip-->
 ```bash
 cp scripts/models/sepsis_model.pkl cookbook/models/
 ```
@@ -53,7 +56,8 @@ cp scripts/models/sepsis_model.pkl cookbook/models/
 
     The training script uses the [MIMIC-IV Clinical Database Demo](https://physionet.org/content/mimic-iv-demo/2.2/) (~50MB, freely downloadable). Set the path:
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     export MIMIC_CSV_PATH=/path/to/mimic-iv-clinical-database-demo-2.2
     ```
 
@@ -90,7 +94,8 @@ The two patterns have different data requirements:
 
     Download pre-extracted patient bundles—these are already in the repo if you cloned it:
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     mkdir -p cookbook/data/mimic_demo_patients
     cd cookbook/data/mimic_demo_patients
     wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/mimic_demo_patients/high_risk_patient.json
@@ -108,7 +113,8 @@ The two patterns have different data requirements:
 
     Add Medplum credentials to your `.env` file. See [FHIR Sandbox Setup](./setup_fhir_sandboxes.md#medplum) for details:
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
     MEDPLUM_CLIENT_ID=your_client_id
     MEDPLUM_CLIENT_SECRET=your_client_secret
@@ -118,7 +124,8 @@ The two patterns have different data requirements:
 
     **2. Extract and Upload Demo Patients**
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     # Set MIMIC-on-FHIR path (or use --mimic flag)
     export MIMIC_FHIR_PATH=/path/to/mimic-iv-on-fhir
 
@@ -156,7 +163,8 @@ The two patterns have different data requirements:
 
         The script has options for generating larger test sets:
 
-        ```bash
+        <!--pytest.mark.skip-->
+```bash
         python extract_mimic_demo_patients.py --help
 
         # Examples:

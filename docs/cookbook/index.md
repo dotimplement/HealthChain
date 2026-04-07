@@ -109,6 +109,7 @@ Hands-on, production-ready examples for building healthcare AI applications with
 
 Cookbooks are standalone scripts — run them directly to explore and experiment. When you're ready to build a proper service, scaffold a project and move your logic in:
 
+<!--pytest.mark.skip-->
 ```bash
 # 1. Run a cookbook locally
 python cookbook/sepsis_cds_hooks.py
@@ -125,6 +126,7 @@ healthchain serve
 
 **What moves from your script into `healthchain.yaml`:**
 
+<!--pytest.mark.skip-->
 ```python
 # cookbook — everything hardcoded in Python
 gateway = FHIRGateway()
@@ -151,6 +153,7 @@ llm:
   max_tokens: 512
 ```
 
+<!--pytest.mark.skip-->
 ```python
 # app.py — load from config instead
 from healthchain.config.appconfig import AppConfig

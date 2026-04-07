@@ -18,6 +18,7 @@ First, create sample data that matches what an EHR would send. This is the same 
 
 Create a `data` directory:
 
+<!--pytest.mark.skip-->
 ```bash
 mkdir data
 ```
@@ -91,6 +92,7 @@ This sample includes:
 
 The fastest way to test is with the sample data directly. With your service running, send the request:
 
+<!--pytest.mark.skip-->
 ```bash
 curl -X POST http://localhost:8000/cds/cds-services/patient-alerts \
   -H "Content-Type: application/json" \
@@ -135,13 +137,15 @@ Make sure your service is running in one terminal:
 
 === "uv"
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     uv run python app.py
     ```
 
 === "pip"
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     python app.py
     ```
 
@@ -149,13 +153,15 @@ Then in another terminal, run the test:
 
 === "uv"
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     uv run python test_service.py
     ```
 
 === "pip"
 
-    ```bash
+    <!--pytest.mark.skip-->
+```bash
     python test_service.py
     ```
 

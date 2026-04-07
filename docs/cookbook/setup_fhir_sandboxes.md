@@ -36,6 +36,7 @@ Epic uses [OAuth2 with JWT assertion for authentication](https://fhir.epic.com/D
 
 Follow Epic's instructions to [create a Public Private key pair for JWT signature](https://fhir.epic.com/Documentation?docId=oauth2&section=Creating-Key-Pair):
 
+<!--pytest.mark.skip-->
 ```bash
 # Generate private key - make sure the key length is at least 2048 bits.
 openssl genrsa -out privatekey.pem 2048
@@ -51,7 +52,8 @@ Where `/CN=myapp` is the subject name (e.g., your app name). The subject name do
 Epic now requires registering your public key via a **JWKS (JSON Web Key Set) URL** instead of direct file upload. For quick and dirty development/testing purposes, you can use ngrok to expose your JWKS server publicly.
 
 1. **Set up a JWKS server**:
-   ```bash
+   <!--pytest.mark.skip-->
+```bash
    # Ensure your .env has the private key path
    # EPIC_CLIENT_SECRET_PATH=path/to/privatekey.pem
    # EPIC_KEY_ID=healthchain-demo-key
@@ -65,7 +67,8 @@ Epic now requires registering your public key via a **JWKS (JSON Web Key Set) UR
       - Example: `your-app.ngrok-free.app`
 
 3. **Expose your JWKS server**:
-   ```bash
+   <!--pytest.mark.skip-->
+```bash
    ngrok http 9999 --domain=your-app.ngrok-free.app
    ```
 
@@ -96,6 +99,7 @@ The JWKS must be:
 
 Create a `.env` file with your credentials:
 
+<!--pytest.mark.skip-->
 ```bash
 # .env file
 EPIC_BASE_URL=https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
@@ -110,6 +114,7 @@ EPIC_KEY_ID=healthchain-demo-key  # Must match the kid in your JWKS
 
 ### Using Epic Sandbox in Code
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway.clients import FHIRAuthConfig
 
@@ -128,6 +133,7 @@ gateway.add_source("epic", EPIC_URL)
 
 After configuration:
 
+<!--pytest.mark.skip-->
 ```bash
 python scripts/check_epic_connection.py
 ```
@@ -165,11 +171,13 @@ Cerner (now Oracle Health) provides both open and secure public sandboxes for th
 
 The Open Sandbox is read-only. It does not require authentication and is handy for quick proof of concepts:
 
+<!--pytest.mark.skip-->
 ```bash
 https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/:resource[?:parameters]
 ```
 You can get an idea of patients available in the open sandbox by querying some common last names:
 
+<!--pytest.mark.skip-->
 ```bash
 curl -i -H "Accept: application/json+fhir" "https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d/Patient?family=smith"
 ```
@@ -213,6 +221,7 @@ After creating the client:
 
 Create a `.env` file with your credentials:
 
+<!--pytest.mark.skip-->
 ```bash
 # .env file
 MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
@@ -224,6 +233,7 @@ MEDPLUM_SCOPE=openid
 
 ### Using Medplum in Code
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import FHIRGateway
 from healthchain.gateway.clients import FHIRAuthConfig

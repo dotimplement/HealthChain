@@ -8,12 +8,14 @@ The [InteropEngine](../reference/interop/engine.md) provides a unified interface
 
 Install HealthChain:
 
+<!--pytest.mark.skip-->
 ```bash
 pip install healthchain
 ```
 
 Create an interoperability engine:
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.interop import create_interop, FormatType
 from pathlib import Path
@@ -26,6 +28,7 @@ engine = create_interop()
 
 Parse a CDA document and extract FHIR resources:
 
+<!--pytest.mark.skip-->
 ```python
 cda_xml = """
 <ClinicalDocument xmlns="urn:hl7-org:v3">
@@ -93,6 +96,7 @@ for resource in fhir_resources:
 
 Generate a CDA document from FHIR resources:
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir.r4b import Condition, Patient
 
@@ -149,6 +153,7 @@ print(cda_document)
 
 Parse an HL7v2 message and extract FHIR resources:
 
+<!--pytest.mark.skip-->
 ```python
 hl7v2_message = """
 MSH|^~\&|EPIC|EPICADT|SMS|SMSADT|199912271408|CHARRIS|ADT^A01|1817457|D|2.5|
@@ -169,6 +174,7 @@ for resource in fhir_resources:
 
 Generate an HL7v2 message from FHIR resources:
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir.r4b import Patient, Encounter
 
@@ -226,6 +232,7 @@ print(hl7v2_message)
 
 Save converted data to files:
 
+<!--pytest.mark.skip-->
 ```python
 output_dir = Path("./output")
 output_dir.mkdir(exist_ok=True)

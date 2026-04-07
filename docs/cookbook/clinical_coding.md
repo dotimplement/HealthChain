@@ -18,6 +18,7 @@ A clinical note arrives from NoteReader as CDA XML → gets parsed and processed
 
 We'll use [scispacy](https://allenai.github.io/scispacy/) for medical entity extraction. Install the required dependencies:
 
+<!--pytest.mark.skip-->
 ```bash
 pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
@@ -27,6 +28,7 @@ pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/e
 
 Download the sample CDA file `notereader_cda.xml` into a `data/` folder in your project root using `wget`:
 
+<!--pytest.mark.skip-->
 ```bash
 mkdir -p data
 cd data
@@ -39,6 +41,7 @@ Set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Se
 
 Once you have your Medplum credentials, configure them in a `.env` file:
 
+<!--pytest.mark.skip-->
 ```bash
 # .env file
 MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4

@@ -10,6 +10,7 @@ Check out the full working example [here](https://github.com/dotimplement/Health
 
 ### Install Dependencies
 
+<!--pytest.mark.skip-->
 ```bash
 pip install healthchain python-dotenv
 ```
@@ -19,6 +20,7 @@ This example uses a Hugging Face model for the summarization task, so make sure 
 
 If you are using a chat model, make sure you have the necessary `langchain` packages installed.
 
+<!--pytest.mark.skip-->
 ```bash
 pip install langchain langchain-huggingface
 ```
@@ -27,6 +29,7 @@ pip install langchain langchain-huggingface
 
 Download the sample data `discharge_notes.csv` into a `data/` folder in your project root using `wget`:
 
+<!--pytest.mark.skip-->
 ```bash
 mkdir -p data
 cd data
