@@ -21,26 +21,26 @@ def upgrade() -> None:
     op.create_table(
         "audit_events",
         sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("recorded", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("agent_who", sa.Text(), nullable=False),
-        sa.Column("entity_what", sa.Text(), nullable=True),
+        sa.Column("time", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("users", sa.Text(), nullable=False),
+        sa.Column("accessed_info", sa.Text(), nullable=True),
         sa.Column("action", sa.String(length=1), nullable=False),
         sa.Column("resource", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_audit_events_action", "audit_events", ["action"])
-    op.create_index("ix_audit_events_agent_recorded", "audit_events", ["agent_who", "recorded"])
-    op.create_index("ix_audit_events_agent_who", "audit_events", ["agent_who"])
-    op.create_index("ix_audit_events_entity_recorded", "audit_events", ["entity_what", "recorded"])
-    op.create_index("ix_audit_events_entity_what", "audit_events", ["entity_what"])
-    op.create_index("ix_audit_events_recorded", "audit_events", ["recorded"])
+    op.create_index("ix_audit_events_users_time", "audit_events", ["users", "time"])
+    op.create_index("ix_audit_events_users", "audit_events", ["users"])
+    op.create_index("ix_audit_events_accessed_info_time", "audit_events", ["accessed_info", "time"])
+    op.create_index("ix_audit_events_accessed_info", "audit_events", ["accessed_info"])
+    op.create_index("ix_audit_events_time", "audit_events", ["time"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_audit_events_recorded", table_name="audit_events")
-    op.drop_index("ix_audit_events_entity_what", table_name="audit_events")
-    op.drop_index("ix_audit_events_entity_recorded", table_name="audit_events")
-    op.drop_index("ix_audit_events_agent_who", table_name="audit_events")
-    op.drop_index("ix_audit_events_agent_recorded", table_name="audit_events")
+    op.drop_index("ix_audit_events_accessed_info", table_name="audit_events")
+    op.drop_index("ix_audit_events_accessed_info_time", table_name="audit_events")
+    op.drop_index("ix_audit_events_users", table_name="audit_events")
+    op.drop_index("ix_audit_events_users_time", table_name="audit_events")
     op.drop_index("ix_audit_events_action", table_name="audit_events")
     op.drop_table("audit_events")
