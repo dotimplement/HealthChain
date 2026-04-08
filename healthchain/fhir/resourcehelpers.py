@@ -27,6 +27,9 @@ from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.riskassessment import RiskAssessment
 from fhir.resources.R4B.codeableconcept import CodeableConcept
 
+from fhir.resources.R4B.auditevent import AuditEvent, AuditEventAgent, AuditEventSource
+from fhir.resources.R4B.coding import Coding
+
 from healthchain.fhir.elementhelpers import (
     create_single_codeable_concept,
     create_single_attachment,
@@ -475,6 +478,65 @@ def set_condition_category(
     return condition
 
 
+def create_provenance_audit_event(
+   resource: Any,
+   source: str,
+   tag_code: Optional[str] = None,
+) -> Optional[AuditEvent]:
+   """
+   create a FHIR AuditEvent recording that provenance metadata was added to a resource.
+
+   Called internally by add_provenance_metadata. Records:
+     - what resource was used
+     - which resource system it came from
+     - when it happened
+     - what kind of tag code was applied (if any)
+   """
+   try:
+       resource_type = getattr(resource, "resource_type", None) or type(resource).__name__
+       resource_id = getattr(resource, "id", "unknown")
+
+       event = AuditEvent(
+           type=Coding(
+               system="http://terminology.hl7.org/CodeSystem/audit-event-type",
+               code="rest",
+               display="RESTful Operation",
+           ),
+           action="C", ## C means Create
+           recorded=datetime.datetime.now(datetime.timezone.utc), ## time -> when it was accessed
+           outcome="0",  ## code for checking if it's success or not
+           agent=[  ## who accessed it
+               AuditEventAgent(
+                   requestor=True,
+                   who={"reference": f"Device/healthchain-gateway"},
+                   network={"address": source, "type": "5"},
+               )
+           ],
+           source=AuditEventSource(
+               observer={"reference": "Device/healthchain-gateway"},
+               site=source,
+           ),
+           entity=[ ## what is accessed
+               {
+                   "what": {"reference": f"{resource_type}/{resource_id}"},
+                   "description": f"Provenance tagged from {source}"
+                   + (f" with tag '{tag_code}'" if tag_code else ""),
+               }
+           ],
+       )
+
+       logger.info(
+           f"PROVENANCE AUDIT: {resource_type}/{resource_id} "
+           f"tagged from '{source}'"
+           + (f" [{tag_code}]" if tag_code else "")
+       )
+
+       return event
+
+   except Exception as e:
+       logger.warning(f"Failed to create provenance audit event: {e}")
+
+
 def add_provenance_metadata(
     resource: Any,
     source: str,
@@ -522,6 +584,8 @@ def add_provenance_metadata(
                 display=tag_display or tag_code,
             )
         )
+
+    create_provenance_audit_event(resource, source, tag_code)
 
     return resource
 
