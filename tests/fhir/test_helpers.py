@@ -320,6 +320,85 @@ def test_add_provenance_metadata_sets_source_and_tag():
     assert any(t.code == "aggregated" for t in (updated.meta.tag or []))
 
 
+
+def test_create_provenance_audit_event_returns_audit_event():
+    """Test that create_provenance_audit_event returns a valid FHIR AuditEvent."""
+    from fhir.resources.R4B.auditevent import AuditEvent as FHIRAuditEvent
+    from healthchain.fhir.resourcehelpers import create_provenance_audit_event
+
+    cond = create_condition(subject="Patient/123", code="E11.9")
+    event = create_provenance_audit_event(cond, "epic", "aggregated")
+
+    assert event is not None
+    assert isinstance(event, FHIRAuditEvent)
+    assert event.action == "C"
+    assert event.outcome == "0"
+    assert event.agent[0].requestor == True
+    assert event.source.site == "epic"
+    assert event.entity[0].what.reference == "Condition/" + cond.id
+
+
+def test_create_provenance_audit_event_without_tag():
+    """Test that create_provenance_audit_event works without a tag_code."""
+    from healthchain.fhir.resourcehelpers import create_provenance_audit_event
+
+    cond = create_condition(subject="Patient/123", code="E11.9")
+    event = create_provenance_audit_event(cond, "cerner")
+
+    assert event is not None
+    assert event.source.site == "cerner"
+    assert "with tag" not in event.entity[0].description
+
+
+
+
+def test_add_provenance_metadata_creates_audit_event(caplog):
+    """Test that add_provenance_metadata logs a provenance audit event."""
+    import logging
+
+    with caplog.at_level(logging.INFO):
+        cond = create_condition(subject="Patient/123", code="E11.9")
+        add_provenance_metadata(cond, "epic", "aggregated", "Aggregated")
+
+    assert "PROVENANCE AUDIT" in caplog.text
+    assert "epic" in caplog.text
+    assert "aggregated" in caplog.text
+
+
+def test_create_provenance_audit_event_returns_audit_event():
+    """Test that create_provenance_audit_event returns a valid FHIR AuditEvent."""
+    from fhir.resources.R4B.auditevent import AuditEvent as FHIRAuditEvent
+    from healthchain.fhir.resourcehelpers import create_provenance_audit_event
+
+    cond = create_condition(subject="Patient/123", code="E11.9")
+    event = create_provenance_audit_event(cond, "epic", "aggregated")
+
+    assert event is not None
+    assert isinstance(event, FHIRAuditEvent)
+    assert event.action == "C"
+    assert event.outcome == "0"
+    assert event.agent[0].requestor == True
+    assert event.source.site == "epic"
+    assert event.entity[0].what.reference == "Condition/" + cond.id
+
+
+def test_create_provenance_audit_event_without_tag():
+    """Test that create_provenance_audit_event works without a tag_code."""
+    from healthchain.fhir.resourcehelpers import create_provenance_audit_event
+
+    cond = create_condition(subject="Patient/123", code="E11.9")
+    event = create_provenance_audit_event(cond, "cerner")
+
+    assert event is not None
+    assert event.source.site == "cerner"
+    assert "with tag" not in event.entity[0].description
+
+
+
+
+
+
+
 def test_add_coding_to_codeable_concept_appends():
     cc = create_single_codeable_concept("123", "X")
     updated = add_coding_to_codeable_concept(cc, "456", "http://sys", "Y")
@@ -404,3 +483,5 @@ def test_calculate_age_from_event_date_invalid():
     assert calculate_age_from_event_date("", "2020-01-01") is None
     assert calculate_age_from_event_date("invalid", "2020-01-01") is None
     assert calculate_age_from_event_date("1990-01-01", "invalid") is None
+
+

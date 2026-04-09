@@ -527,7 +527,7 @@ def create_provenance_audit_event(
 
        logger.info(
            f"PROVENANCE AUDIT: {resource_type}/{resource_id} "
-           f"tagged from '{source}'"
+           f"came from '{source}'"
            + (f" [{tag_code}]" if tag_code else "")
        )
 
