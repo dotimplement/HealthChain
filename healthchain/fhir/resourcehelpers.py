@@ -34,7 +34,7 @@ from healthchain.fhir.elementhelpers import (
     create_single_codeable_concept,
     create_single_attachment,
 )
-from healthchain.fhir.utilities import _generate_id
+from healthchain.utils.idgenerator import generate_id as _generate_id
 
 logger = logging.getLogger(__name__)
 

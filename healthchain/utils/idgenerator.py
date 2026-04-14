@@ -1,8 +1,23 @@
 import random
 import string
+import uuid
 
 from typing import List
-import uuid
+
+
+HC_PREFIX = "hc-"
+
+
+def generate_id(prefix: str = HC_PREFIX) -> str:
+    """Generate a unique HealthChain ID.
+
+    Args:
+        prefix: Prefix to prepend to the UUID (default: "hc-")
+
+    Returns:
+        str: A unique ID string, e.g. "hc-550e8400-e29b-41d4-a716-446655440000"
+    """
+    return f"{prefix}{uuid.uuid4()}"
 
 
 class IdGenerator:

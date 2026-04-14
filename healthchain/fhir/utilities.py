@@ -5,18 +5,7 @@ age calculation, and gender encoding.
 """
 
 import datetime
-import uuid
 from typing import Optional
-
-
-def _generate_id() -> str:
-    """Generate a unique ID prefixed with 'hc-'.
-
-    Returns:
-        str: A unique ID string prefixed with 'hc-'
-    """
-    return f"hc-{str(uuid.uuid4())}"
-
 
 def calculate_age_from_birthdate(birth_date: str) -> Optional[int]:
     """Calculate age in years from a birth date string.

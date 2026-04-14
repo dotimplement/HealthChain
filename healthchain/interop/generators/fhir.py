@@ -4,7 +4,6 @@ FHIR Generator for HealthChain Interoperability Engine
 This module provides functionality for generating FHIR resources from templates.
 """
 
-import uuid
 import logging
 from typing import Dict, List, Optional, Type, Any
 
@@ -13,6 +12,7 @@ from liquid import Template
 
 from healthchain.interop.generators.base import BaseGenerator
 from healthchain.fhir import create_resource_from_dict
+from healthchain.utils.idgenerator import generate_id
 from healthchain.interop.types import FormatType
 
 
@@ -204,7 +204,7 @@ class FHIRGenerator(BaseGenerator):
         # Add common fields
         id_prefix = self.config.get_config_value("defaults.common.id_prefix", "hc-")
         if "id" not in resource_dict:
-            resource_dict["id"] = f"{id_prefix}{str(uuid.uuid4())}"
+            resource_dict["id"] = generate_id(id_prefix)
 
         # Get default values from configuration if available
         default_subject = self.config.get_config_value("defaults.common.subject")
