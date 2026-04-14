@@ -6,6 +6,7 @@ from typing import List
 
 
 HC_PREFIX = "hc-"
+DEFAULT_PATIENT_REF = "Patient/123"
 
 
 def generate_id(prefix: str = HC_PREFIX) -> str:

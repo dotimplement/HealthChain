@@ -1,4 +1,6 @@
 from typing import Optional
+
+from healthchain.utils.idgenerator import DEFAULT_PATIENT_REF
 from faker import Faker
 
 from healthchain.sandbox.generators.basegenerators import (
@@ -45,7 +47,7 @@ class ProcedureGenerator(BaseGenerator):
         random_seed: Optional[int] = None,
     ):
         Faker.seed(random_seed)
-        subject_reference = subject_reference or "Patient/123"
+        subject_reference = subject_reference or DEFAULT_PATIENT_REF
         encounter_reference = encounter_reference or "Encounter/123"
         code = generator_registry.get("ProcedureSnomedCodeGenerator").generate(
             constraints=constraints
