@@ -331,7 +331,7 @@ def test_create_provenance_audit_event_returns_audit_event():
 
     assert event is not None
     assert isinstance(event, FHIRAuditEvent)
-    assert event.action == "C"
+    assert event.action == "U"
     assert event.outcome == "0"
     assert event.agent[0].requestor == True
     assert event.source.site == "epic"
@@ -375,7 +375,7 @@ def test_create_provenance_audit_event_returns_audit_event():
 
     assert event is not None
     assert isinstance(event, FHIRAuditEvent)
-    assert event.action == "C"
+    assert event.action == "U"
     assert event.outcome == "0"
     assert event.agent[0].requestor == True
     assert event.source.site == "epic"
@@ -397,6 +397,17 @@ def test_create_provenance_audit_event_without_tag():
 
 
 
+
+
+def test_add_provenance_metadata_calls_create_provenance_audit_event():
+    """Test that add_provenance_metadata calls create_provenance_audit_event."""
+    from unittest.mock import patch
+
+    with patch("healthchain.fhir.resourcehelpers.create_provenance_audit_event") as mock_fn:
+        cond = create_condition(subject="Patient/123", code="E11.9")
+        add_provenance_metadata(cond, "epic", "aggregated", "Aggregated")
+
+    mock_fn.assert_called_once_with(cond, "epic", "aggregated")
 
 
 def test_add_coding_to_codeable_concept_appends():

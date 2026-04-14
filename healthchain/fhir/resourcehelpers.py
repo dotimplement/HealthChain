@@ -502,7 +502,7 @@ def create_provenance_audit_event(
                code="rest",
                display="RESTful Operation",
            ),
-           action="C", ## C means Create
+           action="U",  ## U means Update - provenance tagging modifies an existing resource
            recorded=datetime.datetime.now(datetime.timezone.utc), ## time -> when it was accessed
            outcome="0",  ## code for checking if it's success or not
            agent=[  ## who accessed it
