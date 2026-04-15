@@ -6,6 +6,7 @@ healthcare-specific gateways, routes, middleware, and capabilities.
 """
 
 import logging
+import os
 import re
 
 from contextlib import asynccontextmanager
@@ -104,6 +105,8 @@ def _print_startup_banner(
     gateways: dict,
     services: dict,
     docs_url: str,
+    port: int = 8000,
+    service_type: Optional[str] = None,
     config=None,
     config_path: Optional[str] = None,
 ) -> None:
@@ -116,23 +119,30 @@ def _print_startup_banner(
     LOGO_COL = 38
 
     # ── resolve status values from config or sensible defaults ──
-    svc_type = (config.service.type if config else None) or (
-        list({**gateways, **services}.keys())[0]
-        if {**gateways, **services}
-        else "unknown"
+    svc_type = (
+        service_type
+        or (config.service.type if config else None)
+        or (
+            list({**gateways, **services}.keys())[0]
+            if {**gateways, **services}
+            else "unknown"
+        )
     )
     env = config.site.environment if config else "development"
-    port = str(config.service.port if config else 8000)
+    port = str(port)
     site = config.site.name if config else None
     auth = config.security.auth if config else "none"
     tls = config.security.tls.enabled if config else False
     hipaa = config.compliance.hipaa if config else False
     eval_enabled = config.eval.enabled if config else False
     eval_provider = config.eval.provider if config else "mlflow"
+    # Check registered gateways first, then fall back to env var presence
     fhir_configured = any(
-        hasattr(gw, "sources") and getattr(gw, "sources", None)
+        hasattr(gw, "connection_manager")
+        and gw.connection_manager
+        and getattr(gw.connection_manager, "sources", None)
         for gw in gateways.values()
-    )
+    ) or any(k.endswith("_CLIENT_ID") for k in os.environ)
 
     status: list[str] = [
         f"\033[1m\033[38;2;255;121;198m{title}\033[0m  \033[2mv{version}\033[0m",
@@ -237,6 +247,8 @@ class HealthChainAPI(FastAPI):
         title: str = "HealthChain API",
         description: str = "Healthcare Integration API",
         version: str = "1.0.0",
+        port: Optional[int] = None,
+        service_type: Optional[str] = None,
         enable_cors: bool = True,
         enable_events: bool = True,
         event_dispatcher: Optional[EventDispatcher] = None,
@@ -261,6 +273,10 @@ class HealthChainAPI(FastAPI):
             lifespan=self._lifespan,
             **kwargs,
         )
+
+        # Display metadata for banner (when running outside healthchain serve)
+        self._port = port
+        self._service_type = service_type
 
         # Gateway and service registries
         self.gateways = {}
@@ -597,12 +613,15 @@ class HealthChainAPI(FastAPI):
         from healthchain.config.appconfig import AppConfig
 
         config = AppConfig.load()
+        port = self._port or (config.service.port if config else 8000)
         _print_startup_banner(
             title=config.name if config else self.title,
             version=config.version if config else self.version,
             gateways=self.gateways,
             services=self.services,
-            docs_url=self.docs_url or "http://localhost:8000/docs",
+            docs_url=self.docs_url or "/docs",
+            port=port,
+            service_type=self._service_type,
             config=config,
             config_path="./healthchain.yaml" if config else None,
         )
@@ -615,6 +634,25 @@ class HealthChainAPI(FastAPI):
                     logger.debug(f"Initialized: {name}")
                 except Exception as e:
                     logger.warning(f"Failed to initialize {name}: {e}")
+
+    def run(self, host: str = "0.0.0.0", **kwargs) -> None:
+        """Run the application with uvicorn.
+
+        Convenience wrapper for local development and cookbooks. For production,
+        use `healthchain serve` which reads healthchain.yaml for TLS, port, etc.
+
+        Args:
+            host: Host to bind to (default: 0.0.0.0)
+            **kwargs: Passed through to uvicorn.run (e.g. reload=True, workers=4)
+
+        Example:
+            app = HealthChainAPI(title="My App", port=8888)
+            app.run()
+            app.run(reload=True)  # with hot reload
+        """
+        import uvicorn
+
+        uvicorn.run(self, host=host, port=self._port or 8000, **kwargs)
 
     async def _shutdown(self) -> None:
         """Handle graceful shutdown."""

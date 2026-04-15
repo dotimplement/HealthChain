@@ -1,11 +1,11 @@
 """FHIR utilities for HealthChain."""
 
+from healthchain.fhir import r4b
+
 from healthchain.fhir.version import (
     FHIRVersion,
     get_fhir_resource,
     get_default_version,
-    set_default_version,
-    reset_default_version,
     fhir_version_context,
     convert_resource,
     get_resource_version,
@@ -64,12 +64,12 @@ from healthchain.fhir.utilities import (
 )
 
 __all__ = [
+    # R4B re-export module
+    "r4b",
     # Version management
     "FHIRVersion",
     "get_fhir_resource",
     "get_default_version",
-    "set_default_version",
-    "reset_default_version",
     "fhir_version_context",
     "convert_resource",
     "get_resource_version",

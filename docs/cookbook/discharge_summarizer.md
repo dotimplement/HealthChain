@@ -124,7 +124,7 @@ from healthchain.models import CDSRequest, CDSResponse
 cds_service = CDSHooksService()
 
 # Define the CDS service function
-@cds_service.hook("encounter-discharge", id="discharge-summary")
+@cds_service.hook("encounter-discharge", id="discharge-summarizer")
 def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
     """Process discharge summaries with AI"""
     # Parse CDS request to internal Document format
@@ -183,14 +183,9 @@ client.load_free_text(
 Put it all together and run both the service and sandbox client:
 
 ```python
-import uvicorn
 import threading
 
-# Start the API server in a separate thread
-def start_api():
-    uvicorn.run(app, port=8000)
-
-api_thread = threading.Thread(target=start_api, daemon=True)
+api_thread = threading.Thread(target=app.run, daemon=True)
 api_thread.start()
 
 # Send requests and save responses with sandbox client
@@ -203,7 +198,7 @@ client.save_results("./output/")
     Once running, your service will be available at:
 
     - **Service discovery**: `http://localhost:8000/cds-services`
-    - **Discharge summary endpoint**: `http://localhost:8000/cds-services/discharge-summary`
+    - **Discharge summary endpoint**: `http://localhost:8000/cds/cds-services/discharge-summarizer`
 
 ??? example "Example CDS Response"
 
@@ -257,3 +252,4 @@ A CDS Hooks service for discharge workflows that integrates seamlessly with EHR 
     - **Add validation**: Implement checks for required discharge elements (medications, follow-ups, equipment).
     - **Multi-card support**: Expand to generate separate cards for different discharge aspects (medication reconciliation, transportation, follow-up scheduling).
     - **Integrate with workflows**: Deploy to Epic App Orchard or Cerner Code Console for production EHR integration.
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).

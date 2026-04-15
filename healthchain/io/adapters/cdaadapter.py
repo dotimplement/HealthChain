@@ -12,10 +12,6 @@ from healthchain.fhir import (
     create_document_reference,
     read_content_attachment,
 )
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
-from fhir.resources.allergyintolerance import AllergyIntolerance
-from fhir.resources.documentreference import DocumentReference
 
 log = logging.getLogger(__name__)
 
@@ -109,14 +105,15 @@ class CdaAdapter(BaseAdapter[CdaRequest, CdaResponse]):
         allergy_list = []
 
         for resource in fhir_resources:
-            if isinstance(resource, Condition):
+            resource_type_name = resource.__class__.__name__
+            if resource_type_name == "Condition":
                 problem_list.append(resource)
                 set_condition_category(resource, "problem-list-item")
-            elif isinstance(resource, MedicationStatement):
+            elif resource_type_name == "MedicationStatement":
                 medication_list.append(resource)
-            elif isinstance(resource, AllergyIntolerance):
+            elif resource_type_name == "AllergyIntolerance":
                 allergy_list.append(resource)
-            elif isinstance(resource, DocumentReference):
+            elif resource_type_name == "DocumentReference":
                 if (
                     resource.content
                     and resource.content[0].attachment

@@ -355,8 +355,7 @@ Query patients from FHIR server → Run predictions → Write RiskAssessment bac
 Configure the [FHIRGateway](../reference/gateway/fhir_gateway.md) with your FHIR source:
 
 ```python
-from fhir.resources.patient import Patient
-from fhir.resources.observation import Observation
+from healthchain.fhir.r4b import Patient, Observation
 from healthchain.gateway import FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
 from healthchain.fhir import merge_bundles
@@ -513,5 +512,5 @@ Both patterns:
     - **Add more features**: Extend `sepsis_vitals.yaml` with lab values, medications, or other Observations
     - **Add more FHIR sources**: The gateway supports multiple sources—see the cookbook script for Epic sandbox configuration, or the [FHIR Sandbox Setup guide](./setup_fhir_sandboxes.md)
     - **Automate batch runs**: Schedule screening jobs with cron, Airflow, or cloud schedulers; or use [FHIR Subscriptions](https://www.hl7.org/fhir/subscription.html) to trigger on new ICU admissions ([PRs welcome!](https://github.com/dotimplement/HealthChain/pulls))
-    - **Combine patterns**: Use batch screening to identify high-risk patients, then enable CDS
-    alerts for those patients
+    - **Combine patterns**: Use batch screening to identify high-risk patients, then enable CDS alerts for those patients
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).

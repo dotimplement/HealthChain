@@ -72,7 +72,7 @@ HealthChain provides utilities to work with FHIR resources easily:
 
 ```python
 from healthchain.fhir import create_condition, create_patient
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Create a patient with basic demographics
 # Note: create_patient generates an auto-prefixed ID (e.g., "hc-abc123")
@@ -97,7 +97,7 @@ print(f"With condition: {condition.code.coding[0].display}")
 
 ??? info "FHIR Versions in HealthChain"
 
-    HealthChain uses **FHIR R5** as the default version. However, **STU3** and **R4B** are also supported for compatibility with different EHR systems.
+    HealthChain uses **FHIR R4B** as the default version, matching most production EHRs (Epic, Cerner, etc.). **R5** and **STU3** are also supported.
 
     You can specify the version when working with FHIR resources, and HealthChain provides utilities for converting between versions when needed.
 
@@ -108,7 +108,7 @@ print(f"With condition: {condition.code.coding[0].display}")
 When an EHR sends patient context, it often comes as a **Bundle** - a collection of related resources:
 
 ```python
-from fhir.resources.bundle import Bundle
+from healthchain.fhir.r4b import Bundle
 
 # A bundle might contain a patient, their conditions, and medications
 bundle_data = {

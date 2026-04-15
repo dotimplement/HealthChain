@@ -3,8 +3,8 @@ import httpx
 
 from typing import Any, Dict, Type, Union
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.capabilitystatement import CapabilityStatement
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.capabilitystatement import CapabilityStatement
 from fhir.resources.resource import Resource
 
 from healthchain.gateway.clients.auth import OAuth2TokenManager
