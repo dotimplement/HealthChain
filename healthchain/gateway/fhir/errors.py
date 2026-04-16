@@ -38,6 +38,49 @@ class FHIRConnectionError(Exception):
         else:
             super().__init__(f"[{code}] {message}")
 
+class RateLimitError(Exception):
+   """
+   Raised when the FHIR sercer returns 429 too many requests
+
+   Args:
+       message: Human-readable error message e.g. Server does not allow client defined ids
+       code: Error code or technical details e.g. METHOD_NOT_ALLOWED
+       retry: How long the users need to wait before retrying to send a new request
+   """
+   def _init_(
+       self,
+       message:str,
+       code:str,
+       retry : Optional[int] = None,
+   ):
+       self.retry = retry
+       super.__init__(message=message, code=code, state="429",show_state=False)
+
+class RetryError(Exception):
+   """
+   Raised for server that is safe to retry
+   """
+   def _init_(self,message:str,code:str,state:str):
+       super.__init__(message=message,code=code,state=state,show_state=False)
+
+class AuthenError(Exception):
+   """
+   Raised when the authentication is expired, it returns 401
+   """
+   def _init_(self, message: str, code: str):
+       super.__init__(message=message, code=code, state="401", show_state=False)
+
+class FHIRTimeoutError(Exception):
+   """
+   Raised when the FHIR request times out
+   """
+   def _init_(self, message: str, code: str):
+       super.__init__(message=message, code=code, state="408", show_state=False)
+
+
+
+
+
 
 class FHIRErrorHandler:
     """
@@ -193,3 +236,4 @@ class FHIRErrorHandler:
             code="AUTHENTICATION_ERROR",
             state="401",  # Unauthorized
         )
+
