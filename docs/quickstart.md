@@ -58,7 +58,6 @@ Containers make your pipeline FHIR-native by loading and transforming your data 
 
 [(Full Documentation on Containers)](./reference/io/containers/containers.md)
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.io import Document
@@ -73,8 +72,11 @@ def extract_diabetes(doc: Document) -> Document:
         condition = create_condition(
             code="73211009",
             display="Diabetes mellitus",
+            subject="Patient/example",
         )
-        doc.fhir.problem_list.append(condition)
+        # problem_list is derived from the bundle per call; use the setter
+        # (or add_resources) so the Condition persists.
+        doc.fhir.problem_list = [condition]
 
     return doc
 
@@ -204,7 +206,6 @@ Workflows determine the request structure, required FHIR resources, and validati
 | `synthea-patient`  | **Synthea FHIR Patient Records**    | R4           | [Synthea Downloads](https://synthea.mitre.org/downloads)                                  | [Download ZIP](https://arc.net/l/quote/hoquexhy) (100 Sample, 36 MB)                           |
 
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.sandbox import list_available_datasets
 
@@ -262,7 +263,6 @@ Use `healthchain.fhir` helpers to quickly create and manipulate FHIR resources (
 
 [(Full Documentation on FHIR Helpers)](./reference/utilities/fhir_helpers.md)
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.fhir import create_condition
 

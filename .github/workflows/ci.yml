@@ -49,4 +49,3 @@ jobs:
             docs/quickstart.md \
             docs/cookbook/ \
             docs/tutorials/
-        continue-on-error: true  # Don't block CI while snippets are being updated

@@ -57,7 +57,7 @@ cp scripts/models/sepsis_model.pkl cookbook/models/
     The training script uses the [MIMIC-IV Clinical Database Demo](https://physionet.org/content/mimic-iv-demo/2.2/) (~50MB, freely downloadable). Set the path:
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     export MIMIC_CSV_PATH=/path/to/mimic-iv-clinical-database-demo-2.2
     ```
 
@@ -95,7 +95,7 @@ The two patterns have different data requirements:
     Download pre-extracted patient bundles—these are already in the repo if you cloned it:
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     mkdir -p cookbook/data/mimic_demo_patients
     cd cookbook/data/mimic_demo_patients
     wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/mimic_demo_patients/high_risk_patient.json
@@ -114,7 +114,7 @@ The two patterns have different data requirements:
     Add Medplum credentials to your `.env` file. See [FHIR Sandbox Setup](./setup_fhir_sandboxes.md#medplum) for details:
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
     MEDPLUM_CLIENT_ID=your_client_id
     MEDPLUM_CLIENT_SECRET=your_client_secret
@@ -125,7 +125,7 @@ The two patterns have different data requirements:
     **2. Extract and Upload Demo Patients**
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     # Set MIMIC-on-FHIR path (or use --mimic flag)
     export MIMIC_FHIR_PATH=/path/to/mimic-iv-on-fhir
 
@@ -164,7 +164,7 @@ The two patterns have different data requirements:
         The script has options for generating larger test sets:
 
         <!--pytest.mark.skip-->
-```bash
+        ```bash
         python extract_mimic_demo_patients.py --help
 
         # Examples:

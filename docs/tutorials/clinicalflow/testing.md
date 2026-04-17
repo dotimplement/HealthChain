@@ -138,14 +138,14 @@ Make sure your service is running in one terminal:
 === "uv"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     uv run python app.py
     ```
 
 === "pip"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     python app.py
     ```
 
@@ -154,14 +154,14 @@ Then in another terminal, run the test:
 === "uv"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     uv run python test_service.py
     ```
 
 === "pip"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     python test_service.py
     ```
 

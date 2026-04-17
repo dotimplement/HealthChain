@@ -130,14 +130,14 @@ Start your CDS service:
 === "uv"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     uv run python app.py
     ```
 
 === "pip"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     python app.py
     ```
 

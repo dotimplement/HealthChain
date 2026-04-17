@@ -99,14 +99,14 @@ Run it:
 === "uv"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     uv run python test_pipeline.py
     ```
 
 === "pip"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     python test_pipeline.py
     ```
 

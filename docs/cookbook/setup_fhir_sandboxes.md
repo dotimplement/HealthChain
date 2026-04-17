@@ -53,7 +53,7 @@ Epic now requires registering your public key via a **JWKS (JSON Web Key Set) UR
 
 1. **Set up a JWKS server**:
    <!--pytest.mark.skip-->
-```bash
+   ```bash
    # Ensure your .env has the private key path
    # EPIC_CLIENT_SECRET_PATH=path/to/privatekey.pem
    # EPIC_KEY_ID=healthchain-demo-key
@@ -68,7 +68,7 @@ Epic now requires registering your public key via a **JWKS (JSON Web Key Set) UR
 
 3. **Expose your JWKS server**:
    <!--pytest.mark.skip-->
-```bash
+   ```bash
    ngrok http 9999 --domain=your-app.ngrok-free.app
    ```
 

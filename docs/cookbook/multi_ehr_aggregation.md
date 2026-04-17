@@ -207,7 +207,7 @@ Example uses Epic patient `eIXesllypH3M9tAA5WdJftQ3`; see [Epic sandbox](https:/
 
 === "cURL"
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     curl -X 'GET' \
       'http://127.0.0.1:8888/fhir/aggregate/Condition?id=eIXesllypH3M9tAA5WdJftQ3&sources=epic&sources=cerner' \
       -H 'accept: application/fhir+json'

@@ -58,14 +58,14 @@ Run it:
 === "uv"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     uv run python check_install.py
     ```
 
 === "pip"
 
     <!--pytest.mark.skip-->
-```bash
+    ```bash
     python check_install.py
     ```
 

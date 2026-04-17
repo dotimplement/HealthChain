@@ -85,15 +85,6 @@ default-groups = [
     "docs",
 ]
 
-[tool.pytest.ini_options]
-# pytest-codeblocks: test Python code snippets in documentation
-# Use `uv run pytest --codeblocks` to run doc snippet tests
-# Snippets can be skipped with: <!--pytest.mark.skip-->
-# Entire files can be skipped with: <!--pytest-codeblocks:skipfile-->
-markers = [
-    "codeblocks: marks tests extracted from documentation code blocks",
-]
-
 [build-system]
 requires = ["hatchling", "numpy>=2.0.0"]
 build-backend = "hatchling.build"
