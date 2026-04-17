@@ -3,8 +3,9 @@
 import datetime
 import pytest
 from pydantic import ValidationError
+from unittest.mock import MagicMock
 
-from healthchain.mlflow.context import PatientContext, HealthcareRunContext
+from healthchain.mlflow_tracking.context import PatientContext, HealthcareRunContext
 
 
 # PatientContext tests
@@ -106,15 +107,15 @@ def test_healthcare_context_full(patient_context):
 
 
 def test_healthcare_context_to_dict_minimal():
-    """Test to_dict with minimal context."""
+    """Test to_dict with minimal context omits None optional fields."""
     context = HealthcareRunContext(model_id="test-model", version="1.0")
 
     result = context.to_dict()
 
     assert result["model_id"] == "test-model"
     assert result["version"] == "1.0"
-    assert result["organization"] is None
-    assert result["purpose"] is None
+    assert "organization" not in result
+    assert "purpose" not in result
     assert result["data_sources"] == []
     assert result["regulatory_tags"] == []
     assert "patient_context" not in result
@@ -167,6 +168,81 @@ def test_healthcare_context_from_model_config():
     assert context.organization == "Factory Org"
     assert context.purpose == "Factory test"
     assert context.recorded is not None
+
+
+def test_healthcare_context_from_app_config():
+    """Test from_app_config populates fields from AppConfig-like object."""
+    config = MagicMock()
+    config.version = "2.0.0"
+    config.name = "test-app"
+    config.site.name = "Test Hospital"
+    config.eval.tracking_uri = "http://mlflow.example.com"
+    config.sources = {"epic": MagicMock(), "cerner": MagicMock()}
+    config.compliance.hipaa = True
+
+    context = HealthcareRunContext.from_app_config(
+        config,
+        model_id="clinical-ner",
+        purpose="Entity extraction",
+    )
+
+    assert context.model_id == "clinical-ner"
+    assert context.version == "2.0.0"
+    assert context.organization == "Test Hospital"
+    assert context.tracking_uri == "http://mlflow.example.com"
+    assert set(context.data_sources) == {"epic", "cerner"}
+    assert "HIPAA" in context.regulatory_tags
+    assert context.purpose == "Entity extraction"
+    assert context.recorded is not None
+
+
+def test_healthcare_context_from_app_config_falls_back_to_app_name():
+    """Test from_app_config falls back to config.name when site.name is empty."""
+    config = MagicMock()
+    config.version = "1.0.0"
+    config.name = "my-app"
+    config.site.name = ""
+    config.eval.tracking_uri = None
+    config.sources = {}
+    config.compliance.hipaa = False
+
+    context = HealthcareRunContext.from_app_config(config, model_id="model-x")
+
+    assert context.organization == "my-app"
+
+
+def test_healthcare_context_from_app_config_kwargs_override():
+    """Test from_app_config kwargs override derived values."""
+    config = MagicMock()
+    config.version = "1.0.0"
+    config.name = "my-app"
+    config.site.name = "Original Org"
+    config.eval.tracking_uri = None
+    config.sources = {}
+    config.compliance.hipaa = False
+
+    context = HealthcareRunContext.from_app_config(
+        config,
+        model_id="model-x",
+        organization="Override Org",
+        version="9.9.9",
+    )
+
+    assert context.organization == "Override Org"
+    assert context.version == "9.9.9"
+
+
+def test_healthcare_context_from_app_config_missing_attributes():
+    """Test from_app_config is safe when config attributes are missing."""
+    config = MagicMock(spec=[])  # No attributes — simulates an incomplete config
+
+    context = HealthcareRunContext.from_app_config(config, model_id="safe-model")
+
+    assert context.model_id == "safe-model"
+    assert context.version == "unknown"
+    assert context.tracking_uri is None
+    assert context.data_sources == []
+    assert context.regulatory_tags == []
 
 
 def test_healthcare_context_to_fhir_provenance_minimal():

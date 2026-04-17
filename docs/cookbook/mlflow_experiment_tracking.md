@@ -22,7 +22,7 @@ pip install healthchain[mlflow]
 Verify installation:
 
 ```python
-from healthchain.mlflow import is_mlflow_available
+from healthchain.mlflow_tracking import is_mlflow_available
 
 if is_mlflow_available():
     print("MLflow ready!")
@@ -34,7 +34,7 @@ Use MLflow directly with HealthChain's healthcare context helper:
 
 ```python
 import mlflow
-from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
 from healthchain.pipeline import Pipeline
 from healthchain.pipeline.components.integrations import SpacyNLP
 from healthchain.io import Document
@@ -96,7 +96,7 @@ View results with `mlflow ui` at `http://localhost:5000`.
 Capture anonymized patient cohort information:
 
 ```python
-from healthchain.mlflow import HealthcareRunContext, PatientContext
+from healthchain.mlflow_tracking import HealthcareRunContext, PatientContext
 
 patient_context = PatientContext(
     cohort="General Medicine Inpatients",
@@ -174,7 +174,7 @@ Track multiple models in the same experiment:
 
 ```python
 import mlflow
-from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
 from healthchain.pipeline import Pipeline
 from healthchain.pipeline.components.integrations import SpacyNLP
 from healthchain.io import Document
@@ -227,7 +227,7 @@ For batch jobs, log step-wise metrics:
 
 ```python
 import mlflow
-from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
 
 mlflow.set_experiment("batch-processing")
 

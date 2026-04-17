@@ -210,17 +210,23 @@ class HealthcareRunContext(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Convert context to a dictionary for logging.
 
+        Only includes fields that have been set (None optional fields are omitted).
+
         Returns:
             Dictionary representation of the context
         """
-        result = {
+        result: Dict[str, Any] = {
             "model_id": self.model_id,
             "version": self.version,
-            "organization": self.organization,
-            "purpose": self.purpose,
             "data_sources": self.data_sources,
             "regulatory_tags": self.regulatory_tags,
         }
+
+        if self.organization is not None:
+            result["organization"] = self.organization
+
+        if self.purpose is not None:
+            result["purpose"] = self.purpose
 
         if self.patient_context:
             result["patient_context"] = self.patient_context.model_dump()
@@ -287,21 +293,29 @@ class HealthcareRunContext(BaseModel):
             ...     purpose="Early sepsis detection",
             ... )
         """
+        eval_config = getattr(config, "eval", None)
+        site_config = getattr(config, "site", None)
+        compliance_config = getattr(config, "compliance", None)
+
         derived: Dict[str, Any] = {
-            "version": config.version,
-            "tracking_uri": config.eval.tracking_uri,
+            "version": getattr(config, "version", "unknown"),
+            "tracking_uri": getattr(eval_config, "tracking_uri", None),
         }
 
-        if config.site.name:
-            derived["organization"] = config.site.name
-        elif config.name:
-            derived["organization"] = config.name
+        site_name = getattr(site_config, "name", None)
+        if site_name:
+            derived["organization"] = site_name
+        else:
+            app_name = getattr(config, "name", None)
+            if app_name:
+                derived["organization"] = app_name
 
-        if config.sources:
-            derived["data_sources"] = list(config.sources.keys())
+        sources = getattr(config, "sources", {})
+        if sources:
+            derived["data_sources"] = list(sources.keys())
 
         regulatory_tags: List[str] = []
-        if config.compliance.hipaa:
+        if getattr(compliance_config, "hipaa", False):
             regulatory_tags.append("HIPAA")
         if regulatory_tags:
             derived["regulatory_tags"] = regulatory_tags

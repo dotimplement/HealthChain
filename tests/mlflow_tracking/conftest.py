@@ -6,7 +6,7 @@ import pytest
 @pytest.fixture
 def patient_context():
     """Provides a PatientContext for testing."""
-    from healthchain.mlflow.context import PatientContext
+    from healthchain.mlflow_tracking.context import PatientContext
 
     return PatientContext(
         cohort="ICU patients",
@@ -20,7 +20,7 @@ def patient_context():
 @pytest.fixture
 def healthcare_context(patient_context):
     """Provides a HealthcareRunContext for testing."""
-    from healthchain.mlflow.context import HealthcareRunContext
+    from healthchain.mlflow_tracking.context import HealthcareRunContext
 
     return HealthcareRunContext(
         model_id="sepsis-predictor",

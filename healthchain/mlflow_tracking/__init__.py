@@ -9,7 +9,7 @@ Installation:
 
 Example:
     >>> import mlflow
-    >>> from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+    >>> from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
     >>>
     >>> context = HealthcareRunContext(
     ...     model_id="sepsis-predictor",
@@ -51,7 +51,7 @@ def is_mlflow_available() -> bool:
 
 
 # Always import context classes (they don't require mlflow)
-from healthchain.mlflow.context import HealthcareRunContext, PatientContext  # noqa: E402
+from healthchain.mlflow_tracking.context import HealthcareRunContext, PatientContext  # noqa: E402
 
 
 def log_healthcare_context(
@@ -63,6 +63,8 @@ def log_healthcare_context(
     This function logs healthcare-specific metadata to MLflow, including
     model information, patient cohort context, and optionally a FHIR
     Provenance resource for audit trails.
+
+    All logged params and tags use the ``healthchain.`` namespace prefix.
 
     If context.tracking_uri is set (populated automatically by
     HealthcareRunContext.from_app_config()), the MLflow tracking URI is
@@ -83,7 +85,7 @@ def log_healthcare_context(
     Example:
         >>> import mlflow
         >>> from healthchain.config.appconfig import AppConfig
-        >>> from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+        >>> from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
         >>>
         >>> config = AppConfig.load()
         >>> context = HealthcareRunContext.from_app_config(
@@ -109,43 +111,43 @@ def log_healthcare_context(
             "No active MLflow run. Call mlflow.start_run() first or use as context manager."
         )
 
-    # Build parameters to log
+    # Build parameters to log — all under the healthchain. namespace
     params = {
-        "healthcare.model_id": context.model_id,
-        "healthcare.model_version": context.version,
+        "healthchain.model_id": context.model_id,
+        "healthchain.model_version": context.version,
     }
 
     if context.organization:
-        params["healthcare.organization"] = context.organization
+        params["healthchain.organization"] = context.organization
 
     if context.purpose:
-        params["healthcare.purpose"] = context.purpose
+        params["healthchain.purpose"] = context.purpose
 
     if context.patient_context:
-        params["healthcare.patient_cohort"] = context.patient_context.cohort
+        params["healthchain.patient_cohort"] = context.patient_context.cohort
         if context.patient_context.age_range:
-            params["healthcare.patient_age_range"] = context.patient_context.age_range
+            params["healthchain.patient_age_range"] = context.patient_context.age_range
         if context.patient_context.sample_size:
-            params["healthcare.patient_sample_size"] = (
+            params["healthchain.patient_sample_size"] = (
                 context.patient_context.sample_size
             )
 
     if context.data_sources:
-        params["healthcare.data_sources"] = ", ".join(context.data_sources)
+        params["healthchain.data_sources"] = ", ".join(context.data_sources)
 
     if context.regulatory_tags:
-        params["healthcare.regulatory_tags"] = ", ".join(context.regulatory_tags)
+        params["healthchain.regulatory_tags"] = ", ".join(context.regulatory_tags)
 
     # Log parameters
     _mlflow.log_params(params)
 
-    # Set healthcare-specific tags
+    # Set run-level tags — also under healthchain. namespace
     _mlflow.set_tag("healthchain.model_id", context.model_id)
     _mlflow.set_tag("healthchain.version", context.version)
 
     # Log custom metadata as tags (avoids MLflow param value length limits)
     for key, value in context.custom_metadata.items():
-        _mlflow.set_tag(f"healthcare.custom.{key}", str(value))
+        _mlflow.set_tag(f"healthchain.custom.{key}", str(value))
 
     # Log FHIR Provenance as artifact if requested
     if log_provenance:

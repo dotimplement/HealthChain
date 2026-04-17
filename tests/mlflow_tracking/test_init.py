@@ -6,7 +6,7 @@ import tempfile
 
 def test_is_mlflow_available_returns_bool():
     """Test is_mlflow_available returns boolean."""
-    from healthchain.mlflow import is_mlflow_available
+    from healthchain.mlflow_tracking import is_mlflow_available
 
     result = is_mlflow_available()
 
@@ -15,7 +15,7 @@ def test_is_mlflow_available_returns_bool():
 
 def test_patient_context_always_importable():
     """Test PatientContext can always be imported."""
-    from healthchain.mlflow import PatientContext
+    from healthchain.mlflow_tracking import PatientContext
 
     context = PatientContext()
     assert context.cohort == "unspecified"
@@ -23,7 +23,7 @@ def test_patient_context_always_importable():
 
 def test_healthcare_run_context_always_importable():
     """Test HealthcareRunContext can always be imported."""
-    from healthchain.mlflow import HealthcareRunContext
+    from healthchain.mlflow_tracking import HealthcareRunContext
 
     context = HealthcareRunContext(model_id="test", version="1.0")
     assert context.model_id == "test"
@@ -31,7 +31,7 @@ def test_healthcare_run_context_always_importable():
 
 def test_all_exports_defined():
     """Test that __all__ contains expected exports."""
-    import healthchain.mlflow as mlflow_module
+    import healthchain.mlflow_tracking as mlflow_tracking_module
 
     expected_exports = [
         "HealthcareRunContext",
@@ -41,12 +41,12 @@ def test_all_exports_defined():
     ]
 
     for export in expected_exports:
-        assert export in mlflow_module.__all__
+        assert export in mlflow_tracking_module.__all__
 
 
 def test_log_healthcare_context_importable():
     """Test log_healthcare_context can be imported."""
-    from healthchain.mlflow import log_healthcare_context
+    from healthchain.mlflow_tracking import log_healthcare_context
 
     assert callable(log_healthcare_context)
 
@@ -55,7 +55,7 @@ def test_log_healthcare_context_requires_active_run():
     """Test log_healthcare_context raises error without active run."""
     pytest.importorskip("mlflow")
 
-    from healthchain.mlflow import HealthcareRunContext, log_healthcare_context
+    from healthchain.mlflow_tracking import HealthcareRunContext, log_healthcare_context
 
     context = HealthcareRunContext(model_id="test", version="1.0")
 
@@ -67,7 +67,7 @@ def test_log_healthcare_context_success():
     """Test log_healthcare_context logs params and tags to an active MLflow run."""
     mlflow = pytest.importorskip("mlflow")
 
-    from healthchain.mlflow import (
+    from healthchain.mlflow_tracking import (
         HealthcareRunContext,
         PatientContext,
         log_healthcare_context,
@@ -93,21 +93,22 @@ def test_log_healthcare_context_success():
             run = mlflow.active_run()
             run_data = mlflow.get_run(run.info.run_id).data
 
-    assert logged["healthcare.model_id"] == "test-model"
-    assert logged["healthcare.model_version"] == "1.0.0"
-    assert logged["healthcare.organization"] == "Test Org"
-    assert logged["healthcare.regulatory_tags"] == "HIPAA"
-    assert logged["healthcare.data_sources"] == "mimic-iv"
-    assert logged["healthcare.patient_cohort"] == "ICU patients"
-    assert run_data.params["healthcare.model_id"] == "test-model"
+    assert logged["healthchain.model_id"] == "test-model"
+    assert logged["healthchain.model_version"] == "1.0.0"
+    assert logged["healthchain.organization"] == "Test Org"
+    assert logged["healthchain.regulatory_tags"] == "HIPAA"
+    assert logged["healthchain.data_sources"] == "mimic-iv"
+    assert logged["healthchain.patient_cohort"] == "ICU patients"
+    assert run_data.params["healthchain.model_id"] == "test-model"
     assert run_data.tags["healthchain.model_id"] == "test-model"
-    assert run_data.tags["healthcare.custom.threshold"] == "0.7"
-    assert run_data.tags["healthcare.custom.validated"] == "True"
+    # Custom metadata tags use str() — bool True becomes "True"
+    assert run_data.tags["healthchain.custom.threshold"] == "0.7"
+    assert run_data.tags["healthchain.custom.validated"] == "True"
 
 
 def test_context_models_independent_of_mlflow():
     """Test context models work without mlflow installed."""
-    from healthchain.mlflow.context import HealthcareRunContext, PatientContext
+    from healthchain.mlflow_tracking.context import HealthcareRunContext, PatientContext
 
     patient = PatientContext(cohort="test-cohort", sample_size=100)
     assert patient.sample_size == 100
