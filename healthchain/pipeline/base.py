@@ -41,7 +41,7 @@ class ModelSource(Enum):
 
 @dataclass
 class ModelConfig:
-    """Configuration for model initialization"""
+    """Configuration for model initialization."""
 
     source: ModelSource
     model_id: Optional[str] = None

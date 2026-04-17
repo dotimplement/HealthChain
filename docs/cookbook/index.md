@@ -83,6 +83,17 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
 </a>
 
+<a href="mlflow_experiment_tracking/" class="cookbook-card" data-tags="ml">
+  <div class="cookbook-card-icon">📊</div>
+  <div class="cookbook-card-title">Track Clinical NLP Experiments with MLflow</div>
+  <div class="cookbook-card-description">
+    Monitor healthcare AI model performance, log patient cohort metadata and regulatory context, generate FHIR Provenance for audit trails, and compare model versions in the MLflow UI.
+  </div>
+  <div class="cookbook-tags">
+    <span class="tag tag-ml">ML Research</span>
+  </div>
+</a>
+
 <a href="format_conversion/" class="cookbook-card" data-tags="healthtech interop fhir">
   <div class="cookbook-card-icon">🔄</div>
   <div class="cookbook-card-title">Convert Between Healthcare Data Formats</div>
