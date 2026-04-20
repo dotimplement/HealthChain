@@ -78,6 +78,17 @@ When writing docs:
 - Include code snippets or configuration examples where helpful.
 - Call out assumptions, limitations, and safety‑relevant behaviour explicitly.
 
+### Writing Cookbooks
+
+Cookbooks are often the first thing a developer runs. These principles keep them effective:
+
+- **Reduce time-to-running**: Every prerequisite you can eliminate or defer is a developer you don't lose. Pre-bake demo data and models where possible; collapse advanced setup into `??? details` blocks.
+- **Lead with the problem**: The intro should say what pain it solves — "you trained a model on CSVs, now you need to deploy against FHIR data" — not just what the code does.
+- **Show HealthChain's unique value**: Each cookbook should have a moment that would be 50+ lines of custom code without HealthChain (`Dataset.from_fhir_bundle()`, `merge_bundles()`, `FHIRAuthConfig.from_env()`). Don't bury it.
+- **Complement, don't replace**: Anywhere an existing tool (LangChain, FastAPI, sklearn) appears alongside HealthChain, say explicitly that they work together. Reduces the "should I switch?" anxiety.
+- **Be honest about the roadmap**: Compliance, eval, and audit features are in progress — reference them as such. Developers trust you more for it.
+- **Collapse advanced paths, don't omit them**: The `??? details` pattern keeps the main path clean without losing information for power users.
+
 ## 💻 Writing Code
 
 >**New to HealthChain?** Look for [`good first issue`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
