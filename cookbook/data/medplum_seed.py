@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Seed Medplum with a synthetic cancer patient for the ATCC and FHIR Q&A demos.
+Seed Medplum with a synthetic patient for FHIR Q&A demos.
 
 Setup:
     1. Sign up at https://app.medplum.com and create a client application
