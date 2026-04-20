@@ -80,9 +80,6 @@ def create_app():
         dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
         result = pipeline(dataset)
 
-        # print("Result:")
-        # print(result.data.head(10))
-
         probability = float(result.metadata["probabilities"][0])
         risk = (
             "high" if probability > 0.7 else "moderate" if probability > 0.4 else "low"
@@ -118,7 +115,6 @@ def create_app():
     app = HealthChainAPI(
         title="Sepsis CDS Hooks",
         description="Real-time sepsis risk alerts via CDS Hooks",
-        port=8000,
         service_type="cds-hooks",
     )
     app.register_service(cds, path="/cds")

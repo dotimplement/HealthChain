@@ -105,7 +105,6 @@ def create_app():
     app = HealthChainAPI(
         title="Epic CDI Service",
         description="Clinical document intelligence with FHIR and NoteReader integration",
-        port=8000,
         service_type="fhir-gateway",
     )
     app.register_gateway(fhir_gateway, path="/fhir")

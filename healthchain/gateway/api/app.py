@@ -247,7 +247,6 @@ class HealthChainAPI(FastAPI):
         title: str = "HealthChain API",
         description: str = "Healthcare Integration API",
         version: str = "1.0.0",
-        port: Optional[int] = None,
         service_type: Optional[str] = None,
         enable_cors: bool = True,
         enable_events: bool = True,
@@ -275,7 +274,7 @@ class HealthChainAPI(FastAPI):
         )
 
         # Display metadata for banner (when running outside healthchain serve)
-        self._port = port
+        self._port: Optional[int] = None
         self._service_type = service_type
 
         # Gateway and service registries
@@ -635,7 +634,7 @@ class HealthChainAPI(FastAPI):
                 except Exception as e:
                     logger.warning(f"Failed to initialize {name}: {e}")
 
-    def run(self, host: str = "0.0.0.0", **kwargs) -> None:
+    def run(self, host: str = "0.0.0.0", port: int = 8000, **kwargs) -> None:
         """Run the application with uvicorn.
 
         Convenience wrapper for local development and cookbooks. For production,
@@ -643,16 +642,18 @@ class HealthChainAPI(FastAPI):
 
         Args:
             host: Host to bind to (default: 0.0.0.0)
+            port: Port to bind to (default: 8000)
             **kwargs: Passed through to uvicorn.run (e.g. reload=True, workers=4)
 
         Example:
-            app = HealthChainAPI(title="My App", port=8888)
-            app.run()
-            app.run(reload=True)  # with hot reload
+            app = HealthChainAPI(title="My App")
+            app.run(port=8888)
+            app.run(port=8888, reload=True)  # with hot reload
         """
         import uvicorn
 
-        uvicorn.run(self, host=host, port=self._port or 8000, **kwargs)
+        self._port = port
+        uvicorn.run(self, host=host, port=port, **kwargs)
 
     async def _shutdown(self) -> None:
         """Handle graceful shutdown."""

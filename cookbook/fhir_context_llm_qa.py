@@ -116,7 +116,6 @@ def create_app(llm: BaseChatModel) -> HealthChainAPI:
     app = HealthChainAPI(
         title="FHIR-Grounded Patient Q&A",
         description="Answers patient questions using live FHIR data as context",
-        port=8888,
         service_type="fhir-gateway",
     )
 
@@ -136,10 +135,6 @@ def create_app(llm: BaseChatModel) -> HealthChainAPI:
 
         doc = pipeline(doc)
 
-        print("--------------------------------")
-        print(doc.text)
-        print("--------------------------------")
-
         answer = chain.invoke({"context": doc.text, "question": request.question})
         return PatientAnswer(
             patient_id=request.patient_id,
@@ -152,6 +147,5 @@ def create_app(llm: BaseChatModel) -> HealthChainAPI:
 
 if __name__ == "__main__":
     llm = ChatAnthropic(model="claude-opus-4-6", max_tokens=512)
-
     app = create_app(llm)
-    app.run()
+    app.run(port=8888)

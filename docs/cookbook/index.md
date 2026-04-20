@@ -44,6 +44,20 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
 </a>
 
+<a href="fhir_qa/" class="cookbook-card" data-tags="genai fhir pipeline gateway">
+  <div class="cookbook-card-icon">💬</div>
+  <div class="cookbook-card-title">FHIR-Grounded Patient Q&A</div>
+  <div class="cookbook-card-description">
+    Build a patient Q&A service that fetches live FHIR data, formats it as LLM context via a pipeline, and returns grounded answers. Foundation pattern for patient portal chatbots and care navigation assistants.
+  </div>
+  <div class="cookbook-tags">
+    <span class="tag tag-genai">GenAI</span>
+    <span class="tag tag-fhir">FHIR</span>
+    <span class="tag tag-pipeline">Pipeline</span>
+    <span class="tag tag-gateway">Gateway</span>
+  </div>
+</a>
+
 <a href="multi_ehr_aggregation/" class="cookbook-card" data-tags="genai gateway fhir">
   <div class="cookbook-card-icon">🔗</div>
   <div class="cookbook-card-title">Multi-Source Patient Data Aggregation</div>
@@ -132,7 +146,8 @@ gateway.add_source("medplum", FHIRAuthConfig.from_env("MEDPLUM").to_connection_s
 
 llm = ChatAnthropic(model="claude-opus-4-6", max_tokens=512)
 
-app = HealthChainAPI(title="My App", port=8000, service_type="fhir-gateway")
+app = HealthChainAPI(title="My App", service_type="fhir-gateway")
+app.run(port=8000)
 ```
 
 ```yaml

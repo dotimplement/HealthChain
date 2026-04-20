@@ -103,7 +103,6 @@ def create_app():
     app = HealthChainAPI(
         title="Multi-EHR Data Aggregation",
         description="Aggregate patient data from multiple FHIR sources",
-        port=8888,
         service_type="fhir-gateway",
     )
     app.register_gateway(gateway, path="/fhir")
@@ -112,4 +111,4 @@ def create_app():
 
 
 if __name__ == "__main__":
-    create_app().run()
+    create_app().run(port=8888)
