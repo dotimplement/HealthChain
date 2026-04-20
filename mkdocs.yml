@@ -26,6 +26,7 @@ nav:
   - Cookbook:
       - cookbook/index.md
       - Setup FHIR Sandbox: cookbook/setup_fhir_sandboxes.md
+      - FHIR-Grounded Patient Q&A: cookbook/fhir_qa.md
       - Multi-Source Data Integration: cookbook/multi_ehr_aggregation.md
       - Automated Clinical Coding: cookbook/clinical_coding.md
       - Discharge Summarizer: cookbook/discharge_summarizer.md
