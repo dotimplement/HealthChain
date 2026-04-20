@@ -165,34 +165,30 @@ app.register_service(cds)
 """
 
 _APP_PY_FHIR_GATEWAY = """\
-import os
 from typing import List
 
-from healthchain.fhir.r4b import Bundle
-from healthchain.fhir.r4b import Condition
-
+from healthchain.fhir.r4b import Bundle, Condition
 from healthchain.gateway import FHIRGateway, HealthChainAPI
+from healthchain.config.appconfig import AppConfig
 from healthchain.fhir import merge_bundles
 from healthchain.io.containers import Document
 from healthchain.pipeline import Pipeline
 
-# Add FHIR source credentials to .env (see .env.example)
-gateway = FHIRGateway()
+# Loads .env then healthchain.yaml — sources are declared there, credentials stay in .env
+config = AppConfig.load()
+gateway = FHIRGateway.from_config(config)
 
-epic_url = os.getenv("EPIC_BASE_URL")
-cerner_url = os.getenv("CERNER_BASE_URL")
+# To enable LLM processing: add an llm: section to healthchain.yaml, then uncomment:
+# llm = config.llm.to_langchain() if config.llm else None
 
-if epic_url:
-    gateway.add_source("epic", epic_url)
-if cerner_url:
-    gateway.add_source("cerner", cerner_url)
-
-# Add your NLP/ML/LLM processing steps here
 pipeline = Pipeline[Document]()
 
 
 @pipeline.add_node
 def process(doc: Document) -> Document:
+    # Add your NLP/ML/LLM processing steps here
+    # if llm:
+    #     response = llm.invoke(doc.text)
     return doc
 
 
@@ -226,6 +222,22 @@ app.register_gateway(gateway)
 
 
 def _make_healthchain_yaml(name: str, service_type: str) -> str:
+    if service_type == "fhir-gateway":
+        sources_block = """\
+# FHIR data sources — credentials stay in .env, source names declared here
+# FHIRGateway.from_config(config) in app.py wires these up automatically
+sources:
+  epic:
+    env_prefix: EPIC    # reads EPIC_CLIENT_ID, EPIC_BASE_URL, EPIC_TOKEN_URL from .env
+  cerner:
+    env_prefix: CERNER  # reads CERNER_BASE_URL from .env (no auth for open sandbox)"""
+    else:
+        sources_block = """\
+# FHIR data sources — declare sources here, credentials stay in .env
+# sources:
+#   epic:
+#     env_prefix: EPIC    # reads EPIC_CLIENT_ID, EPIC_BASE_URL, EPIC_TOKEN_URL from .env"""
+
     return f"""\
 # HealthChain application configuration
 # https://dotimplement.github.io/HealthChain/reference/config
@@ -273,14 +285,9 @@ site:
   name: ""
   environment: development  # development | staging | production
 
-# FHIR data sources — declare sources here, credentials stay in .env
-# sources:
-#   medplum:
-#     env_prefix: MEDPLUM   # reads MEDPLUM_CLIENT_ID, MEDPLUM_BASE_URL etc.
-#   epic:
-#     env_prefix: EPIC      # reads EPIC_CLIENT_ID, EPIC_BASE_URL etc.
+{sources_block}
 
-# LLM provider (used by app.py or cookbooks via config.llm.to_langchain())
+# LLM provider — uncomment and set llm = config.llm.to_langchain() in app.py to enable
 # llm:
 #   provider: anthropic     # anthropic | openai | google | huggingface
 #   model: claude-opus-4-6

@@ -403,10 +403,14 @@ A production-ready data aggregation service with:
 
     - **Training Data for AI Models**: Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
 
+!!! note "HealthChain complements your existing stack"
+
+    HealthChain handles FHIR authentication, multi-source querying, provenance tracking, and deduplication. Your downstream tools — LangChain, pandas, custom NLP — stay exactly as they are. The aggregated Bundle or `Document` drops straight into whatever processing you already have.
+
 !!! tip "Next Steps"
 
     - **Try another FHIR server**: Set up a different [FHIR server](./setup_fhir_sandboxes.md) where you can upload the same test patients to multiple instances for true multi-source aggregation.
     - **Expand resource types**: Change `Condition` to `MedicationStatement`, `Observation`, or `Procedure` to aggregate different data.
     - **Add processing**: Extend the pipeline with terminology mapping, entity extraction, or quality checks.
     - **Build on it**: Use aggregated data in the [Clinical Coding tutorial](./clinical_coding.md) or feed it to your LLM application.
-    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service). Moving to `healthchain.yaml` is where config-driven compliance support (audit logging, data provenance, deployment metadata) will live as those features mature.

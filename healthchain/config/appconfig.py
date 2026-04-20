@@ -146,7 +146,18 @@ class AppConfig(BaseModel):
 
     @classmethod
     def load(cls) -> Optional["AppConfig"]:
-        """Load healthchain.yaml from the current working directory if it exists."""
+        """Load healthchain.yaml from the current working directory if it exists.
+
+        Also loads .env into the environment before parsing config, so credentials
+        are available to any component initialised from the returned config object.
+        """
+        try:
+            from dotenv import load_dotenv
+
+            load_dotenv()
+        except ImportError:
+            pass
+
         config_path = Path(_CONFIG_FILENAME)
         if config_path.exists():
             try:

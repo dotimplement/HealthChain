@@ -69,7 +69,6 @@ def create_app() -> HealthChainAPI:
     app = HealthChainAPI(
         title="Discharge Note Summarizer",
         description="AI-powered discharge note summarization service",
-        port=8000,
         service_type="cds-hooks",
     )
     app.register_service(cds, path="/cds")
