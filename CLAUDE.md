@@ -63,7 +63,7 @@ uv add --dev <package>                 # Add dev dependency
 
 ## 4. Coding Standards
 
-- **Python**: 3.10-3.12, prefer sync for legacy EHR compatibility; async available for modern systems but use only when explicitly needed
+- **Python**: 3.10-3.13, prefer sync for legacy EHR compatibility; async available for modern systems but use only when explicitly needed
 - **Dependencies**: Pydantic v2 (<2.11.0), NumPy <2.0.0 (spaCy compatibility)
 - **Environment**: Use `uv` to manage dependencies and run commands (`uv run <command>`)
 - **Formatting**: `ruff` enforces project style

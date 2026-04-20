@@ -297,4 +297,4 @@ This project builds on [fhir.resources](https://github.com/nazrulworld/fhir.reso
 [build]: https://github.com/dotimplement/HealthChain/actions?query=branch%3Amain
 [discord]: https://discord.gg/UQC6uAepUz
 [substack]: https://jenniferjiangkells.substack.com/
-[claude-md]: CLAUDE.MD
+[claude-md]: CLAUDE.md
