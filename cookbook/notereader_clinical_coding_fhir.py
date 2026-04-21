@@ -118,30 +118,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import threading
-    from time import sleep
-    from healthchain.sandbox import SandboxClient
-
-    server_thread = threading.Thread(target=app.run, daemon=True)
-    server_thread.start()
-    sleep(2)
-
-    # Create sandbox client for testing
-    client = SandboxClient(
-        url="http://localhost:8000/notereader/?wsdl",
-        workflow="sign-note-inpatient",
-        protocol="soap",
-    )
-    # Load clinical document from file
-    client.load_from_path("./data/notereader_cda.xml")
-
-    # Send request and save response
-    responses = client.send_requests()
-
-    # Save results
-    client.save_results("./output/")
-
-    try:
-        server_thread.join()
-    except KeyboardInterrupt:
-        pass
+    with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+        client.load_from_path("./data/notereader_cda.xml")
+        responses = client.send_requests()
+        client.save_results("./output/")

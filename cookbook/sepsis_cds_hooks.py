@@ -126,29 +126,15 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import threading
-    from time import sleep
-    from healthchain.sandbox import SandboxClient
+    with app.sandbox("sepsis-risk") as client:
+        client.load_from_path(DEMO_PATIENTS_DIR, pattern="*_patient.json")
+        responses = client.send_requests()
+        client.save_results("./output")
 
-    server = threading.Thread(target=app.run, daemon=True)
-    server.start()
-    sleep(2)
-
-    # Test with pre-extracted demo patients (fast, realistic per-patient data)
-    client = SandboxClient(
-        url="http://localhost:8000/cds/cds-services/sepsis-risk",
-        workflow="patient-view",
-    )
-    client.load_from_path(DEMO_PATIENTS_DIR, pattern="*_patient.json")
-    responses = client.send_requests()
-    client.save_results(save_request=True, save_response=True, directory="./output/")
-
-    print(f"\nProcessed {len(responses)} requests")
-    for i, resp in enumerate(responses):
-        cards = resp.get("cards", [])
-        if cards:
-            print(f"  Patient {i+1}: {cards[0].get('summary', 'No alert')}")
-        else:
-            print(f"  Patient {i+1}: Low risk (no alert)")
-
-    server.join()
+        print(f"\nProcessed {len(responses)} requests")
+        for i, resp in enumerate(responses):
+            cards = resp.get("cards", [])
+            if cards:
+                print(f"  Patient {i+1}: {cards[0].get('summary', 'No alert')}")
+            else:
+                print(f"  Patient {i+1}: Low risk (no alert)")
