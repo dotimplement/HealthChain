@@ -163,6 +163,7 @@ output/
 models/
 local/
 !healthchain/models/
+!cookbook/models/
 !healthchain/interop/models/
 .DS_Store
 .vscode/

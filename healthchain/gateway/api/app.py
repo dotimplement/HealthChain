@@ -634,6 +634,152 @@ class HealthChainAPI(FastAPI):
                 except Exception as e:
                     logger.warning(f"Failed to initialize {name}: {e}")
 
+    def _resolve_cds_url(self, hook_id: str, host: str, port: int) -> str:
+        """Build the CDS hook URL from the registered CDSHooksService config."""
+        from healthchain.gateway.cds import CDSHooksService
+
+        for service in self.services.values():
+            if isinstance(service, CDSHooksService):
+                base = service.config.base_path.rstrip("/")
+                svc = service.config.service_path.strip("/")
+                return f"http://{host}:{port}{base}/{svc}/{hook_id}"
+        return f"http://{host}:{port}/cds/cds-services/{hook_id}"
+
+    def _resolve_soap_url(self, host: str, port: int) -> str:
+        """Build the SOAP service URL from the registered NoteReaderService config."""
+        from healthchain.gateway.soap.notereader import NoteReaderService
+
+        for service in self.services.values():
+            if isinstance(service, NoteReaderService):
+                path = service.config.default_mount_path.rstrip("/")
+                return f"http://{host}:{port}{path}/?wsdl"
+        return f"http://{host}:{port}/notereader/?wsdl"
+
+    def _resolve_cds_workflow(self, hook_id: str) -> Optional[str]:
+        """Look up the hook type for a given hook ID from registered CDSHooksService."""
+        from healthchain.gateway.cds import CDSHooksService
+
+        for service in self.services.values():
+            if isinstance(service, CDSHooksService):
+                for hook_type, metadata in service._handler_metadata.items():
+                    if metadata.get("id") == hook_id:
+                        return hook_type
+        return None
+
+    def sandbox(
+        self,
+        hook_id: Optional[str] = None,
+        *,
+        workflow: Optional[str] = None,
+        protocol: str = "rest",
+        port: int = 8000,
+        host: str = "127.0.0.1",
+        startup_timeout: float = 10.0,
+    ):
+        """Start the app and return a configured SandboxClient as a context manager.
+
+        Mirrors the FastAPI TestClient pattern — server lifecycle is handled
+        automatically so cookbooks stay focused on clinical logic.
+
+        For CDS Hooks services, pass the hook ID you registered with
+        ``@cds.hook(..., id="your-hook-id")`` — the workflow and URL are resolved
+        automatically from the registered service.
+
+        For SOAP/NoteReader services, pass ``protocol="soap"`` and the workflow name.
+
+        Args:
+            hook_id: Hook ID registered with ``@cds.hook(..., id="...")``. Required for CDS.
+            workflow: Workflow name (e.g. ``"sign-note-inpatient"``). Required for SOAP;
+                derived automatically for CDS.
+            protocol: ``"rest"`` for CDS Hooks (default) or ``"soap"`` for NoteReader.
+            port: Port to run the server on (default: 8000).
+            host: Host to bind to (default: 127.0.0.1).
+            startup_timeout: Max seconds to wait for the server to be ready (default: 10.0).
+
+        Yields:
+            SandboxClient configured and ready to load data and send requests.
+
+        Raises:
+            ValueError: If hook_id is missing for CDS or workflow is missing for SOAP.
+            RuntimeError: If the server does not become ready within startup_timeout.
+
+        Examples:
+            CDS Hooks::
+
+                with app.sandbox("sepsis-risk") as client:
+                    client.load_from_path("./data/patients", pattern="*_patient.json")
+                    responses = client.send_requests()
+                    client.save_results("./output")
+
+            SOAP/NoteReader::
+
+                with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+                    client.load_from_path("./data/note.xml")
+                    responses = client.send_requests()
+                    client.save_results("./output")
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _sandbox_ctx():
+            import time
+            import threading
+            import httpx
+            import uvicorn
+            from healthchain.sandbox import SandboxClient
+
+            if protocol == "soap":
+                if workflow is None:
+                    raise ValueError(
+                        "workflow is required for SOAP protocol (e.g. 'sign-note-inpatient')."
+                    )
+                url = self._resolve_soap_url(host, port)
+                resolved_workflow = workflow
+            else:
+                if hook_id is None:
+                    raise ValueError(
+                        "hook_id is required for CDS protocol. "
+                        "Pass the ID from @cds.hook(..., id='your-hook-id')."
+                    )
+                url = self._resolve_cds_url(hook_id, host, port)
+                resolved_workflow = workflow or self._resolve_cds_workflow(hook_id)
+                if resolved_workflow is None:
+                    raise ValueError(
+                        f"No hook registered with id='{hook_id}'. "
+                        f"Register one with @cds.hook(..., id='{hook_id}') before calling sandbox()."
+                    )
+
+            config = uvicorn.Config(self, host=host, port=port, log_level="error")
+            server = uvicorn.Server(config)
+            thread = threading.Thread(target=server.run, daemon=True)
+            thread.start()
+
+            health_url = f"http://{host}:{port}/health"
+            deadline = time.monotonic() + startup_timeout
+            while time.monotonic() < deadline:
+                try:
+                    httpx.get(health_url, timeout=0.5)
+                    break
+                except Exception:
+                    time.sleep(0.2)
+            else:
+                server.should_exit = True
+                thread.join(timeout=5)
+                raise RuntimeError(
+                    f"Server did not become ready within {startup_timeout}s. "
+                    f"Check that port {port} is not already in use."
+                )
+
+            try:
+                yield SandboxClient(
+                    url=url, workflow=resolved_workflow, protocol=protocol
+                )
+            finally:
+                server.should_exit = True
+                thread.join(timeout=5)
+
+        return _sandbox_ctx()
+
     def run(self, host: str = "0.0.0.0", port: int = 8000, **kwargs) -> None:
         """Run the application with uvicorn.
 

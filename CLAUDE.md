@@ -133,6 +133,7 @@ When responding to user instructions, follow this process:
 3. **Break Down & Plan**:
    - Break down, think through the problem, and create a rough plan
    - Reference project conventions and best practices
+   - **Before proposing new APIs or abstractions**: check what comparable libraries in the Python/healthcare ecosystem do first. HealthChain is a healthcare abstraction layer designed to complement existing stacks (FastAPI, LangChain, HuggingFace, spaCy, etc.) — not replace them. Users plug HealthChain into tools they already know, so familiar idioms (context managers, decorators, method chaining) should be the default. Never reinvent patterns that already exist upstream. Bespoke APIs are only justified when the healthcare domain genuinely has no prior art (e.g. FHIR-specific concepts). When presenting a proposal, name the prior art explicitly so the developer can make an informed decision (e.g. "FastAPI does X, LangServe does Y, I'm proposing Z because...").
    - **Trivial tasks**: Start immediately
    - **Non-trivial tasks** (>200 LOC or >3 files): Present plan → wait for user confirmation
 4. **Execute**:

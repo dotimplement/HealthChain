@@ -1,5 +1,7 @@
 # Multi-Source Patient Data Aggregation
 
+**Level:** Intermediate
+
 This example shows you how to aggregate patient data from multiple FHIR sources and track data provenance: essential for building AI applications that train on diverse data, query multiple EHR vendors in RAG systems, or construct unified patient timelines from fragmented health records.
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!

@@ -8,6 +8,7 @@ HuggingFace transformer model (PEGASUS).
 Requirements:
     pip install healthchain transformers torch python-dotenv
     # HUGGINGFACEHUB_API_TOKEN env var required
+    # Note: downloads ~1GB on first run (sshleifer/distilbart-cnn-12-6)
 
 Run:
     python cookbook/cds_discharge_summarizer_hf_trf.py
@@ -33,7 +34,7 @@ def create_pipeline() -> SummarizationPipeline:
             "Enter your HuggingFace token: "
         )
     return SummarizationPipeline.from_model_id(
-        "google/pegasus-xsum", source="huggingface", task="summarization"
+        "sshleifer/distilbart-cnn-12-6", source="huggingface", task="summarization"
     )
 
 
@@ -58,24 +59,10 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import threading
-    from healthchain.sandbox import SandboxClient
-
-    api_thread = threading.Thread(target=app.run, daemon=True)
-    api_thread.start()
-
-    client = SandboxClient(
-        url="http://localhost:8000/cds/cds-services/discharge-summarizer",
-        workflow="encounter-discharge",
-    )
-    client.load_free_text(
-        csv_path="data/discharge_notes.csv",
-        column_name="text",
-    )
-    responses = client.send_requests()
-    client.save_results("./output/")
-
-    try:
-        api_thread.join()
-    except KeyboardInterrupt:
-        pass
+    with app.sandbox("discharge-summarizer") as client:
+        client.load_free_text(
+            csv_path="data/discharge_notes.csv",
+            column_name="text",
+        )
+        responses = client.send_requests()
+        client.save_results("./output/")

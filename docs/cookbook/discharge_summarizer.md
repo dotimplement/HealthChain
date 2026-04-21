@@ -1,5 +1,7 @@
 # Build a CDS Hooks Service for Discharge Summarization
 
+**Level:** Beginner
+
 This example shows you how to build a CDS service that integrates with EHR systems. We'll automatically summarize discharge notes and return actionable recommendations using the [CDS Hooks standard](https://cds-hooks.org/).
 
 Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
@@ -155,15 +157,8 @@ HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.m
 
 
 ```python
-from healthchain.sandbox import SandboxClient
-
-# Create sandbox client for testing
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/discharge-summarizer",
-    workflow="encounter-discharge"
-)
-
-# Load discharge notes from CSV and generate FHIR data
+# load_free_text() converts discharge notes into FHIR DocumentReferences
+# and wraps them in CDS requests for the encounter-discharge workflow
 client.load_free_text(
     csv_path="data/discharge_notes.csv",
     column_name="text"
@@ -180,17 +175,16 @@ client.load_free_text(
 
 ## Run the Complete Example
 
-Put it all together and run both the service and sandbox client:
+Pass the hook ID you registered with `@cds.hook(..., id="discharge-summarizer")` — HealthChain resolves the service URL and workflow automatically:
 
 ```python
-import threading
-
-api_thread = threading.Thread(target=app.run, daemon=True)
-api_thread.start()
-
-# Send requests and save responses with sandbox client
-client.send_requests()
-client.save_results("./output/")
+with app.sandbox("discharge-summarizer") as client:
+    client.load_free_text(
+        csv_path="data/discharge_notes.csv",
+        column_name="text"
+    )
+    responses = client.send_requests()
+    client.save_results("./output/")
 ```
 
 !!! tip "Service Endpoints"
