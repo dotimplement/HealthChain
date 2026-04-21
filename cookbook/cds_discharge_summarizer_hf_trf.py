@@ -8,6 +8,7 @@ HuggingFace transformer model (PEGASUS).
 Requirements:
     pip install healthchain transformers torch python-dotenv
     # HUGGINGFACEHUB_API_TOKEN env var required
+    # Note: downloads ~1GB on first run (sshleifer/distilbart-cnn-12-6)
 
 Run:
     python cookbook/cds_discharge_summarizer_hf_trf.py
@@ -33,7 +34,7 @@ def create_pipeline() -> SummarizationPipeline:
             "Enter your HuggingFace token: "
         )
     return SummarizationPipeline.from_model_id(
-        "google/pegasus-xsum", source="huggingface", task="summarization"
+        "sshleifer/distilbart-cnn-12-6", source="huggingface", task="summarization"
     )
 
 
