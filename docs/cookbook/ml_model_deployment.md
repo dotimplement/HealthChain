@@ -1,5 +1,7 @@
 # Deploy ML Models: Real-Time Alerts & Batch Screening
 
+**Level:** Intermediate
+
 You trained a model on CSVs. Now you need to deploy it against FHIR data from EHRs. This tutorial shows how to bridge that gap with two production patterns: **real-time CDS Hooks alerts** and **batch FHIR Gateway screening** — both using the same model and a simple YAML schema that maps FHIR resources to your training features.
 
 Check out the full working examples:

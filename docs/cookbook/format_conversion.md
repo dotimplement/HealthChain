@@ -1,5 +1,7 @@
 # Convert Between Healthcare Data Formats
 
+**Level:** Intermediate
+
 Convert between CDA, HL7v2, and FHIR formats using HealthChain's interoperability engine. This recipe covers the most common conversion scenarios for integrating legacy healthcare systems with modern FHIR-based applications.
 
 The [InteropEngine](../reference/interop/engine.md) provides a unified interface for bidirectional format conversion, handling the complexity of mapping between different healthcare data standards.

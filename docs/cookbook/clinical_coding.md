@@ -1,5 +1,7 @@
 # Build a NoteReader Service with FHIR Integration
 
+**Level:** Advanced
+
 Modernize Epic NoteReader's legacy SOAP interface by connecting it to a modern FHIR server, without disrupting existing CDI workflows. You'll extract SNOMED CT codes from clinical notes using NLP, write structured data to [Medplum](https://www.medplum.com/) for analytics, and return CDA responses to Epic.
 
 [Epic NoteReader CDI](../reference/gateway/soap_cda.md) is a legacy CDA interface for clinical documentation improvement workflows. It's great because it's already embedded in existing EHR workflows and designed for third-party NLP integrations. The downside? Its legacy SOAP design limits modern analytics in FHIR. This tutorial shows you how to bridge that gap. Get the best of both worlds! Legacy workflows keep running while you unlock advanced analytics.

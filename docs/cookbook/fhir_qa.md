@@ -1,5 +1,7 @@
 # FHIR-Grounded Patient Q&A
 
+**Level:** Beginner
+
 This example shows you how to build a Q&A service that answers patient questions using their live clinical data as context. The service fetches FHIR resources from a connected EHR, formats them into a structured prompt context using a HealthChain pipeline, and passes both to an LLM to generate a grounded, personalised response.
 
 This is the foundational pattern for patient-facing AI assistants — hospital portal chatbots, discharge navigation tools, care plan Q&A — where answers must be anchored to the individual patient's record rather than general medical knowledge.

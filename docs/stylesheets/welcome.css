@@ -649,7 +649,38 @@
   color: #ff8f00;
 }
 
+/* Difficulty tags */
+.tag-beginner {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.tag-intermediate {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.tag-advanced {
+  background-color: #fce4ec;
+  color: #c62828;
+}
+
 /* Dark mode tag adjustments */
+[data-md-color-scheme="slate"] .tag-beginner {
+  background-color: #1b3d1f;
+  color: #81c784;
+}
+
+[data-md-color-scheme="slate"] .tag-intermediate {
+  background-color: #3d3010;
+  color: #ffd54f;
+}
+
+[data-md-color-scheme="slate"] .tag-advanced {
+  background-color: #3d1a1a;
+  color: #ef9a9a;
+}
+
 [data-md-color-scheme="slate"] .tag-healthtech {
   background-color: #3d2d1f;
   color: #ffb74d;
