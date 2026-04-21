@@ -22,7 +22,7 @@ Both patterns share the same trained model and feature extraction — only the i
 
 ## Quick Start: CDS Hooks in 5 Minutes
 
-The model and demo patients are already in the repo — no training or data download needed.
+The demo patients and a pre-generated model are already in the repo — no training or data download needed.
 
 ```bash
 pip install healthchain joblib xgboost
@@ -92,38 +92,15 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 
     Step through the full flow in [notebooks/fhir_ml_workflow.ipynb](https://github.com/dotimplement/HealthChain/blob/main/notebooks/fhir_ml_workflow.ipynb): FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.
 
-??? details "Train your own model"
+??? details "Bring your own model"
 
-    The cookbook includes a training script that builds an XGBoost classifier from MIMIC-IV data:
-
-    ```bash
-    cd scripts
-    python sepsis_prediction_training.py
-    ```
-
-    This script loads MIMIC-IV CSV tables, extracts vitals features, labels ICU stays with sepsis diagnoses, trains and evaluates several classifiers, and saves the best model to `scripts/models/sepsis_model.pkl`.
-
-    After training, copy it into the cookbook directory:
-
-    ```bash
-    cp scripts/models/sepsis_model.pkl cookbook/models/
-    ```
-
-    !!! note "MIMIC-IV Demo Dataset"
-
-        The training script uses the [MIMIC-IV Clinical Database Demo](https://physionet.org/content/mimic-iv-demo/2.2/) (~50MB, freely downloadable):
-
-        ```bash
-        export MIMIC_CSV_PATH=/path/to/mimic-iv-clinical-database-demo-2.2
-        ```
-
-    **Using your own model?** Save any scikit-learn-compatible model as a pickle with this structure:
+    The pre-generated model in `cookbook/models/` is a synthetic demo — not trained on real patient data. To swap in your own:
 
     ```python
     import joblib
 
     joblib.dump({
-        "model": your_trained_model,       # Must have .predict_proba()
+        "model": your_trained_model,    # any model with .predict_proba()
         "metadata": {
             "feature_names": ["heart_rate", "temperature", ...],
             "metrics": {"optimal_threshold": 0.5}
@@ -131,7 +108,7 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
     }, "cookbook/models/sepsis_model.pkl")
     ```
 
-    The pipeline works with any model that implements `predict_proba()` — XGBoost, Random Forest, LightGBM, or PyTorch/TensorFlow wrapped with a sklearn-compatible interface.
+    Works with any scikit-learn-compatible model: XGBoost, LightGBM, or PyTorch/TF wrapped with a sklearn interface. To train on real MIMIC-IV data, see [`scripts/sepsis_prediction_training.py`](https://github.com/dotimplement/HealthChain/blob/main/scripts/sepsis_prediction_training.py).
 
 ---
 
@@ -187,19 +164,14 @@ Register with [HealthChainAPI](../reference/gateway/api.md) and test using the [
 
 ```python
 from healthchain.gateway import HealthChainAPI
-from healthchain.sandbox import SandboxClient
 
 app = HealthChainAPI(title="Sepsis CDS Hooks")
 app.register_service(cds, path="/cds")
 
-# Test with pre-extracted demo patients
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/sepsis-risk",
-    workflow="patient-view",
-)
-client.load_from_path("cookbook/data/mimic_demo_patients", pattern="*_patient.json")
-responses = client.send_requests()
-client.save_results(save_request=True, save_response=True, directory="./output/")
+with app.sandbox("sepsis-risk") as client:
+    client.load_from_path("cookbook/data/mimic_demo_patients", pattern="*_patient.json")
+    responses = client.send_requests()
+    client.save_results("./output/")
 ```
 
 ??? example "Example CDS Response"
@@ -393,7 +365,7 @@ Both patterns:
 
 !!! tip "Next Steps"
 
-    - **Train your own model**: Replace `sepsis_model.pkl` with your model; update the feature schema to match your features
+    - **Bring your own model**: Replace `sepsis_model.pkl` with any scikit-learn-compatible model; update `sepsis_vitals.yaml` to match your feature set
     - **Add more FHIR sources**: The gateway supports multiple sources — see the [FHIR Sandbox Setup guide](./setup_fhir_sandboxes.md)
     - **Combine patterns**: Use batch screening to identify high-risk patients, then enable CDS alerts for those patients
     - **Automate batch runs**: Schedule screening jobs with cron, Airflow, or cloud schedulers; or use [FHIR Subscriptions](https://www.hl7.org/fhir/subscription.html) to trigger on new ICU admissions ([PRs welcome!](https://github.com/dotimplement/HealthChain/pulls))

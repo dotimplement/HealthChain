@@ -218,16 +218,8 @@ app.register_service(note_service, path="/notereader")
 HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the NoteReader workflow end-to-end. It loads your sample CDA document, sends it to your service via the configured endpoint, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally before connecting to Epic.
 
 ```python
-from healthchain.sandbox import SandboxClient
-
-# Create sandbox client for SOAP/CDA testing
-client = SandboxClient(
-    url="http://localhost:8000/notereader/?wsdl",
-    workflow="sign-note-inpatient",
-    protocol="soap"
-)
-
-# Load sample CDA document
+# load_from_path() reads a CDA XML file and wraps it in a SOAP envelope
+# ready to send to the NoteReader endpoint
 client.load_from_path("./data/notereader_cda.xml")
 
 # Inspect CDA document before sending
@@ -237,17 +229,13 @@ client.load_from_path("./data/notereader_cda.xml")
 
 ## Run the Complete Example
 
-Now for the moment of truth! Start your service and run the sandbox to see the complete workflow in action.
+Pass `protocol="soap"` and the workflow name — HealthChain resolves the NoteReader service URL automatically:
 
 ```python
-import threading
-
-api_thread = threading.Thread(target=app.run, daemon=True)
-api_thread.start()
-
-# Send requests and save responses with sandbox client
-client.send_requests()
-client.save_results("./output/")
+with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+    client.load_from_path("./data/notereader_cda.xml")
+    responses = client.send_requests()
+    client.save_results("./output/")
 ```
 
 !!! abstract "What happens when you run this"
