@@ -639,7 +639,7 @@
   color: #c2185b;
 }
 
-.tag-fhir {
+.tag-fhirgateway {
   background-color: #f1f8e9;
   color: #558b2f;
 }
@@ -647,6 +647,11 @@
 .tag-cdshooks {
   background-color: #fff8e1;
   color: #ff8f00;
+}
+
+.tag-zerosetup {
+  background-color: #e8eaf6;
+  color: #3949ab;
 }
 
 /* Difficulty tags */
@@ -716,7 +721,7 @@
   color: #f48fb1;
 }
 
-[data-md-color-scheme="slate"] .tag-fhir {
+[data-md-color-scheme="slate"] .tag-fhirgateway {
   background-color: #2a3d1a;
   color: #aed581;
 }
@@ -724,6 +729,11 @@
 [data-md-color-scheme="slate"] .tag-cdshooks {
   background-color: #3d3a1a;
   color: #ffd54f;
+}
+
+[data-md-color-scheme="slate"] .tag-zerosetup {
+  background-color: #1a1d3d;
+  color: #9fa8da;
 }
 
 [data-md-color-scheme="slate"] .cookbook-card {

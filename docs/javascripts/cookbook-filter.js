@@ -27,7 +27,7 @@ function initCookbookFilter() {
     cards.forEach(card => {
       const cardTags = card.dataset.tags.split(' ');
       const matches = activeFilters.size === 0 ||
-        [...activeFilters].some(filter => cardTags.includes(filter));
+        [...activeFilters].every(filter => cardTags.includes(filter));
 
       if (matches) {
         card.classList.remove('filtered-out');
