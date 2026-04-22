@@ -58,8 +58,8 @@ include = [
 ]
 
 [project.urls]
-Homepage = "https://dotimplement.github.io/HealthChain/"
-Repository = "https://github.com/dotimplement/HealthChain"
+Homepage = "https://healthchainai.github.io/HealthChain/"
+Repository = "https://github.com/healthchainai/HealthChain"
 
 [project.scripts]
 healthchain = "healthchain.cli:main"

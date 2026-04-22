@@ -3,8 +3,8 @@ site_description: Simplify prototyping and testing NLP applications in a healthc
 site_author: Jennifer Jiang-Kells
 
 # Repository
-repo_name: dotimplement/healthchain
-repo_url: https://github.com/dotimplement/healthchain
+repo_name: healthchainai/healthchain
+repo_url: https://github.com/healthchainai/healthchain
 
 nav:
   - Home: index.md
@@ -93,7 +93,7 @@ nav:
   - Community:
       - community/index.md
 
-copyright: dotimplement
+copyright: dotimplement ai
 theme:
   name: material
   custom_dir: docs/overrides/

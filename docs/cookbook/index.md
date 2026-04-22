@@ -6,7 +6,7 @@ Hands-on, production-ready examples for building healthcare AI applications with
     Cookbooks are runnable scripts in the HealthChain repository. Clone the repo to get started:
 
     ```bash
-    git clone https://github.com/dotimplement/HealthChain.git
+    git clone https://github.com/healthchainai/HealthChain.git
     cd HealthChain
     uv sync   # or: pip install healthchain
     ```

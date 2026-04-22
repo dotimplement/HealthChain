@@ -10,7 +10,7 @@
 # FHIR source credentials (if connecting to Epic/Cerner):
 #   FHIR_BASE_URL, CLIENT_ID, CLIENT_SECRET or CLIENT_SECRET_PATH
 #
-# See docs: https://dotimplement.github.io/HealthChain/reference/gateway/gateway/
+# See docs: https://healthchainai.github.io/HealthChain/reference/gateway/gateway/
 
 FROM python:3.11-slim
 

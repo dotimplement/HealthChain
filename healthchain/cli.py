@@ -27,7 +27,7 @@ _DOCKERFILE = """\
 # FHIR source credentials (if connecting to Epic/Cerner):
 #   FHIR_BASE_URL, CLIENT_ID, CLIENT_SECRET or CLIENT_SECRET_PATH
 #
-# See docs: https://dotimplement.github.io/HealthChain/reference/gateway/gateway/
+# See docs: https://healthchainai.github.io/HealthChain/reference/gateway/gateway/
 
 FROM python:3.11-slim
 
@@ -110,7 +110,7 @@ EPIC_CLIENT_SECRET=
 CERNER_BASE_URL=https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d
 # Cerner open sandbox requires no credentials
 
-# See docs: https://dotimplement.github.io/HealthChain/reference/gateway/fhir_gateway/
+# See docs: https://healthchainai.github.io/HealthChain/reference/gateway/fhir_gateway/
 """
 
 _ENV_EXAMPLE_DEFAULT = """\
@@ -127,7 +127,7 @@ _REQUIREMENTS = "healthchain\n"
 
 _APP_PY_DEFAULT = """\
 # Your HealthChain application goes here.
-# See https://dotimplement.github.io/HealthChain/ for examples.
+# See https://healthchainai.github.io/HealthChain/ for examples.
 """
 
 _APP_PY_CDS_HOOKS = """\
@@ -240,7 +240,7 @@ sources:
 
     return f"""\
 # HealthChain application configuration
-# https://dotimplement.github.io/HealthChain/reference/config
+# https://healthchainai.github.io/HealthChain/reference/config
 
 name: {name}
 version: "1.0.0"
@@ -352,7 +352,7 @@ def new_project(name: str, template: str):
         print(f"  {_BOLD}healthchain new my-app --template cds-hooks{_RST}")
         print(f"  {_BOLD}healthchain new my-app --template fhir-gateway{_RST}")
     print(f"\n{_INDIGO}Configure your app in healthchain.yaml{_RST}")
-    print(f"{_DIM}See https://dotimplement.github.io/HealthChain/ for examples.{_RST}")
+    print(f"{_DIM}See https://healthchainai.github.io/HealthChain/ for examples.{_RST}")
 
 
 def eject_templates(target_dir: str):
@@ -368,7 +368,7 @@ def eject_templates(target_dir: str):
         print(f"     {_DIM}from healthchain.interop import create_interop{_RST}")
         print(f"     {_DIM}engine = create_interop(config_dir='{target_dir}'){_RST}")
         print(
-            f"\n{_DIM}See https://dotimplement.github.io/HealthChain/reference/interop/ for details.{_RST}"
+            f"\n{_DIM}See https://healthchainai.github.io/HealthChain/reference/interop/ for details.{_RST}"
         )
 
     except FileExistsError as e:

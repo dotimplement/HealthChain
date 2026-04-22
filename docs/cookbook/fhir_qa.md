@@ -6,7 +6,7 @@ This example shows you how to build a Q&A service that answers patient questions
 
 This is the foundational pattern for patient-facing AI assistants — hospital portal chatbots, discharge navigation tools, care plan Q&A — where answers must be anchored to the individual patient's record rather than general medical knowledge.
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/fhir_context_llm_qa.py)!
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/fhir_context_llm_qa.py)!
 
 ## Setup
 
