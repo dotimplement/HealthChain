@@ -517,7 +517,7 @@ def add_provenance_metadata(
 
         resource.meta.tag.append(
             CodingCls(
-                system="https://dotimplement.github.io/HealthChain/fhir/tags",
+                system="https://healthchainai.github.io/HealthChain/fhir/tags",
                 code=tag_code,
                 display=tag_display or tag_code,
             )

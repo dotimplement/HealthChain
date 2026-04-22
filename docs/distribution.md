@@ -3,7 +3,7 @@
 HealthChain is licensed under Apache 2.0. To comply with the licence you need to add the following notice at the top every file that uses part of HealthChain code:
 
 ```
-Copyright 2024 - dotimplement
+Copyright 2024-2026 dotimplement ai
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

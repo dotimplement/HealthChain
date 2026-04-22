@@ -14,6 +14,9 @@ FHIR Sources:
 
 Run:
     python cookbook/multi_ehr_data_aggregation.py
+    # Starts a service and keeps running for interactive use.
+    # GET /fhir/transform/Condition?patient=<id>&source=epic
+    # Docs at: http://localhost:8888/docs
 """
 
 from typing import List

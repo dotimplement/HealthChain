@@ -4,7 +4,7 @@
 
 This example shows you how to build a CDS service that integrates with EHR systems. We'll automatically summarize discharge notes and return actionable recommendations using the [CDS Hooks standard](https://cds-hooks.org/).
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
 
 ![](../assets/images/hc-use-cases-clinical-integration.png) *Illustrative Architecture - actual implementation may vary.*
 
@@ -32,7 +32,7 @@ Download the sample data `discharge_notes.csv` into a `data/` folder in your pro
 ```bash
 mkdir -p data
 cd data
-wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/discharge_notes.csv
+wget https://github.com/healthchainai/HealthChain/raw/main/cookbook/data/discharge_notes.csv
 ```
 
 ## Initialize the pipeline

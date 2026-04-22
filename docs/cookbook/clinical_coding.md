@@ -6,7 +6,7 @@ Modernize Epic NoteReader's legacy SOAP interface by connecting it to a modern F
 
 [Epic NoteReader CDI](../reference/gateway/soap_cda.md) is a legacy CDA interface for clinical documentation improvement workflows. It's great because it's already embedded in existing EHR workflows and designed for third-party NLP integrations. The downside? Its legacy SOAP design limits modern analytics in FHIR. This tutorial shows you how to bridge that gap. Get the best of both worlds! Legacy workflows keep running while you unlock advanced analytics.
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/notereader_clinical_coding_fhir.py).
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/notereader_clinical_coding_fhir.py).
 
 ## How It Works
 
@@ -32,7 +32,7 @@ Download the sample CDA file `notereader_cda.xml` into a `data/` folder in your 
 ```bash
 mkdir -p data
 cd data
-wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/notereader_cda.xml
+wget https://github.com/healthchainai/HealthChain/raw/main/cookbook/data/notereader_cda.xml
 ```
 
 ### Configure Medplum Credentials
@@ -255,7 +255,7 @@ with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
 
 ### Expected Output
 
-[Our sample data](https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/notereader_cda.xml) contains the following note:
+[Our sample data](https://github.com/healthchainai/HealthChain/raw/main/cookbook/data/notereader_cda.xml) contains the following note:
 
 ??? example "Test Note"
     ```text
@@ -312,7 +312,7 @@ You should be able to interact with the resources you've just created in the Med
         "source": "urn:healthchain:source:epic-notereader",
         "tag": [
           {
-            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+            "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
             "code": "cdi",
             "display": "cdi"
           }

@@ -2,27 +2,35 @@
 
 Hands-on, production-ready examples for building healthcare AI applications with HealthChain.
 
+!!! tip "Getting started"
+    Cookbooks are runnable scripts in the HealthChain repository. Clone the repo to get started:
+
+    ```bash
+    git clone https://github.com/healthchainai/HealthChain.git
+    cd HealthChain
+    uv sync   # or: pip install healthchain
+    ```
+
+    Run any cookbook from the repo root — e.g. `python cookbook/sepsis_cds_hooks.py`. Filter by **Zero Setup** below to find examples that run immediately with no external accounts.
+
 <div class="tag-legend">
   <span class="tag-legend-title">Filter:</span>
   <span class="tag tag-filter tag-beginner" data-tag="beginner">Beginner</span>
   <span class="tag tag-filter tag-intermediate" data-tag="intermediate">Intermediate</span>
   <span class="tag tag-filter tag-advanced" data-tag="advanced">Advanced</span>
-  <span class="tag tag-filter tag-healthtech" data-tag="healthtech">HealthTech</span>
   <span class="tag tag-filter tag-genai" data-tag="genai">GenAI</span>
   <span class="tag tag-filter tag-ml" data-tag="ml">ML Research</span>
-  <span class="tag tag-filter tag-gateway" data-tag="gateway">Gateway</span>
-  <span class="tag tag-filter tag-pipeline" data-tag="pipeline">Pipeline</span>
-  <span class="tag tag-filter tag-interop" data-tag="interop">Interop</span>
-  <span class="tag tag-filter tag-fhir" data-tag="fhir">FHIR</span>
   <span class="tag tag-filter tag-cdshooks" data-tag="cdshooks">CDS Hooks</span>
-  <span class="tag tag-filter tag-sandbox" data-tag="sandbox">Sandbox</span>
+  <span class="tag tag-filter tag-fhirgateway" data-tag="fhir-gateway">FHIR Gateway</span>
+  <span class="tag tag-filter tag-interop" data-tag="interop">Interop</span>
+  <span class="tag tag-filter tag-zerosetup" data-tag="zero-setup">Zero Setup</span>
   <span class="tag-clear hidden" id="clearFilters">Clear</span>
 </div>
 
 <div class="cookbook-wrapper">
 <div class="cookbook-grid" id="cookbookGrid">
 
-<a href="setup_fhir_sandboxes/" class="cookbook-card" data-tags="fhir sandbox beginner">
+<a href="setup_fhir_sandboxes/" class="cookbook-card" data-tags="beginner fhir-gateway">
   <div class="cookbook-card-icon">🚦</div>
   <div class="cookbook-card-title">Working with FHIR Sandboxes</div>
   <div class="cookbook-card-description">
@@ -30,12 +38,11 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
   <div class="cookbook-tags">
     <span class="tag tag-beginner">Beginner</span>
-    <span class="tag tag-fhir">FHIR</span>
-    <span class="tag tag-sandbox">Sandbox</span>
+    <span class="tag tag-fhirgateway">FHIR Gateway</span>
   </div>
 </a>
 
-<a href="ml_model_deployment/" class="cookbook-card" data-tags="ml gateway cdshooks intermediate">
+<a href="ml_model_deployment/" class="cookbook-card" data-tags="ml cdshooks fhir-gateway intermediate zero-setup">
   <div class="cookbook-card-icon">🔬</div>
   <div class="cookbook-card-title">Deploy ML Models: Real-Time Alerts & Batch Screening</div>
   <div class="cookbook-card-description">
@@ -44,12 +51,13 @@ Hands-on, production-ready examples for building healthcare AI applications with
   <div class="cookbook-tags">
     <span class="tag tag-intermediate">Intermediate</span>
     <span class="tag tag-ml">ML Research</span>
-    <span class="tag tag-gateway">Gateway</span>
     <span class="tag tag-cdshooks">CDS Hooks</span>
+    <span class="tag tag-fhirgateway">FHIR Gateway</span>
+    <span class="tag tag-zerosetup">Zero Setup</span>
   </div>
 </a>
 
-<a href="fhir_qa/" class="cookbook-card" data-tags="genai fhir pipeline gateway beginner">
+<a href="fhir_qa/" class="cookbook-card" data-tags="genai fhir-gateway beginner">
   <div class="cookbook-card-icon">💬</div>
   <div class="cookbook-card-title">FHIR-Grounded Patient Q&A</div>
   <div class="cookbook-card-description">
@@ -58,13 +66,11 @@ Hands-on, production-ready examples for building healthcare AI applications with
   <div class="cookbook-tags">
     <span class="tag tag-beginner">Beginner</span>
     <span class="tag tag-genai">GenAI</span>
-    <span class="tag tag-fhir">FHIR</span>
-    <span class="tag tag-pipeline">Pipeline</span>
-    <span class="tag tag-gateway">Gateway</span>
+    <span class="tag tag-fhirgateway">FHIR Gateway</span>
   </div>
 </a>
 
-<a href="multi_ehr_aggregation/" class="cookbook-card" data-tags="genai gateway fhir intermediate">
+<a href="multi_ehr_aggregation/" class="cookbook-card" data-tags="genai fhir-gateway intermediate">
   <div class="cookbook-card-icon">🔗</div>
   <div class="cookbook-card-title">Multi-Source Patient Data Aggregation</div>
   <div class="cookbook-card-description">
@@ -73,12 +79,11 @@ Hands-on, production-ready examples for building healthcare AI applications with
   <div class="cookbook-tags">
     <span class="tag tag-intermediate">Intermediate</span>
     <span class="tag tag-genai">GenAI</span>
-    <span class="tag tag-gateway">Gateway</span>
-    <span class="tag tag-fhir">FHIR</span>
+    <span class="tag tag-fhirgateway">FHIR Gateway</span>
   </div>
 </a>
 
-<a href="clinical_coding/" class="cookbook-card" data-tags="healthtech pipeline interop advanced">
+<a href="clinical_coding/" class="cookbook-card" data-tags="interop advanced">
   <div class="cookbook-card-icon">🧾</div>
   <div class="cookbook-card-title">Automate Clinical Coding & FHIR Integration</div>
   <div class="cookbook-card-description">
@@ -86,13 +91,11 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
   <div class="cookbook-tags">
     <span class="tag tag-advanced">Advanced</span>
-    <span class="tag tag-healthtech">HealthTech</span>
-    <span class="tag tag-pipeline">Pipeline</span>
     <span class="tag tag-interop">Interop</span>
   </div>
 </a>
 
-<a href="discharge_summarizer/" class="cookbook-card" data-tags="healthtech gateway cdshooks beginner">
+<a href="discharge_summarizer/" class="cookbook-card" data-tags="cdshooks beginner zero-setup">
   <div class="cookbook-card-icon">📝</div>
   <div class="cookbook-card-title">Summarize Discharge Notes with CDS Hooks</div>
   <div class="cookbook-card-description">
@@ -100,13 +103,12 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
   <div class="cookbook-tags">
     <span class="tag tag-beginner">Beginner</span>
-    <span class="tag tag-healthtech">HealthTech</span>
-    <span class="tag tag-gateway">Gateway</span>
     <span class="tag tag-cdshooks">CDS Hooks</span>
+    <span class="tag tag-zerosetup">Zero Setup</span>
   </div>
 </a>
 
-<a href="format_conversion/" class="cookbook-card" data-tags="healthtech interop fhir intermediate">
+<a href="format_conversion/" class="cookbook-card" data-tags="interop intermediate zero-setup">
   <div class="cookbook-card-icon">🔄</div>
   <div class="cookbook-card-title">Convert Between Healthcare Data Formats</div>
   <div class="cookbook-card-description">
@@ -114,9 +116,8 @@ Hands-on, production-ready examples for building healthcare AI applications with
   </div>
   <div class="cookbook-tags">
     <span class="tag tag-intermediate">Intermediate</span>
-    <span class="tag tag-healthtech">HealthTech</span>
     <span class="tag tag-interop">Interop</span>
-    <span class="tag tag-fhir">FHIR</span>
+    <span class="tag tag-zerosetup">Zero Setup</span>
   </div>
 </a>
 

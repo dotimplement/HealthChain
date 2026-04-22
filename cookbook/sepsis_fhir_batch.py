@@ -9,13 +9,14 @@ Requirements:
     pip install healthchain joblib xgboost python-dotenv
 
 Setup:
-    1. Extract and upload demo patients:
-       python scripts/extract_mimic_demo_patients.py --minimal --upload
-    2. Update DEMO_PATIENT_IDS below with the server-assigned IDs
-    3. Set env vars: MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET, MEDPLUM_BASE_URL
+    1. Set env vars: MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET, MEDPLUM_BASE_URL, MEDPLUM_TOKEN_URL
+    2. Seed demo patients:
+       healthchain seed medplum ./cookbook/data/mimic_demo_patients/
+    3. Update DEMO_PATIENT_IDS below with the printed IDs (high/moderate/low risk order)
 
 Run:
     python cookbook/sepsis_fhir_batch.py
+    # Screens patients, writes RiskAssessment resources back to the FHIR server, and exits.
 """
 
 from pathlib import Path
@@ -176,8 +177,8 @@ app, gateway = create_app()
 
 
 if __name__ == "__main__":
-    # Demo patient IDs from: python scripts/extract_mimic_demo_patients.py --minimal --upload
-    # (Update these with server-assigned IDs after upload)
+    # Demo patient IDs from: healthchain seed medplum ./cookbook/data/mimic_demo_patients/
+    # (Update these with the printed server-assigned IDs)
     DEMO_PATIENT_IDS = [
         "702e11e8-6d21-41dd-9b48-31715fdc0fb1",  # high risk
         "3b0da7e9-0379-455a-8d35-bedd3a6ee459",  # moderate risk

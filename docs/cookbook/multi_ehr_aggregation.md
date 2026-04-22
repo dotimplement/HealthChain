@@ -4,7 +4,7 @@
 
 This example shows you how to aggregate patient data from multiple FHIR sources and track data provenance: essential for building AI applications that train on diverse data, query multiple EHR vendors in RAG systems, or construct unified patient timelines from fragmented health records.
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!
 
 ![](../assets/images/hc-use-cases-genai-aggregate.png) *Illustrative Architecture - actual implementation may vary.*
 
@@ -110,7 +110,7 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
         "source": "urn:healthchain:source:epic",  // Adds source
         "tag": [
           {
-            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+            "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
             "code": "aggregated",
             "display": "Aggregated"
           }  // Appends a custom HealthChain tag
@@ -262,7 +262,7 @@ Sample conditions:
               "lastUpdated": "2025-10-10T15:23:50.167941Z",  // Updated by HealthChain Gateway
               "source": "urn:healthchain:source:epic",       // Added by HealthChain Gateway
               "tag": [{
-                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
                 "code": "aggregated",
                 "display": "Aggregated"
               }]  // Added by HealthChain Gateway
@@ -306,7 +306,7 @@ Sample conditions:
               "lastUpdated": "2025-10-10T15:23:50.168175Z", // Updated by HealthChain Gateway
               "source": "urn:healthchain:source:epic",      // Added by HealthChain Gateway
               "tag": [{
-                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
                 "code": "aggregated"
               }]  // Added by HealthChain Gateway
             },

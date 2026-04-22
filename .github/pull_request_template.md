@@ -24,7 +24,7 @@ Closes #
 
 
 ## Checklist
-- [ ] I have read [`CONTRIBUTING.md`](https://github.com/dotimplement/HealthChain/blob/main/CONTRIBUTING.md) and followed the guidelines.
+- [ ] I have read [`CONTRIBUTING.md`](https://github.com/healthchainai/HealthChain/blob/main/CONTRIBUTING.md) and followed the guidelines.
 - [ ] I have linked all relevant Issues / Discussions / RFCs.
 - [ ] I have updated documentation where needed.
 - [ ] I understand all code changes and can explain the design decisions and trade-offs.

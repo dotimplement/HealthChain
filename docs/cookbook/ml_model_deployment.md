@@ -6,8 +6,8 @@ You trained a model on CSVs. Now you need to deploy it against FHIR data from EH
 
 Check out the full working examples:
 
-- [Real-time CDS Hooks](https://github.com/dotimplement/HealthChain/tree/main/cookbook/sepsis_cds_hooks.py)
-- [Batch FHIR Gateway](https://github.com/dotimplement/HealthChain/tree/main/cookbook/sepsis_fhir_batch.py)
+- [Real-time CDS Hooks](https://github.com/healthchainai/HealthChain/tree/main/cookbook/sepsis_cds_hooks.py)
+- [Batch FHIR Gateway](https://github.com/healthchainai/HealthChain/tree/main/cookbook/sepsis_fhir_batch.py)
 
 ![](../assets/images/hc-use-cases-ml-deployment.png)
 
@@ -92,7 +92,7 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 
 !!! tip "Explore Interactively"
 
-    Step through the full flow in [notebooks/fhir_ml_workflow.ipynb](https://github.com/dotimplement/HealthChain/blob/main/notebooks/fhir_ml_workflow.ipynb): FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.
+    Step through the full flow in [notebooks/fhir_ml_workflow.ipynb](https://github.com/healthchainai/HealthChain/blob/main/notebooks/fhir_ml_workflow.ipynb): FHIR bundle → Dataset → DataFrame → inference → RiskAssessment.
 
 ??? details "Bring your own model"
 
@@ -110,7 +110,7 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
     }, "cookbook/models/sepsis_model.pkl")
     ```
 
-    Works with any scikit-learn-compatible model: XGBoost, LightGBM, or PyTorch/TF wrapped with a sklearn interface. To train on real MIMIC-IV data, see [`scripts/sepsis_prediction_training.py`](https://github.com/dotimplement/HealthChain/blob/main/scripts/sepsis_prediction_training.py).
+    Works with any scikit-learn-compatible model: XGBoost, LightGBM, or PyTorch/TF wrapped with a sklearn interface. To train on real MIMIC-IV data, see [`scripts/sepsis_prediction_training.py`](https://github.com/healthchainai/HealthChain/blob/main/scripts/sepsis_prediction_training.py).
 
 ---
 
@@ -216,29 +216,21 @@ MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
 
 ??? details "Upload demo patients to Medplum"
 
-    Extract MIMIC patients and upload them to your Medplum instance:
+    Pre-extracted MIMIC demo patients are already in the repo. Upload them to your Medplum instance with:
 
     ```bash
-    export MIMIC_FHIR_PATH=/path/to/mimic-iv-on-fhir
-    cd scripts
-    python extract_mimic_demo_patients.py --minimal --upload
+    healthchain seed medplum ./cookbook/data/mimic_demo_patients/
     ```
 
-    The script prints server-assigned patient IDs — copy them into `DEMO_PATIENT_IDS` in `sepsis_fhir_batch.py`:
+    The command prints the server-assigned IDs — copy them into `DEMO_PATIENT_IDS` in `sepsis_fhir_batch.py`:
 
     ```
-    ✓ Uploaded to Medplum!
-
-    Copy this into sepsis_fhir_batch.py:
-
-    DEMO_PATIENT_IDS = [
-        "702e11e8-6d21-41dd-9b48-31715fdc0fb1",  # high risk
-        "3b0da7e9-0379-455a-8d35-bedd3a6ee459",  # moderate risk
-        "f490ceb4-6262-4f1e-8b72-5515e6c46741",  # low risk
-    ]
+    ✓ high_risk_bundle   →  PATIENT_ID=702e11e8-...
+    ✓ low_risk_bundle    →  PATIENT_ID=3b0da7e9-...
+    ✓ moderate_risk_bundle  →  PATIENT_ID=f490ceb4-...
     ```
 
-    Options for larger test sets: `--num-patients-per-risk 5`, `--seed 123`, `--help`.
+    To regenerate patients from a full MIMIC-on-FHIR dataset: `python scripts/extract_mimic_demo_patients.py --minimal`.
 
 ### Screen Patients and Write Back Results
 
@@ -370,5 +362,5 @@ Both patterns:
     - **Bring your own model**: Replace `sepsis_model.pkl` with any scikit-learn-compatible model; update `sepsis_vitals.yaml` to match your feature set
     - **Add more FHIR sources**: The gateway supports multiple sources — see the [FHIR Sandbox Setup guide](./setup_fhir_sandboxes.md)
     - **Combine patterns**: Use batch screening to identify high-risk patients, then enable CDS alerts for those patients
-    - **Automate batch runs**: Schedule screening jobs with cron, Airflow, or cloud schedulers; or use [FHIR Subscriptions](https://www.hl7.org/fhir/subscription.html) to trigger on new ICU admissions ([PRs welcome!](https://github.com/dotimplement/HealthChain/pulls))
+    - **Automate batch runs**: Schedule screening jobs with cron, Airflow, or cloud schedulers; or use [FHIR Subscriptions](https://www.hl7.org/fhir/subscription.html) to trigger on new ICU admissions ([PRs welcome!](https://github.com/healthchainai/HealthChain/pulls))
     - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service). Moving to `healthchain.yaml` is where config-driven compliance support (audit logging, model versioning, deployment metadata) will live as those features mature.
