@@ -240,6 +240,28 @@ gateway = FHIRGateway()
 gateway.add_source("medplum", MEDPLUM_URL)
 ```
 
+### Seeding test data
+
+Once credentials are configured, use `healthchain seed medplum` to upload FHIR data from a JSON file or directory of JSON files:
+
+```bash
+# Single bundle file
+healthchain seed medplum ./cookbook/data/qa_patient.json
+
+# Directory of bundle files
+healthchain seed medplum ./cookbook/data/mimic_demo_patients/
+```
+
+The command accepts any FHIR transaction Bundle, resource array, or single resource. It prints the server-assigned Patient ID(s) after upload:
+
+```
+◆ Seeding Medplum  qa_patient.json
+
+  ✓ DEMO_PATIENT_ID=abc123
+```
+
+Each cookbook's `cookbook/data/` directory contains the seed file it needs.
+
 ### Benefits of Medplum
 
 - **Full control**: Upload your own test data

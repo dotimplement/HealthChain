@@ -32,16 +32,16 @@ ANTHROPIC_API_KEY=your_api_key   # or OPENAI_API_KEY, etc.
 
 ### Seed test data
 
-The cookbook ships with a seed script that creates a synthetic patient with conditions, an upcoming appointment, and an active care plan:
+The cookbook ships with a demo patient bundle — a synthetic patient with a condition, an upcoming appointment, and an active care plan. Upload it to your Medplum instance with:
 
 ```bash
-uv run python cookbook/data/medplum_seed.py
+healthchain seed medplum ./cookbook/data/qa_patient.json
 ```
 
-The script prints the new patient ID — add it to `.env` so you can reference it when testing:
+Note the printed patient ID — you'll use it when testing the `/qa` endpoint:
 
-```bash
-DEMO_PATIENT_ID=<id printed by seed script>
+```
+✓ DEMO_PATIENT_ID=<id>
 ```
 
 ## Format FHIR data as LLM context

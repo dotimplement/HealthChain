@@ -497,6 +497,59 @@ def sandbox_run(
         print(f"\n{_GREEN}✓{_RST} Saved to {_BOLD}{resolved_output}/{_RST}")
 
 
+def seed_medplum(path: str):
+    """Seed Medplum with FHIR data from a JSON file or directory."""
+    from pathlib import Path
+
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        pass
+
+    try:
+        from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+
+        config = FHIRAuthConfig.from_env("MEDPLUM")
+    except Exception as e:
+        print(f"\n{_RED}Error:{_RST} Could not load Medplum credentials: {e}")
+        print(
+            f"{_DIM}Set MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET, "
+            f"MEDPLUM_BASE_URL, MEDPLUM_TOKEN_URL in .env{_RST}"
+        )
+        return
+
+    target = Path(path)
+    if not target.exists():
+        print(f"\n{_RED}Error:{_RST} Path not found: {path}")
+        return
+
+    from healthchain.sandbox.seeders import seed_from_directory, seed_from_file
+
+    print(f"\n{_BOLD}{_CYAN}◆ Seeding Medplum{_RST}  {_DIM}{target}{_RST}\n")
+
+    try:
+        if target.is_dir():
+            results = seed_from_directory(config, target)
+            if not results:
+                print(f"  {_AMBER}No JSON files found in {target}{_RST}")
+                return
+            for name, ids in results.items():
+                for patient_id in ids:
+                    print(
+                        f"  {_GREEN}✓{_RST} {_CYAN}{name}{_RST}  →  {_BOLD}PATIENT_ID={patient_id}{_RST}"
+                    )
+        else:
+            ids = seed_from_file(config, target)
+            if not ids:
+                print(f"  {_GREEN}✓{_RST} Uploaded (no Patient resources found)")
+            for patient_id in ids:
+                print(f"  {_GREEN}✓{_RST} {_BOLD}DEMO_PATIENT_ID={patient_id}{_RST}")
+    except Exception as e:
+        print(f"\n{_RED}Error:{_RST} {e}")
+
+
 def status():
     """Show current project status from healthchain.yaml."""
     from healthchain.config.appconfig import AppConfig
@@ -676,6 +729,20 @@ def main():
         help="Don't save results to disk",
     )
 
+    # Subparser for the 'seed' command
+    seed_parser = subparsers.add_parser(
+        "seed", help="Seed a FHIR test server with demo data"
+    )
+    seed_subparsers = seed_parser.add_subparsers(dest="seed_command", required=True)
+    seed_medplum_parser = seed_subparsers.add_parser(
+        "medplum", help="Upload FHIR data to Medplum"
+    )
+    seed_medplum_parser.add_argument(
+        "path",
+        type=str,
+        help="Path to a FHIR JSON file or directory of JSON files",
+    )
+
     # Subparser for the 'status' command
     subparsers.add_parser("status", help="Show project status from healthchain.yaml")
 
@@ -708,6 +775,9 @@ def main():
                 output=args.output,
                 no_save=args.no_save,
             )
+    elif args.command == "seed":
+        if args.seed_command == "medplum":
+            seed_medplum(args.path)
     elif args.command == "status":
         status()
     elif args.command == "eject-templates":

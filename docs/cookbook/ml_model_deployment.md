@@ -216,29 +216,21 @@ MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
 
 ??? details "Upload demo patients to Medplum"
 
-    Extract MIMIC patients and upload them to your Medplum instance:
+    Pre-extracted MIMIC demo patients are already in the repo. Upload them to your Medplum instance with:
 
     ```bash
-    export MIMIC_FHIR_PATH=/path/to/mimic-iv-on-fhir
-    cd scripts
-    python extract_mimic_demo_patients.py --minimal --upload
+    healthchain seed medplum ./cookbook/data/mimic_demo_patients/
     ```
 
-    The script prints server-assigned patient IDs — copy them into `DEMO_PATIENT_IDS` in `sepsis_fhir_batch.py`:
+    The command prints the server-assigned IDs — copy them into `DEMO_PATIENT_IDS` in `sepsis_fhir_batch.py`:
 
     ```
-    ✓ Uploaded to Medplum!
-
-    Copy this into sepsis_fhir_batch.py:
-
-    DEMO_PATIENT_IDS = [
-        "702e11e8-6d21-41dd-9b48-31715fdc0fb1",  # high risk
-        "3b0da7e9-0379-455a-8d35-bedd3a6ee459",  # moderate risk
-        "f490ceb4-6262-4f1e-8b72-5515e6c46741",  # low risk
-    ]
+    ✓ high_risk_bundle   →  PATIENT_ID=702e11e8-...
+    ✓ low_risk_bundle    →  PATIENT_ID=3b0da7e9-...
+    ✓ moderate_risk_bundle  →  PATIENT_ID=f490ceb4-...
     ```
 
-    Options for larger test sets: `--num-patients-per-risk 5`, `--seed 123`, `--help`.
+    To regenerate patients from a full MIMIC-on-FHIR dataset: `python scripts/extract_mimic_demo_patients.py --minimal`.
 
 ### Screen Patients and Write Back Results
 
