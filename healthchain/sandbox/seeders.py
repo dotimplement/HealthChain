@@ -72,7 +72,19 @@ def _post_bundle(
 
 
 def seed_from_file(config: FHIRAuthConfig, path: Path) -> list[str]:
-    """Upload a FHIR JSON file to the server. Returns server-assigned Patient IDs."""
+    """Upload a FHIR JSON file to a FHIR server as a transaction bundle.
+
+    Accepts a FHIR transaction Bundle, a JSON array of resources, or a single
+    resource object. Non-Bundle inputs are wrapped into a transaction bundle
+    automatically before upload.
+
+    Args:
+        config: FHIR server auth config (base URL + OAuth2 credentials).
+        path: Path to a JSON file containing FHIR data.
+
+    Returns:
+        Server-assigned Patient IDs found in the transaction response.
+    """
     token_manager = OAuth2TokenManager(config.to_oauth2_config())
     data = json.loads(path.read_text())
     bundle = _as_transaction_bundle(data)
@@ -81,7 +93,19 @@ def seed_from_file(config: FHIRAuthConfig, path: Path) -> list[str]:
 
 
 def seed_from_directory(config: FHIRAuthConfig, path: Path) -> dict[str, list[str]]:
-    """Upload all *.json files in a directory. Returns {stem: [patient_ids]}."""
+    """Upload all *.json files in a directory to a FHIR server.
+
+    Each file is uploaded as a separate transaction. Files are processed in
+    alphabetical order. See `seed_from_file` for accepted input formats.
+
+    Args:
+        config: FHIR server auth config (base URL + OAuth2 credentials).
+        path: Directory containing FHIR JSON files.
+
+    Returns:
+        Mapping of filename stem to server-assigned Patient IDs,
+        e.g. ``{"high_risk_bundle": ["abc123"], "low_risk_bundle": ["def456"]}``.
+    """
     token_manager = OAuth2TokenManager(config.to_oauth2_config())
     results: dict[str, list[str]] = {}
     for json_file in sorted(path.glob("*.json")):
