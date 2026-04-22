@@ -9,16 +9,19 @@ Requirements:
     pip install healthchain langchain-core langchain-anthropic python-dotenv
 
 Setup:
-    1. Run: python cookbook/data/medplum_seed.py
-    2. Add to .env:
+    1. Add to .env:
            MEDPLUM_CLIENT_ID=your_client_id
            MEDPLUM_CLIENT_SECRET=your_client_secret
            MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
            MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
            ANTHROPIC_API_KEY=your_api_key   # or OPENAI_API_KEY, etc.
+    2. Seed demo patient:
+           healthchain seed medplum ./cookbook/data/qa_patient.json
+       Note the printed DEMO_PATIENT_ID for use when testing.
 
 Run:
     python cookbook/fhir_context_llm_qa.py
+    # Starts a service and keeps running for interactive use.
     # POST /qa  {"patient_id": "...", "question": "..."}
     # Docs at: http://localhost:8888/docs
 """

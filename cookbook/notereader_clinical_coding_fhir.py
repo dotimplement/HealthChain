@@ -9,9 +9,13 @@ Requirements:
 
 Run:
     python cookbook/notereader_clinical_coding_fhir.py
+    # Fires a test CDA document and exits.
+    # To keep the service running for manual exploration, replace
+    # `with app.sandbox(...)` with `app.run()` in the __main__ block.
 """
 
 import logging
+from pathlib import Path
 
 from spacy.tokens import Span
 from dotenv import load_dotenv
@@ -30,6 +34,8 @@ from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
 
 load_dotenv()
+
+_DATA_DIR = Path(__file__).parent / "data"
 
 # Load configuration from environment variables
 config = FHIRAuthConfig.from_env("MEDPLUM")
@@ -119,6 +125,6 @@ app = create_app()
 
 if __name__ == "__main__":
     with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
-        client.load_from_path("./data/notereader_cda.xml")
+        client.load_from_path(_DATA_DIR / "notereader_cda.xml")
         responses = client.send_requests()
         client.save_results("./output/")

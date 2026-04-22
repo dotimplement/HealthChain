@@ -11,12 +11,14 @@ Requirements:
 
 Run:
     python cookbook/cds_discharge_summarizer_hf_chat.py
-    # POST /cds/cds-services/discharge-summarizer
-    # Docs at: http://localhost:8000/docs
+    # Fires test requests from discharge_notes.csv and exits.
+    # To keep the service running for manual exploration, replace
+    # `with app.sandbox(...)` with `app.run()` in the __main__ block.
 """
 
 import os
 import getpass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -30,6 +32,8 @@ from healthchain.pipeline import SummarizationPipeline
 from healthchain.models import CDSRequest, CDSResponse
 
 load_dotenv()
+
+_DATA_DIR = Path(__file__).parent / "data"
 
 
 def create_chain():
@@ -81,7 +85,7 @@ app = create_app()
 if __name__ == "__main__":
     with app.sandbox("discharge-summarizer") as client:
         client.load_free_text(
-            csv_path="data/discharge_notes.csv",
+            csv_path=str(_DATA_DIR / "discharge_notes.csv"),
             column_name="text",
         )
         responses = client.send_requests()
