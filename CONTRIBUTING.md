@@ -8,10 +8,10 @@ Before you start, please read this guide to understand how to propose changes, o
 To keep reviews efficient and maintain project quality, PRs must meet these basics (or may be closed without in‑depth review):
 
 - [ ] Small, focused on a single change or issue
-- [ ] Links to at least one [`GitHub Issue`](https://github.com/dotimplement/HealthChain/issues) or [`RFC`](https://github.com/dotimplement/HealthChain/tree/main/docs/rfcs) (Request for Comments) with context and trade‑offs explained in the description
+- [ ] Links to at least one [`GitHub Issue`](https://github.com/healthchainai/HealthChain/issues) or [`RFC`](https://github.com/healthchainai/HealthChain/tree/main/docs/rfcs) (Request for Comments) with context and trade‑offs explained in the description
 - [ ] All tests pass locally; new functionality has tests and docs
 - [ ] For `core`, `Stage: Research 🔬`, or `Stage: Design 🎨` labels: has accepted RFC
-- [ ] Not sure about scope? Open a [GitHub Discussion](https://github.com/dotimplement/HealthChain/discussions) first
+- [ ] Not sure about scope? Open a [GitHub Discussion](https://github.com/healthchainai/HealthChain/discussions) first
 
 ## Contributing health & domain expertise
 
@@ -19,7 +19,7 @@ Real‑world experience from healthcare, public health, and digital health produ
 
 You can contribute domain expertise by:
 
-- Opening [`Issues`](https://github.com/dotimplement/HealthChain/issues) or [`Discussions`](https://github.com/dotimplement/HealthChain/discussions) that describe real workflows, data models (e.g. FHIR resources), regulatory or security constraints, and integration needs.
+- Opening [`Issues`](https://github.com/healthchainai/HealthChain/issues) or [`Discussions`](https://github.com/healthchainai/HealthChain/discussions) that describe real workflows, data models (e.g. FHIR resources), regulatory or security constraints, and integration needs.
 - Commenting on `Stage: Research 🔬` and `Stage: Design 🎨` issues with context from clinical practice, informatics, or implementation experience.
 - Co‑authoring RFCs that capture requirements for consent, auditing, interoperability, and safety‑related behaviors.
 
@@ -44,7 +44,7 @@ Once we've aligned on a collaboration, we'll track it using GitHub issues with s
 - Co-authored RFCs welcome for features you're willing to help build/maintain
 
 **For exploratory technical discussions:**
-Use [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) to brainstorm architecture options and gather community input.
+Use [GitHub Discussions](https://github.com/healthchainai/HealthChain/discussions) to brainstorm architecture options and gather community input.
 
 **We're particularly interested in:**
 - Pilot deployments and production integrations
@@ -59,7 +59,7 @@ Found a bug? Have a suggestion for a new feature? You can help us improve by:
 - **Submitting Bug Reports**: Clearly describe the issue, steps to reproduce, expected outcome, actual outcome, and any relevant logs or screenshots.
 - **Suggesting Enhancements**: Describe the problem you face, not only your proposed solution. Include user stories, constraints, and any alternatives considered.
 
-For broad, exploratory ideas or "is this a good idea?" questions, please prefer [GitHub Discussions](https://github.com/dotimplement/HealthChain/discussions) over large PRs.
+For broad, exploratory ideas or "is this a good idea?" questions, please prefer [GitHub Discussions](https://github.com/healthchainai/HealthChain/discussions) over large PRs.
 
 - Use the `Ideas` category for high‑level proposals.
 - Link any related Discussion from the corresponding issue if applicable.
@@ -78,15 +78,26 @@ When writing docs:
 - Include code snippets or configuration examples where helpful.
 - Call out assumptions, limitations, and safety‑relevant behaviour explicitly.
 
+### Writing Cookbooks
+
+Cookbooks are often the first thing a developer runs. These principles keep them effective:
+
+- **Reduce time-to-running**: Every prerequisite you can eliminate or defer is a developer you don't lose. Pre-bake demo data and models where possible; collapse advanced setup into `??? details` blocks.
+- **Lead with the problem**: The intro should say what pain it solves — "you trained a model on CSVs, now you need to deploy against FHIR data" — not just what the code does.
+- **Show HealthChain's unique value**: Each cookbook should have a moment that would be 50+ lines of custom code without HealthChain (`Dataset.from_fhir_bundle()`, `merge_bundles()`, `FHIRAuthConfig.from_env()`). Don't bury it.
+- **Complement, don't replace**: Anywhere an existing tool (LangChain, FastAPI, sklearn) appears alongside HealthChain, say explicitly that they work together. Reduces the "should I switch?" anxiety.
+- **Be honest about the roadmap**: Compliance, eval, and audit features are in progress — reference them as such. Developers trust you more for it.
+- **Collapse advanced paths, don't omit them**: The `??? details` pattern keeps the main path clean without losing information for power users.
+
 ## 💻 Writing Code
 
->**New to HealthChain?** Look for [`good first issue`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
+>**New to HealthChain?** Look for [`good first issue`](https://github.com/healthchainai/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/healthchainai/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) labels.
 
-**Check the [project board](https://github.com/orgs/dotimplement/projects/1/views/1)** to see current priorities and what's actively being worked on.
+**Check the [project board](https://github.com/orgs/healthchainai/projects/1/views/1)** to see current priorities and what's actively being worked on.
 
 You can contribute code by:
 
-- **Fixing Bugs**: Pick issues labelled [`Issue: Bug 🐛`](https://github.com/dotimplement/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22Issue%3A+Bug+%F0%9F%90%9B%22) and reference the issue number in your commits and PR.
+- **Fixing Bugs**: Pick issues labelled [`Issue: Bug 🐛`](https://github.com/healthchainai/HealthChain/issues?q=is%3Aissue+is%3Aopen+label%3A%22Issue%3A+Bug+%F0%9F%90%9B%22) and reference the issue number in your commits and PR.
 - **Implementing Features**: For non‑trivial features, start with an issue or Discussion to confirm scope and fit, and use the RFC process for anything touching core areas.
 - **Improving Tests**: Increase coverage, add regression tests for fixed bugs, and improve reliability of existing test suites.
 
@@ -107,7 +118,7 @@ For issues with any of these labels:
 For larger changes, especially related to authentication/authorization, persistence, public API, or deployment/operations:
 
 - Check for an existing `Stage: Research 🔬`, `Stage: Design 🎨`, or `core` issue.
-- Comment on the issue or start a [`GitHub Discussion`](https://github.com/dotimplement/HealthChain/discussions) if the problem or approach is unclear.
+- Comment on the issue or start a [`GitHub Discussion`](https://github.com/healthchainai/HealthChain/discussions) if the problem or approach is unclear.
 - Follow the [`RFC process`](#how-to-create-an-rfc) before opening an implementation PR.
 
 **Quick reference:**

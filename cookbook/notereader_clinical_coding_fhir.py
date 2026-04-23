@@ -9,9 +9,13 @@ Requirements:
 
 Run:
     python cookbook/notereader_clinical_coding_fhir.py
+    # Fires a test CDA document and exits.
+    # To keep the service running for manual exploration, replace
+    # `with app.sandbox(...)` with `app.run()` in the __main__ block.
 """
 
 import logging
+from pathlib import Path
 
 from spacy.tokens import Span
 from dotenv import load_dotenv
@@ -30,6 +34,8 @@ from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 logging.getLogger("spyne.model.complex").setLevel(logging.ERROR)
 
 load_dotenv()
+
+_DATA_DIR = Path(__file__).parent / "data"
 
 # Load configuration from environment variables
 config = FHIRAuthConfig.from_env("MEDPLUM")
@@ -105,7 +111,6 @@ def create_app():
     app = HealthChainAPI(
         title="Epic CDI Service",
         description="Clinical document intelligence with FHIR and NoteReader integration",
-        port=8000,
         service_type="fhir-gateway",
     )
     app.register_gateway(fhir_gateway, path="/fhir")
@@ -119,30 +124,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import threading
-    from time import sleep
-    from healthchain.sandbox import SandboxClient
-
-    server_thread = threading.Thread(target=app.run, daemon=True)
-    server_thread.start()
-    sleep(2)
-
-    # Create sandbox client for testing
-    client = SandboxClient(
-        url="http://localhost:8000/notereader/?wsdl",
-        workflow="sign-note-inpatient",
-        protocol="soap",
-    )
-    # Load clinical document from file
-    client.load_from_path("./data/notereader_cda.xml")
-
-    # Send request and save response
-    responses = client.send_requests()
-
-    # Save results
-    client.save_results("./output/")
-
-    try:
-        server_thread.join()
-    except KeyboardInterrupt:
-        pass
+    with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+        client.load_from_path(_DATA_DIR / "notereader_cda.xml")
+        responses = client.send_requests()
+        client.save_results("./output/")

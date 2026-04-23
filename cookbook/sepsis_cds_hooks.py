@@ -4,15 +4,16 @@ Sepsis Risk Prediction via CDS Hooks
 
 Real-time sepsis alerts triggered when clinician opens a patient chart.
 Uses pre-extracted MIMIC patient data for demos.
-
-Demo patients extracted from MIMIC-on-FHIR using:
-    python scripts/extract_mimic_demo_patients.py
+Demo patients are pre-built and included in cookbook/data/mimic_demo_patients/.
 
 Requirements:
     pip install healthchain joblib xgboost
 
 Run:
     python cookbook/sepsis_cds_hooks.py
+    # Fires test requests against 3 pre-extracted MIMIC patients and exits.
+    # To keep the service running for manual exploration, replace
+    # `with app.sandbox(...)` with `app.run()` in the __main__ block.
 """
 
 from pathlib import Path
@@ -80,9 +81,6 @@ def create_app():
         dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
         result = pipeline(dataset)
 
-        # print("Result:")
-        # print(result.data.head(10))
-
         probability = float(result.metadata["probabilities"][0])
         risk = (
             "high" if probability > 0.7 else "moderate" if probability > 0.4 else "low"
@@ -118,7 +116,6 @@ def create_app():
     app = HealthChainAPI(
         title="Sepsis CDS Hooks",
         description="Real-time sepsis risk alerts via CDS Hooks",
-        port=8000,
         service_type="cds-hooks",
     )
     app.register_service(cds, path="/cds")
@@ -130,29 +127,15 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import threading
-    from time import sleep
-    from healthchain.sandbox import SandboxClient
+    with app.sandbox("sepsis-risk") as client:
+        client.load_from_path(DEMO_PATIENTS_DIR, pattern="*_patient.json")
+        responses = client.send_requests()
+        client.save_results("./output")
 
-    server = threading.Thread(target=app.run, daemon=True)
-    server.start()
-    sleep(2)
-
-    # Test with pre-extracted demo patients (fast, realistic per-patient data)
-    client = SandboxClient(
-        url="http://localhost:8000/cds/cds-services/sepsis-risk",
-        workflow="patient-view",
-    )
-    client.load_from_path(DEMO_PATIENTS_DIR, pattern="*_patient.json")
-    responses = client.send_requests()
-    client.save_results(save_request=True, save_response=True, directory="./output/")
-
-    print(f"\nProcessed {len(responses)} requests")
-    for i, resp in enumerate(responses):
-        cards = resp.get("cards", [])
-        if cards:
-            print(f"  Patient {i+1}: {cards[0].get('summary', 'No alert')}")
-        else:
-            print(f"  Patient {i+1}: Low risk (no alert)")
-
-    server.join()
+        print(f"\nProcessed {len(responses)} requests")
+        for i, resp in enumerate(responses):
+            cards = resp.get("cards", [])
+            if cards:
+                print(f"  Patient {i+1}: {cards[0].get('summary', 'No alert')}")
+            else:
+                print(f"  Patient {i+1}: Low risk (no alert)")

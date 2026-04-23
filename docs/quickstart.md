@@ -276,4 +276,4 @@ condition = create_condition(
 ```
 
 ## Going further ✨
-Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/dotimplement/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).
+Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/healthchainai/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).

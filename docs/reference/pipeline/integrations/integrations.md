@@ -85,7 +85,7 @@ for token in spacy_doc:
 
 The `HFTransformer` integrates HuggingFace `transformers` models into your HealthChain pipeline. Models can be browsed on the [HuggingFace website](https://huggingface.co/models).
 
-HuggingFace offers models for a wide range of different tasks, and while not all of these have been thoroughly tested for HealthChain compatibility, we expect that all NLP models and tasks should be compatible. If you have an issues integrating any models please raise an issue on our [Github homepage](https://github.com/dotimplement/HealthChain)!
+HuggingFace offers models for a wide range of different tasks, and while not all of these have been thoroughly tested for HealthChain compatibility, we expect that all NLP models and tasks should be compatible. If you have an issues integrating any models please raise an issue on our [Github homepage](https://github.com/healthchainai/HealthChain)!
 
 There are two ways to initialize this component:
 

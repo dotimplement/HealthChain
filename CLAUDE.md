@@ -63,7 +63,7 @@ uv add --dev <package>                 # Add dev dependency
 
 ## 4. Coding Standards
 
-- **Python**: 3.10-3.11, prefer sync for legacy EHR compatibility; async available for modern systems but use only when explicitly needed
+- **Python**: 3.10-3.13, prefer sync for legacy EHR compatibility; async available for modern systems but use only when explicitly needed
 - **Dependencies**: Pydantic v2 (<2.11.0), NumPy <2.0.0 (spaCy compatibility)
 - **Environment**: Use `uv` to manage dependencies and run commands (`uv run <command>`)
 - **Formatting**: `ruff` enforces project style
@@ -133,6 +133,7 @@ When responding to user instructions, follow this process:
 3. **Break Down & Plan**:
    - Break down, think through the problem, and create a rough plan
    - Reference project conventions and best practices
+   - **Before proposing new APIs or abstractions**: check what comparable libraries in the Python/healthcare ecosystem do first. HealthChain is a healthcare abstraction layer designed to complement existing stacks (FastAPI, LangChain, HuggingFace, spaCy, etc.) — not replace them. Users plug HealthChain into tools they already know, so familiar idioms (context managers, decorators, method chaining) should be the default. Never reinvent patterns that already exist upstream. Bespoke APIs are only justified when the healthcare domain genuinely has no prior art (e.g. FHIR-specific concepts). When presenting a proposal, name the prior art explicitly so the developer can make an informed decision (e.g. "FastAPI does X, LangServe does Y, I'm proposing Z because...").
    - **Trivial tasks**: Start immediately
    - **Non-trivial tasks** (>200 LOC or >3 files): Present plan → wait for user confirmation
 4. **Execute**:
@@ -140,8 +141,25 @@ When responding to user instructions, follow this process:
    - Prefer existing abstractions over new ones
    - Run: `uv run ruff check . --fix && uv run ruff format .`
    - If stuck, return to step 3 to re-plan
-5. **Review**: Summarize files changed, key design decisions, and any follow-ups or TODOs
+5. **Review**: Summarize files changed, key design decisions, and any follow-ups or TODOs. Always check:
+   - **Tests**: Do any existing tests need updating? Are there gaps worth flagging?
+   - **Docs**: Do any doc pages, docstrings, or examples need updating?
+   - **Cookbooks**: Do any cookbook examples need updating to reflect the change?
 6. **Session Boundaries**: If request isn't related to current context, suggest starting fresh to avoid confusion
+
+### Committing Changes
+
+When the developer is ready to commit, AI should:
+1. Run the review checklist from step 5 above — flag anything outstanding
+2. Run `git status` and `git diff` to identify what's changed
+3. Group changes into logical commits if needed (e.g. don't mix a feature with a test infra change)
+4. Suggest which files to stage for each commit
+5. Propose a commit message following [Conventional Commits](https://www.conventionalcommits.org/) style
+6. Let the developer review and run the actual `git commit` themselves — AI never runs `git commit` or `git push`
+
+### Writing Cookbook Examples
+
+Follow the principles in [CONTRIBUTING.md — Writing Cookbooks](../CONTRIBUTING.md#writing-cookbooks). Key rule: reduce time-to-running above all else — pre-bake demo data, collapse advanced setup, and lead with the problem the cookbook solves.
 
 ### Adding New FHIR Resource Utilities
 
@@ -164,4 +182,4 @@ When responding to user instructions, follow this process:
 
 ---
 
-**Last updated**: 2025-12-17
+**Last updated**: 2026-04-20

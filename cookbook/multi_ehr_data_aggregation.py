@@ -14,6 +14,9 @@ FHIR Sources:
 
 Run:
     python cookbook/multi_ehr_data_aggregation.py
+    # Starts a service and keeps running for interactive use.
+    # GET /fhir/transform/Condition?patient=<id>&source=epic
+    # Docs at: http://localhost:8888/docs
 """
 
 from typing import List
@@ -103,7 +106,6 @@ def create_app():
     app = HealthChainAPI(
         title="Multi-EHR Data Aggregation",
         description="Aggregate patient data from multiple FHIR sources",
-        port=8888,
         service_type="fhir-gateway",
     )
     app.register_gateway(gateway, path="/fhir")
@@ -112,4 +114,4 @@ def create_app():
 
 
 if __name__ == "__main__":
-    create_app().run()
+    create_app().run(port=8888)

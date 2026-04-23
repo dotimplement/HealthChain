@@ -165,6 +165,46 @@ Saved to ./output/
 
 ---
 
+## `healthchain seed`
+
+Seed a FHIR test server with data from a local JSON file or directory of JSON files. Accepts any FHIR transaction Bundle, resource array, or single resource.
+
+### `healthchain seed medplum`
+
+Upload FHIR data to [Medplum](https://www.medplum.com/). Reads credentials from `MEDPLUM_CLIENT_ID`, `MEDPLUM_CLIENT_SECRET`, `MEDPLUM_BASE_URL`, and `MEDPLUM_TOKEN_URL` in `.env`.
+
+```bash
+# Single bundle file
+healthchain seed medplum ./cookbook/data/qa_patient.json
+
+# Directory — uploads each *.json file as a separate transaction
+healthchain seed medplum ./cookbook/data/mimic_demo_patients/
+```
+
+Example output:
+
+```
+◆ Seeding Medplum  qa_patient.json
+
+  ✓ DEMO_PATIENT_ID=abc123
+```
+
+For a directory:
+
+```
+◆ Seeding Medplum  mimic_demo_patients/
+
+  ✓ high_risk_bundle      →  PATIENT_ID=702e11e8-...
+  ✓ low_risk_bundle       →  PATIENT_ID=3b0da7e9-...
+  ✓ moderate_risk_bundle  →  PATIENT_ID=f490ceb4-...
+```
+
+Note the printed IDs — you'll need them to query or reference the seeded patients in your app or tests.
+
+See the [FHIR Sandbox Setup guide](cookbook/setup_fhir_sandboxes.md#medplum) for Medplum account setup and credential configuration.
+
+---
+
 ## `healthchain eject-templates`
 
 Copy the built-in interop templates into your project for customization.

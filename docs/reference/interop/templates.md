@@ -36,7 +36,7 @@ Using full paths is recommended for clarity and to avoid confusion when template
 
 ## Default Templates
 
-HealthChain provides default templates for the transformation of Problems, Medications, and Notes sections in a Continuity of Care (CCD) CDA to FHIR and the reverse. They are configured to work out of the box with the default configuration and the example CDAs [here](https://github.com/dotimplement/HealthChain/tree/main/resources).
+HealthChain provides default templates for the transformation of Problems, Medications, and Notes sections in a Continuity of Care (CCD) CDA to FHIR and the reverse. They are configured to work out of the box with the default configuration and the example CDAs [here](https://github.com/healthchainai/HealthChain/tree/main/resources).
 
 You are welcome to modify these templates at your own discretion or use them as a starting reference point for your writing your own templates. **Always verify that templates work for your use case.**
 
