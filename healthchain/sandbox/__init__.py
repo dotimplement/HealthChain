@@ -25,8 +25,7 @@ def __getattr__(name):
 
     if name in deprecated_names:
         warnings.warn(
-            f"{name} is deprecated and has been removed. "
-            f"Use SandboxClient instead.",
+            f"{name} is deprecated and has been removed. Use SandboxClient instead.",
             DeprecationWarning,
             stacklevel=2,
         )

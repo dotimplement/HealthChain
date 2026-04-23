@@ -457,7 +457,7 @@ def extract_sepsis_labels(
 
     sepsis_count = sepsis_labels["sepsis"].sum()
     print(
-        f"  ICU stays with sepsis: {sepsis_count}/{len(sepsis_labels)} ({sepsis_count/len(sepsis_labels)*100:.2f}%)"
+        f"  ICU stays with sepsis: {sepsis_count}/{len(sepsis_labels)} ({sepsis_count / len(sepsis_labels) * 100:.2f}%)"
     )
 
     return sepsis_labels[["stay_id", "sepsis"]]
@@ -645,7 +645,7 @@ def train_models(X_train: pd.DataFrame, y_train: pd.Series) -> Dict[str, Any]:
     positive_rate = positive_samples / total_samples if total_samples > 0 else 0.0
 
     print(
-        f"  Positive samples: {positive_samples}/{total_samples} ({positive_rate*100:.2f}%)"
+        f"  Positive samples: {positive_samples}/{total_samples} ({positive_rate * 100:.2f}%)"
     )
 
     # Random Forest - use class_weight to handle imbalance
@@ -719,7 +719,7 @@ def evaluate_models(
     """
     print("\nEvaluating models...")
     print(
-        f"Test set: {len(y_test)} samples, {y_test.sum()} positive ({y_test.sum()/len(y_test)*100:.2f}%)"
+        f"Test set: {len(y_test)} samples, {y_test.sum()} positive ({y_test.sum() / len(y_test) * 100:.2f}%)"
     )
 
     results = {}
@@ -954,10 +954,10 @@ def main():
             X, y, test_size=0.2, random_state=42, stratify=y
         )
         print(
-            f"  Training set: {len(X_train)} samples ({y_train.sum()} positive, {y_train.sum()/len(y_train)*100:.2f}%)"
+            f"  Training set: {len(X_train)} samples ({y_train.sum()} positive, {y_train.sum() / len(y_train) * 100:.2f}%)"
         )
         print(
-            f"  Test set: {len(X_test)} samples ({y_test.sum()} positive, {y_test.sum()/len(y_test)*100:.2f}%)"
+            f"  Test set: {len(X_test)} samples ({y_test.sum()} positive, {y_test.sum() / len(y_test) * 100:.2f}%)"
         )
 
         # Warn if test set has no positive samples (shouldn't happen with stratify, but check anyway)
@@ -983,14 +983,14 @@ def main():
         # Only apply SMOTE if we have positive samples
         if y_train.sum() > 0 and len(np.unique(y_train)) > 1:
             print(
-                f"  Before oversampling: {len(X_train)} samples ({y_train.sum()} positive, {y_train.sum()/len(y_train)*100:.2f}%)"
+                f"  Before oversampling: {len(X_train)} samples ({y_train.sum()} positive, {y_train.sum() / len(y_train) * 100:.2f}%)"
             )
             # Ensure k_neighbors doesn't exceed available positive samples
             k_neighbors = min(5, max(1, y_train.sum() - 1))
             smote = SMOTE(random_state=42, k_neighbors=k_neighbors)
             X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
             print(
-                f"  After oversampling: {len(X_train_resampled)} samples ({y_train_resampled.sum()} positive, {y_train_resampled.sum()/len(X_train_resampled)*100:.2f}%)"
+                f"  After oversampling: {len(X_train_resampled)} samples ({y_train_resampled.sum()} positive, {y_train_resampled.sum() / len(X_train_resampled) * 100:.2f}%)"
             )
             X_train = pd.DataFrame(
                 X_train_resampled,

@@ -295,7 +295,7 @@ def main():
             label = (
                 f"{risk_level}_risk"
                 if args.num_patients_per_risk == 1
-                else f"{risk_level}_risk_{i+1}"
+                else f"{risk_level}_risk_{i + 1}"
             )
             prefetch = extract_patient_prefetch(
                 bundle, patient["patient_ref"], obs_codes, args.minimal

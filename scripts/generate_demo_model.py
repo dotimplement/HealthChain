@@ -35,9 +35,9 @@ OUTPUT_PATH = Path(__file__).parent.parent / "cookbook" / "models" / "sepsis_mod
 # Demo patient values (from mimic_demo_patients/) used to verify predictions
 # after training. The model must score these in the expected risk bands.
 DEMO_PATIENTS = {
-    "high_risk":     [113, 98.7, 25, 28.5, np.nan, 1.6, np.nan, np.nan],
-    "moderate_risk": [70,  99.4, 14, 10.5, np.nan, 1.2, np.nan, np.nan],
-    "low_risk":      [110, 98.8, 20,  8.6, np.nan, 0.8, np.nan, np.nan],
+    "high_risk": [113, 98.7, 25, 28.5, np.nan, 1.6, np.nan, np.nan],
+    "moderate_risk": [70, 99.4, 14, 10.5, np.nan, 1.2, np.nan, np.nan],
+    "low_risk": [110, 98.8, 20, 8.6, np.nan, 0.8, np.nan, np.nan],
 }
 
 
@@ -60,10 +60,12 @@ def generate_training_data(rng: np.random.Generator) -> tuple[pd.DataFrame, pd.S
     n_normal = 500
 
     def make_group(n, hr, temp, rr, wbc, lactate, creatinine, age, gender):
-        return {k: rng.normal(loc=mu, scale=sd, size=n).clip(lo, hi)
-                for k, (mu, sd, lo, hi) in zip(FEATURE_NAMES, [
-                    hr, temp, rr, wbc, lactate, creatinine, age, gender
-                ])}
+        return {
+            k: rng.normal(loc=mu, scale=sd, size=n).clip(lo, hi)
+            for k, (mu, sd, lo, hi) in zip(
+                FEATURE_NAMES, [hr, temp, rr, wbc, lactate, creatinine, age, gender]
+            )
+        }
 
     sepsis = make_group(
         n_sepsis,
@@ -129,14 +131,20 @@ def verify_demo_predictions(model, median_values):
     """Check that the demo patients score in the expected risk bands."""
     rows = []
     for name, values in DEMO_PATIENTS.items():
-        row = [median_values[f] if np.isnan(v) else v
-               for f, v in zip(FEATURE_NAMES, values)]
+        row = [
+            median_values[f] if np.isnan(v) else v
+            for f, v in zip(FEATURE_NAMES, values)
+        ]
         rows.append(row)
 
     X_demo = pd.DataFrame(rows, columns=FEATURE_NAMES)
     probs = model.predict_proba(X_demo)[:, 1]
 
-    expected = {"high_risk": (0.7, 1.0), "moderate_risk": (0.3, 0.75), "low_risk": (0.0, 0.45)}
+    expected = {
+        "high_risk": (0.7, 1.0),
+        "moderate_risk": (0.3, 0.75),
+        "low_risk": (0.0, 0.45),
+    }
     all_ok = True
     for (name, prob), (lo, hi) in zip(zip(DEMO_PATIENTS, probs), expected.values()):
         band = "high" if prob > 0.7 else "moderate" if prob > 0.4 else "low"
@@ -155,7 +163,7 @@ def main():
 
     print("Generating synthetic training data...")
     X, y = generate_training_data(rng)
-    print(f"  {len(X)} samples, {int(y.sum())} positive ({y.mean()*100:.1f}%)")
+    print(f"  {len(X)} samples, {int(y.sum())} positive ({y.mean() * 100:.1f}%)")
 
     print("Training RandomForest...")
     model = RandomForestClassifier(

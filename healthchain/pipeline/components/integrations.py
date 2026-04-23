@@ -87,7 +87,7 @@ class SpacyNLP(BaseComponent[str]):
             import spacy
         except ImportError:
             raise ImportError(
-                "Could not import spacy. Please install it with: " "`pip install spacy`"
+                "Could not import spacy. Please install it with: `pip install spacy`"
             )
 
         try:

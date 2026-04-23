@@ -120,10 +120,8 @@ def test_generate_resources_missing_template(fhir_generator):
 def test_generate_resources_missing_resource_type(fhir_generator):
     """Test handling when no resource type is specified."""
     # Set up the mock to return None for resource type
-    fhir_generator.config.get_config_value.side_effect = (
-        lambda key, default=None: None
-        if key == "sections.unknown_section.resource"
-        else "default"
+    fhir_generator.config.get_config_value.side_effect = lambda key, default=None: (
+        None if key == "sections.unknown_section.resource" else "default"
     )
 
     # Call the method

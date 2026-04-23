@@ -64,7 +64,9 @@ class LLMConfig(BaseModel):
         elif self.provider == "huggingface":
             from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
-            llm = HuggingFaceEndpoint(repo_id=self.model, max_new_tokens=self.max_tokens)
+            llm = HuggingFaceEndpoint(
+                repo_id=self.model, max_new_tokens=self.max_tokens
+            )
             return ChatHuggingFace(llm=llm)
 
 

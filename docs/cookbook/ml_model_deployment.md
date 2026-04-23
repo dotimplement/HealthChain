@@ -88,6 +88,7 @@ features:
 
 No FHIR parsing code needed — define the mapping once, use it everywhere:
 
+<!--pytest.mark.skip-->
 ```python
 dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 ```
@@ -100,6 +101,7 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 
     The pre-generated model in `cookbook/models/` is a synthetic demo — not trained on real patient data. To swap in your own:
 
+    <!--pytest.mark.skip-->
     ```python
     import joblib
 

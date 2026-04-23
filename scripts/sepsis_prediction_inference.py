@@ -142,7 +142,7 @@ def interpret_results(
     print("=" * 80)
 
     for i in range(len(predictions)):
-        print(f"\nPatient {i+1}:")
+        print(f"\nPatient {i + 1}:")
         print(f"  Risk Score: {probabilities[i]:.2%}")
         print(f"  Prediction: {'SEPSIS RISK' if predictions[i] == 1 else 'Low Risk'}")
 

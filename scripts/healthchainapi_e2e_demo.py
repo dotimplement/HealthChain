@@ -86,7 +86,7 @@ CONFIG = {
 
 def print_section(title: str, emoji: str = "🔧"):
     """Print a nicely formatted section header"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"{emoji} {title}")
     print("=" * 60)
 
