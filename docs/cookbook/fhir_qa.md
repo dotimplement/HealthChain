@@ -99,11 +99,11 @@ After the pipeline runs, `doc.text` holds the formatted context string ready to 
 !!! tip "Customising context"
 
     What you include here directly shapes response quality. Common additions:
-    
+
     - **Medications** — `doc.fhir.get_resources("MedicationRequest")`
     - **Recent results** — `doc.fhir.get_resources("Observation")`
     - **Discharge letters** — `doc.fhir.get_resources("DocumentReference")`
-    
+
     For sensitive resources (mental health, substance use), apply consent-based filtering before adding them to context.
 
 ## Build the Q&A chain
@@ -225,7 +225,7 @@ if __name__ == "__main__":
 !!! info "How the endpoint works"
 
     For each `/qa` request, the service:
-    
+
     1. Fetches Conditions, Appointments, and CarePlans for the patient from Medplum
     2. Merges them into a single Bundle with `merge_bundles()`
     3. Runs the pipeline to produce a plain-text context string

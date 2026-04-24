@@ -725,6 +725,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "pytest-codeblocks" },
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "typer" },
@@ -772,6 +773,7 @@ dev = [
     { name = "pre-commit", specifier = ">=3.5.0,<4" },
     { name = "pytest", specifier = ">=8.2.0,<9" },
     { name = "pytest-asyncio", specifier = ">=0.24.0,<0.25" },
+    { name = "pytest-codeblocks", specifier = ">=0.17.0,<0.18" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "ruff", specifier = ">=0.5.3" },
     { name = "typer", specifier = ">=0.24.1" },
@@ -1825,6 +1827,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/52/6d/c6cf50ce320cf8611df7a1254d86233b3df7cc07f9b5f5cbcb82e08aa534/pytest_asyncio-0.24.0.tar.gz", hash = "sha256:d081d828e576d85f875399194281e92bf8a68d60d72d1a2faf2feddb6c46b276", size = 49855, upload-time = "2024-08-22T08:03:18.145Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/31/6607dab48616902f76885dfcf62c08d929796fc3b2d2318faf9fd54dbed9/pytest_asyncio-0.24.0-py3-none-any.whl", hash = "sha256:a811296ed596b69bf0b6f3dc40f83bcaf341b155a269052d82efa2b25ac7037b", size = 18024, upload-time = "2024-08-22T08:03:15.536Z" },
+]
+
+[[package]]
+name = "pytest-codeblocks"
+version = "0.17.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/99/1ee3017a525dcb36566f0523938fbc20fb33ef8bf957205fafe6659f3a60/pytest_codeblocks-0.17.0.tar.gz", hash = "sha256:446e1babd182f54b4f113d567737a22f5405cade144c08a0085b2985247943d5", size = 11176, upload-time = "2023-09-17T19:17:31.05Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/2c/503f797c7ac1e35d81944f8fbcf3ea7a1965e435676570a833035d8d0937/pytest_codeblocks-0.17.0-py3-none-any.whl", hash = "sha256:b2aed8e66c3ce65435630783b391e7c7ae46f80b8220d3fa1bb7c689b36e78ad", size = 7716, upload-time = "2023-09-17T19:17:29.506Z" },
 ]
 
 [[package]]

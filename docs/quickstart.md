@@ -16,6 +16,7 @@ The [**HealthChainAPI**](./reference/gateway/api.md) provides a unified interfac
 
 [(Full Documentation on Gateway)](./reference/gateway/gateway.md)
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
 from healthchain.fhir.r4b import Patient
@@ -71,8 +72,11 @@ def extract_diabetes(doc: Document) -> Document:
         condition = create_condition(
             code="73211009",
             display="Diabetes mellitus",
+            subject="Patient/example",
         )
-        doc.fhir.problem_list.append(condition)
+        # problem_list is derived from the bundle per call; use the setter
+        # (or add_resources) so the Condition persists.
+        doc.fhir.problem_list = [condition]
 
     return doc
 
@@ -92,6 +96,7 @@ HealthChain provides a set of ready-to-use [**NLP Integrations**](./reference/pi
 
 [(Full Documentation on Components)](./reference/pipeline/components/components.md)
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline import Pipeline
 from healthchain.pipeline.components import TextPreProcessor, SpacyNLP, TextPostProcessor
@@ -113,6 +118,7 @@ You can process legacy healthcare data formats too. [**Adapters**](./reference/i
 
 [(Full Documentation on Adapters)](./reference/io/adapters/adapters.md)
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.io import CdaAdapter
 from healthchain.models import CdaRequest
@@ -133,6 +139,7 @@ Prebuilt pipelines are the fastest way to jump into healthcare AI with minimal s
 
 [(Full Documentation on Pipelines)](./reference/pipeline/pipeline.md#prebuilt)
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline import MedicalCodingPipeline
 from healthchain.models import CdaRequest
@@ -150,6 +157,7 @@ The HealthChain Interoperability module provides tools for converting between di
 
 [(Full Documentation on Interoperability Engine)](./reference/interop/interop.md)
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.interop import create_interop, FormatType
 
@@ -208,6 +216,7 @@ print(datasets)
 
 #### Basic Usage
 
+<!--pytest.mark.skip-->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -235,6 +244,7 @@ responses = client.send_requests()
 
 For clinical documentation workflows using SOAP/CDA:
 
+<!--pytest.mark.skip-->
 ```python
 # Use context manager for automatic result saving
 with SandboxClient(
