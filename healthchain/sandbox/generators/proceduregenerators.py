@@ -11,8 +11,8 @@ from healthchain.sandbox.generators.value_sets.procedurecodes import (
     ProcedureCodeSimple,
     ProcedureCodeComplex,
 )
-from fhir.resources.procedure import Procedure
-from fhir.resources.reference import Reference
+from fhir.resources.R4B.procedure import Procedure
+from fhir.resources.R4B.reference import Reference
 
 
 faker = Faker()
@@ -56,5 +56,5 @@ class ProcedureGenerator(BaseGenerator):
             code=code,
             subject=Reference(reference=subject_reference),
             encounter=Reference(reference=encounter_reference),
-            occurrencePeriod=generator_registry.get("PeriodGenerator").generate(),
+            performedPeriod=generator_registry.get("PeriodGenerator").generate(),
         )

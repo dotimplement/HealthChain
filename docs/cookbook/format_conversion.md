@@ -1,5 +1,7 @@
 # Convert Between Healthcare Data Formats
 
+**Level:** Intermediate
+
 Convert between CDA, HL7v2, and FHIR formats using HealthChain's interoperability engine. This recipe covers the most common conversion scenarios for integrating legacy healthcare systems with modern FHIR-based applications.
 
 The [InteropEngine](../reference/interop/engine.md) provides a unified interface for bidirectional format conversion, handling the complexity of mapping between different healthcare data standards.
@@ -94,8 +96,7 @@ for resource in fhir_resources:
 Generate a CDA document from FHIR resources:
 
 ```python
-from fhir.resources.condition import Condition
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Condition, Patient
 
 # Create FHIR resources
 patient = Patient(
@@ -171,8 +172,7 @@ for resource in fhir_resources:
 Generate an HL7v2 message from FHIR resources:
 
 ```python
-from fhir.resources.patient import Patient
-from fhir.resources.encounter import Encounter
+from healthchain.fhir.r4b import Patient, Encounter
 
 patient = Patient(
     resourceType="Patient",

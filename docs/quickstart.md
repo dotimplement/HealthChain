@@ -18,7 +18,7 @@ The [**HealthChainAPI**](./reference/gateway/api.md) provides a unified interfac
 
 ```python
 from healthchain.gateway import HealthChainAPI, FHIRGateway
-from fhir.resources.patient import Patient
+from healthchain.fhir.r4b import Patient
 
 # Create your healthcare application
 app = HealthChainAPI(title="My Healthcare AI App")
@@ -266,4 +266,4 @@ condition = create_condition(
 ```
 
 ## Going further ✨
-Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/dotimplement/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).
+Check out our [Cookbook](cookbook/index.md) section for more worked examples! HealthChain is still in its early stages, so if you have any questions please feel free to reach us on [Github](https://github.com/healthchainai/HealthChain/discussions) or [Discord](https://discord.gg/UQC6uAepUz).

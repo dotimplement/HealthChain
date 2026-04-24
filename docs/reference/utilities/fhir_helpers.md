@@ -4,80 +4,34 @@ The `fhir` module provides a set of helper functions to make it easier for you t
 
 ## FHIR Version Support
 
-HealthChain supports multiple FHIR versions: **R5** (default), **R4B**, and **STU3**. All resource creation and helper functions accept an optional `version` parameter.
-
-### Supported Versions
-
-| Version | Description | Package Path |
-|---------|-------------|--------------|
-| **R5** | FHIR Release 5 (default) | `fhir.resources.*` |
-| **R4B** | FHIR R4B (Ballot) | `fhir.resources.R4B.*` |
-| **STU3** | FHIR STU3 | `fhir.resources.STU3.*` |
-
-### Basic Usage
+HealthChain uses **R4B by default** — this matches most production EHRs. For most use cases, import from `healthchain.fhir.r4b` and don't think about versions:
 
 ```python
-from healthchain.fhir import (
-    FHIRVersion,
-    get_fhir_resource,
-    set_default_version,
-    fhir_version_context,
-    convert_resource,
-    create_condition,
-)
+from healthchain.fhir.r4b import Patient, Condition, Bundle
+```
+
+FHIR resource classes are provided by the [`fhir.resources`](https://github.com/nazrulworld/fhir.resources) library. R4B is a minor ballot update to R4 with no breaking changes to core resources — it is compatible with R4 FHIR servers in practice.
+
+!!! note "Scope of version utilities"
+    The version utilities below apply to dynamic resource loading and cross-version conversion. The `create_*` helpers always produce R4B resources. The FHIR gateway client always deserializes server responses as R4B.
+
+### Explicit version control
+
+For cases where you need to load or convert resources in a specific version:
+
+```python
+from healthchain.fhir import get_fhir_resource, fhir_version_context, convert_resource
 
 # Get a resource class for a specific version
 Patient_R4B = get_fhir_resource("Patient", "R4B")
-Patient_R5 = get_fhir_resource("Patient", FHIRVersion.R5)
+Patient_R5 = get_fhir_resource("Patient", "R5")
 
-# Create resources with a specific version
-condition_r4b = create_condition(
-    subject="Patient/123",
-    code="38341003",
-    display="Hypertension",
-    version="R4B"  # Creates R4B Condition
-)
-
-# Set the default version for the session
-set_default_version("R4B")
-
-# Use context manager for temporary version changes
+# Temporarily switch the default version for get_fhir_resource calls
 with fhir_version_context("STU3"):
-    # All resources created here use STU3
-    condition = create_condition(subject="Patient/123", code="123")
-```
+    PatientSTU3 = get_fhir_resource("Patient")
 
-### Version Conversion
-
-Convert resources between FHIR versions using `convert_resource()`:
-
-```python
-from healthchain.fhir import get_fhir_resource, convert_resource
-
-# Create an R5 Patient
-Patient_R5 = get_fhir_resource("Patient")
-patient_r5 = Patient_R5(id="test-123", gender="male")
-
-# Convert to R4B
-patient_r4b = convert_resource(patient_r5, "R4B")
-print(patient_r4b.__class__.__module__)  # fhir.resources.R4B.patient
-```
-
-!!! warning "Version Conversion Limitations"
-    The `convert_resource()` function uses a serialize/deserialize approach. Field mappings between FHIR versions may not be 1:1 - some fields may be added, removed, or renamed between versions. Complex resources with version-specific fields may require manual handling.
-
-### Version Detection
-
-Detect the FHIR version of an existing resource:
-
-```python
-from healthchain.fhir import get_resource_version, get_fhir_resource
-
-Patient_R4B = get_fhir_resource("Patient", "R4B")
-patient = Patient_R4B(id="123")
-
-version = get_resource_version(patient)
-print(version)  # FHIRVersion.R4B
+# Convert between versions (serialize/deserialize — not lossless across major field renames)
+patient_r5 = convert_resource(patient_r4b, "R5")
 ```
 
 ### API Reference
@@ -85,12 +39,10 @@ print(version)  # FHIRVersion.R4B
 | Function | Description |
 |----------|-------------|
 | `get_fhir_resource(name, version)` | Get a resource class for a specific version |
-| `get_default_version()` | Get the current default FHIR version |
-| `set_default_version(version)` | Set the global default FHIR version |
-| `reset_default_version()` | Reset to library default (R5) |
-| `fhir_version_context(version)` | Context manager for temporary version changes |
-| `convert_resource(resource, version)` | Convert a resource to a different version |
-| `get_resource_version(resource)` | Detect the version of an existing resource |
+| `get_default_version()` | Returns the current default version (R4B) |
+| `fhir_version_context(version)` | Context manager for temporarily switching the default version |
+| `convert_resource(resource, version)` | Convert a resource to a different version (best-effort, not lossless) |
+| `get_resource_version(resource)` | Detect the FHIR version of an existing resource |
 
 ---
 
@@ -172,14 +124,6 @@ condition = create_condition(
     system="http://snomed.info/sct",
 )
 
-# Create an R4B condition
-condition_r4b = create_condition(
-    subject="Patient/123",
-    code="38341003",
-    display="Hypertension",
-    version="R4B",  # Optional: specify FHIR version
-)
-
 # Output the created resource
 print(condition.model_dump())
 ```
@@ -244,14 +188,12 @@ print(medication.model_dump())
         "resourceType": "MedicationStatement",
         "id": "hc-86a26eba-63f9-4017-b7b2-5b36f9bad5f1",
         "status": "recorded",
-        "medication": {
-            "concept": {
-                "coding": [{
-                    "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                    "code": "1049221",
-                    "display": "Acetaminophen 325 MG Oral Tablet"
-                }]
-            }
+        "medicationCodeableConcept": {
+            "coding": [{
+                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                "code": "1049221",
+                "display": "Acetaminophen 325 MG Oral Tablet"
+            }]
         },
         "subject": {
             "reference": "Patient/123"
@@ -362,12 +304,12 @@ print(doc_ref.model_dump())
 
 ## Utilities
 
-### set_problem_list_item_category()
+### set_condition_category()
 
 Sets the category of a [**Condition**](https://www.hl7.org/fhir/condition.html) resource to "`problem-list-item`".
 
 ```python
-from healthchain.fhir import set_problem_list_item_category, create_condition
+from healthchain.fhir import set_condition_category, create_condition
 
 # Create a condition and set it as a problem list item
 problem_list_item = create_condition(
@@ -376,7 +318,7 @@ problem_list_item = create_condition(
     display="Hypertension"
 )
 
-set_problem_list_item_category(problem_list_item)
+set_condition_category(problem_list_item)
 
 # Output the modified resource
 print(problem_list_item.model_dump())
@@ -556,7 +498,7 @@ from healthchain.fhir import get_resources
 conditions = get_resources(bundle, "Condition")
 
 # Or using the resource type directly
-from fhir.resources.condition import Condition
+from healthchain.fhir.r4b import Condition
 conditions = get_resources(bundle, Condition)
 
 for condition in conditions:

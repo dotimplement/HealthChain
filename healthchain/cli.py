@@ -27,7 +27,7 @@ _DOCKERFILE = """\
 # FHIR source credentials (if connecting to Epic/Cerner):
 #   FHIR_BASE_URL, CLIENT_ID, CLIENT_SECRET or CLIENT_SECRET_PATH
 #
-# See docs: https://dotimplement.github.io/HealthChain/reference/gateway/gateway/
+# See docs: https://healthchainai.github.io/HealthChain/reference/gateway/gateway/
 
 FROM python:3.11-slim
 
@@ -110,7 +110,7 @@ EPIC_CLIENT_SECRET=
 CERNER_BASE_URL=https://fhir-open.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d
 # Cerner open sandbox requires no credentials
 
-# See docs: https://dotimplement.github.io/HealthChain/reference/gateway/fhir_gateway/
+# See docs: https://healthchainai.github.io/HealthChain/reference/gateway/fhir_gateway/
 """
 
 _ENV_EXAMPLE_DEFAULT = """\
@@ -127,7 +127,7 @@ _REQUIREMENTS = "healthchain\n"
 
 _APP_PY_DEFAULT = """\
 # Your HealthChain application goes here.
-# See https://dotimplement.github.io/HealthChain/ for examples.
+# See https://healthchainai.github.io/HealthChain/ for examples.
 """
 
 _APP_PY_CDS_HOOKS = """\
@@ -165,34 +165,30 @@ app.register_service(cds)
 """
 
 _APP_PY_FHIR_GATEWAY = """\
-import os
 from typing import List
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.condition import Condition
-
+from healthchain.fhir.r4b import Bundle, Condition
 from healthchain.gateway import FHIRGateway, HealthChainAPI
+from healthchain.config.appconfig import AppConfig
 from healthchain.fhir import merge_bundles
 from healthchain.io.containers import Document
 from healthchain.pipeline import Pipeline
 
-# Add FHIR source credentials to .env (see .env.example)
-gateway = FHIRGateway()
+# Loads .env then healthchain.yaml — sources are declared there, credentials stay in .env
+config = AppConfig.load()
+gateway = FHIRGateway.from_config(config)
 
-epic_url = os.getenv("EPIC_BASE_URL")
-cerner_url = os.getenv("CERNER_BASE_URL")
+# To enable LLM processing: add an llm: section to healthchain.yaml, then uncomment:
+# llm = config.llm.to_langchain() if config.llm else None
 
-if epic_url:
-    gateway.add_source("epic", epic_url)
-if cerner_url:
-    gateway.add_source("cerner", cerner_url)
-
-# Add your NLP/ML/LLM processing steps here
 pipeline = Pipeline[Document]()
 
 
 @pipeline.add_node
 def process(doc: Document) -> Document:
+    # Add your NLP/ML/LLM processing steps here
+    # if llm:
+    #     response = llm.invoke(doc.text)
     return doc
 
 
@@ -226,9 +222,25 @@ app.register_gateway(gateway)
 
 
 def _make_healthchain_yaml(name: str, service_type: str) -> str:
+    if service_type == "fhir-gateway":
+        sources_block = """\
+# FHIR data sources — credentials stay in .env, source names declared here
+# FHIRGateway.from_config(config) in app.py wires these up automatically
+sources:
+  epic:
+    env_prefix: EPIC    # reads EPIC_CLIENT_ID, EPIC_BASE_URL, EPIC_TOKEN_URL from .env
+  cerner:
+    env_prefix: CERNER  # reads CERNER_BASE_URL from .env (no auth for open sandbox)"""
+    else:
+        sources_block = """\
+# FHIR data sources — declare sources here, credentials stay in .env
+# sources:
+#   epic:
+#     env_prefix: EPIC    # reads EPIC_CLIENT_ID, EPIC_BASE_URL, EPIC_TOKEN_URL from .env"""
+
     return f"""\
 # HealthChain application configuration
-# https://dotimplement.github.io/HealthChain/reference/config
+# https://healthchainai.github.io/HealthChain/reference/config
 
 name: {name}
 version: "1.0.0"
@@ -272,6 +284,14 @@ eval:
 site:
   name: ""
   environment: development  # development | staging | production
+
+{sources_block}
+
+# LLM provider — uncomment and set llm = config.llm.to_langchain() in app.py to enable
+# llm:
+#   provider: anthropic     # anthropic | openai | google | huggingface
+#   model: claude-opus-4-6
+#   max_tokens: 512
 """
 
 
@@ -332,7 +352,7 @@ def new_project(name: str, template: str):
         print(f"  {_BOLD}healthchain new my-app --template cds-hooks{_RST}")
         print(f"  {_BOLD}healthchain new my-app --template fhir-gateway{_RST}")
     print(f"\n{_INDIGO}Configure your app in healthchain.yaml{_RST}")
-    print(f"{_DIM}See https://dotimplement.github.io/HealthChain/ for examples.{_RST}")
+    print(f"{_DIM}See https://healthchainai.github.io/HealthChain/ for examples.{_RST}")
 
 
 def eject_templates(target_dir: str):
@@ -348,7 +368,7 @@ def eject_templates(target_dir: str):
         print(f"     {_DIM}from healthchain.interop import create_interop{_RST}")
         print(f"     {_DIM}engine = create_interop(config_dir='{target_dir}'){_RST}")
         print(
-            f"\n{_DIM}See https://dotimplement.github.io/HealthChain/reference/interop/ for details.{_RST}"
+            f"\n{_DIM}See https://healthchainai.github.io/HealthChain/reference/interop/ for details.{_RST}"
         )
 
     except FileExistsError as e:
@@ -413,6 +433,7 @@ def sandbox_run(
 
     config = AppConfig.load()
     resolved_output = output or (config.data.output_dir if config else "./output")
+    resolved_from_path = from_path or (config.data.patients_dir if config else None)
 
     print(f"\n{_BOLD}{_CYAN}◆ Sandbox{_RST}  {_DIM}{url}{_RST}")
     print(f"  {_CYAN}workflow  {_RST}{workflow}")
@@ -423,10 +444,10 @@ def sandbox_run(
         print(f"\n{_RED}Error:{_RST} {e}")
         return
 
-    if from_path:
-        print(f"\n{_DIM}Loading from {from_path}...{_RST}")
+    if resolved_from_path:
+        print(f"\n{_DIM}Loading from {resolved_from_path}...{_RST}")
         try:
-            client.load_from_path(from_path)
+            client.load_from_path(resolved_from_path)
         except (FileNotFoundError, ValueError) as e:
             print(f"{_RED}Error loading data:{_RST} {e}")
             return
@@ -474,6 +495,59 @@ def sandbox_run(
     if not no_save:
         client.save_results(resolved_output)
         print(f"\n{_GREEN}✓{_RST} Saved to {_BOLD}{resolved_output}/{_RST}")
+
+
+def seed_medplum(path: str):
+    """Seed Medplum with FHIR data from a JSON file or directory."""
+    from pathlib import Path
+
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        pass
+
+    try:
+        from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
+
+        config = FHIRAuthConfig.from_env("MEDPLUM")
+    except Exception as e:
+        print(f"\n{_RED}Error:{_RST} Could not load Medplum credentials: {e}")
+        print(
+            f"{_DIM}Set MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET, "
+            f"MEDPLUM_BASE_URL, MEDPLUM_TOKEN_URL in .env{_RST}"
+        )
+        return
+
+    target = Path(path)
+    if not target.exists():
+        print(f"\n{_RED}Error:{_RST} Path not found: {path}")
+        return
+
+    from healthchain.sandbox.seeders import seed_from_directory, seed_from_file
+
+    print(f"\n{_BOLD}{_CYAN}◆ Seeding Medplum{_RST}  {_DIM}{target}{_RST}\n")
+
+    try:
+        if target.is_dir():
+            results = seed_from_directory(config, target)
+            if not results:
+                print(f"  {_AMBER}No JSON files found in {target}{_RST}")
+                return
+            for name, ids in results.items():
+                for patient_id in ids:
+                    print(
+                        f"  {_GREEN}✓{_RST} {_CYAN}{name}{_RST}  →  {_BOLD}PATIENT_ID={patient_id}{_RST}"
+                    )
+        else:
+            ids = seed_from_file(config, target)
+            if not ids:
+                print(f"  {_GREEN}✓{_RST} Uploaded (no Patient resources found)")
+            for patient_id in ids:
+                print(f"  {_GREEN}✓{_RST} {_BOLD}DEMO_PATIENT_ID={patient_id}{_RST}")
+    except Exception as e:
+        print(f"\n{_RED}Error:{_RST} {e}")
 
 
 def status():
@@ -526,14 +600,16 @@ def status():
     auth_col = _GREEN if config.security.auth != "none" else _AMBER
     print(f"{_key('auth        ')}{auth_col}{config.security.auth}{_RST}")
     tls_val = (
-        _val_on("enabled") if config.security.tls.enabled else _val_off("disabled")
+        _val_on("enabled") if config.security.tls.enabled else f"{_DIM}disabled{_RST}"
     )
     print(f"{_key('TLS         ')}{tls_val}")
     origins = ", ".join(config.security.allowed_origins)
     print(f"{_key('origins     ')}{_DIM}{origins}{_RST}")
 
     print(_section("Compliance"))
-    hipaa_val = _val_on("enabled") if config.compliance.hipaa else _val_off("disabled")
+    hipaa_val = (
+        _val_on("enabled") if config.compliance.hipaa else f"{_DIM}disabled{_RST}"
+    )
     print(f"{_key('HIPAA       ')}{hipaa_val}")
     if config.compliance.hipaa:
         print(f"{_key('audit log   ')}{_BOLD}{config.compliance.audit_log}{_RST}")
@@ -545,6 +621,18 @@ def status():
         print(f"{_key('events      ')}{_DIM}{', '.join(config.eval.track)}{_RST}")
     else:
         print(f"  {_DIM}disabled{_RST}")
+
+    if config.sources:
+        print(_section("Sources"))
+        for source_name, source in config.sources.items():
+            print(
+                f"{_key(f'{source_name:<12}')}{_DIM}env_prefix={source.env_prefix}{_RST}"
+            )
+
+    if config.llm:
+        print(_section("LLM"))
+        print(f"{_key('provider    ')}{config.llm.provider}")
+        print(f"{_key('model       ')}{_BOLD}{config.llm.model}{_RST}")
 
     print()
 
@@ -641,6 +729,20 @@ def main():
         help="Don't save results to disk",
     )
 
+    # Subparser for the 'seed' command
+    seed_parser = subparsers.add_parser(
+        "seed", help="Seed a FHIR test server with demo data"
+    )
+    seed_subparsers = seed_parser.add_subparsers(dest="seed_command", required=True)
+    seed_medplum_parser = seed_subparsers.add_parser(
+        "medplum", help="Upload FHIR data to Medplum"
+    )
+    seed_medplum_parser.add_argument(
+        "path",
+        type=str,
+        help="Path to a FHIR JSON file or directory of JSON files",
+    )
+
     # Subparser for the 'status' command
     subparsers.add_parser("status", help="Show project status from healthchain.yaml")
 
@@ -673,6 +775,9 @@ def main():
                 output=args.output,
                 no_save=args.no_save,
             )
+    elif args.command == "seed":
+        if args.seed_command == "medplum":
+            seed_medplum(args.path)
     elif args.command == "status":
         status()
     elif args.command == "eject-templates":

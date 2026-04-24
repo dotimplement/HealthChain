@@ -1,8 +1,10 @@
 # Build a CDS Hooks Service for Discharge Summarization
 
+**Level:** Beginner
+
 This example shows you how to build a CDS service that integrates with EHR systems. We'll automatically summarize discharge notes and return actionable recommendations using the [CDS Hooks standard](https://cds-hooks.org/).
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/cds_discharge_summarizer_hf_chat.py)!
 
 ![](../assets/images/hc-use-cases-clinical-integration.png) *Illustrative Architecture - actual implementation may vary.*
 
@@ -30,7 +32,7 @@ Download the sample data `discharge_notes.csv` into a `data/` folder in your pro
 ```bash
 mkdir -p data
 cd data
-wget https://github.com/dotimplement/HealthChain/raw/main/cookbook/data/discharge_notes.csv
+wget https://github.com/healthchainai/HealthChain/raw/main/cookbook/data/discharge_notes.csv
 ```
 
 ## Initialize the pipeline
@@ -124,7 +126,7 @@ from healthchain.models import CDSRequest, CDSResponse
 cds_service = CDSHooksService()
 
 # Define the CDS service function
-@cds_service.hook("encounter-discharge", id="discharge-summary")
+@cds_service.hook("encounter-discharge", id="discharge-summarizer")
 def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
     """Process discharge summaries with AI"""
     # Parse CDS request to internal Document format
@@ -155,15 +157,8 @@ HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.m
 
 
 ```python
-from healthchain.sandbox import SandboxClient
-
-# Create sandbox client for testing
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/discharge-summarizer",
-    workflow="encounter-discharge"
-)
-
-# Load discharge notes from CSV and generate FHIR data
+# load_free_text() converts discharge notes into FHIR DocumentReferences
+# and wraps them in CDS requests for the encounter-discharge workflow
 client.load_free_text(
     csv_path="data/discharge_notes.csv",
     column_name="text"
@@ -180,22 +175,16 @@ client.load_free_text(
 
 ## Run the Complete Example
 
-Put it all together and run both the service and sandbox client:
+Pass the hook ID you registered with `@cds.hook(..., id="discharge-summarizer")` — HealthChain resolves the service URL and workflow automatically:
 
 ```python
-import uvicorn
-import threading
-
-# Start the API server in a separate thread
-def start_api():
-    uvicorn.run(app, port=8000)
-
-api_thread = threading.Thread(target=start_api, daemon=True)
-api_thread.start()
-
-# Send requests and save responses with sandbox client
-client.send_requests()
-client.save_results("./output/")
+with app.sandbox("discharge-summarizer") as client:
+    client.load_free_text(
+        csv_path="data/discharge_notes.csv",
+        column_name="text"
+    )
+    responses = client.send_requests()
+    client.save_results("./output/")
 ```
 
 !!! tip "Service Endpoints"
@@ -203,7 +192,7 @@ client.save_results("./output/")
     Once running, your service will be available at:
 
     - **Service discovery**: `http://localhost:8000/cds-services`
-    - **Discharge summary endpoint**: `http://localhost:8000/cds-services/discharge-summary`
+    - **Discharge summary endpoint**: `http://localhost:8000/cds/cds-services/discharge-summarizer`
 
 ??? example "Example CDS Response"
 
@@ -257,3 +246,4 @@ A CDS Hooks service for discharge workflows that integrates seamlessly with EHR 
     - **Add validation**: Implement checks for required discharge elements (medications, follow-ups, equipment).
     - **Multi-card support**: Expand to generate separate cards for different discharge aspects (medication reconciliation, transportation, follow-up scheduling).
     - **Integrate with workflows**: Deploy to Epic App Orchard or Cerner Code Console for production EHR integration.
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service).

@@ -39,6 +39,17 @@ eval:
 site:
   name: ""
   environment: development
+
+# FHIR data sources — credentials stay in .env
+# sources:
+#   medplum:
+#     env_prefix: MEDPLUM
+
+# LLM provider for LangChain-based pipelines
+# llm:
+#   provider: anthropic
+#   model: claude-opus-4-6
+#   max_tokens: 512
 ```
 
 ---
@@ -116,3 +127,59 @@ The `card_feedback` event closes the evaluation loop — it provides implicit gr
 |-------|------|---------|-------------|
 | `name` | string | `""` | Hospital or organisation name — displayed in `healthchain status` |
 | `environment` | string | `development` | Deployment environment — `development`, `staging`, or `production` |
+
+---
+
+## `sources`
+
+Declare FHIR data sources here. Credentials stay in environment variables — only source names and env prefixes are stored in config.
+
+```yaml
+sources:
+  medplum:
+    env_prefix: MEDPLUM   # reads MEDPLUM_CLIENT_ID, MEDPLUM_BASE_URL, etc.
+  epic:
+    env_prefix: EPIC
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `<name>` | object | — | Arbitrary source name used in `gateway.search(..., source="<name>")` |
+| `<name>.env_prefix` | string | — | Prefix for env vars: `{PREFIX}_CLIENT_ID`, `{PREFIX}_CLIENT_SECRET`, `{PREFIX}_BASE_URL`, `{PREFIX}_TOKEN_URL` |
+
+With sources declared, use `FHIRGateway.from_config()` instead of `gateway.add_source()`:
+
+```python
+from healthchain.gateway import FHIRGateway
+from healthchain.config.appconfig import AppConfig
+
+gateway = FHIRGateway.from_config(AppConfig.load())
+```
+
+---
+
+## `llm`
+
+LLM provider settings for LangChain-based pipelines. API key is read from the standard environment variable for each provider (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, etc.).
+
+```yaml
+llm:
+  provider: anthropic
+  model: claude-opus-4-6
+  max_tokens: 512
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `provider` | string | `anthropic` | LLM provider — `anthropic`, `openai`, or `google` |
+| `model` | string | `claude-opus-4-6` | Model ID passed to the LangChain chat model |
+| `max_tokens` | int | `512` | Maximum tokens for model response |
+
+Use `llm.to_langchain()` to instantiate the configured model:
+
+```python
+from healthchain.config.appconfig import AppConfig
+
+config = AppConfig.load()
+llm = config.llm.to_langchain()  # returns ChatAnthropic / ChatOpenAI / ChatGoogleGenerativeAI
+```

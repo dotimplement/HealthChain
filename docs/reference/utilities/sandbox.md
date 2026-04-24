@@ -1,27 +1,46 @@
 # Sandbox Client
 
-The sandbox client provides a simplified interface for testing and validating your applications in realistic healthcare contexts. Use `SandboxClient` to quickly spin up demos and test with various data sources and workflows.
+The sandbox client provides a simplified interface for testing and validating your applications in realistic healthcare contexts. Use `app.sandbox()` to test a `HealthChainAPI` app you've built, or `SandboxClient` directly to connect to any already-running service.
 
-## Quick Example
+## Testing Your App with `app.sandbox()`
 
-Test CDS Hooks workflows with synthetic data:
+The primary way to test a HealthChain app locally. Pass the hook ID you registered — the service URL and workflow are resolved automatically from your registered services:
+
+=== "CDS Hooks"
+    ```python
+    # hook_id matches @cds.hook(..., id="sepsis-risk")
+    with app.sandbox("sepsis-risk") as client:
+        client.load_from_path("./data/patients", pattern="*_patient.json")
+        responses = client.send_requests()
+        client.save_results("./output")
+    ```
+
+=== "SOAP / NoteReader"
+    ```python
+    with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+        client.load_from_path("./data/note.xml")
+        responses = client.send_requests()
+        client.save_results("./output")
+    ```
+
+## Connecting to a Running Service
+
+Use `SandboxClient` directly when connecting to a service that's already running (e.g. started with `healthchain serve`):
 
 ```python
 from healthchain.sandbox import SandboxClient
 
-# Create client with full service URL and workflow
 client = SandboxClient(
     url="http://localhost:8000/cds/cds-services/my-service",
     workflow="encounter-discharge"
 )
 
-# Load data and send requests
 client.load_from_registry(
     "synthea-patient",
     data_dir="./data/synthea",
     resource_types=["Condition", "MedicationStatement"],
     sample_size=5
-    )
+)
 responses = client.send_requests()
 ```
 

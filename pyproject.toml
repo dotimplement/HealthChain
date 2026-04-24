@@ -41,7 +41,7 @@ dependencies = [
     "starlette>=0.40.0,<0.50.0",
     "uvicorn>=0.24.0,<0.25",
     "httpx>=0.27.0,<0.28",
-    "lxml>=5.2.2,<6",
+    "lxml>=5.2.2,<7",
     "xmltodict>=0.13.0,<0.14",
     "fhir-resources>=8.0.0,<9",
     "python-liquid>=1.13.0,<2",
@@ -49,6 +49,7 @@ dependencies = [
     "fastapi-events>=0.12.2,<0.13",
     "jwt>=1.3.1,<2",
     "pyyaml>=6.0.3,<7",
+    "python-dotenv>=1.0.0,<2",
 ]
 include = [
     "healthchain/templates/*",
@@ -57,19 +58,24 @@ include = [
 ]
 
 [project.urls]
-Homepage = "https://dotimplement.github.io/HealthChain/"
-Repository = "https://github.com/dotimplement/HealthChain"
+Homepage = "https://healthchainai.github.io/HealthChain/"
+Repository = "https://github.com/healthchainai/HealthChain"
 
 [project.scripts]
 healthchain = "healthchain.cli:main"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.4.2,<0.5",
+    "ruff>=0.5.3",
     "pytest>=8.2.0,<9",
     "pre-commit>=3.5.0,<4",
     "pytest-asyncio>=0.24.0,<0.25",
     "ipykernel>=6.29.5,<7",
+    "pytest-cov>=7.1.0",
+    "typer>=0.24.1",
+]
+scripts = [
+    "scikit-learn>=1.7.2",
 ]
 docs = [
     "mkdocs>=1.6.1,<2",
@@ -83,6 +89,10 @@ default-groups = [
     "dev",
     "docs",
 ]
+
+[tool.ruff]
+extend-exclude = ["*.md", "docs/**/*.md"]
+force-exclude = true
 
 [build-system]
 requires = ["hatchling", "numpy>=2.0.0"]

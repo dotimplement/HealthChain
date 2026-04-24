@@ -639,7 +639,7 @@
   color: #c2185b;
 }
 
-.tag-fhir {
+.tag-fhirgateway {
   background-color: #f1f8e9;
   color: #558b2f;
 }
@@ -649,7 +649,43 @@
   color: #ff8f00;
 }
 
+.tag-zerosetup {
+  background-color: #e8eaf6;
+  color: #3949ab;
+}
+
+/* Difficulty tags */
+.tag-beginner {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.tag-intermediate {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.tag-advanced {
+  background-color: #fce4ec;
+  color: #c62828;
+}
+
 /* Dark mode tag adjustments */
+[data-md-color-scheme="slate"] .tag-beginner {
+  background-color: #1b3d1f;
+  color: #81c784;
+}
+
+[data-md-color-scheme="slate"] .tag-intermediate {
+  background-color: #3d3010;
+  color: #ffd54f;
+}
+
+[data-md-color-scheme="slate"] .tag-advanced {
+  background-color: #3d1a1a;
+  color: #ef9a9a;
+}
+
 [data-md-color-scheme="slate"] .tag-healthtech {
   background-color: #3d2d1f;
   color: #ffb74d;
@@ -685,7 +721,7 @@
   color: #f48fb1;
 }
 
-[data-md-color-scheme="slate"] .tag-fhir {
+[data-md-color-scheme="slate"] .tag-fhirgateway {
   background-color: #2a3d1a;
   color: #aed581;
 }
@@ -693,6 +729,11 @@
 [data-md-color-scheme="slate"] .tag-cdshooks {
   background-color: #3d3a1a;
   color: #ffd54f;
+}
+
+[data-md-color-scheme="slate"] .tag-zerosetup {
+  background-color: #1a1d3d;
+  color: #9fa8da;
 }
 
 [data-md-color-scheme="slate"] .cookbook-card {

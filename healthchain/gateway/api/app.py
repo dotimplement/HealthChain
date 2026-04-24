@@ -6,6 +6,7 @@ healthcare-specific gateways, routes, middleware, and capabilities.
 """
 
 import logging
+import os
 import re
 
 from contextlib import asynccontextmanager
@@ -104,6 +105,8 @@ def _print_startup_banner(
     gateways: dict,
     services: dict,
     docs_url: str,
+    port: int = 8000,
+    service_type: Optional[str] = None,
     config=None,
     config_path: Optional[str] = None,
 ) -> None:
@@ -116,23 +119,30 @@ def _print_startup_banner(
     LOGO_COL = 38
 
     # ── resolve status values from config or sensible defaults ──
-    svc_type = (config.service.type if config else None) or (
-        list({**gateways, **services}.keys())[0]
-        if {**gateways, **services}
-        else "unknown"
+    svc_type = (
+        service_type
+        or (config.service.type if config else None)
+        or (
+            list({**gateways, **services}.keys())[0]
+            if {**gateways, **services}
+            else "unknown"
+        )
     )
     env = config.site.environment if config else "development"
-    port = str(config.service.port if config else 8000)
+    port = str(port)
     site = config.site.name if config else None
     auth = config.security.auth if config else "none"
     tls = config.security.tls.enabled if config else False
     hipaa = config.compliance.hipaa if config else False
     eval_enabled = config.eval.enabled if config else False
     eval_provider = config.eval.provider if config else "mlflow"
+    # Check registered gateways first, then fall back to env var presence
     fhir_configured = any(
-        hasattr(gw, "sources") and getattr(gw, "sources", None)
+        hasattr(gw, "connection_manager")
+        and gw.connection_manager
+        and getattr(gw.connection_manager, "sources", None)
         for gw in gateways.values()
-    )
+    ) or any(k.endswith("_CLIENT_ID") for k in os.environ)
 
     status: list[str] = [
         f"\033[1m\033[38;2;255;121;198m{title}\033[0m  \033[2mv{version}\033[0m",
@@ -237,6 +247,7 @@ class HealthChainAPI(FastAPI):
         title: str = "HealthChain API",
         description: str = "Healthcare Integration API",
         version: str = "1.0.0",
+        service_type: Optional[str] = None,
         enable_cors: bool = True,
         enable_events: bool = True,
         event_dispatcher: Optional[EventDispatcher] = None,
@@ -261,6 +272,10 @@ class HealthChainAPI(FastAPI):
             lifespan=self._lifespan,
             **kwargs,
         )
+
+        # Display metadata for banner (when running outside healthchain serve)
+        self._port: Optional[int] = None
+        self._service_type = service_type
 
         # Gateway and service registries
         self.gateways = {}
@@ -597,12 +612,15 @@ class HealthChainAPI(FastAPI):
         from healthchain.config.appconfig import AppConfig
 
         config = AppConfig.load()
+        port = self._port or (config.service.port if config else 8000)
         _print_startup_banner(
             title=config.name if config else self.title,
             version=config.version if config else self.version,
             gateways=self.gateways,
             services=self.services,
-            docs_url=self.docs_url or "http://localhost:8000/docs",
+            docs_url=self.docs_url or "/docs",
+            port=port,
+            service_type=self._service_type,
             config=config,
             config_path="./healthchain.yaml" if config else None,
         )
@@ -615,6 +633,173 @@ class HealthChainAPI(FastAPI):
                     logger.debug(f"Initialized: {name}")
                 except Exception as e:
                     logger.warning(f"Failed to initialize {name}: {e}")
+
+    def _resolve_cds_url(self, hook_id: str, host: str, port: int) -> str:
+        """Build the CDS hook URL from the registered CDSHooksService config."""
+        from healthchain.gateway.cds import CDSHooksService
+
+        for service in self.services.values():
+            if isinstance(service, CDSHooksService):
+                base = service.config.base_path.rstrip("/")
+                svc = service.config.service_path.strip("/")
+                return f"http://{host}:{port}{base}/{svc}/{hook_id}"
+        return f"http://{host}:{port}/cds/cds-services/{hook_id}"
+
+    def _resolve_soap_url(self, host: str, port: int) -> str:
+        """Build the SOAP service URL from the registered NoteReaderService config."""
+        from healthchain.gateway.soap.notereader import NoteReaderService
+
+        for service in self.services.values():
+            if isinstance(service, NoteReaderService):
+                path = service.config.default_mount_path.rstrip("/")
+                return f"http://{host}:{port}{path}/?wsdl"
+        return f"http://{host}:{port}/notereader/?wsdl"
+
+    def _resolve_cds_workflow(self, hook_id: str) -> Optional[str]:
+        """Look up the hook type for a given hook ID from registered CDSHooksService."""
+        from healthchain.gateway.cds import CDSHooksService
+
+        for service in self.services.values():
+            if isinstance(service, CDSHooksService):
+                for hook_type, metadata in service._handler_metadata.items():
+                    if metadata.get("id") == hook_id:
+                        return hook_type
+        return None
+
+    def sandbox(
+        self,
+        hook_id: Optional[str] = None,
+        *,
+        workflow: Optional[str] = None,
+        protocol: str = "rest",
+        port: int = 8000,
+        host: str = "127.0.0.1",
+        startup_timeout: float = 10.0,
+    ):
+        """Start the app and return a configured SandboxClient as a context manager.
+
+        Mirrors the FastAPI TestClient pattern — server lifecycle is handled
+        automatically so cookbooks stay focused on clinical logic.
+
+        For CDS Hooks services, pass the hook ID you registered with
+        ``@cds.hook(..., id="your-hook-id")`` — the workflow and URL are resolved
+        automatically from the registered service.
+
+        For SOAP/NoteReader services, pass ``protocol="soap"`` and the workflow name.
+
+        Args:
+            hook_id: Hook ID registered with ``@cds.hook(..., id="...")``. Required for CDS.
+            workflow: Workflow name (e.g. ``"sign-note-inpatient"``). Required for SOAP;
+                derived automatically for CDS.
+            protocol: ``"rest"`` for CDS Hooks (default) or ``"soap"`` for NoteReader.
+            port: Port to run the server on (default: 8000).
+            host: Host to bind to (default: 127.0.0.1).
+            startup_timeout: Max seconds to wait for the server to be ready (default: 10.0).
+
+        Yields:
+            SandboxClient configured and ready to load data and send requests.
+
+        Raises:
+            ValueError: If hook_id is missing for CDS or workflow is missing for SOAP.
+            RuntimeError: If the server does not become ready within startup_timeout.
+
+        Examples:
+            CDS Hooks::
+
+                with app.sandbox("sepsis-risk") as client:
+                    client.load_from_path("./data/patients", pattern="*_patient.json")
+                    responses = client.send_requests()
+                    client.save_results("./output")
+
+            SOAP/NoteReader::
+
+                with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
+                    client.load_from_path("./data/note.xml")
+                    responses = client.send_requests()
+                    client.save_results("./output")
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _sandbox_ctx():
+            import time
+            import threading
+            import httpx
+            import uvicorn
+            from healthchain.sandbox import SandboxClient
+
+            if protocol == "soap":
+                if workflow is None:
+                    raise ValueError(
+                        "workflow is required for SOAP protocol (e.g. 'sign-note-inpatient')."
+                    )
+                url = self._resolve_soap_url(host, port)
+                resolved_workflow = workflow
+            else:
+                if hook_id is None:
+                    raise ValueError(
+                        "hook_id is required for CDS protocol. "
+                        "Pass the ID from @cds.hook(..., id='your-hook-id')."
+                    )
+                url = self._resolve_cds_url(hook_id, host, port)
+                resolved_workflow = workflow or self._resolve_cds_workflow(hook_id)
+                if resolved_workflow is None:
+                    raise ValueError(
+                        f"No hook registered with id='{hook_id}'. "
+                        f"Register one with @cds.hook(..., id='{hook_id}') before calling sandbox()."
+                    )
+
+            config = uvicorn.Config(self, host=host, port=port, log_level="error")
+            server = uvicorn.Server(config)
+            thread = threading.Thread(target=server.run, daemon=True)
+            thread.start()
+
+            health_url = f"http://{host}:{port}/health"
+            deadline = time.monotonic() + startup_timeout
+            while time.monotonic() < deadline:
+                try:
+                    httpx.get(health_url, timeout=0.5)
+                    break
+                except Exception:
+                    time.sleep(0.2)
+            else:
+                server.should_exit = True
+                thread.join(timeout=5)
+                raise RuntimeError(
+                    f"Server did not become ready within {startup_timeout}s. "
+                    f"Check that port {port} is not already in use."
+                )
+
+            try:
+                yield SandboxClient(
+                    url=url, workflow=resolved_workflow, protocol=protocol
+                )
+            finally:
+                server.should_exit = True
+                thread.join(timeout=5)
+
+        return _sandbox_ctx()
+
+    def run(self, host: str = "0.0.0.0", port: int = 8000, **kwargs) -> None:
+        """Run the application with uvicorn.
+
+        Convenience wrapper for local development and cookbooks. For production,
+        use `healthchain serve` which reads healthchain.yaml for TLS, port, etc.
+
+        Args:
+            host: Host to bind to (default: 0.0.0.0)
+            port: Port to bind to (default: 8000)
+            **kwargs: Passed through to uvicorn.run (e.g. reload=True, workers=4)
+
+        Example:
+            app = HealthChainAPI(title="My App")
+            app.run(port=8888)
+            app.run(port=8888, reload=True)  # with hot reload
+        """
+        import uvicorn
+
+        self._port = port
+        uvicorn.run(self, host=host, port=port, **kwargs)
 
     async def _shutdown(self) -> None:
         """Handle graceful shutdown."""

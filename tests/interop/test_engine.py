@@ -9,8 +9,8 @@ from healthchain.interop.engine import (
 from healthchain.interop.types import FormatType, validate_format
 from healthchain.config.base import ValidationLevel
 
-from fhir.resources.condition import Condition
-from fhir.resources.medicationstatement import MedicationStatement
+from fhir.resources.R4B.condition import Condition
+from fhir.resources.R4B.medicationstatement import MedicationStatement
 
 
 @pytest.fixture

@@ -1,8 +1,10 @@
 # Multi-Source Patient Data Aggregation
 
+**Level:** Intermediate
+
 This example shows you how to aggregate patient data from multiple FHIR sources and track data provenance: essential for building AI applications that train on diverse data, query multiple EHR vendors in RAG systems, or construct unified patient timelines from fragmented health records.
 
-Check out the full working example [here](https://github.com/dotimplement/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!
+Check out the full working example [here](https://github.com/healthchainai/HealthChain/tree/main/cookbook/multi_ehr_data_aggregation.py)!
 
 ![](../assets/images/hc-use-cases-genai-aggregate.png) *Illustrative Architecture - actual implementation may vary.*
 
@@ -108,7 +110,7 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
         "source": "urn:healthchain:source:epic",  // Adds source
         "tag": [
           {
-            "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+            "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
             "code": "aggregated",
             "display": "Aggregated"
           }  // Appends a custom HealthChain tag
@@ -123,13 +125,17 @@ def get_unified_patient(patient_id: str, sources: List[str]) -> Bundle:
 Register the gateway with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints.
 
 ```python
-import uvicorn
 from healthchain.gateway import HealthChainAPI
 
-app = HealthChainAPI()
+app = HealthChainAPI(
+    title="Multi-EHR Data Aggregation",
+    description="Aggregate patient data from multiple FHIR sources",
+    port=8888,
+    service_type="fhir-gateway",
+)
 app.register_gateway(gateway, path="/fhir")
 
-uvicorn.run(app)
+app.run()
 ```
 
 !!! tip "FHIR Endpoints Provided by the Service"
@@ -256,7 +262,7 @@ Sample conditions:
               "lastUpdated": "2025-10-10T15:23:50.167941Z",  // Updated by HealthChain Gateway
               "source": "urn:healthchain:source:epic",       // Added by HealthChain Gateway
               "tag": [{
-                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
                 "code": "aggregated",
                 "display": "Aggregated"
               }]  // Added by HealthChain Gateway
@@ -300,7 +306,7 @@ Sample conditions:
               "lastUpdated": "2025-10-10T15:23:50.168175Z", // Updated by HealthChain Gateway
               "source": "urn:healthchain:source:epic",      // Added by HealthChain Gateway
               "tag": [{
-                "system": "https://dotimplement.github.io/HealthChain/fhir/tags",
+                "system": "https://healthchainai.github.io/HealthChain/fhir/tags",
                 "code": "aggregated"
               }]  // Added by HealthChain Gateway
             },
@@ -399,9 +405,14 @@ A production-ready data aggregation service with:
 
     - **Training Data for AI Models**: Aggregate diverse patient data across EHR vendors for model training. Provenance tags enable stratified analysis (e.g., "how does model performance vary by data source?").
 
+!!! note "HealthChain complements your existing stack"
+
+    HealthChain handles FHIR authentication, multi-source querying, provenance tracking, and deduplication. Your downstream tools — LangChain, pandas, custom NLP — stay exactly as they are. The aggregated Bundle or `Document` drops straight into whatever processing you already have.
+
 !!! tip "Next Steps"
 
     - **Try another FHIR server**: Set up a different [FHIR server](./setup_fhir_sandboxes.md) where you can upload the same test patients to multiple instances for true multi-source aggregation.
     - **Expand resource types**: Change `Condition` to `MedicationStatement`, `Observation`, or `Procedure` to aggregate different data.
     - **Add processing**: Extend the pipeline with terminology mapping, entity extraction, or quality checks.
     - **Build on it**: Use aggregated data in the [Clinical Coding tutorial](./clinical_coding.md) or feed it to your LLM application.
+    - **Go to production**: Scaffold a project with `healthchain new` and run with `healthchain serve` — see [From cookbook to service](./index.md#from-cookbook-to-service). Moving to `healthchain.yaml` is where config-driven compliance support (audit logging, data provenance, deployment metadata) will live as those features mature.

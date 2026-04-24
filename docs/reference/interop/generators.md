@@ -203,7 +203,7 @@ from healthchain.interop.template_registry import TemplateRegistry
 from healthchain.interop.generators import BaseGenerator
 
 from typing import List
-from fhir.resources.resource import Resource
+from fhir.resources.R4B.resource import Resource
 
 
 class CustomGenerator(BaseGenerator):
