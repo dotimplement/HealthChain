@@ -136,6 +136,6 @@ if __name__ == "__main__":
         for i, resp in enumerate(responses):
             cards = resp.get("cards", [])
             if cards:
-                print(f"  Patient {i+1}: {cards[0].get('summary', 'No alert')}")
+                print(f"  Patient {i + 1}: {cards[0].get('summary', 'No alert')}")
             else:
-                print(f"  Patient {i+1}: Low risk (no alert)")
+                print(f"  Patient {i + 1}: Low risk (no alert)")

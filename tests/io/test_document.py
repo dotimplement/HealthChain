@@ -35,14 +35,16 @@ def test_document_initialization(sample_document):
         (
             lambda: (
                 lambda b: (
-                    add_resource(
-                        b, create_condition(subject="Patient/123", code="E11.9")
-                    ),
-                    add_resource(
-                        b, create_condition(subject="Patient/123", code="I10")
-                    ),
+                    (
+                        add_resource(
+                            b, create_condition(subject="Patient/123", code="E11.9")
+                        ),
+                        add_resource(
+                            b, create_condition(subject="Patient/123", code="I10")
+                        ),
+                    )
+                    and b
                 )
-                and b
             )(create_bundle("collection")),
             True,
             2,
@@ -189,7 +191,8 @@ def test_document_patient_convenience_properties_param(num_patients):
     patients = []
     for i in range(num_patients):
         patient = Patient(
-            id=f"patient-{i+1}", name=[HumanName(given=["John"], family=f"Fam{i+1}")]
+            id=f"patient-{i + 1}",
+            name=[HumanName(given=["John"], family=f"Fam{i + 1}")],
         )
         patients.append(patient)
         add_resource(bundle, patient)

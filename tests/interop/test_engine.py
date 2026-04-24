@@ -42,12 +42,15 @@ def mock_template_registry():
 @pytest.fixture
 def interop_engine(mock_config_manager, mock_template_registry):
     """Create a mocked InteropEngine instance for testing."""
-    with patch(
-        "healthchain.interop.engine.InteropConfigManager",
-        return_value=mock_config_manager,
-    ), patch(
-        "healthchain.interop.engine.TemplateRegistry",
-        return_value=mock_template_registry,
+    with (
+        patch(
+            "healthchain.interop.engine.InteropConfigManager",
+            return_value=mock_config_manager,
+        ),
+        patch(
+            "healthchain.interop.engine.TemplateRegistry",
+            return_value=mock_template_registry,
+        ),
     ):
         engine = InteropEngine(
             config_dir=Path("/mock/path"),

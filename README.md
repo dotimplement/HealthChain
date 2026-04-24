@@ -55,38 +55,7 @@ See the [CLI reference](https://healthchainai.github.io/HealthChain/cli/) for al
 
 ## Core Features
 
-HealthChain is the **quickest way for AI/ML engineers to integrate their models with real healthcare systems**.
-
-### 💡 For HealthTech Engineers
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/hc-use-cases-clinical-integration.png" alt="Clinical Integration" width=100%>
-      <div align="center">
-        <br>
-        <a href="https://healthchainai.github.io/HealthChain/reference/gateway/cdshooks/"><strong>⚡️ Real-Time Clinical Workflow Integration</strong></a>
-        <br><br>
-        <div>Build CDS alerts and automated coding tools that integrate directly into Epic workflows</div><br>
-        <a href="https://healthchainai.github.io/HealthChain/cookbook/discharge_summarizer/">Getting Started →</a>
-        <br><br>
-      </div>
-    </td>
-    <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/openapi_docs.png" alt="FHIR Utilities" width=100%>
-      <div align="center">
-        <br>
-        <a href="https://healthchainai.github.io/HealthChain/reference/utilities/fhir_helpers/"><strong>🔥 FHIR Development Utilities</strong></a>
-        <br><br>
-        <div>Accelerate development with type-safe FHIR resource creation, validation helpers, and sandbox environments for testing clinical workflows</div><br>
-        <a href="https://healthchainai.github.io/HealthChain/reference/utilities/sandbox/">Getting Started →</a>
-        <br><br>
-      </div>
-    </td>
-  </tr>
-</table>
-
-### 🤖 For LLM / GenAI Developers
+HealthChain is the **quickest way for AI engineers to connect their models to real healthcare data**.
 
 <table>
   <tr>
@@ -102,27 +71,7 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
       </div>
     </td>
     <td width="50%" valign="top">
-      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/interopengine.png" alt="Format Conversion" width=100%>
-      <div align="center">
-        <br>
-        <a href="https://healthchainai.github.io/HealthChain/reference/interop/interop/"><strong>🔄 Healthcare Data Format Conversion</strong></a>
-        <br><br>
-        <div>Convert between FHIR and CDA formats with configuration-driven templates for unified data processing workflows</div><br>
-        <a href="https://healthchainai.github.io/HealthChain/cookbook/clinical_coding/">Getting Started →</a>
-        <br><br>
-      </div>
-    </td>
-  </tr>
-</table>
-
-### 🎓 For ML Researchers
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-    <div align="center">
-      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/hc-use-cases-ml-deployment.png" alt="Deploy" width=60%>
-    </div>
+      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/hc-use-cases-ml-deployment.png" alt="Deploy" width=100%>
       <div align="center">
         <br>
         <a href="https://healthchainai.github.io/HealthChain/reference/gateway/fhir_gateway/"><strong>🚀 Deploy ML Models as Healthcare APIs</strong></a>
@@ -132,6 +81,31 @@ HealthChain is the **quickest way for AI/ML engineers to integrate their models 
         <br><br>
       </div>
     </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/hc-use-cases-clinical-integration.png" alt="Clinical Integration" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://healthchainai.github.io/HealthChain/reference/gateway/cdshooks/"><strong>⚡️ Real-Time Clinical Workflow Integration</strong></a>
+        <br><br>
+        <div>Deploy AI models as CDS services that integrate directly into EHR workflows — alerts, recommendations, and automated coding at the point of care</div><br>
+        <a href="https://healthchainai.github.io/HealthChain/cookbook/discharge_summarizer/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+    <td width="50%" valign="top">
+      <img src="https://raw.githubusercontent.com/healthchainai/HealthChain/main/docs/assets/images/openapi_docs.png" alt="FHIR Utilities" width=100%>
+      <div align="center">
+        <br>
+        <a href="https://healthchainai.github.io/HealthChain/reference/utilities/fhir_helpers/"><strong>🔥 FHIR Development Utilities</strong></a>
+        <br><br>
+        <div>Type-safe FHIR resource creation, validation helpers, and sandbox environments — skip the boilerplate and work with healthcare data natively</div><br>
+        <a href="https://healthchainai.github.io/HealthChain/reference/utilities/sandbox/">Getting Started →</a>
+        <br><br>
+      </div>
+    </td>
+  </tr>
 </table>
 
 ## Why HealthChain?
@@ -142,7 +116,7 @@ HealthChain understands healthcare protocols and data formats natively, so you d
 
 - **Optimized for real-time** - Connect to live FHIR APIs and integration points instead of stale data exports
 - **Automatic validation** - Type-safe FHIR models prevent broken healthcare data
-- **Built-in NLP support** - Extract structured data from clinical notes, output as FHIR
+- **Native LLM + ML support** - Wire up any model, from LLMs to scikit-learn, and output results as FHIR
 - **Developer experience** - Modular and extensible architecture works across any EHR system
 - **Production-ready foundations** - Dockerized deployment, configurable security and compliance settings, and an architecture designed for real-world healthcare environments
 
@@ -220,53 +194,36 @@ if __name__ == "__main__":
 ### Testing with Sandbox [[Docs](https://healthchainai.github.io/HealthChain/reference/utilities/sandbox)]
 
 ```python
-from healthchain.sandbox import SandboxClient
+from healthchain.gateway import HealthChainAPI, CDSHooksService
 
-# Test CDS Hooks service with synthetic data
-client = SandboxClient(
-    url="http://localhost:8000/cds/cds-services/discharge-summary",
-    workflow="encounter-discharge"
-)
+cds = CDSHooksService()
+app = HealthChainAPI(title="Discharge Summarizer")
+app.register_service(cds, path="/cds")
 
-# Load from test datasets
-client.load_from_registry(
-    "synthea-patient",
-    data_dir="./data/synthea",
-    resource_types=["Condition", "DocumentReference"],
-    sample_size=5
-)
-
-# Send requests and save results
-responses = client.send_requests()
-client.save_results("./output/")
+# Server lifecycle handled automatically
+with app.sandbox("discharge-summary") as client:
+    client.load_from_path("./data/patients", pattern="*_patient.json")
+    responses = client.send_requests()
+    client.save_results("./output/")
 ```
 
-## 🛣️ Road Map
+## 🛣️ What we're building towards
 
-- [ ] 🔍 Data provenance and observability
-- [ ] 🔒 Production security and compliance – enhanced authentication, audit logging, and HIPAA-aligned controls (encryption, access logging, configuration patterns)
-- [ ] 🔄 HL7v2 parsing, FHIR profile conversion, and OMOP mapping
-- [ ] 🧾 Da Vinci CRD/DTR/PAS prior authorization workflows
-- [ ] 🚀 Kubernetes deployment and telemetry integration
-- [ ] 📊 Model performance monitoring with MLFlow integration
-- [ ] 🤖 MCP server integration
+- [ ] 🔒 **Production security and compliance** — audit logging, API authentication, and governance config for NHS/HIPAA deployments
+- [ ] 🔌 **Deeper EHR connectivity** — more FHIR sources, live data patterns, and real-world integration examples from pilot deployments
+- [ ] 📊 **Observability and Eval** — model eval, deployment telemetry, and audit trails for clinical AI systems
+- [ ] 🤖 **AI agent ecosystem** — MCP server, Claude skill for healthcare data workflows, and agentic integrations for the next generation of clinical AI tools
 
 ## 🤝 Contributing
 
-HealthChain is built for production healthcare systems. We prioritize contributors with:
-
-- **Healthcare product experience** – shipped clinical systems, EHR integrations, or health data products
-- **FHIR expertise** – designed or implemented FHIR APIs and interoperability solutions
-- **Healthcare security background** – auth, privacy, compliance in regulated environments
-
-If that's you, we'd love your input!
+HealthChain is built by and for AI engineers working with healthcare data. The best contributions come from people who have hit a real problem and have something specific to say about it.
 
 **Get started:**
 
-- See the [project board](https://github.com/orgs/healthchainai/projects/1/views/1) for current roadmap and active work
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and RFC process
-- Discuss ideas in [GitHub Discussions](https://github.com/healthchainai/HealthChain/discussions)
-- Join our [Discord](https://discord.gg/UQC6uAepUz) community
+- **Working with healthcare or research data?** [Contribute a cookbook](https://github.com/healthchainai/HealthChain/issues/208) — bring your use case, I'll personally support you through it
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
+- Technical questions and ideas → [GitHub Discussions](https://github.com/healthchainai/HealthChain/discussions)
+- Pilots and partnerships → [email](mailto:jenniferjiangkells@gmail.com?subject=HealthChain)
 
 ## 🤗 Acknowledgements
 
