@@ -2,23 +2,35 @@ import logging
 from abc import ABC, abstractmethod
 from inspect import signature
 from pathlib import Path
+from dataclasses import dataclass, field
+from enum import Enum
+from functools import reduce
 from typing import (
     Any,
     Callable,
-    Optional,
-    Type,
-    Union,
+    Dict,
+    Generic,
     List,
     Literal,
-    Dict,
+    Optional,
+    Type,
     TypeVar,
-    Generic,
+    Union,
 )
-from functools import reduce
 from pydantic import BaseModel
-from dataclasses import dataclass, field
-from enum import Enum
 
+from healthchain.execution import (
+    ExecutionModeLike,
+    ExecutionPlan,
+    ExecutionProfile,
+    RuntimeScope,
+    RuntimeStatus,
+    generate_correlation_id,
+    get_correlation_id,
+    map_runtime_error,
+    record_runtime_event,
+    runtime_context,
+)
 from healthchain.io.containers import DataContainer
 from healthchain.pipeline.components.base import BaseComponent
 
@@ -91,6 +103,15 @@ class BasePipeline(Generic[T], ABC):
         _output_template (Optional[str]): Template string for formatting pipeline outputs
         _output_template_path (Optional[Path]): Path to template file for formatting pipeline outputs
 
+    Mutation guidance:
+        - Treat typed document compartments (.nlp, .fhir, .cds, .models) as the
+          canonical home for domain outputs.
+        - Put durable auxiliary outputs in document.artifacts when they do not fit
+          a typed compartment.
+        - Put stable cross-cutting descriptors in document.metadata.
+        - Put ephemeral stage-local scratch data in document.execution and clear it
+          at execution boundaries instead of persisting it as business data.
+
     Example:
         >>> class MyPipeline(BasePipeline[Document]):
         ...     def configure_pipeline(self, config: ModelConfig) -> None:
@@ -102,12 +123,13 @@ class BasePipeline(Generic[T], ABC):
         >>> result = pipeline(document)  # Document → Document
     """
 
-    def __init__(self):
+    def __init__(self, execution_profile: Optional[ExecutionProfile] = None):
         self._components: List[PipelineNode[T]] = []
         self._stages: Dict[str, List[Callable]] = {}
         self._built_pipeline: Optional[Callable] = None
         self._output_template: Optional[str] = None
         self._output_template_path: Optional[Path] = None
+        self._execution_profile = execution_profile or ExecutionProfile.inline_only()
 
     def __repr__(self) -> str:
         components_repr = ", ".join(
@@ -140,6 +162,7 @@ class BasePipeline(Generic[T], ABC):
         task: Optional[str] = "text-generation",
         template: Optional[str] = None,
         template_path: Optional[Union[str, Path]] = None,
+        execution_profile: Optional[ExecutionProfile] = None,
         **kwargs: Any,
     ) -> "BasePipeline":
         """
@@ -191,6 +214,8 @@ class BasePipeline(Generic[T], ABC):
             task = pipeline.task
 
         instance = cls()
+        if execution_profile is not None:
+            instance.configure_execution(execution_profile)
         instance._configure_output_templates(template, template_path)
 
         config = ModelConfig(
@@ -213,6 +238,7 @@ class BasePipeline(Generic[T], ABC):
         task: Optional[str] = "text-generation",
         template: Optional[str] = None,
         template_path: Optional[Union[str, Path]] = None,
+        execution_profile: Optional[ExecutionProfile] = None,
         **kwargs: Any,
     ) -> "BasePipeline":
         """
@@ -257,6 +283,8 @@ class BasePipeline(Generic[T], ABC):
             ... )
         """
         pipeline = cls()
+        if execution_profile is not None:
+            pipeline.configure_execution(execution_profile)
         pipeline._configure_output_templates(template, template_path)
 
         config = ModelConfig(
@@ -278,6 +306,7 @@ class BasePipeline(Generic[T], ABC):
         task: Optional[str] = None,
         template: Optional[str] = None,
         template_path: Optional[Union[str, Path]] = None,
+        execution_profile: Optional[ExecutionProfile] = None,
         **kwargs: Any,
     ) -> "BasePipeline":
         """Load pipeline from a local model path.
@@ -321,6 +350,8 @@ class BasePipeline(Generic[T], ABC):
             ... )
         """
         pipeline = cls()
+        if execution_profile is not None:
+            pipeline.configure_execution(execution_profile)
         pipeline._configure_output_templates(template, template_path)
 
         path = Path(path)
@@ -406,6 +437,26 @@ class BasePipeline(Generic[T], ABC):
                                                     and values are lists of callable components.
         """
         self._stages = new_stages
+
+    @property
+    def execution_profile(self) -> ExecutionProfile:
+        """Return the declared execution profile for this pipeline."""
+        return self._execution_profile
+
+    def configure_execution(
+        self, execution_profile: ExecutionProfile
+    ) -> "BasePipeline":
+        """Declare how this pipeline may execute without changing its default behavior."""
+        self._execution_profile = execution_profile
+        return self
+
+    def plan_execution(self, mode: ExecutionModeLike = None) -> ExecutionPlan:
+        """Resolve execution intent for runtime callers and future background runners."""
+        return ExecutionPlan(
+            scope=self.__class__.__name__,
+            mode=self._execution_profile.resolve_mode(mode),
+            profile=self._execution_profile,
+        )
 
     def add_node(
         self,
@@ -687,9 +738,54 @@ class BasePipeline(Generic[T], ABC):
             )
 
     def __call__(self, data: Union[T, DataContainer[T]]) -> DataContainer[T]:
-        if self._built_pipeline is None:
-            self._built_pipeline = self.build()
-        return self._built_pipeline(data)
+        correlation_id = get_correlation_id() or generate_correlation_id()
+        plan = self.plan_execution()
+        scope = self.__class__.__name__
+        with runtime_context(correlation_id=correlation_id):
+            record_runtime_event(
+                name="pipeline.execution.started",
+                activity=RuntimeScope.PIPELINE,
+                status=RuntimeStatus.STARTED,
+                scope=scope,
+                details={
+                    "execution": plan.as_metadata(),
+                    "component_count": len(self._components),
+                },
+            )
+            try:
+                if self._built_pipeline is None:
+                    self._built_pipeline = self.build()
+                result = self._built_pipeline(data)
+            except Exception as exc:
+                runtime_error = map_runtime_error(
+                    exc,
+                    phase=RuntimeScope.PIPELINE,
+                    correlation_id=correlation_id,
+                )
+                record_runtime_event(
+                    name="pipeline.execution.failed",
+                    activity=RuntimeScope.PIPELINE,
+                    status=RuntimeStatus.FAILED,
+                    scope=scope,
+                    details={
+                        "execution": plan.as_metadata(),
+                        "component_count": len(self._components),
+                    },
+                    error=runtime_error,
+                )
+                raise
+
+            record_runtime_event(
+                name="pipeline.execution.completed",
+                activity=RuntimeScope.PIPELINE,
+                status=RuntimeStatus.COMPLETED,
+                scope=scope,
+                details={
+                    "execution": plan.as_metadata(),
+                    "component_count": len(self._components),
+                },
+            )
+            return result
 
     def build(self) -> Callable:
         """

@@ -1,7 +1,7 @@
 import logging
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, ItemsView, Iterator, List, Optional, Union
 from uuid import uuid4
 
 from spacy.tokens import Doc as SpacyDoc
@@ -208,6 +208,100 @@ class ModelOutputs:
                 )
 
         return generated_text
+
+
+@dataclass
+class DocumentCompartment:
+    """
+    Lightweight key/value compartment for explicit Document-side state.
+
+    This keeps auxiliary mutation out of Document's top-level namespace while
+    preserving a small, ergonomic API.
+    """
+
+    _values: Dict[str, Any] = field(default_factory=dict, repr=False)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._values.get(key, default)
+
+    def set(self, key: str, value: Any) -> Any:
+        self._values[key] = value
+        return value
+
+    def update(self, values: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
+        if values:
+            self._values.update(values)
+        if kwargs:
+            self._values.update(kwargs)
+
+    def pop(self, key: str, default: Any = None) -> Any:
+        return self._values.pop(key, default)
+
+    def clear(self) -> None:
+        self._values.clear()
+
+    def as_dict(self) -> Dict[str, Any]:
+        return dict(self._values)
+
+    def items(self) -> ItemsView[str, Any]:
+        return self._values.items()
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._values
+
+    def __getitem__(self, key: str) -> Any:
+        return self._values[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._values[key] = value
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._values)
+
+    def __len__(self) -> int:
+        return len(self._values)
+
+    def __bool__(self) -> bool:
+        return bool(self._values)
+
+
+@dataclass
+class DocumentMetadata(DocumentCompartment):
+    """
+    Stable descriptive context for a document.
+
+    Keep identifiers, labels, and other durable descriptors here instead of in
+    domain compartments.
+    """
+
+
+@dataclass
+class DocumentArtifacts(DocumentCompartment):
+    """
+    Durable derived outputs that do not fit a typed domain compartment.
+
+    Store auxiliary payloads here when they may need inspection or persistence.
+    """
+
+    def record(self, name: str, value: Any, version: Optional[str] = None) -> Any:
+        if version is None:
+            return self.set(name, value)
+        return self.set(name, {"value": value, "version": version})
+
+
+@dataclass
+class ExecutionState(DocumentCompartment):
+    """
+    Ephemeral runtime state for the active adapter or pipeline flow.
+
+    This compartment is for in-memory scratch data only and should be cleared at
+    execution boundaries instead of persisted as business data.
+    """
+
+    def mark_stage(self, stage: str, **kwargs: Any) -> None:
+        self.set("stage", stage)
+        if kwargs:
+            self.update(kwargs)
 
 
 @dataclass
@@ -701,12 +795,27 @@ class Document(BaseDocument):
         - Stores and manipulates clinical FHIR data via the .fhir property (access to bundles, problem lists, meds, allergies, etc.).
         - Encapsulates CDS Hooks-style decision support cards and suggested actions via the .cds property.
         - Stores outputs from external ML/LLM models: HuggingFace, LangChain, etc.
+        - Exposes explicit contract compartments for durable metadata, auxiliary artifacts,
+          and ephemeral execution state.
+
+    Mutation guidance:
+        - Keep typed domain payloads inside .nlp, .fhir, .cds, and .models.
+        - Keep stable descriptors such as source identifiers or tags inside .metadata.
+        - Keep durable derived outputs that do not belong in typed compartments inside
+          .artifacts.
+        - Keep request-local or stage-local scratch data inside .execution.
+        - Keep raw transport envelopes at the adapter boundary instead of persisting
+          them on the Document whenever possible.
 
     Attributes:
+        input: Explicit alias for the original input boundary (.data)
         nlp (NlpAnnotations): NLP output (tokens, entities, embeddings, spaCy doc)
         fhir (FhirData): FHIR resources and context (problem list, medication, allergy, etc.)
         cds (CdsAnnotations): Clinical decision support (cards and actions)
         models (ModelOutputs): Results from ML/LLM models (HuggingFace, LangChain, etc.)
+        metadata (DocumentMetadata): Stable descriptive context for the document.
+        artifacts (DocumentArtifacts): Durable derived outputs and compatibility shims.
+        execution (ExecutionState): Ephemeral runtime state for active pipeline work.
         text (str): The text content of the document (if available).
         data: The original input supplied (raw text, Bundle, resource, or list of resources)
 
@@ -728,6 +837,13 @@ class Document(BaseDocument):
     _fhir: FhirData = field(default_factory=FhirData)
     _cds: CdsAnnotations = field(default_factory=CdsAnnotations)
     _models: ModelOutputs = field(default_factory=ModelOutputs)
+    _metadata: DocumentMetadata = field(default_factory=DocumentMetadata, repr=False)
+    _artifacts: DocumentArtifacts = field(default_factory=DocumentArtifacts, repr=False)
+    _execution: ExecutionState = field(default_factory=ExecutionState, repr=False)
+
+    @property
+    def input(self) -> Any:
+        return self.data
 
     @property
     def nlp(self) -> NlpAnnotations:
@@ -744,6 +860,30 @@ class Document(BaseDocument):
     @property
     def models(self) -> ModelOutputs:
         return self._models
+
+    @property
+    def metadata(self) -> DocumentMetadata:
+        return self._metadata
+
+    @property
+    def artifacts(self) -> DocumentArtifacts:
+        return self._artifacts
+
+    @property
+    def execution(self) -> ExecutionState:
+        return self._execution
+
+    def set_metadata(self, key: str, value: Any) -> Any:
+        return self._metadata.set(key, value)
+
+    def add_artifact(self, name: str, value: Any, version: Optional[str] = None) -> Any:
+        return self._artifacts.record(name, value, version=version)
+
+    def set_execution(self, key: str, value: Any) -> Any:
+        return self._execution.set(key, value)
+
+    def clear_execution(self) -> None:
+        self._execution.clear()
 
     def __post_init__(self):
         """

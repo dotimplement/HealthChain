@@ -1,5 +1,8 @@
 """Tests for the HealthChainAPI class."""
 
+import io
+import sys
+
 import pytest
 from unittest.mock import AsyncMock
 from fastapi import Depends, HTTPException
@@ -92,6 +95,27 @@ def test_lifespan_startup_shutdown():
         assert client.get("/health").status_code == 200
 
     assert gateway.shutdown_called
+
+
+def test_lifespan_startup_degrades_for_cp1252_stdout(monkeypatch):
+    """Startup should stay live when stdout cannot encode banner glyphs."""
+    buffer = io.BytesIO()
+    stdout = io.TextIOWrapper(buffer, encoding="cp1252", errors="strict")
+    monkeypatch.setattr(sys, "stdout", stdout)
+
+    app = HealthChainAPI(title="Encoding Safe API")
+
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+
+    stdout.flush()
+    output = buffer.getvalue().decode("cp1252")
+
+    assert "Encoding Safe API" in output
+    assert "validation:" in output
+    assert "docs:" in output
+    assert "╭" not in output
+    assert "█" not in output
 
 
 def test_dependency_injection(app, mock_dispatcher, mock_gateway):

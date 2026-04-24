@@ -13,6 +13,18 @@ from typing import Any, Callable, Dict, List, TypeVar, Generic, Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
+from healthchain.execution import (
+    ExecutionModeLike,
+    ExecutionPlan,
+    ExecutionProfile,
+    RuntimeScope,
+    RuntimeStatus,
+    generate_correlation_id,
+    get_correlation_id,
+    map_runtime_error,
+    record_runtime_event,
+    runtime_context,
+)
 from healthchain.gateway.api.protocols import EventDispatcherProtocol
 
 
@@ -170,6 +182,7 @@ class BaseProtocolHandler(ABC, Generic[T, R]):
             **options: Additional configuration options
         """
         self._handlers = {}
+        self._execution_profiles: Dict[str, ExecutionProfile] = {}
         self.options = options
         self.config = config or GatewayConfig()
         self.use_events = use_events
@@ -179,19 +192,63 @@ class BaseProtocolHandler(ABC, Generic[T, R]):
         )
         self.events = EventCapability()
 
-    def register_handler(self, operation: str, handler: Callable) -> P:
+    def register_handler(
+        self,
+        operation: str,
+        handler: Callable,
+        *,
+        execution_profile: Optional[ExecutionProfile] = None,
+    ) -> P:
         """
         Register a handler function for a specific operation.
 
         Args:
             operation: The operation name or identifier
             handler: Function that will handle the operation
+            execution_profile: Declares whether the operation is inline-only or
+                can later be executed in background mode
 
         Returns:
             Self, to allow for method chaining
         """
         self._handlers[operation] = handler
+        self._execution_profiles[operation] = (
+            execution_profile or ExecutionProfile.inline_only()
+        )
         return self
+
+    def set_execution_profile(
+        self, operation: str, execution_profile: ExecutionProfile
+    ) -> P:
+        """Update the execution declaration for a registered operation."""
+        if operation not in self._handlers:
+            raise ValueError(f"Operation '{operation}' is not registered.")
+        self._execution_profiles[operation] = execution_profile
+        return self
+
+    def get_execution_profile(self, operation: str) -> ExecutionProfile:
+        """Return the execution declaration for an operation."""
+        return self._execution_profiles.get(operation, ExecutionProfile.inline_only())
+
+    def plan_execution(
+        self, operation: str, execution_mode: ExecutionModeLike = None
+    ) -> ExecutionPlan:
+        """Resolve execution intent for a registered operation."""
+        if operation not in self._handlers:
+            raise ValueError(f"Unsupported operation: {operation}")
+        profile = self.get_execution_profile(operation)
+        return ExecutionPlan(
+            scope=operation,
+            mode=profile.resolve_mode(execution_mode),
+            profile=profile,
+        )
+
+    def get_execution_capabilities(self) -> Dict[str, Dict[str, object]]:
+        """Return execution metadata for all registered operations."""
+        return {
+            operation: self.get_execution_profile(operation).as_metadata()
+            for operation in self._handlers
+        }
 
     async def handle(self, operation: str, **params) -> Union[R, Dict[str, Any]]:
         """
@@ -205,27 +262,106 @@ class BaseProtocolHandler(ABC, Generic[T, R]):
         Returns:
             The response object or error dictionary
         """
+        correlation_id = get_correlation_id() or generate_correlation_id()
+        scope = f"{self.__class__.__name__}.{operation}"
         if operation in self._handlers:
             handler = self._handlers[operation]
-            try:
-                # Support both async and non-async handlers
-                if asyncio.iscoroutinefunction(handler):
-                    result = await handler(**params)
-                else:
-                    result = handler(**params)
-                return self._process_result(result)
-            except Exception as e:
-                logger.error(
-                    f"Error in handler for operation {operation}: {str(e)}",
-                    exc_info=True,
+            plan = self.plan_execution(operation)
+            with runtime_context(correlation_id=correlation_id):
+                record_runtime_event(
+                    name="interop.operation.started",
+                    activity=RuntimeScope.INTEROP,
+                    status=RuntimeStatus.STARTED,
+                    scope=scope,
+                    details={"execution": plan.as_metadata()},
                 )
-                return self._handle_error(str(e))
+                try:
+                    # Support both async and non-async handlers
+                    if asyncio.iscoroutinefunction(handler):
+                        result = await handler(**params)
+                    else:
+                        result = handler(**params)
+                    processed = self._process_result(result)
+                except Exception as e:
+                    logger.error(
+                        f"Error in handler for operation {operation}: {str(e)}",
+                        exc_info=True,
+                    )
+                    runtime_error = map_runtime_error(
+                        e,
+                        phase=RuntimeScope.INTEROP,
+                        correlation_id=correlation_id,
+                    )
+                    record_runtime_event(
+                        name="interop.operation.failed",
+                        activity=RuntimeScope.INTEROP,
+                        status=RuntimeStatus.FAILED,
+                        scope=scope,
+                        details={"execution": plan.as_metadata()},
+                        error=runtime_error,
+                    )
+                    return self._handle_error(str(e))
+
+                record_runtime_event(
+                    name="interop.operation.completed",
+                    activity=RuntimeScope.INTEROP,
+                    status=RuntimeStatus.COMPLETED,
+                    scope=scope,
+                    details={"execution": plan.as_metadata()},
+                )
+                return processed
 
         # Fall back to default handler
-        if asyncio.iscoroutinefunction(self._default_handler):
-            return await self._default_handler(operation, **params)
-        else:
-            return self._default_handler(operation, **params)
+        with runtime_context(correlation_id=correlation_id):
+            record_runtime_event(
+                name="interop.operation.started",
+                activity=RuntimeScope.INTEROP,
+                status=RuntimeStatus.STARTED,
+                scope=scope,
+                details={"execution": ExecutionProfile.inline_only().as_metadata()},
+            )
+            try:
+                if asyncio.iscoroutinefunction(self._default_handler):
+                    result = await self._default_handler(operation, **params)
+                else:
+                    result = self._default_handler(operation, **params)
+            except Exception as e:
+                runtime_error = map_runtime_error(
+                    e,
+                    phase=RuntimeScope.INTEROP,
+                    correlation_id=correlation_id,
+                )
+                record_runtime_event(
+                    name="interop.operation.failed",
+                    activity=RuntimeScope.INTEROP,
+                    status=RuntimeStatus.FAILED,
+                    scope=scope,
+                    details={"execution": ExecutionProfile.inline_only().as_metadata()},
+                    error=runtime_error,
+                )
+                raise
+            if isinstance(result, dict) and "error" in result:
+                record_runtime_event(
+                    name="interop.operation.failed",
+                    activity=RuntimeScope.INTEROP,
+                    status=RuntimeStatus.FAILED,
+                    scope=scope,
+                    details={"execution": ExecutionProfile.inline_only().as_metadata()},
+                    error=map_runtime_error(
+                        ValueError(result["error"]),
+                        phase=RuntimeScope.INTEROP,
+                        correlation_id=correlation_id,
+                    ),
+                )
+            else:
+                record_runtime_event(
+                    name="interop.operation.completed",
+                    activity=RuntimeScope.INTEROP,
+                    status=RuntimeStatus.COMPLETED,
+                    scope=scope,
+                    details={"execution": ExecutionProfile.inline_only().as_metadata()},
+                )
+            return result
 
     def _process_result(self, result: Any) -> R:
         """

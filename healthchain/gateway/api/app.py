@@ -7,6 +7,7 @@ healthcare-specific gateways, routes, middleware, and capabilities.
 
 import logging
 import re
+import sys
 
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -17,11 +18,41 @@ from fastapi.responses import JSONResponse
 
 from typing import Dict, Optional, Type, Union
 
+from healthchain.execution import (
+    RuntimeHooks,
+    RuntimeScope,
+    RuntimeStatus,
+    generate_correlation_id,
+    map_runtime_error,
+    record_runtime_event,
+    runtime_context,
+)
 from healthchain.gateway.base import BaseGateway, BaseProtocolHandler
 from healthchain.gateway.events.dispatcher import EventDispatcher
 from healthchain.gateway.api.dependencies import get_app
 
 logger = logging.getLogger(__name__)
+
+_CORRELATION_HEADER = "X-Correlation-ID"
+_ERROR_CODE_HEADER = "X-HealthChain-Error-Code"
+_ERROR_PHASE_HEADER = "X-HealthChain-Error-Phase"
+
+_ANSI_ESCAPE_RE = re.compile(r"\033\[[^m]*m")
+_BANNER_FALLBACK_TRANSLATION = str.maketrans(
+    {
+        "╭": "+",
+        "╮": "+",
+        "╰": "+",
+        "╯": "+",
+        "│": "|",
+        "─": "-",
+        "✓": "ok",
+        "✗": "x",
+        "█": "#",
+        "▄": "#",
+        "▀": "#",
+    }
+)
 
 # ── Half-block pixel font (4 wide × 3 tall, encodes 2 logical rows per char) ──
 _HB = {
@@ -60,11 +91,41 @@ def _gradient(text: str, t0: float, t1: float) -> str:
 
 
 def _vlen(s: str) -> int:
-    return len(re.sub(r"\033\[[^m]*m", "", s))
+    return len(_ANSI_ESCAPE_RE.sub("", s))
 
 
 def _pad(s: str, width: int) -> str:
     return s + " " * max(0, width - _vlen(s))
+
+
+def _plain_console_text(text: str, encoding: Optional[str] = None) -> str:
+    plain = _ANSI_ESCAPE_RE.sub("", text).translate(_BANNER_FALLBACK_TRANSLATION)
+    safe_encoding = encoding or "ascii"
+    try:
+        return plain.encode(safe_encoding, errors="backslashreplace").decode(
+            safe_encoding
+        )
+    except LookupError:
+        return plain.encode("ascii", errors="backslashreplace").decode("ascii")
+
+
+def _write_console_text(text: str) -> None:
+    stream = sys.stdout
+    if stream is None:
+        return
+
+    output = text
+    encoding = getattr(stream, "encoding", None)
+    if encoding:
+        try:
+            text.encode(encoding)
+        except (LookupError, UnicodeEncodeError):
+            output = _plain_console_text(text, encoding)
+
+    try:
+        stream.write(output)
+    except UnicodeEncodeError:
+        stream.write(_plain_console_text(text, encoding))
 
 
 def _val_bool(enabled: bool) -> str:
@@ -98,6 +159,18 @@ def _status_row(key: str, value: str) -> str:
     return f"\033[1m\033[38;2;0;255;135m{key}\033[0m  {value}"
 
 
+def _startup_validation_status(summary) -> str:
+    if summary is None:
+        return "\033[2mnot available\033[0m"
+    if summary.errors:
+        return f"\033[38;2;255;85;85mx {len(summary.errors)} error(s)\033[0m"
+    if summary.warnings:
+        return f"\033[38;2;255;200;50m! {len(summary.warnings)} warning(s)\033[0m"
+    if summary.status == "defaulted":
+        return "\033[38;2;255;200;50m! defaults\033[0m"
+    return "\033[38;2;0;255;135mok\033[0m"
+
+
 def _print_startup_banner(
     title: str,
     version: str,
@@ -106,6 +179,7 @@ def _print_startup_banner(
     docs_url: str,
     config=None,
     config_path: Optional[str] = None,
+    validation_summary=None,
 ) -> None:
     """Print pixel-wordmark banner with live status panel."""
     health_rows = _render_word("HEALTH")
@@ -155,6 +229,7 @@ def _print_startup_banner(
         _status_row("tls:        ", _val_bool(tls)),
         _status_row("hipaa:      ", _val_bool(hipaa)),
         _status_row("eval:       ", _val_eval(eval_enabled, eval_provider)),
+        _status_row("validation: ", _startup_validation_status(validation_summary)),
         "",
         _status_row("config:     ", f"\033[1m{config_path or '(none)'}\033[0m"),
         _status_row("docs:       ", f"\033[1mhttp://localhost:{port}{docs_url}\033[0m"),
@@ -190,13 +265,12 @@ def _print_startup_banner(
     border = "\033[38;2;99;102;241m"  # indigo
     rst = "\033[0m"
 
-    print()
-    print(f"{border}╭{'─' * (inner_w + 2)}╮{rst}")
+    lines = ["", f"{border}╭{'─' * (inner_w + 2)}╮{rst}"]
     for logo_line, s in zip(logo_lines, status):
         padding = " " * (max_status_w - _vlen(s))
-        print(f"{border}│{rst} {logo_line}   {s}{padding} {border}│{rst}")
-    print(f"{border}╰{'─' * (inner_w + 2)}╯{rst}")
-    print()
+        lines.append(f"{border}│{rst} {logo_line}   {s}{padding} {border}│{rst}")
+    lines.extend([f"{border}╰{'─' * (inner_w + 2)}╯{rst}", ""])
+    _write_console_text("\n".join(lines) + "\n")
 
 
 class HealthChainAPI(FastAPI):
@@ -240,6 +314,7 @@ class HealthChainAPI(FastAPI):
         enable_cors: bool = True,
         enable_events: bool = True,
         event_dispatcher: Optional[EventDispatcher] = None,
+        runtime_hooks: Optional[RuntimeHooks] = None,
         **kwargs,
     ):
         """
@@ -252,6 +327,7 @@ class HealthChainAPI(FastAPI):
             enable_cors: Enable CORS middleware
             enable_events: Enable event dispatching
             event_dispatcher: Optional custom event dispatcher
+            runtime_hooks: Optional structured runtime hook sinks
             **kwargs: Additional FastAPI configuration
         """
         super().__init__(
@@ -267,6 +343,8 @@ class HealthChainAPI(FastAPI):
         self.services = {}
         self.gateway_endpoints = {}
         self.service_endpoints = {}
+        self.runtime_hooks = runtime_hooks or RuntimeHooks()
+        self.app_config, self.startup_validation_summary = self._load_startup_config()
 
         # Event system setup
         self.enable_events = enable_events
@@ -278,17 +356,21 @@ class HealthChainAPI(FastAPI):
             else:
                 from healthchain.gateway.events.dispatcher import EventDispatcher
 
-                self.event_dispatcher = EventDispatcher()
+                self.event_dispatcher = EventDispatcher(
+                    runtime_hooks=self.runtime_hooks
+                )
+
+            if hasattr(self.event_dispatcher, "set_runtime_hooks"):
+                self.event_dispatcher.set_runtime_hooks(self.runtime_hooks)
 
             # Initialize the event dispatcher
             self.event_dispatcher.init_app(self)
 
         # Setup middleware
         if enable_cors:
-            from healthchain.config.appconfig import AppConfig
-
-            _config = AppConfig.load()
-            origins = _config.security.allowed_origins if _config else ["*"]
+            origins = (
+                self.app_config.security.allowed_origins if self.app_config else ["*"]
+            )
             self.add_middleware(
                 CORSMiddleware,
                 allow_origins=origins,
@@ -299,6 +381,7 @@ class HealthChainAPI(FastAPI):
 
         # Add global exception handler
         self.add_exception_handler(Exception, self._exception_handler)
+        self.middleware("http")(self._request_runtime_middleware)
 
         # Add default routes
         self._add_default_routes()
@@ -324,6 +407,60 @@ class HealthChainAPI(FastAPI):
             The application's event dispatcher, or None if events are disabled
         """
         return self.event_dispatcher
+
+    def get_startup_validation_summary(self) -> Optional[dict]:
+        if self.startup_validation_summary is None:
+            return None
+        return self.startup_validation_summary.model_dump()
+
+    async def _request_runtime_middleware(self, request: Request, call_next):
+        correlation_id = (
+            request.headers.get(_CORRELATION_HEADER) or generate_correlation_id()
+        )
+        request.state.correlation_id = correlation_id
+        request.state.runtime_error = None
+
+        with runtime_context(correlation_id=correlation_id, hooks=self.runtime_hooks):
+            record_runtime_event(
+                name="request.started",
+                activity=RuntimeScope.REQUEST,
+                status=RuntimeStatus.STARTED,
+                scope=request.url.path,
+                details={"method": request.method},
+                hooks=self.runtime_hooks,
+                correlation_id=correlation_id,
+            )
+            try:
+                response = await call_next(request)
+            except Exception as exc:
+                response = await self._exception_handler(request, exc)
+            response.headers.setdefault(_CORRELATION_HEADER, correlation_id)
+
+            runtime_error = getattr(request.state, "runtime_error", None)
+            if runtime_error is not None:
+                response.headers.setdefault(_ERROR_CODE_HEADER, runtime_error.code)
+                response.headers.setdefault(
+                    _ERROR_PHASE_HEADER, runtime_error.phase.value
+                )
+
+            record_runtime_event(
+                name="request.completed",
+                activity=RuntimeScope.REQUEST,
+                status=RuntimeStatus.COMPLETED,
+                scope=request.url.path,
+                details={
+                    "method": request.method,
+                    "status_code": response.status_code,
+                },
+                hooks=self.runtime_hooks,
+                correlation_id=correlation_id,
+            )
+            return response
+
+    def _load_startup_config(self):
+        from healthchain.config.appconfig import AppConfig
+
+        return AppConfig.load_with_summary(strict=True)
 
     def _register_component(
         self,
@@ -574,47 +711,77 @@ class HealthChainAPI(FastAPI):
         self, request: Request, exc: Exception
     ) -> JSONResponse:
         """Unified exception handler for all types of exceptions."""
+        correlation_id = (
+            getattr(request.state, "correlation_id", None) or generate_correlation_id()
+        )
+        headers: Dict[str, str] = {_CORRELATION_HEADER: correlation_id}
+
         if isinstance(exc, RequestValidationError):
-            return JSONResponse(
-                status_code=422,
-                content={"detail": exc.errors(), "body": exc.body},
-            )
+            runtime_error = map_runtime_error(exc, correlation_id=correlation_id)
+            content = {"detail": exc.errors(), "body": exc.body}
         elif isinstance(exc, HTTPException):
-            return JSONResponse(
-                status_code=exc.status_code,
-                content={"detail": exc.detail},
-                headers=exc.headers,
-            )
+            runtime_error = map_runtime_error(exc, correlation_id=correlation_id)
+            content = {"detail": exc.detail}
+            headers.update(exc.headers or {})
         else:
-            logger.exception("Unhandled exception", exc_info=exc)
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"},
+            runtime_error = map_runtime_error(
+                exc,
+                phase=RuntimeScope.INTERNAL,
+                correlation_id=correlation_id,
             )
+            logger.exception("Unhandled exception", exc_info=exc)
+            content = {"detail": "Internal server error"}
+
+        headers[_CORRELATION_HEADER] = correlation_id
+        headers[_ERROR_CODE_HEADER] = runtime_error.code
+        headers[_ERROR_PHASE_HEADER] = runtime_error.phase.value
+        request.state.runtime_error = runtime_error
+
+        record_runtime_event(
+            name="request.failed",
+            activity=RuntimeScope.REQUEST,
+            status=RuntimeStatus.FAILED,
+            scope=request.url.path,
+            details={"method": request.method},
+            error=runtime_error,
+            hooks=self.runtime_hooks,
+            correlation_id=correlation_id,
+        )
+        return JSONResponse(
+            status_code=runtime_error.status_code,
+            content=content,
+            headers=headers,
+        )
 
     async def _startup(self) -> None:
         """Display startup information and initialize components."""
-        from healthchain.config.appconfig import AppConfig
+        with runtime_context(
+            correlation_id=generate_correlation_id(),
+            hooks=self.runtime_hooks,
+        ):
+            _print_startup_banner(
+                title=self.app_config.name if self.app_config else self.title,
+                version=self.app_config.version if self.app_config else self.version,
+                gateways=self.gateways,
+                services=self.services,
+                docs_url=self.docs_url or "http://localhost:8000/docs",
+                config=self.app_config,
+                config_path=(
+                    self.startup_validation_summary.config_path
+                    if self.startup_validation_summary
+                    else None
+                ),
+                validation_summary=self.startup_validation_summary,
+            )
 
-        config = AppConfig.load()
-        _print_startup_banner(
-            title=config.name if config else self.title,
-            version=config.version if config else self.version,
-            gateways=self.gateways,
-            services=self.services,
-            docs_url=self.docs_url or "http://localhost:8000/docs",
-            config=config,
-            config_path="./healthchain.yaml" if config else None,
-        )
-
-        # Initialize components
-        for name, component in {**self.gateways, **self.services}.items():
-            if hasattr(component, "startup") and callable(component.startup):
-                try:
-                    await component.startup()
-                    logger.debug(f"Initialized: {name}")
-                except Exception as e:
-                    logger.warning(f"Failed to initialize {name}: {e}")
+            # Initialize components
+            for name, component in {**self.gateways, **self.services}.items():
+                if hasattr(component, "startup") and callable(component.startup):
+                    try:
+                        await component.startup()
+                        logger.debug(f"Initialized: {name}")
+                    except Exception as e:
+                        logger.warning(f"Failed to initialize {name}: {e}")
 
     async def _shutdown(self) -> None:
         """Handle graceful shutdown."""

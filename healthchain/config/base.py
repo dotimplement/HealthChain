@@ -1,6 +1,7 @@
 import yaml
 import logging
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
@@ -100,6 +101,19 @@ class ValidationLevel:
     IGNORE = "ignore"  # Skip validation entirely
 
 
+@dataclass
+class ConfigValidationSummary:
+    config_dir: str
+    environment: str
+    module: Optional[str] = None
+    warnings: List[str] = field(default_factory=list)
+    errors: List[str] = field(default_factory=list)
+
+    @property
+    def valid(self) -> bool:
+        return not self.errors
+
+
 class ConfigManager:
     """Manages loading and accessing configuration files for the HealthChain project
 
@@ -137,6 +151,8 @@ class ConfigManager:
         self._module_configs = {}
         self._mappings = {}
         self._loaded = False
+        self._environment_warning: Optional[str] = None
+        self._last_validation_summary: Optional[ConfigValidationSummary] = None
         self._environment = self._detect_environment()
 
     def _detect_environment(self) -> str:
@@ -151,7 +167,10 @@ class ConfigManager:
         # Validate environment
         valid_envs = ["development", "testing", "production"]
         if env not in valid_envs:
-            log.warning(f"Invalid environment '{env}', defaulting to 'development'")
+            self._environment_warning = (
+                f"Invalid HEALTHCHAIN_ENV '{env}', defaulting to 'development'"
+            )
+            log.warning(self._environment_warning)
             env = "development"
 
         log.info(f"Detected environment: {env}")
@@ -473,8 +492,58 @@ class ConfigManager:
 
     def validate(self) -> bool:
         """Validate that all required configurations are present"""
-        # TODO: Implement validation
+        summary = self.get_validation_summary()
+        if summary.errors:
+            return self._handle_validation_error("; ".join(summary.errors))
         return True
+
+    def get_validation_summary(self) -> ConfigValidationSummary:
+        """Build a validation summary for loaded configuration surfaces."""
+        summary = ConfigValidationSummary(
+            config_dir=str(self.config_dir),
+            environment=self._environment,
+            module=self._module,
+        )
+
+        if self._environment_warning:
+            summary.warnings.append(self._environment_warning)
+
+        if not self.config_dir.exists():
+            summary.errors.append(f"Config directory not found: {self.config_dir}")
+            self._last_validation_summary = summary
+            return summary
+
+        defaults_file = self.config_dir / "defaults.yaml"
+        if not defaults_file.exists():
+            summary.warnings.append(f"Defaults file not found: {defaults_file}")
+
+        env_file = self.config_dir / "environments" / f"{self._environment}.yaml"
+        if not env_file.exists():
+            summary.warnings.append(
+                f"Environment file not found for '{self._environment}': {env_file}"
+            )
+
+        if self._module:
+            module_dir = self.config_dir / self._module
+            if not module_dir.exists():
+                summary.warnings.append(
+                    f"Module config directory not found: {module_dir}"
+                )
+
+        mappings_dir = self.config_dir / "mappings"
+        if mappings_dir.exists():
+            mappings = self._load_mappings()
+            if not isinstance(mappings, dict):
+                summary.errors.append(
+                    f"Mappings must load as a dictionary from {mappings_dir}"
+                )
+            elif any(value is None for value in mappings.values()):
+                summary.errors.append(
+                    f"Mappings in {mappings_dir} contain empty or malformed entries"
+                )
+
+        self._last_validation_summary = summary
+        return summary
 
     def set_validation_level(self, level: str) -> "ConfigManager":
         """Set the validation level
