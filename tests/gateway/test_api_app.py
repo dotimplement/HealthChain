@@ -276,8 +276,9 @@ def test_sandbox_raises_for_unregistered_hook_id(cds_app):
 
 def test_sandbox_raises_on_startup_timeout(cds_app):
     """sandbox() raises RuntimeError when the server does not become ready in time."""
-    with patch("uvicorn.Server") as mock_server_cls, patch(
-        "httpx.get", side_effect=ConnectionRefusedError
+    with (
+        patch("uvicorn.Server") as mock_server_cls,
+        patch("httpx.get", side_effect=ConnectionRefusedError),
     ):
         mock_server = MagicMock()
         mock_server.run = MagicMock()

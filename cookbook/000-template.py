@@ -37,6 +37,7 @@ app.register_gateway(gateway, path="/fhir")
 
 # --- Core logic ---
 
+
 def run(patient_id: str) -> None:
     # 1. Pull FHIR resources
     bundle = gateway.search(Patient, {"_id": patient_id}, "medplum")

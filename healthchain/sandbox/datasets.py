@@ -59,8 +59,7 @@ class DatasetRegistry:
         """
         if name not in cls._datasets:
             raise KeyError(
-                f"Dataset '{name}' not found. "
-                f"Available datasets: {cls.list_datasets()}"
+                f"Dataset '{name}' not found. Available datasets: {cls.list_datasets()}"
             )
 
         loader = cls._datasets[name]

@@ -12,11 +12,14 @@ from healthchain.interop.config_manager import InteropConfigManager
 @pytest.fixture
 def mock_validators():
     """Mock the validation functions."""
-    with patch(
-        "healthchain.interop.config_manager.validate_cda_section_config_model"
-    ) as mock_section_validator, patch(
-        "healthchain.interop.config_manager.validate_cda_document_config_model"
-    ) as mock_doc_validator:
+    with (
+        patch(
+            "healthchain.interop.config_manager.validate_cda_section_config_model"
+        ) as mock_section_validator,
+        patch(
+            "healthchain.interop.config_manager.validate_cda_document_config_model"
+        ) as mock_doc_validator,
+    ):
         # Configure mocks to return True by default
         mock_section_validator.return_value = True
         mock_doc_validator.return_value = True
@@ -134,11 +137,14 @@ def test_registration_methods():
         interop_dir.mkdir(parents=True)
 
         # Create manager with IGNORE validation to simplify test
-        with patch(
-            "healthchain.interop.config_manager.register_cda_section_template_config_model"
-        ) as mock_register_section_config, patch(
-            "healthchain.interop.config_manager.register_cda_document_template_config_model"
-        ) as mock_register_document_config:
+        with (
+            patch(
+                "healthchain.interop.config_manager.register_cda_section_template_config_model"
+            ) as mock_register_section_config,
+            patch(
+                "healthchain.interop.config_manager.register_cda_document_template_config_model"
+            ) as mock_register_document_config,
+        ):
             manager = InteropConfigManager(
                 config_dir, validation_level=ValidationLevel.IGNORE
             )

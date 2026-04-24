@@ -49,10 +49,13 @@ def test_coding_pipeline(mock_spacy_nlp, test_document):
 
 def test_coding_pipeline_process_request(mock_spacy_nlp, mock_cda_adapter):
     """Test process_request method with adapter"""
-    with patch(
-        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
-        mock_spacy_nlp,
-    ), patch("healthchain.io.CdaAdapter", mock_cda_adapter):
+    with (
+        patch(
+            "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+            mock_spacy_nlp,
+        ),
+        patch("healthchain.io.CdaAdapter", mock_cda_adapter),
+    ):
         pipeline = MedicalCodingPipeline()
         config = ModelConfig(
             source=ModelSource.SPACY,

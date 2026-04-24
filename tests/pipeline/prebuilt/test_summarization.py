@@ -11,12 +11,15 @@ def test_summarization_pipeline(
     test_document,
 ):
     """Test pure pipeline processing (Document → Document)"""
-    with patch(
-        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
-        mock_hf_transformer,
-    ), patch(
-        "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
-        mock_cds_card_creator,
+    with (
+        patch(
+            "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+            mock_hf_transformer,
+        ),
+        patch(
+            "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
+            mock_cds_card_creator,
+        ),
     ):
         pipeline = SummarizationPipeline()
         config = ModelConfig(
@@ -67,15 +70,19 @@ def test_summarization_pipeline_process_request(
     test_cds_request,
 ):
     """Test process_request method with adapter"""
-    with patch(
-        "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
-        mock_hf_transformer,
-    ), patch(
-        "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
-        mock_cds_card_creator,
-    ), patch(
-        "healthchain.io.CdsFhirAdapter",
-        mock_cds_fhir_adapter,
+    with (
+        patch(
+            "healthchain.pipeline.mixins.ModelRoutingMixin.get_model_component",
+            mock_hf_transformer,
+        ),
+        patch(
+            "healthchain.pipeline.summarizationpipeline.CdsCardCreator",
+            mock_cds_card_creator,
+        ),
+        patch(
+            "healthchain.io.CdsFhirAdapter",
+            mock_cds_fhir_adapter,
+        ),
     ):
         pipeline = SummarizationPipeline()
         config = ModelConfig(
