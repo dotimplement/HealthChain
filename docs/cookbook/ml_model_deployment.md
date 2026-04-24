@@ -26,7 +26,6 @@ Both patterns share the same trained model and feature extraction — only the i
 
 The demo patients and a pre-generated model are already in the repo — no training or data download needed.
 
-<!--pytest.mark.skip-->
 ```bash
 pip install healthchain joblib xgboost
 python cookbook/sepsis_cds_hooks.py
@@ -49,7 +48,6 @@ Results are saved to `./output/`. The rest of this tutorial explains how it work
 
 Both patterns reuse the same pipeline. It loads a pre-trained XGBoost classifier and runs inference on a `Dataset` extracted from a FHIR Bundle:
 
-<!--pytest.mark.skip-->
 ```python
 def create_pipeline() -> Pipeline[Dataset]:
     pipeline = Pipeline[Dataset]()
@@ -88,7 +86,6 @@ features:
 
 No FHIR parsing code needed — define the mapping once, use it everywhere:
 
-<!--pytest.mark.skip-->
 ```python
 dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 ```
@@ -101,7 +98,6 @@ dataset = Dataset.from_fhir_bundle(bundle, schema=SCHEMA_PATH)
 
     The pre-generated model in `cookbook/models/` is a synthetic demo — not trained on real patient data. To swap in your own:
 
-    <!--pytest.mark.skip-->
     ```python
     import joblib
 
@@ -130,7 +126,6 @@ Clinician opens chart → EHR fires patient-view hook → Your service runs pred
 
 Create a [CDSHooksService](../reference/gateway/cdshooks.md) that listens for `patient-view` events:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import CDSHooksService
 from healthchain.fhir import prefetch_to_bundle
@@ -169,7 +164,6 @@ def sepsis_alert(request: CDSRequest) -> CDSResponse:
 
 Register with [HealthChainAPI](../reference/gateway/api.md) and test using the [SandboxClient](../reference/utilities/sandbox.md):
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI
 
@@ -242,7 +236,6 @@ MEDPLUM_TOKEN_URL=https://api.medplum.com/oauth2/token
 
 Configure the [FHIRGateway](../reference/gateway/fhir_gateway.md), run predictions, and write [RiskAssessment](https://www.hl7.org/fhir/riskassessment.html) resources back to the server:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import FHIRGateway
 from healthchain.gateway.clients.fhir.base import FHIRAuthConfig
@@ -275,7 +268,6 @@ for patient_id in DEMO_PATIENT_IDS:
 
     This demo uses a fixed list of patient IDs. In production, query for patients dynamically — for example, ICU admissions in the last hour:
 
-    <!--pytest.mark.skip-->
     ```python
     encounters = gateway.search(
         Encounter,

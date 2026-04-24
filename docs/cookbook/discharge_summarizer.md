@@ -12,7 +12,6 @@ Check out the full working example [here](https://github.com/healthchainai/Healt
 
 ### Install Dependencies
 
-<!--pytest.mark.skip-->
 ```bash
 pip install healthchain python-dotenv
 ```
@@ -22,7 +21,6 @@ This example uses a Hugging Face model for the summarization task, so make sure 
 
 If you are using a chat model, make sure you have the necessary `langchain` packages installed.
 
-<!--pytest.mark.skip-->
 ```bash
 pip install langchain langchain-huggingface
 ```
@@ -31,7 +29,6 @@ pip install langchain langchain-huggingface
 
 Download the sample data `discharge_notes.csv` into a `data/` folder in your project root using `wget`:
 
-<!--pytest.mark.skip-->
 ```bash
 mkdir -p data
 cd data
@@ -48,7 +45,6 @@ First, we'll create a [summarization pipeline](../reference/pipeline/pipeline.md
 For LLM approaches, we'll use [LangChain](https://python.langchain.com/docs/integrations/chat/huggingface/) for better prompting.
 
 === "Non-chat model"
-    <!--pytest.mark.skip-->
     ```python
     from healthchain.pipeline import SummarizationPipeline
 
@@ -59,7 +55,6 @@ For LLM approaches, we'll use [LangChain](https://python.langchain.com/docs/inte
 
 
 === "Chat model"
-    <!--pytest.mark.skip-->
     ```python
     from healthchain.pipeline import SummarizationPipeline
 
@@ -101,7 +96,6 @@ The `SummarizationPipeline` automatically:
 
 The [CdsFhirAdapter](../reference/io/adapters/cdsfhiradapter.md) converts between CDS Hooks requests and HealthChain's [Document](../reference/io/containers/document.md) format. This makes it easy to work with FHIR data in CDS workflows.
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.io import CdsFhirAdapter
 
@@ -124,7 +118,6 @@ cds_adapter.format(doc)
 
 Create the [CDS Hooks handler](../reference/gateway/cdshooks.md) to receive discharge note requests, run the AI summarization pipeline, and return results as CDS cards.
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import CDSHooksService
 from healthchain.models import CDSRequest, CDSResponse
@@ -151,7 +144,6 @@ def handle_discharge_summary(request: CDSRequest) -> CDSResponse:
 
 Register the CDS service with [HealthChainAPI](../reference/gateway/api.md) to create REST endpoints:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI
 
@@ -164,7 +156,6 @@ app.register_service(cds_service)
 HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the CDS hooks workflow end-to-end. It loads your sample free text data and formats it into CDS requests, sends it to your service, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally and inspect the inputs and outputs before connecting to a real EHR instance.
 
 
-<!--pytest.mark.skip-->
 ```python
 # load_free_text() converts discharge notes into FHIR DocumentReferences
 # and wraps them in CDS requests for the encounter-discharge workflow
@@ -186,7 +177,6 @@ client.load_free_text(
 
 Pass the hook ID you registered with `@cds.hook(..., id="discharge-summarizer")` — HealthChain resolves the service URL and workflow automatically:
 
-<!--pytest.mark.skip-->
 ```python
 with app.sandbox("discharge-summarizer") as client:
     client.load_free_text(

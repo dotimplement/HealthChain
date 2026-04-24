@@ -1,4 +1,3 @@
-<!--pytest-codeblocks:skipfile-->
 # FHIR-Grounded Patient Q&A
 
 **Level:** Beginner

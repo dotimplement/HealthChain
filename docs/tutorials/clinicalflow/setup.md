@@ -6,7 +6,6 @@ Get your development environment ready for building the ClinicalFlow service.
 
 Create a new project directory:
 
-<!--pytest.mark.skip-->
 ```bash
 mkdir clinicalflow
 cd clinicalflow
@@ -18,7 +17,6 @@ cd clinicalflow
 
 Then initialize a project and install HealthChain:
 
-<!--pytest.mark.skip-->
 ```bash
 uv init
 uv add healthchain
@@ -29,7 +27,6 @@ uv add healthchain
 
 If you prefer using pip, create and activate a virtual environment first:
 
-<!--pytest.mark.skip-->
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -43,7 +40,6 @@ All the code running examples in this tutorial will show both the uv and pip ver
 
 Create a file called `check_install.py`:
 
-<!--pytest.mark.skip-->
 ```python
 import healthchain
 from healthchain.io import Document
@@ -57,14 +53,12 @@ Run it:
 
 === "uv"
 
-    <!--pytest.mark.skip-->
     ```bash
     uv run python check_install.py
     ```
 
 === "pip"
 
-    <!--pytest.mark.skip-->
     ```bash
     python check_install.py
     ```

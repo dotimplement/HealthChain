@@ -20,7 +20,6 @@ A clinical note arrives from NoteReader as CDA XML → gets parsed and processed
 
 We'll use [scispacy](https://allenai.github.io/scispacy/) for medical entity extraction. Install the required dependencies:
 
-<!--pytest.mark.skip-->
 ```bash
 pip install healthchain scispacy python-dotenv
 pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
@@ -30,7 +29,6 @@ pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/e
 
 Download the sample CDA file `notereader_cda.xml` into a `data/` folder in your project root using `wget`:
 
-<!--pytest.mark.skip-->
 ```bash
 mkdir -p data
 cd data
@@ -43,7 +41,6 @@ Set up a Medplum account and obtain client credentials. See the [FHIR Sandbox Se
 
 Once you have your Medplum credentials, configure them in a `.env` file:
 
-<!--pytest.mark.skip-->
 ```bash
 # .env file
 MEDPLUM_BASE_URL=https://api.medplum.com/fhir/R4
@@ -58,7 +55,6 @@ MEDPLUM_SCOPE=openid
 First we'll need to convert the incoming CDA XML to FHIR. The [CdaAdapter](../reference/io/adapters/cdaadapter.md) enables round-trip conversion between CDA and FHIR using the [InteropEngine](../reference/interop/engine.md) for seamless legacy-to-modern data integration.
 
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.io import CdaAdapter
 
@@ -89,7 +85,6 @@ Next we'll build our NLP processing pipeline. We'll use a [MedicalCodingPipeline
 
 For this demo, we'll use a simple dictionary for the SNOMED CT mapping.
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.pipeline.medicalcodingpipeline import MedicalCodingPipeline
 from healthchain.io import Document
@@ -135,7 +130,6 @@ def link_entities(doc: Document) -> Document:
 
     This is equivalent to constructing a pipeline with the following components manually:
 
-    <!--pytest.mark.skip-->
     ```python
     from healthchain.pipeline import Pipeline
     from healthchain.pipeline.components import SpacyNLP, FHIRProblemListExtractor
@@ -154,7 +148,6 @@ def link_entities(doc: Document) -> Document:
 
 Use `.add_source` to register a FHIR endpoint you want to connect to with its connection string; the gateway will automatically manage the authentication and routing.
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import FHIRGateway
 from healthchain.gateway.clients import FHIRAuthConfig
@@ -179,7 +172,6 @@ fhir_gateway.add_source("medplum", MEDPLUM_URL)
 
 Now let's set up the handler for [NoteReaderService](../reference/gateway/soap_cda.md) method `ProcessDocument`, which will be called by Epic NoteReader when it is triggered in the CDI workflow. This is where we will combine all our components: adapter, pipeline, and writing to our configured FHIR endpoint:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import NoteReaderService
 
@@ -213,7 +205,6 @@ def ai_coding_workflow(request: CdaRequest):
 
 Time to put it all together! Using [HealthChainAPI](../reference/gateway/api.md), we can create a service with *both* the FHIR and NoteReader endpoints:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI
 
@@ -228,7 +219,6 @@ app.register_service(note_service, path="/notereader")
 
 HealthChain provides a [sandbox client utility](../reference/utilities/sandbox.md) which simulates the NoteReader workflow end-to-end. It loads your sample CDA document, sends it to your service via the configured endpoint, and saves the request/response exchange in an `output/` directory. This lets you test the complete integration locally before connecting to Epic.
 
-<!--pytest.mark.skip-->
 ```python
 # load_from_path() reads a CDA XML file and wraps it in a SOAP envelope
 # ready to send to the NoteReader endpoint
@@ -243,7 +233,6 @@ client.load_from_path("./data/notereader_cda.xml")
 
 Pass `protocol="soap"` and the workflow name — HealthChain resolves the NoteReader service URL automatically:
 
-<!--pytest.mark.skip-->
 ```python
 with app.sandbox(workflow="sign-note-inpatient", protocol="soap") as client:
     client.load_from_path("./data/notereader_cda.xml")

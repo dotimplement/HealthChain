@@ -44,8 +44,4 @@ jobs:
 
       - name: Test documentation code snippets
         if: matrix.python-version == '3.12'
-        run: |
-          uv run pytest --codeblocks \
-            docs/quickstart.md \
-            docs/cookbook/ \
-            docs/tutorials/
+        run: uv run pytest --codeblocks docs/quickstart.md

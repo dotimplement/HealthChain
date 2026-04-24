@@ -18,7 +18,6 @@ First, create sample data that matches what an EHR would send. This is the same 
 
 Create a `data` directory:
 
-<!--pytest.mark.skip-->
 ```bash
 mkdir data
 ```
@@ -92,7 +91,6 @@ This sample includes:
 
 The fastest way to test is with the sample data directly. With your service running, send the request:
 
-<!--pytest.mark.skip-->
 ```bash
 curl -X POST http://localhost:8000/cds/cds-services/patient-alerts \
   -H "Content-Type: application/json" \
@@ -105,7 +103,6 @@ You should see a response with cards for the detected conditions.
 
 For more control, create `test_service.py`:
 
-<!--pytest.mark.skip-->
 ```python
 import json
 import requests
@@ -137,14 +134,12 @@ Make sure your service is running in one terminal:
 
 === "uv"
 
-    <!--pytest.mark.skip-->
     ```bash
     uv run python app.py
     ```
 
 === "pip"
 
-    <!--pytest.mark.skip-->
     ```bash
     python app.py
     ```
@@ -153,14 +148,12 @@ Then in another terminal, run the test:
 
 === "uv"
 
-    <!--pytest.mark.skip-->
     ```bash
     uv run python test_service.py
     ```
 
 === "pip"
 
-    <!--pytest.mark.skip-->
     ```bash
     python test_service.py
     ```
@@ -183,7 +176,6 @@ The pipeline extracted four conditions from the clinical note text - exactly wha
 
 For testing with multiple patients or larger datasets, use the `SandboxClient`:
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.sandbox import SandboxClient
 
@@ -210,7 +202,6 @@ for i, response in enumerate(responses):
 
 Save results for reporting or debugging:
 
-<!--pytest.mark.skip-->
 ```python
 # Save responses to files
 client.save_results(
@@ -224,7 +215,6 @@ client.save_results(
 
 Inspect what will be sent without actually calling the service:
 
-<!--pytest.mark.skip-->
 ```python
 # Preview queued requests
 previews = client.preview_requests(limit=5)

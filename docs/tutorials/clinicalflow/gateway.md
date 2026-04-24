@@ -29,7 +29,6 @@ The flow:
 
 Create a file called `app.py`. This imports the pipeline you created in the [previous step](pipeline.md):
 
-<!--pytest.mark.skip-->
 ```python
 from healthchain.gateway import HealthChainAPI, CDSHooksService
 from healthchain.io import Document
@@ -129,14 +128,12 @@ Start your CDS service:
 
 === "uv"
 
-    <!--pytest.mark.skip-->
     ```bash
     uv run python app.py
     ```
 
 === "pip"
 
-    <!--pytest.mark.skip-->
     ```bash
     python app.py
     ```
@@ -149,7 +146,6 @@ Your service is now running at `http://localhost:8000`.
 
 CDS Hooks services must provide a discovery endpoint. Test it:
 
-<!--pytest.mark.skip-->
 ```bash
 curl http://localhost:8000/cds/cds-discovery
 ```
@@ -173,7 +169,6 @@ Response:
 
 Test calling your service:
 
-<!--pytest.mark.skip-->
 ```bash
 curl -X POST http://localhost:8000/cds/cds-services/patient-alerts \
   -H "Content-Type: application/json" \
