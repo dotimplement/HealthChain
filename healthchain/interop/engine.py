@@ -97,6 +97,11 @@ class InteropEngine:
             validation_level: Level of configuration validation (strict, warn, ignore)
             environment: Optional environment to use (development, testing, production)
         """
+        if config_dir is None:
+            from healthchain.interop import _get_bundled_configs
+
+            config_dir = _get_bundled_configs()
+
         # Initialize configuration manager
         self.config = InteropConfigManager(config_dir, validation_level, environment)
 
