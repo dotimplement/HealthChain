@@ -3,7 +3,7 @@ import uuid
 import base64
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Union, Callable
-
+from healthchain.utils.html_utils import clean_html
 
 def map_system(
     system: str, mappings: Dict = None, direction: str = "fhir_to_cda"
@@ -469,7 +469,7 @@ def xmldict_to_html(xml_dict: Dict) -> str:
 
         # Handle text content directly
         if tag_name == "#text":
-            return str(content)
+            return clean_html(content)
 
         # Start building the tag
         opening_tag = f"<{tag_name}"
@@ -499,7 +499,7 @@ def xmldict_to_html(xml_dict: Dict) -> str:
         # Close the tag
         result.append(f"</{tag_name}>")
 
-    return "".join(result)
+    return clean_html("".join(result))
 
 
 def create_default_filters(mappings, id_prefix) -> Dict[str, Callable]:

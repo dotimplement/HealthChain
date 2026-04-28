@@ -1,0 +1,45 @@
+# HealthChain application configuration
+# https://dotimplement.github.io/HealthChain/reference/config
+
+name: my-app
+version: "1.0.0"
+
+# Service settings — read by `healthchain serve`
+service:
+  type: fhir-gateway
+  port: 8000
+
+# Data paths used by your app and sandbox
+data:
+  patients_dir: ./data
+  output_dir: ./output
+
+# Security controls
+security:
+  auth: none              # none | api-key (planned) | smart-on-fhir (planned)
+  tls:
+    enabled: false
+    cert_path: ./certs/server.crt
+    key_path: ./certs/server.key
+  allowed_origins:
+    - "*"
+
+# Compliance settings
+compliance:
+  hipaa: false            # set true to activate audit logging
+  audit_log: ./logs/audit.jsonl
+
+# Evaluation and model monitoring
+eval:
+  enabled: false
+  provider: mlflow        # mlflow | langfuse | none
+  tracking_uri: ./mlruns
+  track:
+    - model_inference
+    - cds_card_returned
+    - card_feedback
+
+# Site / deployment metadata
+site:
+  name: ""
+  environment: development  # development | staging | production
