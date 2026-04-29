@@ -99,10 +99,34 @@ class SecurityConfig(BaseModel):
             raise ValueError(f"auth must be one of: {', '.join(sorted(allowed))}")
         return v
 
+class AuditConfig(BaseModel):
+    enabled: bool = False
+    database_url: Optional[str] = None # To store user's info
+    retention_days: int = 2190
+    personal_identifier_info : bool = False
+    audit_log: str = "./logs/audit.jsonl"
+
+    @field_validator("retention_days")
+    @classmethod
+    def validate_retention(cls,v:int) -> int:
+        if v < 2190:
+            raise ValueError("retention days must meet six-year HIPAA retention period.")
+        return v
 
 class ComplianceConfig(BaseModel):
     hipaa: bool = False
-    audit_log: str = "./logs/audit.jsonl"
+    audit : AuditConfig = AuditConfig()
+
+    def model_post_init(self,__context) -> None:
+        if self.hipaa and not self.audit.enabled:
+            self.audit = AuditConfig(
+                enabled = True,
+                database_url = self.audit.database_url,
+                retention_days = self.audit.retention_days,
+                personal_identifier_info = self.audit.personal_identifier_info,
+                audit_log = self.audit.audit_log
+            )
+
 
 
 class EvalConfig(BaseModel):

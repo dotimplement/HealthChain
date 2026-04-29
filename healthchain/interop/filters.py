@@ -1,8 +1,9 @@
 import json
-import uuid
 import base64
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Union, Callable
+
+from healthchain.utils.idgenerator import generate_id as _generate_id
 
 
 def map_system(
@@ -165,7 +166,7 @@ def generate_id(value=None, prefix: str = "hc-") -> str:
     Returns:
         ID string
     """
-    return value if value else f"{prefix}{str(uuid.uuid4())}"
+    return value if value else _generate_id(prefix)
 
 
 def to_json(obj: Any) -> str:

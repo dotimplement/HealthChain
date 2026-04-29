@@ -12,6 +12,7 @@ from healthchain.sandbox.generators.basegenerators import (
     generator_registry,
     register_generator,
 )
+from healthchain.utils.idgenerator import DEFAULT_PATIENT_REF
 
 from datetime import datetime
 
@@ -145,7 +146,7 @@ class EncounterGenerator(BaseGenerator):
         random_seed: Optional[int] = None,
     ) -> Encounter:
         Faker.seed(random_seed)
-        patient_reference = "Patient/123"
+        patient_reference = DEFAULT_PATIENT_REF
         return Encounter(
             id=generator_registry.get("IdGenerator").generate(),
             status=faker.random_element(

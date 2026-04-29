@@ -2,7 +2,8 @@ import logging
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
-from uuid import uuid4
+
+from healthchain.utils.idgenerator import generate_id
 
 from spacy.tokens import Doc as SpacyDoc
 from spacy.tokens import Span
@@ -463,7 +464,7 @@ class FhirData:
         """
         # Generate a consistent ID if not present
         if not document.id:
-            document.id = f"doc-{uuid4()}"
+            document.id = generate_id("doc-")
 
         # Add relationship metadata if there's a parent
         if parent_id:

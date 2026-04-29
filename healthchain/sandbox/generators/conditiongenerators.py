@@ -5,6 +5,7 @@ from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.condition import ConditionStage
 
 from healthchain.fhir import create_single_codeable_concept, create_condition
+from healthchain.utils.idgenerator import DEFAULT_PATIENT_REF
 from healthchain.sandbox.generators.basegenerators import (
     BaseGenerator,
     generator_registry,
@@ -111,7 +112,7 @@ class ConditionGenerator(BaseGenerator):
         random_seed: Optional[int] = None,
     ):
         Faker.seed(random_seed)
-        subject_reference = subject_reference or "Patient/123"
+        subject_reference = subject_reference or DEFAULT_PATIENT_REF
         encounter_reference = encounter_reference or "Encounter/123"
         code = generator_registry.get("SnomedCodeGenerator").generate(
             constraints=constraints

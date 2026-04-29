@@ -1,4 +1,6 @@
 from typing import Optional
+
+from healthchain.utils.idgenerator import DEFAULT_PATIENT_REF
 from faker import Faker
 
 from healthchain.sandbox.generators.basegenerators import (
@@ -43,7 +45,7 @@ class MedicationRequestGenerator(BaseGenerator):
         random_seed: Optional[int] = None,
     ):
         Faker.seed(random_seed)
-        subject_reference = "Patient/123"
+        subject_reference = DEFAULT_PATIENT_REF
         encounter_reference = "Encounter/123"
         return MedicationRequest(
             resourceType="MedicationRequest",

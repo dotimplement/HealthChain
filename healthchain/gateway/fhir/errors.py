@@ -38,6 +38,53 @@ class FHIRConnectionError(Exception):
         else:
             super().__init__(f"[{code}] {message}")
 
+class RateLimitError(Exception):
+   """
+   Raised when the FHIR sercer returns 429 too many requests
+
+   Args:
+       message: Human-readable error message e.g. Server does not allow client defined ids
+       code: Error code or technical details e.g. METHOD_NOT_ALLOWED
+       retry: How long the users need to wait before retrying to send a new request
+   """
+   def _init_(
+       self,
+       message:str,
+       code:str,
+       retry : Optional[int] = None,
+   ):
+       self.retry = retry
+       super.__init__(message=message, code=code, state="429",show_state=False)
+
+# ----------------------------------------------------------------------------------------------
+
+#add 4 subclasses
+class RateLimitError(FHIRConnectionError):
+    """Raised when the FHIR server returns 429 Too Many Requests."""
+    def __init__(self, message: str, code: str, retry_after: Optional[int] = None):
+        self.retry_after = retry_after
+        super().__init__(message=message, code=code, state="429", show_state=False)
+
+
+class RetryableError(FHIRConnectionError):
+    """Raised for temporary server failures that are safe to retry (502, 503, 504)."""
+    def __init__(self, message: str, code: str, state: str):
+        super().__init__(message=message, code=code, state=state, show_state=False)
+
+
+class AuthExpiredError(FHIRConnectionError):
+    """Raised when the OAuth2 token has expired or is invalid (401)."""
+    def __init__(self, message: str, code: str):
+        super().__init__(message=message, code=code, state="401", show_state=False)
+
+
+class FHIRTimeoutError(FHIRConnectionError):
+    """Raised when a FHIR request times out."""
+    def __init__(self, message: str, code: str):
+        super().__init__(message=message, code=code, state="408", show_state=False)
+
+
+# ----------------------------------------------------------------------------------------------
 
 class FHIRErrorHandler:
     """
@@ -193,3 +240,4 @@ class FHIRErrorHandler:
             code="AUTHENTICATION_ERROR",
             state="401",  # Unauthorized
         )
+
