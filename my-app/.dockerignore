@@ -1,0 +1,16 @@
+.git
+.idea
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+tests/
+docs/
+notebooks/
+output/
+*.md
+!README.md
