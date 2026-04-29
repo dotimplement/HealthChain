@@ -56,31 +56,35 @@ class RateLimitError(Exception):
        self.retry = retry
        super.__init__(message=message, code=code, state="429",show_state=False)
 
-class RetryError(Exception):
-   """
-   Raised for server that is safe to retry
-   """
-   def _init_(self,message:str,code:str,state:str):
-       super.__init__(message=message,code=code,state=state,show_state=False)
+# ----------------------------------------------------------------------------------------------
 
-class AuthenError(Exception):
-   """
-   Raised when the authentication is expired, it returns 401
-   """
-   def _init_(self, message: str, code: str):
-       super.__init__(message=message, code=code, state="401", show_state=False)
-
-class FHIRTimeoutError(Exception):
-   """
-   Raised when the FHIR request times out
-   """
-   def _init_(self, message: str, code: str):
-       super.__init__(message=message, code=code, state="408", show_state=False)
+#add 4 subclasses
+class RateLimitError(FHIRConnectionError):
+    """Raised when the FHIR server returns 429 Too Many Requests."""
+    def __init__(self, message: str, code: str, retry_after: Optional[int] = None):
+        self.retry_after = retry_after
+        super().__init__(message=message, code=code, state="429", show_state=False)
 
 
+class RetryableError(FHIRConnectionError):
+    """Raised for temporary server failures that are safe to retry (502, 503, 504)."""
+    def __init__(self, message: str, code: str, state: str):
+        super().__init__(message=message, code=code, state=state, show_state=False)
 
 
+class AuthExpiredError(FHIRConnectionError):
+    """Raised when the OAuth2 token has expired or is invalid (401)."""
+    def __init__(self, message: str, code: str):
+        super().__init__(message=message, code=code, state="401", show_state=False)
 
+
+class FHIRTimeoutError(FHIRConnectionError):
+    """Raised when a FHIR request times out."""
+    def __init__(self, message: str, code: str):
+        super().__init__(message=message, code=code, state="408", show_state=False)
+
+
+# ----------------------------------------------------------------------------------------------
 
 class FHIRErrorHandler:
     """

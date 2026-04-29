@@ -61,33 +61,28 @@ class FHIRGateway(BaseFHIRGateway):
         return self.connection_manager.get_client(source)
 
     def _execute_with_client(
-        self,
-        operation: str,
-        *,
-        source: str = None,
-        resource_type: Type[Resource] = None,
-        resource_id: str = None,
-        client_args: tuple = (),
-        client_kwargs: dict = None,
+            self,
+            operation: str,
+            *,
+            source: str = None,
+            resource_type: Type[Resource] = None,
+            resource_id: str = None,
+            client_args: tuple = (),
+            client_kwargs: dict = None,
+            max_retries: int = 3,
     ):
-        """
-        Execute a client operation with consistent error handling.
+        from healthchain.gateway.fhir.request_retry import with_retry
 
-        Args:
-            operation: Operation name (read, create, update, delete, etc.)
-            source: Source name to use
-            resource_type: Resource type for error handling
-            resource_id: Resource ID for error handling (if applicable)
-            client_args: Positional arguments to pass to the client method
-            client_kwargs: Keyword arguments to pass to the client method
-        """
         client = self.get_client(source)
         client_kwargs = client_kwargs or {}
-        try:
-            return getattr(client, operation)(*client_args, **client_kwargs)
-        except Exception as e:
-            FHIRErrorHandler.handle_fhir_error(e, resource_type, resource_id, operation)
 
+        def execute():
+            try:
+                return getattr(client, operation)(*client_args, **client_kwargs)
+            except Exception as e:
+                FHIRErrorHandler.handle_fhir_error(e, resource_type, resource_id, operation)
+
+        return with_retry(execute, max_retries=max_retries)
     def capabilities(self, source: str = None) -> CapabilityStatement:
         """
         Get the capabilities of a FHIR server.

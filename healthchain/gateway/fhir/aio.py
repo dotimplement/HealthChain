@@ -494,43 +494,28 @@ class AsyncFHIRGateway(BaseFHIRGateway):
             FHIRErrorHandler.handle_fhir_error(e, type_name, fhir_id, operation)
 
     async def _execute_with_client(
-        self,
-        operation: str,
-        *,  # Force keyword-only arguments
-        source: str = None,
-        resource_type: Type[Resource] = None,
-        resource_id: str = None,
-        client_args: tuple = (),
-        client_kwargs: dict = None,
+            self,
+            operation: str,
+            *,
+            source: str = None,
+            resource_type: Type[Resource] = None,
+            resource_id: str = None,
+            client_args: tuple = (),
+            client_kwargs: dict = None,
+            max_retries: int = 3,
     ):
-        """
-        Execute a client operation with consistent error handling.
+        from healthchain.gateway.fhir.request_retry import with_retry_async
 
-        Args:
-            operation: Operation name (read, create, update, delete, etc.)
-            source: Source name to use
-            resource_type: Resource type for error handling
-            resource_id: Resource ID for error handling (if applicable)
-            client_args: Positional arguments to pass to the client method
-            client_kwargs: Keyword arguments to pass to the client method
-        """
         client = await self.get_client(source)
         client_kwargs = client_kwargs or {}
 
-        try:
-            result = await getattr(client, operation)(*client_args, **client_kwargs)
-            return result
+        async def execute():
+            try:
+                return await getattr(client, operation)(*client_args, **client_kwargs)
+            except Exception as e:
+                FHIRErrorHandler.handle_fhir_error(e, resource_type, resource_id, operation)
 
-        except Exception as e:
-            # Use existing error handler
-            error_resource_type = resource_type or (
-                client_args[0].__class__
-                if client_args and hasattr(client_args[0], "__class__")
-                else None
-            )
-            FHIRErrorHandler.handle_fhir_error(
-                e, error_resource_type, resource_id, operation
-            )
+        return await with_retry_async(execute, max_retries=max_retries)
 
     def _emit_fhir_event(
         self, operation: str, resource_type: str, resource_id: str, resource: Any = None
