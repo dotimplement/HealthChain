@@ -60,5 +60,5 @@ class OrderSignContext(BaseHookContext):
     @model_validator(mode="after")
     def validate_draft_orders(self):
         if not self.draftOrders:
-            raise ValueError("draftOrders cannot be empty")
+            raise ValueError("draftOrders cannot be empty. At least one draft order is required.")
         return self
