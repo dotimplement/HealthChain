@@ -77,3 +77,12 @@ class OrderSelectContext(BaseHookContext):
                     "Each selection must be a valid FHIR resource identifier in the format 'ResourceType/ResourceID'."
                 )
         return self
+
+    @model_validator(mode="after")
+    def validate_selections(self) -> Self:
+        for selection in self.selections:
+            if "/" not in selection:
+                raise ValueError(
+                    "Invalid selection format: must be ResourceType/ID"
+                )
+        return self
