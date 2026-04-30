@@ -56,3 +56,9 @@ class OrderSignContext(BaseHookContext):
         if unexpected_keys:
             raise ValueError(f"Unexpected keys provided: {unexpected_keys}")
         return values
+    
+    @model_validator(mode="after")
+    def validate_draft_orders(self):
+        if not self.draftOrders:
+            raise ValueError("draftOrders cannot be empty")
+        return self

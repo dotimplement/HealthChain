@@ -77,3 +77,9 @@ class OrderSelectContext(BaseHookContext):
                     "Each selection must be a valid FHIR resource identifier in the format 'ResourceType/ResourceID'."
                 )
         return self
+
+    @model_validator(mode="after")
+    def validate_selections(self):
+        if not self.selections:
+            raise ValueError("selections cannot be empty")
+        return self
