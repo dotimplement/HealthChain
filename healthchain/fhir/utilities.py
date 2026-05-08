@@ -9,6 +9,10 @@ import uuid
 from typing import Optional
 
 
+def _utc_now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
 def _generate_id() -> str:
     """Generate a unique ID prefixed with 'hc-'.
 
