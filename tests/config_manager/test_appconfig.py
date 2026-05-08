@@ -39,7 +39,7 @@ def test_appconfig_missing_fields_use_defaults(tmp_path):
 
     assert config.name == "minimal-app"
     assert config.service.port == 8000
-    assert config.service.type == "cds-hooks"
+    assert config.service.type == "fhir-gateway"
     assert config.security.auth == "none"
     assert config.security.tls.enabled is False
     assert config.compliance.audit_log is None
