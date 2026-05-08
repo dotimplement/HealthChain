@@ -311,7 +311,7 @@ def new_project(name: str, template: str):
         "fhir-gateway": _ENV_EXAMPLE_FHIR_GATEWAY,
         "default": _ENV_EXAMPLE_DEFAULT,
     }
-    service_type = template if template != "default" else "cds-hooks"
+    service_type = template if template != "default" else "fhir-gateway"
 
     (project_dir / "app.py").write_text(_app_py[template])
     (project_dir / "healthchain.yaml").write_text(

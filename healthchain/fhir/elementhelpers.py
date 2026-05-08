@@ -6,13 +6,13 @@ as building blocks within FHIR resources (e.g., CodeableConcept, Attachment, Cod
 
 import logging
 import base64
-import datetime
 
 from typing import Optional, List, Dict, Any
 
 from fhir.resources.R4B.codeableconcept import CodeableConcept
 from fhir.resources.R4B.coding import Coding
 from fhir.resources.R4B.attachment import Attachment
+from healthchain.fhir.utilities import _utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,5 @@ def create_single_attachment(
         data=data,
         url=url,
         title=title,
-        creation=datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        ),
+        creation=_utc_now(),
     )

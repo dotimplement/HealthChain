@@ -11,7 +11,6 @@ Parameters marked REQUIRED are required by FHIR specification.
 """
 
 import logging
-import datetime
 
 from typing import List, Optional, Dict, Any
 
@@ -31,7 +30,7 @@ from healthchain.fhir.elementhelpers import (
     create_single_codeable_concept,
     create_single_attachment,
 )
-from healthchain.fhir.utilities import _generate_id
+from healthchain.fhir.utilities import _generate_id, _utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -168,9 +167,7 @@ def create_value_quantity_observation(
         Observation: A FHIR Observation resource with an auto-generated ID prefixed with 'hc-'
     """
     if not effective_datetime:
-        effective_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        )
+        effective_datetime = _utc_now()
 
     subject_ref = Reference(reference=subject) if subject is not None else None
 
@@ -260,9 +257,7 @@ def create_risk_assessment_from_prediction(
         >>> risk = create_risk_assessment("Patient/123", prediction)
     """
     if not occurrence_datetime:
-        occurrence_datetime = datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        )
+        occurrence_datetime = _utc_now()
 
     outcome = prediction.get("outcome")
     if isinstance(outcome, dict):
@@ -333,9 +328,7 @@ def create_document_reference(
     return DocumentReference(
         id=_generate_id(),
         status=status,
-        date=datetime.datetime.now(datetime.timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%S%z"
-        ),
+        date=_utc_now(),
         description=description,
         content=[
             {
@@ -509,7 +502,7 @@ def add_provenance_metadata(
         resource.meta = MetaCls()
 
     resource.meta.source = f"urn:healthchain:source:{source}"
-    resource.meta.lastUpdated = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    resource.meta.lastUpdated = _utc_now()
 
     if tag_code:
         if not resource.meta.tag:
