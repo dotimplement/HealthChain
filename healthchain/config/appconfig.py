@@ -71,7 +71,7 @@ class LLMConfig(BaseModel):
 
 
 class ServiceConfig(BaseModel):
-    type: str = "cds-hooks"
+    type: str = "fhir-gateway"
     port: int = 8000
 
 
