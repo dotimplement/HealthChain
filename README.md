@@ -126,6 +126,7 @@ HealthChain handles that complexity so you can focus on what actually matters: t
 **Featured & Presented:**
 
 - Featured in [TLDR AI Newsletter](https://tldr.tech/ai/2025-08-21) (900K+ developers)
+- [Featured by Medplum](https://www.medplum.com/blog/healthchain) for open source integration with Epic
 - Presented at [NHS Python Open Source Conference](https://github.com/nhs-r-community/conference-2024/blob/main/Talks/2024-11-21_jiang-kells_building-healthchain.md) ([watch talk](https://www.youtube.com/watch?v=_ZqlPsDUdSY&t=1967s))
 - [Built from NHS AI deployment experience](https://open.substack.com/pub/jenniferjiangkells/p/healthchain-building-the-tool-i-wish) – read the origin story
 
